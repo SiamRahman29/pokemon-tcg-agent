@@ -17,6 +17,9 @@ artifacts/**
 # --- Arena game archive (local measurement data, grows per run) ---
 out/arena/
 
+# --- Net checkpoints / experiment scratch (the shipped nets live in agents/sa/) ---
+out/*.npz
+
 # --- Built submission zips ---
 dist/**
 !dist/.gitkeep
