@@ -97,11 +97,23 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
     if kind == "random":
         return "random", make_random_agent(deck)
     if kind == "search":
-        # search[:tag] -- the sa determinized-search agent; tag is only a label
+        # search[:tag][,noP][,noV] -- the sa determinized-search agent. `noP` /
+        # `noV` disable the policy / value net for THIS instance only, so two
+        # configs can be A/B'd head-to-head in one process (the SA_NO_* env
+        # vars are module-level and would otherwise apply to both sides).
         from sa.agent import SearchAgent
 
         tag = spec.split(":", 1)[1] if ":" in spec else ""
-        return (f"search:{tag}" if tag else "search"), SearchAgent(deck)
+        parts = tag.split(",")
+        flags = {p.strip() for p in parts[1:]}
+        no_pnet = True if "noP" in flags else None
+        no_vnet = True if "noV" in flags else None
+        # w<N>: determinizations per decision (the real compute knob)
+        max_worlds = next((int(f[1:]) for f in flags
+                           if f.startswith("w") and f[1:].isdigit()), None)
+        return ((f"search:{tag}" if tag else "search"),
+                SearchAgent(deck, no_pnet=no_pnet, no_vnet=no_vnet,
+                            max_worlds=max_worlds))
     if kind == "bc":
         # bc[:tag] -- pure behavioral-clone policy agent
         from sa.bcagent import PolicyAgent
