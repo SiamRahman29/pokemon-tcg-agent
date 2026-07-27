@@ -50,11 +50,11 @@ class PolicyNet(nn.Module):
         self.state_fc = nn.Sequential(
             nn.Linear(in_state, STATE_H), nn.ReLU(), nn.Dropout(dropout))
         self.head = nn.Sequential(
-            nn.Linear(STATE_H + OPT_DENSE + 2 * EMB, HEAD_H), nn.ReLU(),
+            nn.Linear(STATE_H + OPT_DENSE + 3 * EMB, HEAD_H), nn.ReLU(),
             nn.Dropout(dropout), nn.Linear(HEAD_H, 1))
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
-                opt_dense, opt_card, opt_atk, opt_row):
+                opt_dense, opt_card, opt_atk, opt_tgt, opt_row):
         parts = [dense, self.slot_emb(slots).flatten(1)]
         for name in BAGS:
             parts.append(self.bag_emb(bag_flat[name], bag_off[name]))
@@ -62,14 +62,15 @@ class PolicyNet(nn.Module):
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
         per_opt = torch.cat([srepr[opt_row], opt_dense,
                              self.card_emb(opt_card),
-                             self.atk_emb(opt_atk)], dim=1)  # (O, ...)
+                             self.atk_emb(opt_atk),
+                             self.card_emb(opt_tgt)], dim=1)  # (O, ...)
         return self.head(per_opt).squeeze(1)                 # (O,)
 
 
 class Data:
     def __init__(self, paths: list[Path]):
         sd, slots, seld, gid, won = [], [], [], [], []
-        od, oc, oa, om = [], [], [], []
+        od, oc, oa, ot, om = [], [], [], [], []
         self.opt_rows: list[tuple[int, int]] = []  # (start,end) per row
         bag_rows: dict[str, list] = {n: [] for n in BAGS}
         base = 0
@@ -84,6 +85,8 @@ class Data:
             od.append(z["opt_dense"])
             oc.append(z["opt_card"])
             oa.append(z["opt_attack"])
+            ot.append(z["opt_target"] if "opt_target" in z
+                      else np.zeros_like(z["opt_card"]))
             om.append(z["opt_chosen"])
             off = z["opt_off"]
             for i in range(n):
@@ -102,6 +105,7 @@ class Data:
         self.opt_dense = np.concatenate(od)
         self.opt_card = np.concatenate(oc).astype(np.int64)
         self.opt_atk = np.concatenate(oa).astype(np.int64)
+        self.opt_tgt = np.concatenate(ot).astype(np.int64)
         self.opt_chosen = np.concatenate(om)
         self.bags = bag_rows
         self.n = len(self.gid)
@@ -131,6 +135,7 @@ class Data:
                    torch.from_numpy(self.opt_dense[opt_idx]),
                    torch.from_numpy(self.opt_card[opt_idx]),
                    torch.from_numpy(self.opt_atk[opt_idx]),
+                   torch.from_numpy(self.opt_tgt[opt_idx]),
                    torch.from_numpy(opt_row),
                    torch.from_numpy(self.opt_chosen[opt_idx]),
                    spans)
@@ -211,9 +216,10 @@ def main() -> int:
         t0 = time.time()
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
-            (dense, slots, bf, bo, seld, odn, ocd, oat, orow, om, _) = batch
+            (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
+             _) = batch
             opt.zero_grad()
-            out = model(dense, slots, bf, bo, seld, odn, ocd, oat, orow)
+            out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow)
             loss = lossf(out, om)
             loss.backward()
             opt.step()
@@ -224,9 +230,9 @@ def main() -> int:
         hit = tries = 0
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
-                (dense, slots, bf, bo, seld, odn, ocd, oat, orow, om,
+                (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
                  spans) = batch
-                out = model(dense, slots, bf, bo, seld, odn, ocd, oat,
+                out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
                             orow).numpy()
                 om = om.numpy()
                 pos = 0

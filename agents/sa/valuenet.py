@@ -49,5 +49,13 @@ def get() -> Net | None:
     if not _tried:
         _tried = True
         if _PATH.exists():
-            _net = Net(np.load(_PATH))
+            try:
+                net = Net(np.load(_PATH))
+                from .features import DENSE_DIM
+                expect = (DENSE_DIM + 12 * net.slot_emb.shape[1]
+                          + 3 * net.bag_emb.shape[1])
+                if net.w1.shape[1] == expect:
+                    _net = net
+            except Exception:
+                _net = None
     return _net

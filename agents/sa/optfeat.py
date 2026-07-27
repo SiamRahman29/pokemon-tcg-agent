@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import numpy as np
 
-VERSION = 1
+VERSION = 2
 
 N_OPTION_TYPES = 17
 OPT_DENSE = N_OPTION_TYPES + 8
-N_ATTACK_IDS = 1600
+N_ATTACK_IDS = 1600  # option_features returns (dense, card_id, attack_id, target_id)
 
 # AreaType ints
 _DECK, _HAND, _DISCARD, _ACTIVE, _BENCH, _PRIZE, _STADIUM = 1, 2, 3, 4, 5, 6, 7
@@ -68,8 +68,9 @@ def _card_at(state: dict, sel: dict, player: int, area: int,
     return 0
 
 
-def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int]:
-    """-> (dense vector, card_id, attack_id) for one option."""
+def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int, int]:
+    """-> (dense vector, card_id, attack_id, target_id) for one option.
+    target_id = the in-play Pokemon an ATTACH/EVOLVE points at."""
     state = obs["current"]
     sel = obs["select"]
     me = state["yourIndex"]
@@ -82,6 +83,7 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int]:
 
     card_id = 0
     attack_id = 0
+    target_id = 0
 
     area = opt.get("area")
     index = opt.get("index") or 0
@@ -90,8 +92,10 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int]:
 
     if t == 7:  # PLAY: index into my hand
         card_id = _card_at(state, sel, me, _HAND, opt.get("index") or 0)
-    elif t in (8, 9):  # ATTACH / EVOLVE: card at (area,index)
+    elif t in (8, 9):  # ATTACH / EVOLVE: card at (area,index) onto target
         card_id = _card_at(state, sel, me, area or _HAND, index)
+        target_id = _card_at(state, sel, me, opt.get("inPlayArea") or 0,
+                             opt.get("inPlayIndex") or 0)
     elif t in (3, 10, 11):  # CARD / ABILITY / DISCARD
         card_id = _card_at(state, sel, player, area or 0, index)
     elif t == 13:  # ATTACK
@@ -99,6 +103,9 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int]:
         act = state["players"][me]["active"]
         if act and act[0] is not None:
             card_id = act[0]["id"]
+        opp_act = state["players"][1 - me]["active"]
+        if opp_act and opp_act[0] is not None:
+            target_id = opp_act[0]["id"]
     elif t == 15:  # SKILL
         card_id = opt.get("cardId") or 0
     elif t in (4, 5, 6):  # TOOL_CARD / ENERGY_CARD / ENERGY on a pokemon
@@ -116,4 +123,4 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int]:
 
     if attack_id >= N_ATTACK_IDS:
         attack_id = 0
-    return dense, card_id, attack_id
+    return dense, card_id, attack_id, target_id

@@ -52,7 +52,7 @@ class Writer:
     def reset(self):
         self.sd, self.slots, self.seld, self.gid = [], [], [], []
         self.bags = {"my_hand": [], "my_discard": [], "opp_discard": []}
-        self.od, self.ocard, self.oatk, self.chosen = [], [], [], []
+        self.od, self.ocard, self.oatk, self.otgt, self.chosen = [], [], [], [], []
         self.off = [0]
         self.won = []
 
@@ -62,10 +62,11 @@ class Writer:
         for k in self.bags:
             self.bags[k].append(bags[k])
         self.seld.append(seld)
-        od, oc, oa = opts
+        od, oc, oa, ot = opts
         self.od.append(od)
         self.ocard.append(oc)
         self.oatk.append(oa)
+        self.otgt.append(ot)
         self.chosen.append(chosen_mask)
         self.off.append(self.off[-1] + len(oc))
         self.gid.append(gid)
@@ -85,6 +86,7 @@ class Writer:
             "opt_dense": np.concatenate(self.od),
             "opt_card": np.concatenate(self.ocard),
             "opt_attack": np.concatenate(self.oatk),
+            "opt_target": np.concatenate(self.otgt),
             "opt_chosen": np.concatenate(self.chosen),
             "opt_off": np.asarray(self.off, dtype=np.int64),
         }
@@ -151,12 +153,13 @@ def main() -> int:
                     od = np.zeros((len(opts), OPT_DENSE), dtype=np.float32)
                     oc = np.zeros(len(opts), dtype=np.int32)
                     oa = np.zeros(len(opts), dtype=np.int32)
+                    ot = np.zeros(len(opts), dtype=np.int32)
                     for i, o in enumerate(opts):
-                        od[i], oc[i], oa[i] = option_features(obs, o)
+                        od[i], oc[i], oa[i], ot[i] = option_features(obs, o)
                     mask = np.zeros(len(opts), dtype=np.float32)
                     mask[picked] = 1.0
                     writer.add(dense, bags, sel_features(sel),
-                               (od, oc, oa), mask, gid, won)
+                               (od, oc, oa, ot), mask, gid, won)
                     n_rows += 1
             except Exception as exc:
                 n_err += 1

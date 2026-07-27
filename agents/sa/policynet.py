@@ -64,11 +64,13 @@ class Net:
         feats = np.empty((n, self.w1.shape[1]), dtype=np.float32)
         sw = len(srepr)
         for i, o in enumerate(opts):
-            od, cid, aid = option_features(obs, o)
+            od, cid, aid, tid = option_features(obs, o)
             feats[i, :sw] = srepr
-            feats[i, sw:sw + len(od)] = od
-            feats[i, sw + len(od):sw + len(od) + 16] = self.card_emb[cid]
-            feats[i, sw + len(od) + 16:] = self.atk_emb[aid]
+            b = sw + len(od)
+            feats[i, sw:b] = od
+            feats[i, b:b + 16] = self.card_emb[cid]
+            feats[i, b + 16:b + 32] = self.atk_emb[aid]
+            feats[i, b + 32:] = self.card_emb[tid]
         h = np.maximum(feats @ self.w1.T + self.b1, 0.0)
         return (h @ self.w2.T + self.b2).reshape(-1)
 
@@ -97,5 +99,18 @@ def get() -> Net | None:
     if not _tried:
         _tried = True
         if _PATH.exists():
-            _net = Net(np.load(_PATH))
+            try:
+                net = Net(np.load(_PATH))
+                from .features import DENSE_DIM
+                from .optfeat import OPT_DENSE
+                expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
+                                + 3 * net.bag_emb.shape[1] + SEL_DENSE)
+                expect_head = (net.ws.shape[0] + OPT_DENSE
+                               + 2 * net.card_emb.shape[1]
+                               + net.atk_emb.shape[1])
+                if (net.ws.shape[1] == expect_state
+                        and net.w1.shape[1] == expect_head):
+                    _net = net
+            except Exception:
+                _net = None
     return _net

@@ -127,6 +127,13 @@ def determinize(obs: dict, my_decklist: list[int], known_opp_hand: list[int],
     for cid in public_cards(state, me, include_hand=True):
         if cid in my_pool:
             my_pool.remove(cid)
+    # if the select is showing our own deck, those cards are known to be in
+    # the deck -- the prize pool is exactly the remainder
+    sel_deck = (obs.get("select") or {}).get("deck")
+    if sel_deck:
+        for c in sel_deck:
+            if c and c.get("playerIndex") == me and c["id"] in my_pool:
+                my_pool.remove(c["id"])
     rng.shuffle(my_pool)
     # revealed prizes were already excluded from the pool
     my_unrevealed = [c for c in mypl["prize"] if c is None]

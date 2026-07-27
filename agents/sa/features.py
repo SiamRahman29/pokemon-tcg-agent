@@ -12,10 +12,10 @@ import numpy as np
 from . import cards as cdb
 from .textdmg import best_estimated_damage
 
-VERSION = 1
+VERSION = 2
 N_CARD_IDS = 1300          # card id space (ids are 1..1267 today)
 N_SLOTS = 12               # my active, my bench x5, opp active, opp bench x5
-PER_SLOT = 16
+PER_SLOT = 18
 N_GLOBAL = 26
 DENSE_DIM = N_GLOBAL + N_SLOTS * PER_SLOT
 
@@ -47,7 +47,29 @@ def _slot_feats(pk: dict | None, mypl: dict, oppl: dict, out: np.ndarray,
     out[base + 13] = min(best_estimated_damage(pk, mypl, oppl), 400) / 400.0
     out[base + 14] = len(pk["tools"]) / 1.0 if pk["tools"] else 0.0
     out[base + 15] = cdb.prize_value(pk["id"]) / 3.0
+    out[base + 16] = _cost_satisfaction(pk)
+    own = c.get("energyType")
+    out[base + 17] = min(sum(1 for e in pk["energies"]
+                             if e == own or e >= 10), 4) / 4.0
     return pk["id"]
+
+
+def _cost_satisfaction(pk: dict) -> float:
+    """How close the attached energy comes to paying this Pokemon's cheapest
+    attack (1.0 = can attack now)."""
+    best = 0.0
+    have = pk["energies"]
+    for aid in cdb.card(pk["id"]).get("attacks") or []:
+        a = cdb.attacks().get(aid)
+        if not a:
+            continue
+        cost = a["energies"]
+        if not cost:
+            return 1.0
+        if cdb.energy_satisfied(cost, have):
+            return 1.0
+        best = max(best, min(len(have), len(cost)) / len(cost))
+    return best
 
 
 def featurize(state: dict, me: int) -> tuple[np.ndarray, dict[str, np.ndarray]]:
