@@ -102,6 +102,12 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
 
         tag = spec.split(":", 1)[1] if ":" in spec else ""
         return (f"search:{tag}" if tag else "search"), SearchAgent(deck)
+    if kind == "bc":
+        # bc[:tag] -- pure behavioral-clone policy agent
+        from sa.bcagent import PolicyAgent
+
+        tag = spec.split(":", 1)[1] if ":" in spec else ""
+        return (f"bc:{tag}" if tag else "bc"), PolicyAgent(deck)
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

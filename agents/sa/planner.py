@@ -16,6 +16,7 @@ import random
 import time
 
 from . import fastsearch as fs
+from . import policynet as pnet
 from . import valuenet as vnet
 from .evalfn import evaluate
 from .worlds import determinize
@@ -23,6 +24,7 @@ from .worlds import determinize
 MAIN = 0  # SelectType.MAIN
 
 ROOT_CAP = 24        # max candidate combos at the root select
+ROOT_POLICY_KEEP = 10  # root candidates kept when the policy net prunes
 PLAYOUT_CAP = 8      # max candidates per playout decision
 MAX_PLAYOUT_STEPS = 160
 MAX_WORLDS = 12
@@ -99,6 +101,15 @@ class Planner:
                     break
                 steps += 1
                 continue
+            net = pnet.get()
+            if net is not None:
+                # clone policy plays both sides: one step, no child evals
+                try:
+                    sid, obs = fs.step(sid, net.choose(obs))
+                    steps += 1
+                    continue
+                except (fs.SearchError, Exception):
+                    pass  # fall through to greedy
             best_v = None
             best = None
             for c in cands:
@@ -139,6 +150,23 @@ class Planner:
         me = obs["current"]["yourIndex"]
         sbi = obs["search_begin_input"]
         deck_visible = obs["select"].get("deck") is not None
+
+        # policy prior: keep only the top root candidates the clone would
+        # consider, plus its outright choice
+        net = pnet.get()
+        if net is not None and len(combos) > ROOT_POLICY_KEEP:
+            try:
+                sc = net.scores(obs)
+                choice = net.choose(obs)
+                ranked = sorted(
+                    combos,
+                    key=lambda c: -(sum(sc[i] for i in c) / max(len(c), 1)
+                                    + 0.01 * len(c)))
+                combos = ranked[:ROOT_POLICY_KEEP]
+                if choice not in combos:
+                    combos.append(choice)
+            except Exception:
+                pass
 
         t0 = time.perf_counter()
         deadline = t0 + budget_s
