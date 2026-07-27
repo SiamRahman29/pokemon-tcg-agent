@@ -42,20 +42,86 @@ Determinized turn-level search + learned nets (BC from top replays):
 - `agent.py` — `SearchAgent` (hybrid), `bcagent.py` — `PolicyAgent` (BC-only, ~ms/move).
   Both never raise: fallback = `list(range(minCount))`.
 
-## Experimental results so far (local arena, seat-swapped)
+## Experimental results (local arena, seat-swapped) — REVISED 2026-07-27 (day 1 pm)
 
-vs tuned sample rule agents (rule:iono ≈ LB Elo 800):
-- search + handcrafted eval only: **50%** vs rule:iono (mirror), 33% vs rule:dragapult.
-- **3× compute made it WORSE (17%)** → handcrafted eval misleads deeper search.
-- value-net leaf (v1, 768 games, overfit): **0%** — worse than handcrafted.
-- BC-only (policy v1, 57% top-1 val): **10%** vs rule:iono (loses the prize race;
-  plays coherently — benches, Rare-Candy evolves, takes prizes, just too leaky).
-- **Hybrid (policy playouts + handcrafted leaf, SA_NO_VNET=1): 50% vs rule:iono
-  cross-deck (grimmsnarl vs iono)** — best so far, wiring works.
+### Correction: earlier numbers in this file were measured through broken controls
 
-Bottleneck identified: **net quality, driven by data volume** (was 768 games).
-Late-game (turn≥14) win prediction is genuinely hard (~50% even for logreg probe);
-mid-game ~71% (logreg baseline). Value net must beat logreg (0.634 overall) to be useful.
+The pre-2026-07-27 results above/below were invalid for three separate reasons.
+**Do not trust any strength claim in this file dated before 2026-07-27 pm.**
+
+1. Nets were trained pre-v2 (DENSE_DIM=218 vs 242) so **both dim guards silently
+   rejected them**. Every "hybrid" result was really search+handcrafted-eval.
+2. "3× compute made it worse (17%)" was tested via `SA_SPEND_MULT`, which only
+   grants more *time*. Time was never binding — `MAX_WORLDS=12` was. That
+   experiment changed nothing and measured noise.
+3. The "50% search+handcrafted" figure was a **mirror** matchup (iono vs iono);
+   it was then compared against cross-deck (grimmsnarl vs iono) runs. Measuring
+   the same no-nets config cross-deck now gives **21%**, not 50%.
+
+### Current measured truth (nets = full 6-day corpus)
+
+vs `rule:iono` (grimmsnarl vs iono, n=24 each, wall-clock-contention caveat below):
+- search, **both nets off** (pure handcrafted): **21%** (5/24)
+- search, **policy ON**, value off: **33%** (8/24)  ← best config
+- BC-only (policy alone, no search): **25%**
+
+Head-to-head A/Bs (same process, same deck both sides — immune to CPU contention,
+the only fully trustworthy comparisons):
+- **policy ON vs policy OFF: 0.696 [0.567, 0.801], W38/D2/L16 over 56 games.**
+  CI excludes 0.5 → the policy net is a real improvement. Settled.
+  (Two independent 28-game runs of the same config ran concurrently by accident:
+  0.750 [0.566,0.873] and 0.643 [0.458,0.793]. The second alone would NOT have
+  been significant — 28 games is not enough to call a ~15pp effect. Always
+  combine, and treat any single 24–28 game arena number as barely indicative.)
+- **value ON vs value OFF: 0.396 [0.228, 0.592], W9/D1/L14 over 24 games.**
+  CI *includes* 0.5, so this does NOT prove the value net hurts — it proves there
+  is **no evidence it helps**, with a negative point estimate. Since it also costs
+  compute per leaf, ship without it. (Tested with the *good* full-corpus net,
+  val 0.5878 — i.e. the net that improved most on paper is the one we exclude.)
+- **worlds 48 vs 12 — SETTLED NEGATIVE. Do not retry this axis.**
+  | variant | score | n | CI |
+  |---|---|---|---|
+  | handcrafted leaf (arena5) | 0.500 | 24 | [0.314, 0.686] |
+  | both nets on (arena7) | 0.458 | 24 | [0.279, 0.649] |
+  | **combined** | **0.479** | **48** | **[0.345, 0.617]** |
+  4× the determinizations buys nothing, with or without nets. It also does not
+  hurt → the old "3× compute made it worse" claim is refuted (that test used
+  `SA_SPEND_MULT`, which could not bind while `MAX_WORLDS` did).
+  **Interpretation:** 12 determinizations already average out most hidden-info
+  variance; more worlds cut *variance* but cannot fix a *biased* leaf evaluator.
+  The 3%-of-budget headroom is real but is NOT free upside on this axis.
+  If spending the budget, try a *different* axis: `MAX_PLAYOUT_STEPS` (rollout
+  depth / horizon), `ROOT_CAP` (root width), or `PLAYOUT_CAP` — i.e. the
+  quality/depth of each rollout, not the number of worlds.
+
+### Two structural lessons
+
+**Value net: val loss does NOT predict arena strength.** The net is trained on
+states from top players' *real* games but queried at *search leaves* mid-playout
+(after greedy/policy continuations). Those are off-distribution, so replay
+accuracy does not transfer. Judge the value net by arena results only, never by
+val loss. It now clearly beats logreg (0.5878 vs 0.634) and still appears to
+make play worse.
+
+**Data volume drives net quality, and it kept paying:**
+| corpus | policy top-1 | value best val |
+|---|---|---|
+| 768 games (v1) | 57% | — |
+| 1,211 / 1,188 games | 63.4% | 0.6327 |
+| **2,410 / 2,387 games** | **66.0%** | **0.5878** |
+Value net still peaks at *epoch 0* even at 2.4k games → still data-starved.
+Late-game acc went 0.396 (noise, only 18 val games in that bucket) → 0.608.
+
+### The biggest open lever: the agent uses 3% of its compute
+
+`MAX_WORLDS` binds on **every** decision. Measured with `SA_DEBUG` instrumentation:
+| MAX_WORLDS | worlds/decide | per-decision budget used | 600s pool used |
+|---|---|---|---|
+| 12 (default) | 12.0 | 15% | ~20s |
+| 48 | 47.5 | 42% | ~89s |
+Raising it is free headroom with no timeout risk. Whether it *helps* is unresolved
+(arena5/arena7). Note arena5 runs a handcrafted leaf, where more determinizations
+may just amplify eval bias — arena7 retests with nets on.
 
 ## Data pipeline
 
@@ -63,8 +129,12 @@ mid-game ~71% (logreg baseline). Value net must beat logreg (0.634 overall) to b
   of daily dataset `kaggle/pokemon-tcg-ai-battle-episodes-<date>`, then top-N episodes
   by avg_score into `replays/<date>/`. Idempotent (skips existing). Now parallel (4 workers).
 - Old repo has 366 top-1% replays: `E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays\2026-07-06..12`.
-- Downloaded so far: `replays/2026-07-26` (403), `2026-07-25` (~230+, in flight),
-  `2026-07-23` (~140+, in flight), 07-24 queued after 25, then 22/21.
+- Downloaded (COMPLETE as of 2026-07-27 pm): `2026-07-26` (403), `07-25` (268),
+  `07-24` (401), `07-23` (176), `07-22` (401), `07-21` (401), `07-20` (~400).
+  Plus the old repo's 366. Datasets built for all: `artifacts/{ds,pds}/{old,d21..d26}`.
+  → value 2,387 games / 390k rows; policy 2,410 games / 363k rows.
+- A few replays download truncated (exactly 3 MiB) and fail JSON parse; the
+  builders skip them (`errors=N` in the summary). Delete + re-fetch to recover.
 - `scripts/build_dataset.py --out artifacts/ds/<tag> --stride 1 <dirs>` — value shards.
 - `scripts/build_policy_dataset.py --out artifacts/pds/<tag> <dirs>` — policy shards.
 - `scripts/train_value.py --ds artifacts/ds --epochs 4` → `agents/sa/value_net.npz`.
@@ -105,28 +175,75 @@ mid-game ~71% (logreg baseline). Value net must beat logreg (0.634 overall) to b
 
 ## Submission
 
-- `python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent search`
-  → builds + **smoke-tests** `dist/submission_*.tar.gz` (self-play with time pool,
-  asserts pool not exhausted). `--agent bc` for policy-only bundle.
-- NOT yet submitted anything. First submission should go up ASAP once hybrid+v2 nets
-  beat rule agents convincingly (validates Linux env + starts rating grind).
-  User must upload manually (or `kaggle competitions submit -f dist/submission.tar.gz -m "msg"`).
+- `python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent search
+  --nets policy` → builds + **smoke-tests** `dist/submission_*.tar.gz`.
+  `--nets` pins which npz ship (see Gotchas — this is load-bearing on Kaggle).
+- **SUBMITTED 2026-07-27:**
+  - `55028078` — **ERROR** (`__file__` NameError under Kaggle's exec loader; see Gotchas).
+  - `55028156` — **COMPLETE**, initial publicScore 600.0 (= starting μ, not yet a
+    measured strength; it drifts as rated episodes play). Config = policy ON /
+    value OFF / worlds 12 (the arena-winning config).
+    **Linux env is VALIDATED — the bundle runs on Kaggle.**
+  Expect a LOW score: ~33% vs rule:iono, and **rule:iono itself scored 763.7** on
+  this LB. Prior attempts from the old repo: ismcts 435.8, vpi-cold-b 489.1.
+  Value here is validating the Linux env + starting rating convergence.
+- `kaggle competitions submit` returned a **400** on CreateSubmission even though
+  the upload hit 100%; the identical file went through minutes later via the
+  Python client. If the CLI 400s, use:
+  `python -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi();
+  a.authenticate(); a.competition_submit('dist/submission.tar.gz','msg','pokemon-tcg-ai-battle')"`
+  — and note that call SUBMITS; it is not a dry run.
+- Smoke caveat: the smoke opponent is trivial, so games end fast (~11s of pool).
+  It proves the bundle imports and runs, not that a long game stays in budget.
+  Arena data covers that: ~109 selects × 423ms ≈ 46s vs a 600s pool (13× headroom).
 
 ## Immediate next steps (priority order)
 
-1. Wait/re-run v2 dataset rebuild + retrain (was in flight). Confirm policy top-1 ≥ 60%
-   and value val_loss < logreg baseline. More data days keep arriving — retrain again after.
-2. Arena matrix: {bc, hybrid, hybrid-noV} × {rule:iono, rule:dragapult} + mirrors
-   (grimmsnarl vs crispin_box). Need >75% vs rules before submitting.
-3. Build submission (grimmsnarl + best agent config), smoke, give to user for upload.
-4. Iterate day 2: more data (07-24/23/22/21 + deepen to top-800/day), winners-only
-   policy variant, more epochs, maybe playout temperature. Watch for causal-confusion
-   ceiling of BC (paper in papers/ warns); search-on-top is our hedge.
-5. Deck A/B: grimmsnarl vs crispin_box with the SAME agent; also consider flg's
-   secondary P/R deck (55 games in 07-26 data).
+1. **Finish the compute question** (arena5/arena7: worlds 48 vs 12, without/with
+   nets). The agent uses 3% of its budget — the only free lever left. If w48 wins
+   with nets on, rebuild + resubmit immediately.
+2. **Fix the value net's off-distribution problem** — it is the clearest known
+   defect. Options: train on states sampled from *search leaves* (self-play
+   playouts) rather than replay states; or blend `evaluate()` with the net; or
+   drop it. Do NOT re-enable it on val loss alone.
+3. More data still pays on both nets (policy 57→63.4→66.0% tracks corpus size;
+   value still peaks at epoch 0). Deepen to top-800/day, add days 07-19 and back.
+4. The agent loses to `rule:iono` in every config (21–33%). Before more net work,
+   consider whether `evalfn.py`/`textdmg.py` or the root candidate enumeration is
+   the real ceiling — a 66%-accurate clone did not fix the prize race.
+5. Deck A/B: grimmsnarl vs crispin_box with the SAME agent; also `rule:dragapult`
+   as a second opponent (all current numbers are vs one opponent on one matchup).
 
 ## Gotchas
 
+- **`__file__` DOES NOT EXIST on Kaggle.** `kaggle_environments/agent.py` runs
+  main.py via `exec(code_object, env)`, so `__file__` is undefined →
+  `NameError` → submission Status=ERROR before the agent ever runs. This killed
+  submission 55028078 (2026-07-27). `main.py` now resolves its dir via
+  try/except NameError → `/kaggle_simulations/agent` → cwd.
+  **The old smoke test could not catch this** because it did `import main`, and
+  importing defines `__file__`. The smoke now `exec`s the source with no
+  `__file__` in globals, exactly as Kaggle does. Keep it that way — a local
+  smoke that loads the agent differently from the grader proves nothing.
+- **Arena archiving is NOT incremental.** `arena.py` buffers rows and writes them
+  in a `finally` at the END of the run. `Stop-Process -Force` skips the `finally`
+  → **all games from that run are lost**. Let arenas finish, or stop them gently.
+- **Arena strength numbers depend on machine load.** `timemgr` budgets on
+  wall-clock, so a contended CPU searches less deeply. Two agents measured under
+  different background load are NOT comparable. Head-to-head runs (both agents in
+  one process) are immune — prefer them for every A/B.
+- Launch long jobs via PowerShell `Start-Process` (detached); bash `nohup &` jobs
+  die when the session's process group is torn down. There is no `setsid` here.
+- Redirecting python stdout to a file block-buffers it; pass `-u` or output only
+  appears in chunks. Never pipe a long run through `| grep | tail` — that buffers
+  until exit, so a killed run looks like it produced nothing (this cost a run).
+- **Kaggle sets no env vars**, so `SA_NO_PNET`/`SA_NO_VNET` are 0 there and any
+  bundled `.npz` is LIVE. Pin the config with `build_submission.py --nets
+  none|policy|value|both` (omitting an npz → `get()` returns None → fallback).
+- Per-instance knobs (added 2026-07-27) let two configs be A/B'd in one process:
+  `search:<tag>,noP,noV,w<N>` in arena specs; `SearchAgent(deck, no_pnet=,
+  no_vnet=, max_worlds=)`. The module-level `SA_*` env vars apply to BOTH sides
+  and would silently compare two identical configs.
 - Windows: use `python -X utf8` everywhere (cp1252 crashes on card names).
 - Arena/harness must run from repo root; `sys.path` needs `src/`, `agents/`, root.
 - Background bash jobs die with the session; re-launch fetches idempotently.
