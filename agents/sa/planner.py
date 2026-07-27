@@ -144,11 +144,12 @@ class Planner:
         deadline = t0 + budget_s
         totals = [0.0] * len(combos)
         counts = [0] * len(combos)
+        alive = list(range(len(combos)))  # root candidates still in play
 
         worlds = 0
-        while worlds < MAX_WORLDS:
+        while worlds < MAX_WORLDS and len(alive) >= 1:
             now = time.perf_counter()
-            if worlds > 0 and now > deadline:
+            if worlds > 0 and (now > deadline or len(alive) == 1):
                 break
             # keep at least one full world even if the budget is tiny
             world = determinize(obs, self.decklist, known_opp_hand, self.rng)
@@ -161,26 +162,32 @@ class Planner:
             except (fs.SearchError, ValueError):
                 STATS["begin_fail"] += 1
                 break  # determinization rejected; bail to what we have
-            world_deadline = min(deadline, time.perf_counter() + budget_s)
-            for i, c in enumerate(combos):
+            for i in alive:
                 try:
-                    sid, o = fs.step(root_sid, c)
+                    sid, o = fs.step(root_sid, combos[i])
                 except fs.SearchError:
                     totals[i] += -1e6
                     counts[i] += 1
                     continue
-                v = self._playout(sid, o, me, world_deadline)
+                v = self._playout(sid, o, me, deadline)
                 totals[i] += v
                 counts[i] += 1
-                if time.perf_counter() > world_deadline and i + 1 < len(combos):
-                    # ran out mid-world: stop scoring further combos this world
+                if time.perf_counter() > deadline and worlds > 0:
                     break
             fs.end()
             worlds += 1
+            # successive halving: drop clearly-worse candidates so later
+            # worlds concentrate on the contenders
+            if len(alive) > 3:
+                scored = sorted(
+                    (totals[i] / max(counts[i], 1), i) for i in alive)
+                keep = max(3, len(alive) // 2) if worlds >= 2 else \
+                    max(4, int(len(alive) * 0.7))
+                alive = sorted(i for _, i in scored[-keep:])
 
-        best_i = 0
+        best_i = alive[0] if alive else 0
         best_v = None
-        for i, c in enumerate(combos):
+        for i in (alive or range(len(combos))):
             if counts[i] == 0:
                 continue
             v = totals[i] / counts[i]

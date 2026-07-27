@@ -1,7 +1,8 @@
 """Train the value net on shards from build_dataset.py.
 
-    python scripts/train_value.py --ds artifacts/ds --epochs 3 --out agents/sa/value_net.npz
+    python scripts/train_value.py --ds artifacts/ds --epochs 4 --out agents/sa/value_net.npz
 
+Game-level validation split (episode id hash), dropout + weight decay.
 Architecture (mirrored by sa/valuenet.py numpy inference):
     slot_emb:  Embedding(N_CARD_IDS, 16) over 12 board slots -> 192
     bag_emb:   EmbeddingBag(N_CARD_IDS, 16, mode=mean) for my_hand,
@@ -23,6 +24,10 @@ ROOT = Path(__file__).resolve().parents[1]
 for sub in ("src", "agents"):
     sys.path.insert(0, str(ROOT / sub))
 
+from ptcg.env import sdk  # noqa: E402
+
+sdk.load()  # sa.features needs the cg engine importable
+
 from sa.features import DENSE_DIM, N_CARD_IDS  # noqa: E402
 
 EMB = 16
@@ -30,15 +35,15 @@ BAGS = ("my_hand", "my_discard", "opp_discard")
 
 
 class ValueNet(nn.Module):
-    def __init__(self):
+    def __init__(self, dropout: float = 0.15):
         super().__init__()
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
         in_dim = DENSE_DIM + 12 * EMB + len(BAGS) * EMB
         self.fc = nn.Sequential(
-            nn.Linear(in_dim, 512), nn.ReLU(),
-            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(in_dim, 512), nn.ReLU(), nn.Dropout(dropout),
+            nn.Linear(512, 256), nn.ReLU(), nn.Dropout(dropout),
             nn.Linear(256, 1))
 
     def forward(self, dense, slots, bag_flat, bag_off):
@@ -48,37 +53,51 @@ class ValueNet(nn.Module):
         return self.fc(torch.cat(parts, dim=1)).squeeze(1)
 
 
-class Shard:
-    def __init__(self, path: Path):
-        z = np.load(path)
-        self.dense = z["dense"]
-        self.slots = z["slots"]
-        self.y = z["y"]
-        self.bags = {}
-        for name in BAGS:
-            self.bags[name] = (z[f"bag_{name}_flat"].astype(np.int64),
-                               z[f"bag_{name}_off"].astype(np.int64))
+class Data:
+    """All shards concatenated, with per-row bag slices."""
+
+    def __init__(self, paths: list[Path]):
+        dense, slots, y, gid = [], [], [], []
+        bag_rows: dict[str, list] = {n: [] for n in BAGS}
+        for p in paths:
+            z = np.load(p)
+            dense.append(z["dense"])
+            slots.append(z["slots"])
+            y.append(z["y"])
+            gid.append(z["gid"] if "gid" in z
+                       else np.zeros(len(z["y"]), dtype=np.int64))
+            for n in BAGS:
+                flat = z[f"bag_{n}_flat"]
+                off = z[f"bag_{n}_off"]
+                bag_rows[n].extend(
+                    flat[off[i]:off[i + 1]].astype(np.int64)
+                    for i in range(len(off) - 1))
+        self.dense = np.concatenate(dense)
+        self.slots = np.concatenate(slots).astype(np.int64)
+        self.y = np.concatenate(y)
+        self.gid = np.concatenate(gid)
+        self.bags = bag_rows
         self.n = len(self.y)
 
-    def batches(self, bs: int, rng: np.random.Generator):
-        order = rng.permutation(self.n)
-        for i in range(0, self.n, bs):
-            idx = order[i:i + bs]
-            dense = torch.from_numpy(self.dense[idx])
-            slots = torch.from_numpy(self.slots[idx].astype(np.int64))
-            y = torch.from_numpy(self.y[idx])
+    def batches(self, idx: np.ndarray, bs: int,
+                rng: np.random.Generator | None):
+        order = rng.permutation(idx) if rng is not None else idx
+        for i in range(0, len(order), bs):
+            sel = order[i:i + bs]
             bag_flat, bag_off = {}, {}
-            for name in BAGS:
-                flat, off = self.bags[name]
-                lens = off[idx + 1] - off[idx]
-                new_off = np.zeros(len(idx) + 1, dtype=np.int64)
-                np.cumsum(lens, out=new_off[1:])
-                out = np.zeros(new_off[-1], dtype=np.int64)
-                for j, k in enumerate(idx):
-                    out[new_off[j]:new_off[j + 1]] = flat[off[k]:off[k + 1]]
-                bag_flat[name] = torch.from_numpy(out)
-                bag_off[name] = torch.from_numpy(new_off)
-            yield dense, slots, bag_flat, bag_off, y
+            for n in BAGS:
+                rows = [self.bags[n][k] for k in sel]
+                off = np.zeros(len(rows) + 1, dtype=np.int64)
+                np.cumsum([len(r) for r in rows], out=off[1:])
+                bag_flat[n] = torch.from_numpy(
+                    np.concatenate(rows) if off[-1]
+                    else np.zeros(0, dtype=np.int64))
+                bag_off[n] = torch.from_numpy(off)
+            yield (torch.from_numpy(self.dense[sel]),
+                   torch.from_numpy(self.slots[sel]),
+                   bag_flat, bag_off,
+                   torch.from_numpy(self.y[sel]),
+                   sel)
 
 
 def export_npz(model: ValueNet, path: Path):
@@ -88,65 +107,78 @@ def export_npz(model: ValueNet, path: Path):
         slot_emb=sd["slot_emb.weight"],
         bag_emb=sd["bag_emb.weight"],
         w1=sd["fc.0.weight"], b1=sd["fc.0.bias"],
-        w2=sd["fc.2.weight"], b2=sd["fc.2.bias"],
-        w3=sd["fc.4.weight"], b3=sd["fc.4.bias"])
+        w2=sd["fc.3.weight"], b2=sd["fc.3.bias"],
+        w3=sd["fc.6.weight"], b3=sd["fc.6.bias"])
     print(f"exported -> {path}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ds", default="artifacts/ds")
-    ap.add_argument("--epochs", type=int, default=3)
+    ap.add_argument("--epochs", type=int, default=4)
     ap.add_argument("--bs", type=int, default=4096)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--wd", type=float, default=1e-5)
+    ap.add_argument("--dropout", type=float, default=0.15)
     ap.add_argument("--out", default="agents/sa/value_net.npz")
-    ap.add_argument("--val-frac", type=float, default=0.05)
     args = ap.parse_args()
 
     torch.set_num_threads(max(1, torch.get_num_threads() - 1))
-    paths = sorted((ROOT / args.ds).glob("shard_*.npz"))
+    paths = sorted((ROOT / args.ds).rglob("shard_*.npz"))
     if not paths:
         raise SystemExit(f"no shards under {ROOT / args.ds}")
-    shards = [Shard(p) for p in paths]
-    n_total = sum(s.n for s in shards)
-    print(f"{len(shards)} shards, {n_total} rows")
+    data = Data(paths)
+    val_mask = (data.gid % 20) == 0  # ~5% of games held out
+    train_idx = np.where(~val_mask)[0]
+    val_idx = np.where(val_mask)[0]
+    print(f"{len(paths)} shards, {data.n} rows "
+          f"({len(train_idx)} train / {len(val_idx)} val, "
+          f"{len(np.unique(data.gid))} games)")
 
-    val_shard = shards[-1]  # holdout: last shard (different games)
-    train_shards = shards[:-1] if len(shards) > 1 else shards
-
-    model = ValueNet()
-    opt = torch.optim.Adam(model.parameters(), lr=args.lr)
+    model = ValueNet(args.dropout)
+    opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
+                            weight_decay=args.wd)
     lossf = nn.BCEWithLogitsLoss()
     rng = np.random.default_rng(0)
+    best_val = 1e9
 
     for epoch in range(args.epochs):
         model.train()
         t0 = time.time()
         tot = seen = 0.0
-        for si, shard in enumerate(train_shards):
-            for dense, slots, bf, bo, y in shard.batches(args.bs, rng):
-                opt.zero_grad()
-                out = model(dense, slots, bf, bo)
-                loss = lossf(out, y)
-                loss.backward()
-                opt.step()
-                tot += loss.item() * len(y)
-                seen += len(y)
+        for dense, slots, bf, bo, y, _ in data.batches(train_idx, args.bs,
+                                                       rng):
+            opt.zero_grad()
+            loss = lossf(model(dense, slots, bf, bo), y)
+            loss.backward()
+            opt.step()
+            tot += loss.item() * len(y)
+            seen += len(y)
         model.eval()
-        correct = vtot = vseen = 0.0
+        vtot = 0.0
+        correct = np.zeros(3)
+        counts = np.zeros(3)
         with torch.no_grad():
-            for dense, slots, bf, bo, y in val_shard.batches(args.bs, rng):
+            for dense, slots, bf, bo, y, sel in data.batches(val_idx, args.bs,
+                                                             None):
                 out = model(dense, slots, bf, bo)
                 vtot += lossf(out, y).item() * len(y)
-                mask = y != 0.5
-                correct += (((out > 0) == (y > 0.5)) & mask).sum().item()
-                vseen += mask.sum().item()
-        print(f"epoch {epoch}: train_loss={tot / seen:.4f} "
-              f"val_loss={vtot / max(vseen, 1):.4f} "
-              f"val_acc={correct / max(vseen, 1):.4f} "
+                turn = data.dense[sel][:, 0] * 40.0
+                pred = (out.numpy() > 0)
+                truth = (y.numpy() > 0.5)
+                decided = y.numpy() != 0.5
+                for b, (lo, hi) in enumerate(((0, 6), (6, 14), (14, 99))):
+                    m = decided & (turn >= lo) & (turn < hi)
+                    correct[b] += (pred[m] == truth[m]).sum()
+                    counts[b] += m.sum()
+        val_loss = vtot / max(len(val_idx), 1)
+        acc = correct / np.maximum(counts, 1)
+        print(f"epoch {epoch}: train={tot / seen:.4f} val={val_loss:.4f} "
+              f"acc(early/mid/late)={acc[0]:.3f}/{acc[1]:.3f}/{acc[2]:.3f} "
               f"({time.time() - t0:.0f}s)")
-
-    export_npz(model, ROOT / args.out)
+        if val_loss < best_val:
+            best_val = val_loss
+            export_npz(model, ROOT / args.out)
     return 0
 
 

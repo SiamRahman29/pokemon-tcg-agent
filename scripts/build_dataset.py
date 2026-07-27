@@ -45,15 +45,17 @@ class ShardWriter:
         self.dense: list[np.ndarray] = []
         self.slots: list[np.ndarray] = []
         self.y: list[float] = []
+        self.gid: list[int] = []
         self.bags: dict[str, list[np.ndarray]] = {
             "my_hand": [], "my_discard": [], "opp_discard": []}
 
-    def add(self, dense, bags, label):
+    def add(self, dense, bags, label, game_id: int):
         self.dense.append(dense)
         self.slots.append(bags["slots"])
         for k in self.bags:
             self.bags[k].append(bags[k])
         self.y.append(label)
+        self.gid.append(game_id)
         if len(self.y) >= SHARD_ROWS:
             self.flush()
 
@@ -64,6 +66,7 @@ class ShardWriter:
             "dense": np.stack(self.dense),
             "slots": np.stack(self.slots),
             "y": np.asarray(self.y, dtype=np.float32),
+            "gid": np.asarray(self.gid, dtype=np.int64),
         }
         for k, lists in self.bags.items():
             off = np.zeros(len(lists) + 1, dtype=np.int64)
@@ -114,7 +117,11 @@ def main() -> int:
                     label = 1.0 if r_me > r_opp else 0.0 if r_me < r_opp \
                         else 0.5
                     dense, bags = featurize(state, me)
-                    writer.add(dense, bags, label)
+                    try:
+                        gid = int(path.stem)
+                    except ValueError:
+                        gid = hash(path.stem) & 0x7FFFFFFF
+                    writer.add(dense, bags, label, gid)
                     n_states += 1
             except Exception as exc:
                 n_err += 1
