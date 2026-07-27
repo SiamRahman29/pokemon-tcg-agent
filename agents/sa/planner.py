@@ -16,6 +16,7 @@ import random
 import time
 
 from . import fastsearch as fs
+from . import valuenet as vnet
 from .evalfn import evaluate
 from .worlds import determinize
 
@@ -117,8 +118,19 @@ class Planner:
             if best is None:
                 break
             sid, obs = best
+        return self._leaf_value(obs, me)
+
+    def _leaf_value(self, obs: dict, me: int) -> float:
         cur = obs.get("current")
-        return evaluate(cur, me) if cur is not None else 0.0
+        if cur is None:
+            return 0.0
+        if cur["result"] != -1:
+            return evaluate(cur, me)  # terminal: +/-WIN or 0
+        net = vnet.get()
+        if net is not None:
+            # scaled so terminals still dominate; comparable across leaves
+            return 40.0 * (net.win_prob(cur, me) - 0.5)
+        return evaluate(cur, me)
 
     # ---- root decision -------------------------------------------------------
 

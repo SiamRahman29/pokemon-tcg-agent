@@ -31,13 +31,19 @@ def _pokemon_value(pk: dict, opp_best_damage: int) -> float:
     return base
 
 
-def _side_damage(pl: dict) -> tuple[int, list[int]]:
-    """(best usable damage of the active, active energies)."""
-    act = pl["active"]
-    if not act or act[0] is None:
-        return 0, []
-    pk = act[0]
-    return cdb.best_usable_damage(pk["id"], pk["energies"]), pk["energies"]
+def _side_threat(mypl: dict, oppl: dict) -> float:
+    """Best expected damage this side can bring to bear next turn: its active
+    at full weight, benched attackers slightly discounted (they must promote)."""
+    from .textdmg import best_estimated_damage
+
+    best = 0.0
+    act = mypl["active"][0] if mypl["active"] else None
+    if act is not None:
+        best = best_estimated_damage(act, mypl, oppl)
+    for pk in mypl["bench"]:
+        if pk is not None:
+            best = max(best, 0.8 * best_estimated_damage(pk, mypl, oppl))
+    return best
 
 
 def _effective_damage(dmg: int, attacker_cid: int, defender: dict) -> int:
@@ -73,18 +79,18 @@ def evaluate(state: dict, me: int) -> float:
     score += 0.06 * my_taken * my_taken
     score -= 0.06 * opp_taken * opp_taken
 
-    # active attack threat (mutual)
+    # attack threat (mutual), including benched attackers and text damage
     my_act = mypl["active"][0] if mypl["active"] else None
     opp_act = oppl["active"][0] if oppl["active"] else None
-    my_dmg, _ = _side_damage(mypl)
-    opp_dmg, _ = _side_damage(oppl)
+    my_dmg = _side_threat(mypl, oppl)
+    opp_dmg = _side_threat(oppl, mypl)
     my_eff = _effective_damage(my_dmg, my_act["id"], opp_act) \
         if my_act and opp_act else my_dmg
     opp_eff = _effective_damage(opp_dmg, opp_act["id"], my_act) \
         if my_act and opp_act else opp_dmg
 
-    score += 0.0016 * my_eff
-    score -= 0.0016 * opp_eff
+    score += 0.0016 * min(my_eff, 400)
+    score -= 0.0016 * min(opp_eff, 400)
     if opp_act is not None and my_act is not None:
         if my_eff >= opp_act["hp"]:
             score += 0.45 * cdb.prize_value(opp_act["id"])
