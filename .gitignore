@@ -1,0 +1,57 @@
+# --- Data (pasted manually, never committed) ---
+data/**
+!data/README.md
+!data/.gitkeep
+
+# --- Replays (downloaded via Kaggle CLI) ---
+replays/**
+!replays/.gitkeep
+
+# --- Local artifacts ---
+artifacts/**
+!artifacts/.gitkeep
+*.pkl
+*.parquet
+*.feather
+
+# --- Arena game archive (local measurement data, grows per run) ---
+out/arena/
+
+# --- Built submission zips ---
+dist/**
+!dist/.gitkeep
+
+# --- Engine SDK (licensed, do NOT republish; keep local only) ---
+sdk/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+.ipynb_checkpoints/
+.venv/
+venv/
+/env/
+.python-version
+
+# --- Tooling / OS ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+*.log
+*.err
+
+# --- Kaggle creds ---
+kaggle.json
+.kaggle/
+
+# gstack session artifacts
+.gstack/
+
+# --- Replay files ---
+replay_miner/replays/**
+replay_miner/manifests/**
