@@ -27,7 +27,7 @@ ROOT_CAP = 24        # max candidate combos at the root select
 ROOT_POLICY_KEEP = 10  # root candidates kept when the policy net prunes
 PLAYOUT_CAP = 8      # max candidates per playout decision
 MAX_PLAYOUT_STEPS = 160
-MAX_WORLDS = 12
+MAX_WORLDS = int(__import__("os").environ.get("SA_MAX_WORLDS", "12"))
 
 DEBUG = bool(int(__import__("os").environ.get("SA_DEBUG", "0")))
 NO_VNET = bool(int(__import__("os").environ.get("SA_NO_VNET", "0")))
@@ -71,9 +71,17 @@ def candidate_combos(sel: dict, cap: int, rng: random.Random | None = None) \
 
 
 class Planner:
-    def __init__(self, decklist: list[int]):
+    def __init__(self, decklist: list[int], no_pnet: bool | None = None,
+                 no_vnet: bool | None = None, max_worlds: int | None = None):
         self.decklist = list(decklist)
         self.rng = random.Random(0xC0FFEE)
+        # per-instance knobs; default to the process-wide env flags so two
+        # configs can be A/B'd head-to-head inside one arena process
+        self.no_pnet = NO_PNET if no_pnet is None else no_pnet
+        self.no_vnet = NO_VNET if no_vnet is None else no_vnet
+        # the world cap binds on every decision well before the time budget
+        # does, so this -- not SA_SPEND_MULT -- is the real compute knob
+        self.max_worlds = MAX_WORLDS if max_worlds is None else max_worlds
 
     # ---- greedy playout ------------------------------------------------------
 
@@ -103,7 +111,7 @@ class Planner:
                     break
                 steps += 1
                 continue
-            net = None if NO_PNET else pnet.get()
+            net = None if self.no_pnet else pnet.get()
             if net is not None:
                 # clone policy plays both sides: one step, no child evals
                 try:
@@ -139,7 +147,7 @@ class Planner:
             return 0.0
         if cur["result"] != -1:
             return evaluate(cur, me)  # terminal: +/-WIN or 0
-        net = None if NO_VNET else vnet.get()
+        net = None if self.no_vnet else vnet.get()
         if net is not None:
             # scaled so terminals still dominate; comparable across leaves
             return 40.0 * (net.win_prob(cur, me) - 0.5)
@@ -155,7 +163,7 @@ class Planner:
 
         # policy prior: keep only the top root candidates the clone would
         # consider, plus its outright choice
-        net = None if NO_PNET else pnet.get()
+        net = None if self.no_pnet else pnet.get()
         if net is not None and len(combos) > ROOT_POLICY_KEEP:
             try:
                 sc = net.scores(obs)
@@ -177,7 +185,7 @@ class Planner:
         alive = list(range(len(combos)))  # root candidates still in play
 
         worlds = 0
-        while worlds < MAX_WORLDS and len(alive) >= 1:
+        while worlds < self.max_worlds and len(alive) >= 1:
             now = time.perf_counter()
             if worlds > 0 and (now > deadline or len(alive) == 1):
                 break
