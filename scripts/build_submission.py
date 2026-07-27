@@ -38,7 +38,18 @@ MAIN_PY = '''\
 import os
 import sys
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
+# Kaggle loads this file with exec(code_object, env) -- `__file__` is NOT
+# defined there (kaggle_environments/agent.py:get_last_callable). Never rely
+# on it: fall back to the documented agent dir, then cwd.
+_CANDS = []
+try:
+    _CANDS.append(os.path.dirname(os.path.abspath(__file__)))
+except NameError:
+    pass
+_CANDS.append("/kaggle_simulations/agent")
+_CANDS.append(os.getcwd())
+_HERE = next((p for p in _CANDS
+              if p and os.path.exists(os.path.join(p, "deck.csv"))), _CANDS[-1])
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
@@ -70,7 +81,24 @@ def agent(obs):
 SMOKE = r'''
 import sys, time
 sys.path.insert(0, ".")
-import main
+
+# Load main.py THE WAY KAGGLE DOES: exec the source with no __file__ in globals
+# (kaggle_environments/agent.py does exec(code_object, env)). `import main`
+# would define __file__ and hide a whole class of crash -- it did once.
+with open("main.py", "rb") as _fh:
+    _src = _fh.read()
+_env = {}
+exec(compile(_src, "main.py", "exec"), _env)
+assert "__file__" not in _env, "smoke must not leak __file__ into agent globals"
+
+
+class _M:
+    pass
+
+
+main = _M()
+main._deck = _env["_deck"]
+main.agent = _env["agent"]
 
 deck = list(main._deck)
 assert len(deck) == 60, len(deck)
@@ -118,7 +146,16 @@ def main() -> int:
     ap.add_argument("--deck", default="grimmsnarl")
     ap.add_argument("--agent", default="search", choices=["search", "bc"])
     ap.add_argument("--no-smoke", action="store_true")
+    # Which nets to ship. The SA_NO_* kill-switches are env vars and Kaggle
+    # sets none, so anything bundled is LIVE there. Omitting an npz makes the
+    # matching net.get() return None and the agent fall back to the
+    # handcrafted eval -- the only way to pin the config for the grader.
+    ap.add_argument("--nets", default="both",
+                    choices=["both", "policy", "value", "none"],
+                    help="nets to include (default both)")
     args = ap.parse_args()
+    if args.agent == "bc" and args.nets in ("value", "none"):
+        raise SystemExit("--agent bc requires the policy net (--nets both|policy)")
 
     sdk_dir = config.find_sdk_dir()
     if sdk_dir is None:
@@ -140,12 +177,20 @@ def main() -> int:
                     ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(ROOT / "agents" / "sa", build / "sa",
                     ignore=shutil.ignore_patterns("__pycache__"))
+    keep_policy = args.nets in ("both", "policy")
+    keep_value = args.nets in ("both", "value")
+    for npz, keep in (("policy_net.npz", keep_policy),
+                      ("value_net.npz", keep_value)):
+        if not keep:
+            (build / "sa" / npz).unlink(missing_ok=True)
     for extra in ("value_net.npz", "policy_net.npz", "deck_library.json"):
-        state = "present" if (build / "sa" / extra).exists() else "MISSING"
-        print(f"  sa/{extra}: {state}")
+        present = (build / "sa" / extra).exists()
+        note = "present" if present else "excluded -> handcrafted fallback"
+        print(f"  sa/{extra}: {note}")
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out = config.DIST_DIR / f"submission_{args.agent}-{args.deck}_{stamp}.tar.gz"
+    out = (config.DIST_DIR /
+           f"submission_{args.agent}-{args.deck}-nets{args.nets}_{stamp}.tar.gz")
     with tarfile.open(out, "w:gz") as tar:
         for item in sorted(build.iterdir()):
             tar.add(item, arcname=item.name)
