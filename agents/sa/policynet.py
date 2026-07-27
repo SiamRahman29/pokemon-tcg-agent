@@ -39,6 +39,7 @@ class Net:
         self.b1 = z["b1"]
         self.w2 = z["w2"]
         self.b2 = z["b2"]
+        self.count_frac = z["count_frac"] if "count_frac" in z else None
 
     def scores(self, obs: dict) -> np.ndarray:
         """Logit per option of obs['select']."""
@@ -72,20 +73,23 @@ class Net:
         return (h @ self.w2.T + self.b2).reshape(-1)
 
     def choose(self, obs: dict) -> list[int]:
-        """Greedy legal selection: rank by logit; take forced minimum, then
-        keep adding positive-logit options up to maxCount."""
+        """Rank options by logit; how MANY to take comes from the data-derived
+        per-(selectType, context) count-fraction table."""
         sel = obs["select"]
         mn = sel.get("minCount", 0)
         mx = sel.get("maxCount", 0)
         sc = self.scores(obs)
         order = list(np.argsort(-sc))
-        pick = [int(i) for i in order[:mn]]
-        for i in order[mn:]:
-            if len(pick) >= mx:
-                break
-            if sc[i] > 0.0:
-                pick.append(int(i))
-        return pick
+        k = mx
+        if mx > mn:
+            frac = 1.0
+            if self.count_frac is not None:
+                t = min(sel.get("type") or 0, 10)
+                ctx = min(sel.get("context") or 0, 63)
+                frac = float(self.count_frac[t, ctx])
+            k = mn + int(round(frac * (mx - mn)))
+            k = max(mn, min(k, mx))
+        return [int(i) for i in order[:k]]
 
 
 def get() -> Net | None:

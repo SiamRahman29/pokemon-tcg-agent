@@ -136,7 +136,30 @@ class Data:
                    spans)
 
 
-def export_npz(model: PolicyNet, path: Path):
+def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
+    """(11, 64) mean of (chosen-min)/(max-min) per (selectType, context) over
+    variable-count selects. Unseen cells default to 1.0 (take the max), which
+    matches top play for searches/benching."""
+    num = np.zeros((11, 64))
+    den = np.zeros((11, 64))
+    for k in idx:
+        a, b = data.opt_rows[k]
+        seld = data.seld[k]
+        t = int(np.argmax(seld[:11]))
+        ctx = int(round(seld[13] * 50.0))
+        ctx = min(ctx, 63)
+        mn = int(round(seld[11] * 5.0))
+        mx = int(round(seld[12] * 5.0))
+        if mx <= mn:
+            continue
+        chosen = float(data.opt_chosen[a:b].sum())
+        num[t, ctx] += (chosen - mn) / (mx - mn)
+        den[t, ctx] += 1.0
+    frac = np.where(den > 0, num / np.maximum(den, 1), 1.0)
+    return frac.astype(np.float32)
+
+
+def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray):
     sd = {k: v.detach().cpu().numpy() for k, v in model.state_dict().items()}
     np.savez_compressed(
         path,
@@ -144,7 +167,8 @@ def export_npz(model: PolicyNet, path: Path):
         card_emb=sd["card_emb.weight"], atk_emb=sd["atk_emb.weight"],
         ws=sd["state_fc.0.weight"], bs=sd["state_fc.0.bias"],
         w1=sd["head.0.weight"], b1=sd["head.0.bias"],
-        w2=sd["head.3.weight"], b2=sd["head.3.bias"])
+        w2=sd["head.3.weight"], b2=sd["head.3.bias"],
+        count_frac=count_frac)
     print(f"exported -> {path}")
 
 
@@ -172,6 +196,8 @@ def main() -> int:
     val_idx = np.where(keep & val_mask)[0]
     print(f"{len(paths)} shards, {data.n} rows -> {len(train_idx)} train / "
           f"{len(val_idx)} val ({len(np.unique(data.gid))} games)")
+
+    count_frac = count_fraction_table(data, train_idx)
 
     model = PolicyNet()
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
@@ -217,7 +243,7 @@ def main() -> int:
               f"({time.time() - t0:.0f}s)")
         if acc > best:
             best = acc
-            export_npz(model, ROOT / args.out)
+            export_npz(model, ROOT / args.out, count_frac)
     return 0
 
 

@@ -51,12 +51,15 @@ def main() -> int:
           f"{len(names)} by avg_score (cutoff "
           f"{float(rows[min(args.max, len(rows)) - 1]['avg_score']):.0f}) -> {out_dir}")
 
-    done = skipped = failed = 0
-    for i, name in enumerate(names):
+    from concurrent.futures import ThreadPoolExecutor
+
+    counts = {"ok": 0, "skip": 0, "fail": 0}
+
+    def fetch(name: str) -> None:
         dest = out_dir / name
         if dest.exists() and dest.stat().st_size > 0:
-            skipped += 1
-            continue
+            counts["skip"] += 1
+            return
         try:
             api.dataset_download_file(dataset, name, path=str(out_dir),
                                       quiet=True)
@@ -65,14 +68,17 @@ def main() -> int:
                 with zipfile.ZipFile(zpath) as zf:
                     zf.extractall(out_dir)
                 zpath.unlink()
-            done += 1
+            counts["ok"] += 1
         except Exception as exc:
-            failed += 1
+            counts["fail"] += 1
             print(f"  {name}: {type(exc).__name__}: {exc}", file=sys.stderr)
-        if (i + 1) % 25 == 0:
-            print(f"  {i + 1}/{len(names)} (ok={done} skip={skipped} "
-                  f"fail={failed})", flush=True)
-    print(f"finished: ok={done} skip={skipped} fail={failed}")
+        n = sum(counts.values())
+        if n % 50 == 0:
+            print(f"  {n}/{len(names)} {counts}", flush=True)
+
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        list(ex.map(fetch, names))
+    print(f"finished: {counts}")
     return 0
 
 
