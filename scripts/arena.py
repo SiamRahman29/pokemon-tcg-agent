@@ -96,6 +96,12 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         return f"rule:{rname}", make_rule_agent(rname, deck)
     if kind == "random":
         return "random", make_random_agent(deck)
+    if kind == "search":
+        # search[:tag] -- the sa determinized-search agent; tag is only a label
+        from sa.agent import SearchAgent
+
+        tag = spec.split(":", 1)[1] if ":" in spec else ""
+        return (f"search:{tag}" if tag else "search"), SearchAgent(deck)
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

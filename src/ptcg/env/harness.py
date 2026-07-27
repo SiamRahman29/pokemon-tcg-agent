@@ -45,6 +45,7 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
         raise RuntimeError("battle_start failed")
 
     times: tuple[list[float], list[float]] = ([], [])
+    overage = [600.0, 600.0]  # mirror Kaggle's per-agent thinking pool
     selects = 0
     try:
         while True:
@@ -53,9 +54,12 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
                 return GameResult(state["result"], state["turn"], selects, times)
             who = state["yourIndex"]
             agent = agent0 if who == 0 else agent1
+            obs["remainingOverageTime"] = overage[who]
             t0 = time.perf_counter()
             choice = agent(obs)
-            times[who].append((time.perf_counter() - t0) * 1000.0)
+            dt = time.perf_counter() - t0
+            overage[who] -= dt
+            times[who].append(dt * 1000.0)
             obs = game.battle_select([int(c) for c in choice])
             selects += 1
             if selects > MAX_SELECTS:
