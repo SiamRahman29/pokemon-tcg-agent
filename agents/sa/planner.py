@@ -30,6 +30,7 @@ MAX_PLAYOUT_STEPS = 160
 ROLLOUT_STEPS = 900  # step cap when rolling out all the way to terminal
 TANH_SCALE = 6.0     # prize-units -> [-1,1], so truncations mix with results
 PRIOR_BONUS = 0.15   # rollout margin needed to overrule the clone (see Planner)
+HALVE_AFTER_WORLDS = 4  # rollout mode: don't prune on 1-2 noisy 0/1 samples
 MAX_WORLDS = int(__import__("os").environ.get("SA_MAX_WORLDS", "12"))
 
 DEBUG = bool(int(__import__("os").environ.get("SA_DEBUG", "0")))
@@ -261,7 +262,12 @@ class Planner:
             fs.end()
             worlds += 1
             # successive halving: drop clearly-worse candidates so later
-            # worlds concentrate on the contenders
+            # worlds concentrate on the contenders.
+            # In rollout mode each world contributes a 0/1 outcome, so a mean
+            # over 1-2 worlds is nearly pure noise and halving there discards
+            # good candidates at random. Collect a few samples first.
+            if self.rollout and worlds < HALVE_AFTER_WORLDS:
+                continue
             if len(alive) > 3:
                 scored = sorted(
                     (totals[i] / max(counts[i], 1), i) for i in alive)
