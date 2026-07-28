@@ -2,12 +2,20 @@
 
     python scripts/train_policy.py --ds artifacts/pds --out agents/sa/policy_net.npz
 
-Pointwise BCE on option chosen/not-chosen, with the state encoded once per row.
-Architecture (mirrored by sa/policynet.py):
-    state:  dense(218) + slot_emb(12x16) + 3 bag means(16) + seld(14) -> 320
-            -> Linear 256 relu -> state_repr
-    option: opt_dense(25) + card_emb(16) + atk_emb(16) -> 57
-    score:  Linear([state_repr, option]) 128 relu -> 1
+The state is encoded once per row, then scored against each option.
+
+    state:  dense + slot_emb(12x16) + 3 bag means(16) + seld(14)
+            -> MLP(--state-h) -> state_repr
+    option: opt_dense + card_emb(16) + atk_emb(16) + tgt_emb(16)
+    score:  MLP([state_repr, option], --head-h) -> 1
+
+`--loss listwise` optimizes softmax cross-entropy over each select's option
+set, which is what the agent actually does at inference (rank the options and
+take the top k). `--loss bce` is the original pointwise objective; it treats
+every option independently and does not model "which of these is best".
+
+Layer sizes are exported generically (`sfc{i}_w` / `head{i}_w` + counts), so
+sa/policynet.py mirrors any depth without a code change.
 """
 from __future__ import annotations
 
@@ -33,13 +41,22 @@ from sa.optfeat import OPT_DENSE, N_ATTACK_IDS  # noqa: E402
 
 EMB = 16
 SEL_DENSE = 14
-STATE_H = 256
-HEAD_H = 128
 BAGS = ("my_hand", "my_discard", "opp_discard")
 
 
+def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential:
+    """ReLU MLP over `sizes` hidden widths; `out_dim` appends a linear head."""
+    layers: list[nn.Module] = []
+    for a, b in zip(sizes[:-1], sizes[1:]):
+        layers += [nn.Linear(a, b), nn.ReLU(), nn.Dropout(dropout)]
+    if out_dim is not None:
+        layers.append(nn.Linear(sizes[-1], out_dim))
+    return nn.Sequential(*layers)
+
+
 class PolicyNet(nn.Module):
-    def __init__(self, dropout: float = 0.1):
+    def __init__(self, state_h: tuple[int, ...] = (256,),
+                 head_h: tuple[int, ...] = (128,), dropout: float = 0.1):
         super().__init__()
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
@@ -47,11 +64,9 @@ class PolicyNet(nn.Module):
         self.card_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.atk_emb = nn.Embedding(N_ATTACK_IDS, EMB)
         in_state = DENSE_DIM + 12 * EMB + len(BAGS) * EMB + SEL_DENSE
-        self.state_fc = nn.Sequential(
-            nn.Linear(in_state, STATE_H), nn.ReLU(), nn.Dropout(dropout))
-        self.head = nn.Sequential(
-            nn.Linear(STATE_H + OPT_DENSE + 3 * EMB, HEAD_H), nn.ReLU(),
-            nn.Dropout(dropout), nn.Linear(HEAD_H, 1))
+        self.state_fc = _mlp([in_state, *state_h], dropout, None)
+        in_head = state_h[-1] + OPT_DENSE + 3 * EMB
+        self.head = _mlp([in_head, *head_h], dropout, 1)
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
                 opt_dense, opt_card, opt_atk, opt_tgt, opt_row):
@@ -65,6 +80,24 @@ class PolicyNet(nn.Module):
                              self.atk_emb(opt_atk),
                              self.card_emb(opt_tgt)], dim=1)  # (O, ...)
         return self.head(per_opt).squeeze(1)                 # (O,)
+
+
+def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
+                  opt_row: torch.Tensor, n_rows: int) -> torch.Tensor:
+    """Softmax cross-entropy within each select's option set, averaged over
+    the chosen options of that select. This is the objective that matches
+    inference: the agent ranks the options and takes the top k."""
+    # log-softmax per row, computed with a segmented max for stability
+    big = torch.full((n_rows,), -1e30, device=out.device)
+    mx = big.scatter_reduce(0, opt_row, out, reduce="amax", include_self=True)
+    ex = torch.exp(out - mx[opt_row])
+    denom = torch.zeros(n_rows, device=out.device).index_add_(0, opt_row, ex)
+    logp = out - mx[opt_row] - torch.log(denom + 1e-12)[opt_row]
+    picked = torch.zeros(n_rows, device=out.device).index_add_(
+        0, opt_row, logp * chosen)
+    cnt = torch.zeros(n_rows, device=out.device).index_add_(0, opt_row, chosen)
+    valid = cnt > 0
+    return -(picked[valid] / cnt[valid]).mean()
 
 
 class Data:
@@ -165,15 +198,23 @@ def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
 
 
 def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray):
-    sd = {k: v.detach().cpu().numpy() for k, v in model.state_dict().items()}
-    np.savez_compressed(
-        path,
-        slot_emb=sd["slot_emb.weight"], bag_emb=sd["bag_emb.weight"],
-        card_emb=sd["card_emb.weight"], atk_emb=sd["atk_emb.weight"],
-        ws=sd["state_fc.0.weight"], bs=sd["state_fc.0.bias"],
-        w1=sd["head.0.weight"], b1=sd["head.0.bias"],
-        w2=sd["head.3.weight"], b2=sd["head.3.bias"],
-        count_frac=count_frac)
+    """Export every Linear generically, so inference mirrors any depth."""
+    out: dict[str, np.ndarray] = {
+        "slot_emb": model.slot_emb.weight.detach().numpy(),
+        "bag_emb": model.bag_emb.weight.detach().numpy(),
+        "card_emb": model.card_emb.weight.detach().numpy(),
+        "atk_emb": model.atk_emb.weight.detach().numpy(),
+        "count_frac": count_frac,
+    }
+    for prefix, seq in (("sfc", model.state_fc), ("head", model.head)):
+        n = 0
+        for mod in seq:
+            if isinstance(mod, nn.Linear):
+                out[f"{prefix}{n}_w"] = mod.weight.detach().numpy()
+                out[f"{prefix}{n}_b"] = mod.bias.detach().numpy()
+                n += 1
+        out[f"n_{prefix}"] = np.array([n], dtype=np.int64)
+    np.savez_compressed(path, **out)
     print(f"exported -> {path}")
 
 
@@ -185,6 +226,13 @@ def main() -> int:
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--wd", type=float, default=1e-5)
     ap.add_argument("--winners-only", action="store_true")
+    ap.add_argument("--loss", choices=("bce", "listwise", "both"),
+                    default="listwise")
+    ap.add_argument("--state-h", default="256",
+                    help="comma-separated hidden widths for the state MLP")
+    ap.add_argument("--head-h", default="128",
+                    help="comma-separated hidden widths for the scoring MLP")
+    ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--out", default="agents/sa/policy_net.npz")
     args = ap.parse_args()
 
@@ -204,10 +252,14 @@ def main() -> int:
 
     count_frac = count_fraction_table(data, train_idx)
 
-    model = PolicyNet()
+    state_h = tuple(int(x) for x in args.state_h.split(","))
+    head_h = tuple(int(x) for x in args.head_h.split(","))
+    model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout)
+    print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
+          f"params={sum(p.numel() for p in model.parameters())}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                             weight_decay=args.wd)
-    lossf = nn.BCEWithLogitsLoss()
+    bcef = nn.BCEWithLogitsLoss()
     rng = np.random.default_rng(0)
     best = -1.0
 
@@ -217,10 +269,14 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             _) = batch
+             spans) = batch
             opt.zero_grad()
             out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow)
-            loss = lossf(out, om)
+            loss = torch.zeros((), dtype=out.dtype)
+            if args.loss in ("bce", "both"):
+                loss = loss + bcef(out, om)
+            if args.loss in ("listwise", "both"):
+                loss = loss + listwise_loss(out, om, orow, len(spans))
             loss.backward()
             opt.step()
             tot += loss.item() * len(om)

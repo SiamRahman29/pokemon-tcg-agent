@@ -157,19 +157,25 @@ def cmd_play(args: argparse.Namespace) -> int:
     games_path.parent.mkdir(parents=True, exist_ok=True)
     rows: list[dict] = []
     t_start = time.monotonic()
+    # Append+flush per game. Buffering rows until the end meant a killed run
+    # lost every game it had played, which made long runs un-abortable.
+    archive_fh = games_path.open("a", encoding="utf-8")
 
     def on_game(match: int, a_seat: int, r: harness.GameResult) -> None:
         names = (name_a, name_b) if a_seat == 0 else (name_b, name_a)
         decks = ((deck_name_a, deck_name_b) if a_seat == 0
                  else (deck_name_b, deck_name_a))
-        rows.append({
+        row = {
             "schema": SCHEMA, "ts": time.time(), "match": match,
             "agent0": names[0], "agent1": names[1],
             "deck0": decks[0], "deck1": decks[1],
             "winner": r.winner, "turns": r.turns, "selects": r.selects,
             "lat0": harness.latency_summary(r.decision_ms[0]),
             "lat1": harness.latency_summary(r.decision_ms[1]),
-        })
+        }
+        rows.append(row)
+        archive_fh.write(json.dumps(row) + "\n")
+        archive_fh.flush()
         print(f"  match {match} seat{a_seat}: winner={r.winner} "
               f"turns={r.turns} selects={r.selects}", flush=True)
 

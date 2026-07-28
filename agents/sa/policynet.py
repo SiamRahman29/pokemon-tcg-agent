@@ -33,13 +33,30 @@ class Net:
         self.bag_emb = z["bag_emb"]
         self.card_emb = z["card_emb"]
         self.atk_emb = z["atk_emb"]
-        self.ws = z["ws"]
-        self.bs = z["bs"]
-        self.w1 = z["w1"]
-        self.b1 = z["b1"]
-        self.w2 = z["w2"]
-        self.b2 = z["b2"]
+        # Layers are stored generically (`sfc{i}_w` / `head{i}_w`) so the net
+        # can be made deeper without touching this file. Nets exported before
+        # that change used fixed ws/w1/w2 names -- still loadable.
+        if "n_sfc" in z:
+            self.state_layers = [(z[f"sfc{i}_w"], z[f"sfc{i}_b"])
+                                 for i in range(int(z["n_sfc"][0]))]
+            self.head_layers = [(z[f"head{i}_w"], z[f"head{i}_b"])
+                                for i in range(int(z["n_head"][0]))]
+        else:
+            self.state_layers = [(z["ws"], z["bs"])]
+            self.head_layers = [(z["w1"], z["b1"]), (z["w2"], z["b2"])]
         self.count_frac = z["count_frac"] if "count_frac" in z else None
+
+    @property
+    def state_in(self) -> int:
+        return self.state_layers[0][0].shape[1]
+
+    @property
+    def state_out(self) -> int:
+        return self.state_layers[-1][0].shape[0]
+
+    @property
+    def head_in(self) -> int:
+        return self.head_layers[0][0].shape[1]
 
     def scores(self, obs: dict) -> np.ndarray:
         """Logit per option of obs['select']."""
@@ -55,13 +72,15 @@ class Net:
                                        dtype=np.float32))
         parts.append(_sel_features(sel))
         x = np.concatenate(parts)
-        srepr = np.maximum(self.ws @ x + self.bs, 0.0)
+        srepr = x
+        for w, b in self.state_layers:      # every state layer is relu'd
+            srepr = np.maximum(w @ srepr + b, 0.0)
 
         opts = sel.get("option") or []
         n = len(opts)
         if n == 0:
             return np.zeros(0, dtype=np.float32)
-        feats = np.empty((n, self.w1.shape[1]), dtype=np.float32)
+        feats = np.empty((n, self.head_in), dtype=np.float32)
         sw = len(srepr)
         for i, o in enumerate(opts):
             od, cid, aid, tid = option_features(obs, o)
@@ -71,8 +90,12 @@ class Net:
             feats[i, b:b + 16] = self.card_emb[cid]
             feats[i, b + 16:b + 32] = self.atk_emb[aid]
             feats[i, b + 32:] = self.card_emb[tid]
-        h = np.maximum(feats @ self.w1.T + self.b1, 0.0)
-        return (h @ self.w2.T + self.b2).reshape(-1)
+        h = feats
+        for j, (w, b) in enumerate(self.head_layers):
+            h = h @ w.T + b
+            if j < len(self.head_layers) - 1:   # last layer is the raw logit
+                h = np.maximum(h, 0.0)
+        return h.reshape(-1)
 
     def choose(self, obs: dict) -> list[int]:
         """Rank options by logit; how MANY to take comes from the data-derived
@@ -105,11 +128,11 @@ def get() -> Net | None:
                 from .optfeat import OPT_DENSE
                 expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
                                 + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-                expect_head = (net.ws.shape[0] + OPT_DENSE
+                expect_head = (net.state_out + OPT_DENSE
                                + 2 * net.card_emb.shape[1]
                                + net.atk_emb.shape[1])
-                if (net.ws.shape[1] == expect_state
-                        and net.w1.shape[1] == expect_head):
+                if (net.state_in == expect_state
+                        and net.head_in == expect_head):
                     _net = net
             except Exception:
                 _net = None
