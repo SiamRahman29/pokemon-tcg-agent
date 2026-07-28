@@ -488,8 +488,15 @@ submit again until 55048039 has a settled number to compare against. Check with
 - Redirecting python stdout to a file block-buffers it; pass `-u` or output only
   appears in chunks. Never pipe a long run through `| grep | tail` — that buffers
   until exit, so a killed run looks like it produced nothing (this cost a run).
+- **Do not set `SA_COUNT_MODE=expect` with a listwise-trained net.** On a
+  variable-count select, `expect` picks k by summing per-option sigmoids, which
+  assumes the logits are calibrated probabilities. A pure listwise net gives a
+  valid *ranking* only — its logits are not probabilities. The default `table`
+  mode uses the data-derived count-fraction table and is loss-independent, so
+  it is correct for every net we have. `expect` needs `--loss both` first.
 - **Kaggle sets no env vars**, so `SA_NO_PNET`/`SA_NO_VNET` are 0 there and any
-  bundled `.npz` is LIVE. Pin the config with `build_submission.py --nets
+  bundled `.npz` is LIVE. `SA_PNET_PATH` is likewise inert there — the bundled
+  `sa/policy_net.npz` is always what runs. Pin the config with `build_submission.py --nets
   none|policy|value|both` (omitting an npz → `get()` returns None → fallback).
 - Per-instance knobs (added 2026-07-27) let two configs be A/B'd in one process:
   `search:<tag>,noP,noV,w<N>` in arena specs; `SearchAgent(deck, no_pnet=,
