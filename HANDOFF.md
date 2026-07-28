@@ -15,10 +15,11 @@ listwise loss + 2,810-game corpus, +2.4pp head-to-head at n=2000) is converging
 behind it.
 
 The day's work moved from "fix the search" to "make the clone better": the
-clone is stronger and ~1000x cheaper to measure. But the measured exchange rate
-on that axis is poor (+1.6pp clone accuracy → ≈ +17 Elo), so the open question
-is **N1: does rollout search on top of the clone pay?** That is running.
-Read "Day-2 results" then "THE PLAN".
+clone is stronger and ~1000x cheaper to measure. **Search is now settled
+negative** — rollout search scored 0.323 vs the clone (n=31) and we instrumented
+why (it overrules the clone on 52% of decisions, on noise). The clone axis works
+but is slow: +1.6pp accuracy ≈ +17 Elo.
+Read "Day-2 results", then **"N2 — THE PLAN FROM HERE"**.
 
 ## Competition hard facts
 
@@ -34,7 +35,10 @@ Read "Day-2 results" then "THE PLAN".
 
 ## Approach (current architecture, all in `agents/sa/`)
 
-Determinized turn-level search + learned nets (BC from top replays):
+**What we actually ship is `bcagent.py` — the BC policy clone, ~1ms/move.**
+The determinized search below is measured *worse* than the clone (see N1) and
+is not in the submission. It is kept because it is the scaffolding any future
+search would reuse, and because its instrumentation is what proved it dead.
 
 - `fastsearch.py` — raw-dict wrapper over engine search API (bypasses slow dataclasses).
 - `worlds.py` — determinization; opponent decklist predicted from `deck_library.json`
@@ -51,11 +55,15 @@ Determinized turn-level search + learned nets (BC from top replays):
 - `planner.py` — per-decision: determinize N worlds (≤12), root candidates
   (`candidate_combos`, policy-pruned to ~10), playout = policy-argmax for BOTH
   sides until our next MAIN (1.5 turns), leaf = value net (or evaluate() if no net),
-  successive halving of root candidates across worlds. Env knobs: `SA_DEBUG`,
-  `SA_NO_VNET`, `SA_NO_PNET`, `SA_SPEND_MULT`, `SA_MAIN_CAP`, `SA_MINOR_CAP`.
-- `timemgr.py` — budgets the 600s pool (reserve 45s, mains ≤4.5s, scaled by branching).
-- `agent.py` — `SearchAgent` (hybrid), `bcagent.py` — `PolicyAgent` (BC-only, ~ms/move).
-  Both never raise: fallback = `list(range(minCount))`.
+  successive halving of root candidates across worlds. Rollout mode (`roll`)
+  plays to terminal instead; `pb` anchors to the clone, `HALVE_AFTER_WORLDS`
+  stops pruning on noise. Env knobs: `SA_DEBUG`, `SA_NO_VNET`, `SA_NO_PNET`,
+  `SA_SPEND_MULT`, `SA_MAIN_CAP`, `SA_MINOR_CAP`.
+- `timemgr.py` — budgets the 600s pool (reserve 45s, mains ≤4.5s, scaled by
+  branching); per-instance overrides via `main_cap`/`minor_cap`.
+- `agent.py` — `SearchAgent` (hybrid; `main_only` lets the clone answer non-MAIN
+  selects), `bcagent.py` — `PolicyAgent` (BC-only, ~ms/move; `net_path` pins a
+  specific npz). Both never raise: fallback = `list(range(minCount))`.
 
 ## Experimental results (local arena, seat-swapped) — REVISED 2026-07-27 (day 1 pm)
 
