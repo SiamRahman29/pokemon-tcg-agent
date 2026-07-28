@@ -25,6 +25,11 @@ class GameResult:
     selects: int
     decision_ms: tuple[list[float], list[float]] = field(
         default_factory=lambda: ([], []))
+    # Thinking pool left per seat at game end. Kaggle turns an exhausted pool
+    # into an instant LOSS; the harness does not, so a slow agent would look
+    # fine here and lose every long game on the ladder. Always check this
+    # before shipping anything that searches.
+    pool_left: tuple[float, float] = (600.0, 600.0)
 
 
 def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
@@ -51,7 +56,8 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
         while True:
             state = obs.get("current")
             if state is not None and state["result"] != -1:
-                return GameResult(state["result"], state["turn"], selects, times)
+                return GameResult(state["result"], state["turn"], selects,
+                                  times, (overage[0], overage[1]))
             who = state["yourIndex"]
             agent = agent0 if who == 0 else agent1
             obs["remainingOverageTime"] = overage[who]
@@ -63,7 +69,8 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
             obs = game.battle_select([int(c) for c in choice])
             selects += 1
             if selects > MAX_SELECTS:
-                return GameResult(2, state["turn"], selects, times)
+                return GameResult(2, state["turn"], selects, times,
+                                  (overage[0], overage[1]))
     finally:
         game.battle_finish()
 

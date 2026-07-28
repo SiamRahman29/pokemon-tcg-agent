@@ -29,6 +29,7 @@ PLAYOUT_CAP = 8      # max candidates per playout decision
 MAX_PLAYOUT_STEPS = 160
 ROLLOUT_STEPS = 900  # step cap when rolling out all the way to terminal
 TANH_SCALE = 6.0     # prize-units -> [-1,1], so truncations mix with results
+PRIOR_BONUS = 0.15   # rollout margin needed to overrule the clone (see Planner)
 MAX_WORLDS = int(__import__("os").environ.get("SA_MAX_WORLDS", "12"))
 
 DEBUG = bool(int(__import__("os").environ.get("SA_DEBUG", "0")))
@@ -79,7 +80,7 @@ def candidate_combos(sel: dict, cap: int, rng: random.Random | None = None) \
 class Planner:
     def __init__(self, decklist: list[int], no_pnet: bool | None = None,
                  no_vnet: bool | None = None, max_worlds: int | None = None,
-                 rollout: bool = False):
+                 rollout: bool = False, prior_bonus: float | None = None):
         self.decklist = list(decklist)
         self.rng = random.Random(0xC0FFEE)
         # per-instance knobs; default to the process-wide env flags so two
@@ -92,6 +93,13 @@ class Planner:
         # rollout: play the policy to game end and score the real result,
         # instead of stopping after 1.5 turns and trusting the leaf evaluator
         self.rollout = rollout
+        # A rollout mean over ~12 worlds of a 0/1 outcome has SE ~= 0.14, so
+        # raw Monte-Carlo will happily overrule the clone on pure noise -- and
+        # the clone is our strongest component. Require the search to beat the
+        # policy's own pick by this margin (in win-probability units) before
+        # deviating from it. 0 = trust the rollouts blindly.
+        self.prior_bonus = (PRIOR_BONUS if prior_bonus is None
+                            else prior_bonus)
 
     # ---- greedy playout ------------------------------------------------------
 
@@ -197,19 +205,21 @@ class Planner:
         # policy prior: keep only the top root candidates the clone would
         # consider, plus its outright choice
         net = None if self.no_pnet else pnet.get()
-        if net is not None and len(combos) > ROOT_POLICY_KEEP:
+        policy_pick = None   # the clone's own choice, our anchor in rollout mode
+        if net is not None:
             try:
-                sc = net.scores(obs)
-                choice = net.choose(obs)
-                ranked = sorted(
-                    combos,
-                    key=lambda c: -(sum(sc[i] for i in c) / max(len(c), 1)
-                                    + 0.01 * len(c)))
-                combos = ranked[:ROOT_POLICY_KEEP]
-                if choice not in combos:
-                    combos.append(choice)
+                policy_pick = net.choose(obs)
+                if len(combos) > ROOT_POLICY_KEEP:
+                    sc = net.scores(obs)
+                    ranked = sorted(
+                        combos,
+                        key=lambda c: -(sum(sc[i] for i in c) / max(len(c), 1)
+                                        + 0.01 * len(c)))
+                    combos = ranked[:ROOT_POLICY_KEEP]
+                if policy_pick not in combos:
+                    combos.append(policy_pick)
             except Exception:
-                pass
+                policy_pick = None
 
         t0 = time.perf_counter()
         deadline = t0 + budget_s
@@ -256,15 +266,32 @@ class Planner:
                     max(4, int(len(alive) * 0.7))
                 alive = sorted(i for _, i in scored[-keep:])
 
+        # In rollout mode, hand the clone's own pick a head start: only a
+        # margin the noise is unlikely to manufacture should overrule it.
+        bonus_i = -1
+        if self.rollout and self.prior_bonus and policy_pick is not None:
+            try:
+                bonus_i = combos.index(policy_pick)
+            except ValueError:
+                bonus_i = -1
+
         best_i = alive[0] if alive else 0
         best_v = None
         for i in (alive or range(len(combos))):
             if counts[i] == 0:
                 continue
             v = totals[i] / counts[i]
+            if i == bonus_i:
+                v += self.prior_bonus
             if best_v is None or v > best_v:
                 best_v = v
                 best_i = i
+        # the anchor must stay reachable: if halving dropped it, keep it only
+        # when nothing that survived actually beat it
+        if bonus_i >= 0 and counts[bonus_i] and bonus_i not in (alive or []):
+            v = totals[bonus_i] / counts[bonus_i] + self.prior_bonus
+            if best_v is None or v > best_v:
+                best_i = bonus_i
 
         STATS["decides"] += 1
         STATS["worlds"] += worlds

@@ -130,7 +130,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 SearchAgent(deck, no_pnet=no_pnet, no_vnet=no_vnet,
                             max_worlds=max_worlds, rollout=rollout,
                             main_cap=_flag_num(flags, "mc", float),
-                            minor_cap=_flag_num(flags, "nc", float)))
+                            minor_cap=_flag_num(flags, "nc", float),
+                            prior_bonus=_flag_num(flags, "pb", float)))
     if kind == "bc":
         # bc[:tag][,net=<path>] -- pure behavioral-clone policy agent. `net=`
         # pins this instance to a specific npz, so two candidate policies can
@@ -180,6 +181,9 @@ def cmd_play(args: argparse.Namespace) -> int:
             "winner": r.winner, "turns": r.turns, "selects": r.selects,
             "lat0": harness.latency_summary(r.decision_ms[0]),
             "lat1": harness.latency_summary(r.decision_ms[1]),
+            # seat-indexed, like agent0/agent1 above
+            "pool0": round(r.pool_left[0], 1),
+            "pool1": round(r.pool_left[1], 1),
         }
         rows.append(row)
         archive_fh.write(json.dumps(row) + "\n")
@@ -204,6 +208,17 @@ def cmd_play(args: argparse.Namespace) -> int:
           f"W{res['wins']}/D{res['draws']}/L{res['losses']} over {res['games']} games")
     print(f"  as P0: W/D/L={res['a_as_p0_wdl']}  as P1: W/D/L={res['a_as_p1_wdl']}")
     print(f"  elapsed {dt:.1f}s; archived {len(rows)} rows -> {games_path}")
+    # Kaggle converts an exhausted thinking pool into a LOSS; this harness does
+    # not, so a slow agent can win here and time out on the ladder.
+    worst: dict[str, float] = {}
+    for r in rows:  # agents swap seats every game, so key by name not seat
+        for seat in (0, 1):
+            name = r[f"agent{seat}"]
+            worst[name] = min(worst.get(name, 600.0), r[f"pool{seat}"])
+    for name, left in worst.items():
+        if left < 300.0:
+            flag = "  <-- WOULD TIME OUT ON KAGGLE" if left <= 0 else ""
+            print(f"  pool left ({name}): min {left:.0f}s of 600s{flag}")
     if "sa.planner" in sys.modules:  # search internals, summed over both sides
         st = sys.modules["sa.planner"].STATS
         if st["decides"]:
