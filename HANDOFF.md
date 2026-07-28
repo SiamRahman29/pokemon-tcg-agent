@@ -291,6 +291,11 @@ python -X utf8 scripts/opportunity_audit.py --corpus artifacts/pds_v2
 # Where is the net weak, per select context? (finds P2c-style feature blindness)
 python -X utf8 scripts/context_accuracy.py
 
+# Data: fetch a day's top episodes, then build its policy shards (both idempotent).
+# Only needed to REBUILD artifacts/ -- see "Data on disk"; more data is not a lever.
+python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-26 --max 400
+python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d26 replays/2026-07-26
+
 # Import public notebook agents
 python -X utf8 scripts/import_v10_agent.py     # rule:v10 + decks/lucario_v10
 python -X utf8 scripts/import_rule_agents.py   # the four sample agents
@@ -311,6 +316,19 @@ python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=Kaggl
 `artifacts/pds/` = 4,010 games (the rejected lw3 corpus);
 `artifacts/pds_v2/` = 2,810 games (the shipped v2 corpus).
 **§4 says more data is not the lever — do not spend time fetching.**
+
+`artifacts/**` is gitignored, so `pds_v2` exists only on this disk. It is just
+`pds` minus the three days that made lw3 worse — rebuild it with:
+
+```powershell
+foreach ($d in @('old','d21','d22','d23','d24','d25','d26','d27')) {
+  New-Item -ItemType Directory -Force "artifacts/pds_v2/$d" | Out-Null
+  Copy-Item "artifacts/pds/$d/shard_*.npz" "artifacts/pds_v2/$d/" -Force
+}
+```
+
+If `artifacts/pds` itself is lost, rebuild the shards from `replays/` with
+`scripts/build_policy_dataset.py` (see the fetch/build commands above).
 
 ---
 
