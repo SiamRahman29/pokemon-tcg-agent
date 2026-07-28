@@ -195,20 +195,26 @@ reaches **0.6216 val top-1 after ONE epoch**; BCE needed ~4 epochs to get there.
 The net was also underfit, so it is deeper now (`--state-h 512,256 --head-h
 256,128`). Layers export generically, so depth changes need no inference edit.
 
-Val top-1: **0.6596 (old BCE) → 0.6711 (listwise, epoch 19 of 30; plateaus by
-epoch ~5 then overfits)**.
+All head-to-head vs the previously shipped BCE net, n=2000 each
+(`bc:<tag>,net=<path>` plays two nets in one process; going through a third
+opponent needs ~2x the games for the same resolution):
 
-**And yet, head-to-head at n=2000, the new net scores 0.514 [0.492, 0.536]
-against the old one — not separated from 0.5.** Use `bc:<tag>,net=<path>` to
-play two nets against each other in one process; going through a third opponent
-needs ~2x the games for the same resolution.
+| net | corpus | val top-1 | vs shipped net | separated? |
+|---|---|---|---|---|
+| shipped (BCE, 256/128) | 2,410 | 0.6596 | — | — |
+| listwise, 512,256/256,128 | 2,410 | 0.6711 | 0.514 [0.492, 0.536] | **no** |
+| **+ 07-27 data (`policy_lw2`)** | **2,810** | **0.6755** | **0.524 [0.502, 0.546]** | **yes** |
 
-**This is the third time a metric has failed to predict strength in this
-project** (value-net val loss, policy top-1 twice). +1.15pp of clone accuracy
-bought at most +1.4pp of win rate, and not significantly. Read that as a
-warning about the whole "improve the clone" axis: it is real but *slow*, and
-it will not cover the 865 → 1210 gap on its own. Always confirm a net in the
-arena before spending a submission slot on it.
+So: the loss/architecture change alone was **not** a demonstrated improvement;
+adding data on top of it was (barely — the lower bound is 0.502). `policy_lw2`
+is now installed as `agents/sa/policy_net.npz` and shipped as `55048039`. The
+old BCE net is kept at `out/policy_net_bce_shipped.npz`.
+
+**A metric has now failed to predict strength three times here** (value-net val
+loss, policy top-1 twice). +1.6pp of clone accuracy bought +2.4pp of win rate
+≈ +17 Elo. Read that as the exchange rate for the whole "improve the clone"
+axis: real, but far too slow to cover 865 → 1210 on its own. Always confirm a
+net head-to-head in the arena before spending a submission slot on it.
 
 ### Terminal rollouts — implemented, running as the N1 test
 
@@ -337,7 +343,8 @@ submission lands.
 - Full submission history (`competition_submissions`), for baselines:
   | ref | date | score | what |
   |---|---|---|---|
-  | **55046717** | **07-28** | **865.2** | **`bc` policy clone, grimmsnarl (current)** |
+  | **55048039** | **07-28** | *pending* | **`bc` clone v2 (listwise + 2810-game corpus)** |
+  | **55046717** | **07-28** | **865.2** | **`bc` policy clone v1, grimmsnarl** |
   | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
   | 54848951 | 07-20 | 477.1 | old-repo attempt |
   | 54727521 | 07-15 | 435.8 | ismcts |
@@ -370,32 +377,50 @@ is the players it imitates — and those players are rated 1170–1210, i.e. the
 target.** So "make the clone imitate them better" is a path that actually
 reaches the goal, and it iterates in minutes instead of hours.
 
-### N0 — A better clone (in flight, but expect small returns)
+### N0 — A better clone (done for today; small but real returns)
 
-`out/policy_lw_final.npz` (listwise, deeper) is **not** a proven upgrade:
-0.514 [0.492, 0.536] head-to-head at n=2000. Do not ship it on its own.
+`policy_lw2` shipped as `55048039`. **The next clone retrain is already set up
+and should be the first thing done:** `artifacts/pds/` now also holds `d19`,
+`d18`, `d17` (400 replays each, built and verified — 57.7k/59.6k/… rows), which
+`train_policy.py` picks up automatically via its `rglob`. That is **~4,000
+games vs the 2,810** behind the shipped net.
 
-1. `out/policy_lw2.npz` is training on the corpus **including 07-27**; all of
-   07-17/18/19 are downloaded (400 each) and their shards are building. Full
-   corpus is ~3,600 games vs the 2,410 the shipped net used.
-2. Evaluate any candidate the cheap way, always head-to-head:
-   `arena.py play "bc:new,net=out/policy_lw2.npz" bc --deck-a grimmsnarl
-   --deck-b grimmsnarl --matches 1000` (~10 min, n=2000, SE ≈ 0.011).
-   Ship only if the interval clears 0.5.
-3. Untried trainer knobs: `--winners-only` (clone only the winner's moves),
-   `--loss both`, LR decay (val plateaus at ~epoch 5 while train loss keeps
-   falling — it is overfitting, not underfitting, past that point).
+```
+python -X utf8 scripts/train_policy.py --ds artifacts/pds --epochs 12 \
+    --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_lw3.npz
+python -X utf8 scripts/arena.py play "bc:lw3,net=out/policy_lw3.npz" bc \
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 \
+    --archive out/arena/ab_lw3.jsonl
+```
+Ship only if the interval clears 0.5. 12 epochs is enough — val plateaus by
+~epoch 5–10 and train loss keeps falling after (overfitting, not underfitting).
+
+Untried trainer knobs, in order of promise: `--winners-only` (clone only the
+winning side's moves — we currently imitate losers too), `--loss both`, LR decay.
 
 ### N1 — Search on top of the clone (RUNNING — this is the big one)
 
 Two shards in flight, pool them with `tally.py`:
 ```
-python -X utf8 scripts/arena.py play "search:R,noV,roll,mc12,nc6,pb0.15" bc \
-    --deck-a grimmsnarl --deck-b grimmsnarl --matches 20 \
-    --archive out/arena/n1_roll_vs_bc_a.jsonl
-python -X utf8 scripts/tally.py "search:R,noV,roll,mc12,nc6,pb0.15" \
-    "out/arena/n1_roll_vs_bc_*.jsonl"
+python -X utf8 scripts/arena.py play "search:M,noV,roll,mo,mc20,pb0.15" bc \
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 25 \
+    --archive out/arena/n1mo_a.jsonl
+python -X utf8 scripts/tally.py "search:M,noV,roll,mo,mc20,pb0.15" \
+    "out/arena/n1mo_*.jsonl"
 ```
+`mo` = **MAIN-only**: the clone answers non-MAIN selects outright and the whole
+pool goes to MAIN decisions. That cut cost from 288s to **92s per game** (6.5x
+pool margin) with no loss of the decisions that actually branch — do not go back
+to searching every select on this hardware. The earlier all-selects variant
+stands at 0.500 (n=4) in `out/arena/n1_roll_vs_bc_*.jsonl`; that n is worthless,
+it is kept only so nobody re-derives it.
+
+**Hardware reality check:** this box delivers only **~1.4 cores of real
+throughput** (Ryzen 5500U, 15W, Balanced is the only power scheme; it is plugged
+in and still throttles). Running 4+ heavy jobs makes everything slower with no
+extra work done. Run at most 2–3, and prefer BC-vs-BC experiments (0.3s/game)
+over search experiments (~90–290s/game) whenever a question can be posed either
+way.
 **Why this is the priority:** the clone axis is measurably slow (N0), the LB
 gap is 865 → 1210, and the reported #1 is "model + search using the full time
 budget". We use 0.1s of a 600s pool with the BC agent. If rollout search clears
@@ -426,11 +451,12 @@ longer how we learn things. Rules: submit only configs that already beat the
 current champion locally at n≥100; keep one slot to re-verify calibration; always
 `--nets` pin the config; never submit an unmeasured build.
 
-**"Latest 2 active" is a real constraint right now.** The two active submissions
-are `55046717` (865.2) and `55028156` (666.1). One more submission evicts the
-666.1 — free. A *second* one would evict `55046717` and stop our best agent from
-playing, while 865.2 is still converging. So: **at most one more submission
-until 865.2 settles**, then re-assess.
+**"Latest 2 active" is a real constraint.** Active now: `55046717` (865.2, v1
+clone) and `55048039` (v2 clone). The free eviction has been used. **The next
+submission will evict `55046717`, our only converged good score** — so do not
+submit again until 55048039 has a settled number to compare against. Check with
+`api.competition_submissions("pokemon-tcg-ai-battle")` (fields are snake_case:
+`public_score`, not `publicScore`).
 
 ## Older next-steps (superseded 2026-07-28, kept for rationale)
 

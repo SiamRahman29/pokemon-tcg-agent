@@ -131,7 +131,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                             max_worlds=max_worlds, rollout=rollout,
                             main_cap=_flag_num(flags, "mc", float),
                             minor_cap=_flag_num(flags, "nc", float),
-                            prior_bonus=_flag_num(flags, "pb", float)))
+                            prior_bonus=_flag_num(flags, "pb", float),
+                            main_only="mo" in flags))
     if kind == "bc":
         # bc[:tag][,net=<path>] -- pure behavioral-clone policy agent. `net=`
         # pins this instance to a specific npz, so two candidate policies can
