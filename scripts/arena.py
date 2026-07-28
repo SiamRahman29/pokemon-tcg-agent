@@ -132,11 +132,19 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                             main_cap=_flag_num(flags, "mc", float),
                             minor_cap=_flag_num(flags, "nc", float)))
     if kind == "bc":
-        # bc[:tag] -- pure behavioral-clone policy agent
+        # bc[:tag][,net=<path>] -- pure behavioral-clone policy agent. `net=`
+        # pins this instance to a specific npz, so two candidate policies can
+        # play each other head-to-head in one process.
         from sa.bcagent import PolicyAgent
 
         tag = spec.split(":", 1)[1] if ":" in spec else ""
-        return (f"bc:{tag}" if tag else "bc"), PolicyAgent(deck)
+        net_path = None
+        for f in tag.split(",")[1:]:
+            if f.strip().startswith("net="):
+                net_path = f.strip()[4:]
+        if net_path and not Path(net_path).exists():
+            raise SystemExit(f"bc net not found: {net_path}")
+        return (f"bc:{tag}" if tag else "bc"), PolicyAgent(deck, net_path)
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

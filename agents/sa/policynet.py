@@ -135,23 +135,32 @@ class Net:
         return [int(i) for i in order[:k]]
 
 
+def load(path) -> Net | None:
+    """Load a specific npz, returning None unless it matches the CURRENT
+    feature dims. The guard is what stops a stale net from being used
+    silently after a feature change -- never remove it."""
+    path = Path(path)
+    if not path.exists():
+        return None
+    try:
+        net = Net(np.load(path))
+        from .features import DENSE_DIM
+        from .optfeat import OPT_DENSE
+        expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
+                        + 3 * net.bag_emb.shape[1] + SEL_DENSE)
+        expect_head = (net.state_out + OPT_DENSE
+                       + 2 * net.card_emb.shape[1]
+                       + net.atk_emb.shape[1])
+        if net.state_in == expect_state and net.head_in == expect_head:
+            return net
+    except Exception:
+        pass
+    return None
+
+
 def get() -> Net | None:
     global _net, _tried
     if not _tried:
         _tried = True
-        if _PATH.exists():
-            try:
-                net = Net(np.load(_PATH))
-                from .features import DENSE_DIM
-                from .optfeat import OPT_DENSE
-                expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
-                                + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-                expect_head = (net.state_out + OPT_DENSE
-                               + 2 * net.card_emb.shape[1]
-                               + net.atk_emb.shape[1])
-                if (net.state_in == expect_state
-                        and net.head_in == expect_head):
-                    _net = net
-            except Exception:
-                _net = None
+        _net = load(_PATH)
     return _net
