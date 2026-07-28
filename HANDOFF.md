@@ -9,11 +9,15 @@ always end with a live plan, never a summary.**
 **Status 2026-07-28 (day 2):** the search stack is not what we thought. Measured
 at **n=1000** instead of n=24, the **BC clone alone scores 0.480 vs `rule:iono`**
 — far above the search agent's 0.33 (n=24) that produced our live 666.1.
-Submitted it: **`55046717` scored 865.2**, the first agent we have built that
-beats the stock `rule:iono` (763.7), +199 over its predecessor. (Provisional
-until converged — see Submission.) The day's work moved from "fix the search"
-to "make the clone better": the clone is stronger, ~1000x cheaper to measure,
-and its ceiling is the 1170–1210 players it imitates.
+Submitted it: `55046717` peaked at 865.2 and **settled at 697.9** (+32 over the
+search agent, not the +199 the peak suggested — see Submission; fresh scores
+lie). A v2 clone (`55048039`, listwise loss + 2,810-game corpus, +2.4pp
+head-to-head at n=2000) is converging now.
+
+The day's work moved from "fix the search" to "make the clone better": the
+clone is stronger and ~1000x cheaper to measure. But the measured exchange rate
+on that axis is poor (+1.6pp clone accuracy → ≈ +17 Elo), so the open question
+is **N1: does rollout search on top of the clone pay?** That is running.
 Read "Day-2 results" then "THE PLAN".
 
 ## Competition hard facts
@@ -343,22 +347,35 @@ submission lands.
 - Full submission history (`competition_submissions`), for baselines:
   | ref | date | score | what |
   |---|---|---|---|
-  | **55048039** | **07-28** | *pending* | **`bc` clone v2 (listwise + 2810-game corpus)** |
-  | **55046717** | **07-28** | **865.2** | **`bc` policy clone v1, grimmsnarl** |
+  | **55048039** | **07-28** | *converging* | **`bc` clone v2 (listwise + 2810-game corpus)** |
+  | **55046717** | **07-28** | **697.9** | **`bc` clone v1 (peaked 865.2, fell back)** |
   | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
   | 54848951 | 07-20 | 477.1 | old-repo attempt |
   | 54727521 | 07-15 | 435.8 | ismcts |
   | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
   | 54535698 | 07-10 | 516.1 | Kaggle starter RL |
   | 54356986 | 07-05 | 361.4 | early attempt |
-  **2026-07-28: the BC clone cleared the `rule:iono` bar for the first time**
-  (865.2 vs 763.7), +199 over the search agent it replaced.
-  **Treat 865.2 as provisional until it converges.** A new submission starts at
-  μ=600 with wide σ; `55028156` peaked ~925 mid-convergence and settled at 666.1.
-  Re-read the score before building on it. If it *does* settle near 865, the
-  arena→LB ladder is mis-calibrated (it predicted ~750 for a 0.480 agent) —
-  most likely because the LB pool is weaker than `rule:iono`, so re-fit the
-  ladder rather than trusting the old row.
+  **The BC clone v1 peaked at 865.2 and fell back to 697.9** over ~1h. This is
+  the *second* time the peak-then-settle pattern has fooled a reading of this
+  file (55028156 peaked ~925, settled 666.1). **A fresh score is not a result.
+  Never report or act on one before it stops moving.** Best practice: read it
+  twice, an hour apart, and only believe the second.
+  Real gain over the search agent: 697.9 vs 666.1, i.e. **+32, not +199**.
+
+  **`rule:iono`'s 763.7 is a STALE number and probably not the bar it looks
+  like.** It was scored 2026-07-13 against that day's pool and then frozen (only
+  the latest 2 submissions play). Our 697.9 was earned against the 07-28 field
+  of 5,792 teams, which is stronger. Comparing them directly is apples to
+  oranges. **The clean fix, worth one slot: re-submit `rule:iono` today**
+  (`scripts/build_rule_submission.py`) and read both live. Until then, treat
+  "are we above the rule baseline?" as *unknown*, not as *no*.
+
+  Ladder check with live numbers (rating = 763.7 + 400·log10(S/(1−S))):
+  arena S=0.33 predicted 641, observed 666; arena S=0.48 predicted 750,
+  observed ~698. So the ladder **over-predicts at the top end** — plausibly
+  because a single `rule:iono` matchup misses our matchup holes (we score only
+  0.360 vs `rule:abomasnow`), and the LB field is diverse. Use the *field
+  average* (≈0.46), not the iono number, if you must predict.
 - `kaggle competitions submit` returned a **400** on CreateSubmission even though
   the upload hit 100%; the identical file went through minutes later via the
   Python client. If the CLI 400s, use:
