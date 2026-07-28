@@ -3,7 +3,9 @@
 param(
   [string]$Root = 'E:\Kaggle\pokemon-tcg-simulation-2',
   [int]$Max = 400,
-  [string[]]$Dates = @('2026-07-27','2026-07-19','2026-07-18','2026-07-17')
+  # NB: `powershell -File this.ps1 -Dates a,b` does not bind a real array --
+  # edit this default and launch with no arguments (same trap as build_days).
+  [string[]]$Dates = @('2026-07-16','2026-07-15','2026-07-14','2026-07-13')
 )
 
 foreach ($d in $Dates) {

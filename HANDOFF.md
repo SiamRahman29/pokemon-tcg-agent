@@ -211,11 +211,18 @@ All head-to-head vs the previously shipped BCE net, n=2000 each
 (`bc:<tag>,net=<path>` plays two nets in one process; going through a third
 opponent needs ~2x the games for the same resolution):
 
-| net | corpus | val top-1 | vs shipped net | separated? |
+| net | corpus | val top-1 | vs prev shipped net | separated? |
 |---|---|---|---|---|
-| shipped (BCE, 256/128) | 2,410 | 0.6596 | — | — |
+| shipped v1 (BCE, 256/128) | 2,410 | 0.6596 | — | — |
 | listwise, 512,256/256,128 | 2,410 | 0.6711 | 0.514 [0.492, 0.536] | **no** |
-| **+ 07-27 data (`policy_lw2`)** | **2,810** | **0.6755** | **0.524 [0.502, 0.546]** | **yes** |
+| **v2 = + 07-27 (`policy_lw2`)** | **2,810** | **0.6755** | **0.524 [0.502, 0.546]** | **yes** |
+| **`policy_lw3` = + 07-17/18/19** | **4,010** | **0.687+** | *see `out/arena/ab_lw3.jsonl`* | — |
+
+**Data is by far the strongest lever on this axis.** Corpus 2,810 → 4,010 gave
++1.2pp of val top-1 in six epochs — more than the loss function and the depth
+change put together. Keep fetching days (top-800/day deepening, 07-16 and
+earlier) and keep retraining; it is cheap, it is the only thing that has
+reliably moved the number, and it needs no new ideas.
 
 So: the loss/architecture change alone was **not** a demonstrated improvement;
 adding data on top of it was (barely — the lower bound is 0.502). `policy_lw2`
