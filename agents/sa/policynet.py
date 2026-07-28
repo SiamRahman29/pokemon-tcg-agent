@@ -13,6 +13,8 @@ from .optfeat import option_features
 # shipped one. Kaggle sets no env vars, so there it is always the bundled npz.
 _PATH = Path(os.environ.get("SA_PNET_PATH")
              or Path(__file__).resolve().parent / "policy_net.npz")
+# how many options to take on a variable-count select; see Net.choose
+COUNT_MODE = os.environ.get("SA_COUNT_MODE", "table")
 _BAGS = ("my_hand", "my_discard", "opp_discard")
 SEL_DENSE = 14
 
@@ -102,8 +104,16 @@ class Net:
         return h.reshape(-1)
 
     def choose(self, obs: dict) -> list[int]:
-        """Rank options by logit; how MANY to take comes from the data-derived
-        per-(selectType, context) count-fraction table."""
+        """Rank options by logit; how MANY to take is the harder half.
+
+        `table` (default): a data-derived per-(selectType, context) mean count
+        fraction -- one number for the whole bucket, so it is wrong on every
+        select whose true count is bimodal.
+        `expect`: sum the per-option sigmoids, i.e. the model's own expected
+        number of chosen options. Only meaningful for a net trained with a
+        pointwise (BCE) term -- a pure listwise net's logits are not calibrated
+        probabilities, only a valid ranking.
+        """
         sel = obs["select"]
         mn = sel.get("minCount", 0)
         mx = sel.get("maxCount", 0)
@@ -111,12 +121,16 @@ class Net:
         order = list(np.argsort(-sc))
         k = mx
         if mx > mn:
-            frac = 1.0
-            if self.count_frac is not None:
-                t = min(sel.get("type") or 0, 10)
-                ctx = min(sel.get("context") or 0, 63)
-                frac = float(self.count_frac[t, ctx])
-            k = mn + int(round(frac * (mx - mn)))
+            if COUNT_MODE == "expect":
+                probs = 1.0 / (1.0 + np.exp(-np.clip(sc, -30.0, 30.0)))
+                k = int(round(float(probs.sum())))
+            else:
+                frac = 1.0
+                if self.count_frac is not None:
+                    t = min(sel.get("type") or 0, 10)
+                    ctx = min(sel.get("context") or 0, 63)
+                    frac = float(self.count_frac[t, ctx])
+                k = mn + int(round(frac * (mx - mn)))
             k = max(mn, min(k, mx))
         return [int(i) for i in order[:k]]
 
