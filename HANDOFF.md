@@ -220,8 +220,9 @@ arguments — see Gotchas).
 ### Data on disk
 
 `replays/`: 07-17..07-22, 07-24, 07-26, 07-27 = 400 each; **07-23 = 175 and
-07-25 = 268 (incomplete — re-fetch)**; 07-16 = 115 and 07-13/14/15 = 0 (fetch
-was still running). Plus 366 old-repo replays at
+07-25 = 268 (incomplete — re-fetch)**; 07-16 = 115 and 07-13/14/15 = 0 (that
+fetch was interrupted; `fetch_days.ps1` is idempotent, just re-run it — though
+§3 says more data is no longer the lever). Plus 366 old-repo replays at
 `E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays\2026-07-06..12`.
 `artifacts/pds/`: `old, d17, d18, d19, d21..d27` → 4,010 games / 607k rows.
 Each daily manifest holds ~4,400–4,800 episodes and we take only the top 400
