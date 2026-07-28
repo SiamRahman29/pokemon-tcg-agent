@@ -9,10 +9,10 @@ always end with a live plan, never a summary.**
 **Status 2026-07-28 (day 2):** the search stack is not what we thought. Measured
 at **n=1000** instead of n=24, the **BC clone alone scores 0.480 vs `rule:iono`**
 — far above the search agent's 0.33 (n=24) that produced our live 666.1.
-Submitted it: `55046717` peaked at 865.2 and **settled at 697.9** (+32 over the
-search agent, not the +199 the peak suggested — see Submission; fresh scores
-lie). A v2 clone (`55048039`, listwise loss + 2,810-game corpus, +2.4pp
-head-to-head at n=2000) is converging now.
+Submitted it: `55046717` has read 865.2 → 697.9 → 739.7 and is **still moving**
+— do not quote any single reading (see Submission). A v2 clone (`55048039`,
+listwise loss + 2,810-game corpus, +2.4pp head-to-head at n=2000) is converging
+behind it.
 
 The day's work moved from "fix the search" to "make the clone better": the
 clone is stronger and ~1000x cheaper to measure. But the measured exchange rate
@@ -347,20 +347,23 @@ submission lands.
 - Full submission history (`competition_submissions`), for baselines:
   | ref | date | score | what |
   |---|---|---|---|
-  | **55048039** | **07-28** | *converging* | **`bc` clone v2 (listwise + 2810-game corpus)** |
-  | **55046717** | **07-28** | **697.9** | **`bc` clone v1 (peaked 865.2, fell back)** |
+  | **55048039** | **07-28** | *600 → 660.5, rising* | **`bc` clone v2 (listwise + 2810-game corpus)** |
+  | **55046717** | **07-28** | *865.2 → 697.9 → 739.7* | **`bc` clone v1 — NOT converged** |
   | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
   | 54848951 | 07-20 | 477.1 | old-repo attempt |
   | 54727521 | 07-15 | 435.8 | ismcts |
   | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
   | 54535698 | 07-10 | 516.1 | Kaggle starter RL |
   | 54356986 | 07-05 | 361.4 | early attempt |
-  **The BC clone v1 peaked at 865.2 and fell back to 697.9** over ~1h. This is
-  the *second* time the peak-then-settle pattern has fooled a reading of this
-  file (55028156 peaked ~925, settled 666.1). **A fresh score is not a result.
-  Never report or act on one before it stops moving.** Best practice: read it
-  twice, an hour apart, and only believe the second.
-  Real gain over the search agent: 697.9 vs 666.1, i.e. **+32, not +199**.
+  **BC clone v1 has read 865.2, then 697.9, then 739.7 within ~2 hours.** It
+  oscillates; it is not converged. Two *separate* readings of this file have now
+  been misled by treating an in-flight number as a result (55028156 peaked ~925
+  and settled at 666.1; v1's 865.2 was reported as a win and was not one).
+  **Rule: a score is a result only after two readings ≥1h apart agree.** A
+  single reading — high OR low — is not evidence. Best current estimate for v1
+  is "somewhere in 700–780, still moving"; the honest gain over the search
+  agent's 666.1 is *small and not yet established*, certainly not the +199 the
+  peak suggested.
 
   **`rule:iono`'s 763.7 is a STALE number and probably not the bar it looks
   like.** It was scored 2026-07-13 against that day's pool and then frozen (only
