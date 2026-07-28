@@ -208,7 +208,10 @@ class Planner:
         policy_pick = None   # the clone's own choice, our anchor in rollout mode
         if net is not None:
             try:
-                policy_pick = net.choose(obs)
+                # choose() ranks by score, candidate_combos emits sorted lists,
+                # so compare as sets -- otherwise [3,1] != [1,3] and we append
+                # a duplicate of a candidate we are already searching.
+                policy_pick = sorted(net.choose(obs))
                 if len(combos) > ROOT_POLICY_KEEP:
                     sc = net.scores(obs)
                     ranked = sorted(
