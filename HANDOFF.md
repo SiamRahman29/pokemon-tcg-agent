@@ -2,8 +2,14 @@
 
 **Mission:** win the public LB (target 1200+ Elo; current #1 "flg" = 1210, 5792 teams).
 Deadline 2026-08-16, then ~2 weeks of continued play. User gives full token budget
-for ~2 days (day 1 was 2026-07-27). User uploads submissions manually; Kaggle CLI
-is authenticated and user has entered the competition.
+for ~2 days (day 1 was 2026-07-27). Kaggle CLI is authenticated and the user has
+entered the competition. **We are not stopping until we win — this file should
+always end with a live plan, never a summary.**
+
+**Status 2026-07-28:** submitted agent sits at **666.1**; the stock `rule:iono`
+agent scores **763.7**. We are below the baseline. The local arena is now
+**calibrated against the LB** (see below), so iteration no longer costs
+submission slots. Read "Leaderboard feedback" then "THE PLAN".
 
 ## Competition hard facts
 
@@ -123,6 +129,45 @@ Raising it is free headroom with no timeout risk. Whether it *helps* is unresolv
 (arena5/arena7). Note arena5 runs a handcrafted leaf, where more determinizations
 may just amplify eval bias — arena7 retests with nets on.
 
+## Leaderboard feedback — the arena is CALIBRATED (2026-07-28)
+
+`55028156` settled at **666.1** (peaked ~925 mid-convergence, then fell back).
+Our own `rule:iono` submission (`54647126`) sits at **763.7** on the same LB.
+
+**Ignore the 925.** A new submission starts at μ=600 with a wide σ, so μ swings
+hard on the first few episodes. The peak during convergence is not a strength
+estimate; the settled value is. Do not chase it, and do not report it as a result.
+
+**The important finding is that the local arena predicted the LB.**
+- Local arena: search+policy scores **0.33** vs `rule:iono` (n=24).
+- Implied rating gap: `400·log10(0.33/0.67)` = **−123** → predicts **641**.
+- Observed gap: 666.1 − 763.7 = **−98** → implies a **0.363** score.
+Arena said 0.33, LB says 0.363 — agreement well inside the n=24 CI.
+
+So `arena.py play <cfg> rule:iono --deck-a grimmsnarl --deck-b iono` is a **free,
+unlimited, same-day proxy for the leaderboard**. This is the single most valuable
+thing we learned from submitting. Stop spending submission slots to find out
+whether a config is good; measure locally, submit only what already won.
+
+**The ladder to the target** (rating = 763.7 + 400·log10(S/(1−S)), S = local score
+vs `rule:iono`):
+| local S vs rule:iono | implied LB rating |
+|---|---|
+| 0.36 ← **we are here** | 666 |
+| 0.50 | 764 |
+| 0.70 | 911 |
+| 0.80 | 1004 |
+| 0.93 | **1213 (wins the LB)** |
+
+Read that last row carefully: **the #1 agent would beat `rule:iono` ~93% of the
+time.** We are at 36% against an opponent whose source we can read. This is not a
+tuning gap — treat it as an architecture gap.
+
+Caveats, so nobody over-trusts this: TrueSkill μ is not exactly Elo-scaled, the LB
+pool is not `rule:iono`, 666.1 may not be fully converged, and this is a **single**
+calibration point. Budget ±100 on the ladder and re-check it after the next
+submission lands.
+
 ## Data pipeline
 
 - `scripts/fetch_top_episodes.py --date YYYY-MM-DD --max N` — downloads manifest.csv
@@ -180,13 +225,19 @@ may just amplify eval bias — arena7 retests with nets on.
   `--nets` pins which npz ship (see Gotchas — this is load-bearing on Kaggle).
 - **SUBMITTED 2026-07-27:**
   - `55028078` — **ERROR** (`__file__` NameError under Kaggle's exec loader; see Gotchas).
-  - `55028156` — **COMPLETE**, initial publicScore 600.0 (= starting μ, not yet a
-    measured strength; it drifts as rated episodes play). Config = policy ON /
-    value OFF / worlds 12 (the arena-winning config).
-    **Linux env is VALIDATED — the bundle runs on Kaggle.**
-  Expect a LOW score: ~33% vs rule:iono, and **rule:iono itself scored 763.7** on
-  this LB. Prior attempts from the old repo: ismcts 435.8, vpi-cold-b 489.1.
-  Value here is validating the Linux env + starting rating convergence.
+  - `55028156` — **COMPLETE, settled at 666.1** (peak ~925 during convergence —
+    noise, see "Leaderboard feedback"). Config = policy ON / value OFF / worlds 12
+    (the arena-winning config). **Linux env is VALIDATED — the bundle runs on Kaggle.**
+- Full submission history (`competition_submissions`), for baselines:
+  | ref | date | score | what |
+  |---|---|---|---|
+  | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl (current) |
+  | 54848951 | 07-20 | 477.1 | old-repo attempt |
+  | 54727521 | 07-15 | 435.8 | ismcts |
+  | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
+  | 54535698 | 07-10 | 516.1 | Kaggle starter RL |
+  | 54356986 | 07-05 | 361.4 | early attempt |
+  Nothing we have built has ever beaten the stock rule agent. That is the headline.
 - `kaggle competitions submit` returned a **400** on CreateSubmission even though
   the upload hit 100%; the identical file went through minutes later via the
   Python client. If the CLI 400s, use:
@@ -197,22 +248,80 @@ may just amplify eval bias — arena7 retests with nets on.
   It proves the bundle imports and runs, not that a long game stays in budget.
   Arena data covers that: ~109 selects × 423ms ≈ 46s vs a 600s pool (13× headroom).
 
-## Immediate next steps (priority order)
+## THE PLAN (day 2, 2026-07-28)
 
-1. **Finish the compute question** (arena5/arena7: worlds 48 vs 12, without/with
-   nets). The agent uses 3% of its budget — the only free lever left. If w48 wins
-   with nets on, rebuild + resubmit immediately.
-2. **Fix the value net's off-distribution problem** — it is the clearest known
-   defect. Options: train on states sampled from *search leaves* (self-play
-   playouts) rather than replay states; or blend `evaluate()` with the net; or
-   drop it. Do NOT re-enable it on val loss alone.
-3. More data still pays on both nets (policy 57→63.4→66.0% tracks corpus size;
-   value still peaks at epoch 0). Deepen to top-800/day, add days 07-19 and back.
-4. The agent loses to `rule:iono` in every config (21–33%). Before more net work,
-   consider whether `evalfn.py`/`textdmg.py` or the root candidate enumeration is
-   the real ceiling — a 66%-accurate clone did not fix the prize race.
-5. Deck A/B: grimmsnarl vs crispin_box with the SAME agent; also `rule:dragapult`
-   as a second opponent (all current numbers are vs one opponent on one matchup).
+Framing: we need 0.36 → 0.93 vs `rule:iono`. Nothing incremental gets there. Two
+of our three compute/learning levers are already measured dead (more worlds: no;
+value net: no), and the third (more data) is doubling the corpus for +2.6pp of
+clone accuracy. **So the plan is diagnosis first, then one big swing.** Do not
+spend a day tuning constants.
+
+### P0 — Find out which component is actually load-bearing (do this first)
+
+Every strength number in this file is n=24, where a 15pp effect is invisible.
+We literally cannot tell our search apart from our clone apart from noise. Fix
+that before choosing where to spend the day. All head-to-head (one process, so
+CPU-contention-immune), all cheap:
+
+1. `search:pol` vs `bc` — **does the search add anything at all over the clone?**
+   This is the fork in the road. n≥100.
+2. `search:pol` vs `rule:iono`, n≥100 — pins our score with a tight CI and
+   becomes the standing calibration anchor (see "Leaderboard feedback").
+3. `search:pol,noV` vs `bc` on a second deck/opponent, to check (1) generalizes.
+
+**If search ≈ BC:** the whole search stack is dead weight. Kill it, put everything
+into the policy net, and take the entire 600s budget back. This is also what the
+LB suggests — per the timing thread, most of the top 20 are *fast policy nets*,
+not searchers, and we have 2 vCPUs.
+**If search > BC:** go to P1, the leaf evaluator is the bottleneck.
+
+### P1 — The leaf evaluator is the prime suspect
+
+Two independent negative results point at the same place. More determinizations
+did nothing (variance reduction on a *biased* estimator can't help) and the value
+net did nothing (trained off-distribution). Both are consistent with "the leaf
+signal is biased or uninformative."
+
+**The one experiment that tests this AND the untested compute axis at once:**
+replace the leaf with a **rollout to terminal** (policy-argmax to game end, score
+the actual win/loss) instead of `evaluate()`. If terminal rollouts beat the
+handcrafted leaf, `evalfn.py` is the bug — and the fix is depth
+(`MAX_PLAYOUT_STEPS`), which is exactly where the unused 97% of the time budget
+should go. Highest expected value of anything on this list. Run it early.
+
+### P2 — Value net trained on the right distribution
+
+Only if P1 says terminal rollouts help but cost too much. Then the correct object
+is a value net trained on **search-leaf states labeled by rollout outcome**
+(bootstrapped / self-play), not on replay states. That is the known structural
+defect, stated precisely. Do NOT re-enable the current value net on val loss.
+
+### P3 — Widen the measurement surface (run in background)
+
+Every number we own is one agent, one deck, one opponent. Add `rule:dragapult`
+and `rule:abomasnow`; A/B grimmsnarl vs crispin_box with the same agent. We may
+be tuning to one matchup's quirks. Pure compute, no thinking — background it.
+
+### P4 — More data (background, lowest leverage now)
+
+Still pays (policy 57 → 63.4 → 66.0% with corpus size; value still peaks at epoch
+0, i.e. data-starved). Deepen to top-800/day, add 07-19 and earlier. But note the
+returns: the corpus doubled for +2.6pp, and a 66%-accurate clone still scores
+0.25. Data is not what stands between us and 0.93. Queue it, don't wait on it.
+
+### Submission discipline (changed as of today)
+
+5 slots/day, 2 active, and **the arena now predicts the LB** — so slots are no
+longer how we learn things. Rules: submit only configs that already beat the
+current champion locally at n≥100; keep one slot to re-verify calibration; always
+`--nets` pin the config; never submit an unmeasured build.
+
+## Older next-steps (superseded 2026-07-28, kept for rationale)
+
+- ~~Finish the compute question (worlds 48 vs 12)~~ — **settled negative**, see above.
+- The agent loses to `rule:iono` in every config (21–33%). A 66%-accurate clone
+  did not fix the prize race → suspect `evalfn.py`/`textdmg.py` or root candidate
+  enumeration. (This became P0/P1.)
 
 ## Gotchas
 
