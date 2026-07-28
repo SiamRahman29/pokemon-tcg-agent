@@ -381,6 +381,12 @@ longer how we learn things. Rules: submit only configs that already beat the
 current champion locally at n≥100; keep one slot to re-verify calibration; always
 `--nets` pin the config; never submit an unmeasured build.
 
+**"Latest 2 active" is a real constraint right now.** The two active submissions
+are `55046717` (865.2) and `55028156` (666.1). One more submission evicts the
+666.1 — free. A *second* one would evict `55046717` and stop our best agent from
+playing, while 865.2 is still converging. So: **at most one more submission
+until 865.2 settles**, then re-assess.
+
 ## Older next-steps (superseded 2026-07-28, kept for rationale)
 
 - ~~Finish the compute question (worlds 48 vs 12)~~ — **settled negative**, see above.
