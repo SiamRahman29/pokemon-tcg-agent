@@ -1,9 +1,14 @@
 # Build POLICY shards for new replay days. The value net is excluded from the
 # shipped agent (arena says it does not help), so we no longer build ds/ too --
 # that halves the work. Add -WithValue if that ever changes.
+#
+# NOTE: `powershell -File this.ps1 -Days a,b,c` does NOT give you a 3-element
+# array -- space-separated spills onto -Root positionally, comma-joined arrives
+# as one string. Either edit $Days below and launch with no arguments, or call
+# the script from an existing PowerShell session where normal binding applies.
 param(
   [string]$Root = 'E:\Kaggle\pokemon-tcg-simulation-2',
-  [string[]]$Days = @('2026-07-27','2026-07-19','2026-07-18','2026-07-17'),
+  [string[]]$Days = @('2026-07-19','2026-07-18','2026-07-17'),
   [switch]$WithValue
 )
 
