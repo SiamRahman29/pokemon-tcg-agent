@@ -197,10 +197,9 @@ def cmd_play(args: argparse.Namespace) -> int:
         res = harness.evaluate_paired(agent_a, agent_b, deck_a, deck_b,
                                       matches=args.matches, on_game=on_game)
     finally:
-        if rows:  # archive whatever finished, even on interrupt
-            with games_path.open("a", encoding="utf-8") as fh:
-                for row in rows:
-                    fh.write(json.dumps(row) + "\n")
+        # rows are already on disk (on_game flushes each one); just close.
+        # Do NOT re-write `rows` here -- that double-counted every game.
+        archive_fh.close()
 
     dt = time.monotonic() - t_start
     print(f"\nA={name_a}: score={res['score']:.3f} "
