@@ -8,10 +8,12 @@ always end with a live plan, never a summary.**
 
 **Status 2026-07-28 (day 2):** the search stack is not what we thought. Measured
 at **n=1000** instead of n=24, the **BC clone alone scores 0.480 vs `rule:iono`**
-— roughly LB parity with the 763.7 baseline, and far above the search agent's
-0.33 (n=24) that produced our live 666.1. **Submitted `55046717` = the BC agent.**
-The day's work has moved from "fix the search" to "make the clone better",
-because the clone is both stronger and ~1000x cheaper to measure.
+— far above the search agent's 0.33 (n=24) that produced our live 666.1.
+Submitted it: **`55046717` scored 865.2**, the first agent we have built that
+beats the stock `rule:iono` (763.7), +199 over its predecessor. (Provisional
+until converged — see Submission.) The day's work moved from "fix the search"
+to "make the clone better": the clone is stronger, ~1000x cheaper to measure,
+and its ceiling is the 1170–1210 players it imitates.
 Read "Day-2 results" then "THE PLAN".
 
 ## Competition hard facts
@@ -306,14 +308,21 @@ submission lands.
 - Full submission history (`competition_submissions`), for baselines:
   | ref | date | score | what |
   |---|---|---|---|
-  | **55046717** | **07-28** | *pending* | **`bc` policy clone, grimmsnarl (current)** |
+  | **55046717** | **07-28** | **865.2** | **`bc` policy clone, grimmsnarl (current)** |
   | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
   | 54848951 | 07-20 | 477.1 | old-repo attempt |
   | 54727521 | 07-15 | 435.8 | ismcts |
   | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
   | 54535698 | 07-10 | 516.1 | Kaggle starter RL |
   | 54356986 | 07-05 | 361.4 | early attempt |
-  Nothing we have built has ever beaten the stock rule agent. That is the headline.
+  **2026-07-28: the BC clone cleared the `rule:iono` bar for the first time**
+  (865.2 vs 763.7), +199 over the search agent it replaced.
+  **Treat 865.2 as provisional until it converges.** A new submission starts at
+  μ=600 with wide σ; `55028156` peaked ~925 mid-convergence and settled at 666.1.
+  Re-read the score before building on it. If it *does* settle near 865, the
+  arena→LB ladder is mis-calibrated (it predicted ~750 for a 0.480 agent) —
+  most likely because the LB pool is weaker than `rule:iono`, so re-fit the
+  ladder rather than trusting the old row.
 - `kaggle competitions submit` returned a **400** on CreateSubmission even though
   the upload hit 100%; the identical file went through minutes later via the
   Python client. If the CLI 400s, use:
