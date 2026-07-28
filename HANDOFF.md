@@ -6,10 +6,13 @@ for ~2 days (day 1 was 2026-07-27). Kaggle CLI is authenticated and the user has
 entered the competition. **We are not stopping until we win — this file should
 always end with a live plan, never a summary.**
 
-**Status 2026-07-28:** submitted agent sits at **666.1**; the stock `rule:iono`
-agent scores **763.7**. We are below the baseline. The local arena is now
-**calibrated against the LB** (see below), so iteration no longer costs
-submission slots. Read "Leaderboard feedback" then "THE PLAN".
+**Status 2026-07-28 (day 2):** the search stack is not what we thought. Measured
+at **n=1000** instead of n=24, the **BC clone alone scores 0.480 vs `rule:iono`**
+— roughly LB parity with the 763.7 baseline, and far above the search agent's
+0.33 (n=24) that produced our live 666.1. **Submitted `55046717` = the BC agent.**
+The day's work has moved from "fix the search" to "make the clone better",
+because the clone is both stronger and ~1000x cheaper to measure.
+Read "Day-2 results" then "THE PLAN".
 
 ## Competition hard facts
 
@@ -128,6 +131,71 @@ Late-game acc went 0.396 (noise, only 18 val games in that bucket) → 0.608.
 Raising it is free headroom with no timeout risk. Whether it *helps* is unresolved
 (arena5/arena7). Note arena5 runs a handcrafted leaf, where more determinizations
 may just amplify eval bias — arena7 retests with nets on.
+
+## Day-2 results (2026-07-28) — measure BC at n=1000, not n=24
+
+### The headline: the clone beats the search stack
+
+| agent | score vs `rule:iono` | n | implied LB |
+|---|---|---|---|
+| **`bc` (policy clone, ~1ms/move)** | **0.480 [0.449, 0.511]** | **1000** | **~750** |
+| `search:pol,noV` | 0.33 [0.18, 0.52] | 24 | 666 (observed) |
+
+The n=24 arena numbers this project ran on were **noise**. A BC agent plays a
+game in ~0.17s, so 1000 games cost 17 seconds of CPU — there was never a reason
+to measure it at n=24. Do not accept an n<100 strength claim again for anything
+that can be measured cheaply.
+
+**Cross-run comparison is valid for BC agents.** The contention caveat below
+applies to `search` (wall-clock time budgets); a BC agent is not time-budgeted,
+so two BC configs measured in separate processes against the same opponent are
+directly comparable. This is what makes the fast loop possible.
+
+### BC vs the whole rule-based field (grimmsnarl, seat-swapped)
+
+| opponent | score | n |
+|---|---|---|
+| `rule:dragapult` | 0.519 [0.470, 0.567] | 400 |
+| `rule:iono` | 0.480 [0.449, 0.511] | 1000 |
+| `rule:lucario` | 0.475 [0.427, 0.524] | 400 |
+| **`rule:abomasnow`** | **0.360 [0.314, 0.408]** | 400 |
+
+Roughly parity with the field, with **abomasnow a real, measured weakness** —
+the one matchup that is significantly below the rest. Worth a targeted look.
+
+### Deck choice is NOT free — the clone can only pilot grimmsnarl
+
+Same agent, same opponent (`rule:iono`), different deck:
+
+| our deck | score | n |
+|---|---|---|
+| `grimmsnarl` | 0.480 | 1000 |
+| **`crispin_box`** | **0.068 [0.047, 0.096]** | 400 |
+
+`crispin_box` has the best raw win-rate in the mined meta (61.9%) and our agent
+scores **7%** with it. A deck's meta win-rate says nothing about whether *our*
+policy can pilot it — the clone has to have learned that deck's lines. Do not
+switch decks on meta stats alone; arena it first (it costs ~1 minute).
+
+### Policy training: the loss function was wrong
+
+The old trainer used pointwise BCE (each option scored independently), which
+does not model "which of these options is best" — the thing the agent actually
+does. `--loss listwise` (softmax cross-entropy within each select's option set)
+reaches **0.6216 val top-1 after ONE epoch**; BCE needed ~4 epochs to get there
+and finished at 0.6596 after 20. The net was also underfit (still improving at
+epoch 19), so it is now deeper as well (`--state-h 512,256 --head-h 256,128`).
+Layers export generically, so depth changes need no inference edit.
+
+### Terminal rollouts work mechanically but were deprioritized
+
+`search:...,roll` plays the policy to game end and scores the real result
+(`agents/sa/planner.py`). Verified: **100% of rollouts reach terminal**, ~98
+steps each, ~156s of the 600s pool per game. It is implemented and ready.
+It was **not** run to a conclusion: it costs ~150s/game to measure, and its
+premise ("fix the leaf and search becomes good") was written when BC was
+believed to score 0.25. BC scoring 0.480 inverts that premise, so the CPU went
+to the clone instead. Re-run it as `search:R,noV,roll,mc12,nc6` vs `bc`.
 
 ## Leaderboard feedback — the arena is CALIBRATED (2026-07-28)
 

@@ -1,6 +1,7 @@
 """Numpy inference for the cloned policy (see scripts/train_policy.py)."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -8,7 +9,10 @@ import numpy as np
 from .features import featurize
 from .optfeat import option_features
 
-_PATH = Path(__file__).resolve().parent / "policy_net.npz"
+# SA_PNET_PATH lets an arena run score a candidate net without overwriting the
+# shipped one. Kaggle sets no env vars, so there it is always the bundled npz.
+_PATH = Path(os.environ.get("SA_PNET_PATH")
+             or Path(__file__).resolve().parent / "policy_net.npz")
 _BAGS = ("my_hand", "my_discard", "opp_discard")
 SEL_DENSE = 14
 
