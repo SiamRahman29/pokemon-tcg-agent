@@ -169,8 +169,10 @@ Same agent, same opponent (`rule:iono`), different deck:
 
 | our deck | score | n |
 |---|---|---|
-| `grimmsnarl` | 0.480 | 1000 |
+| **`grimmsnarl`** | **0.480 [0.449, 0.511]** | 1000 |
+| `alakazam` | 0.320 [0.276, 0.367] | 400 |
 | **`crispin_box`** | **0.068 [0.047, 0.096]** | 400 |
+| `iono` (mirror) | 0.023 [0.011, 0.047] | 300 |
 
 `crispin_box` has the best raw win-rate in the mined meta (61.9%) and our agent
 scores **7%** with it. A deck's meta win-rate says nothing about whether *our*
@@ -299,7 +301,8 @@ submission lands.
 - Full submission history (`competition_submissions`), for baselines:
   | ref | date | score | what |
   |---|---|---|---|
-  | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl (current) |
+  | **55046717** | **07-28** | *pending* | **`bc` policy clone, grimmsnarl (current)** |
+  | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
   | 54848951 | 07-20 | 477.1 | old-repo attempt |
   | 54727521 | 07-15 | 435.8 | ismcts |
   | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
@@ -316,66 +319,46 @@ submission lands.
   It proves the bundle imports and runs, not that a long game stays in budget.
   Arena data covers that: ~109 selects × 423ms ≈ 46s vs a 600s pool (13× headroom).
 
-## THE PLAN (day 2, 2026-07-28)
+## THE PLAN (live — day 2 evening, 2026-07-28)
 
-Framing: we need 0.36 → 0.93 vs `rule:iono`. Nothing incremental gets there. Two
-of our three compute/learning levers are already measured dead (more worlds: no;
-value net: no), and the third (more data) is doubling the corpus for +2.6pp of
-clone accuracy. **So the plan is diagnosis first, then one big swing.** Do not
-spend a day tuning constants.
+Framing has changed. The clone, not the search, is the agent. It sits at ~LB
+parity with `rule:iono` (0.480) and we need 0.93 to win. **The clone's ceiling
+is the players it imitates — and those players are rated 1170–1210, i.e. the
+target.** So "make the clone imitate them better" is a path that actually
+reaches the goal, and it iterates in minutes instead of hours.
 
-### P0 — Find out which component is actually load-bearing (do this first)
+### N0 — Finish and ship the better clone (in flight)
 
-Every strength number in this file is n=24, where a 15pp effect is invisible.
-We literally cannot tell our search apart from our clone apart from noise. Fix
-that before choosing where to spend the day. All head-to-head (one process, so
-CPU-contention-immune), all cheap:
+1. `out/policy_lw.npz` is training (listwise, 512/256 + 256/128, 30 epochs).
+   Evaluate with
+   `SA_PNET_PATH=out/policy_lw.npz` + `arena.py play bc rule:iono --deck-a
+   grimmsnarl --deck-b iono --matches 500`. **Beat 0.480 → ship it.**
+   (`SA_PNET_PATH` scores a candidate net without overwriting the shipped one.)
+2. Then retrain on the enlarged corpus (07-27 is downloading; 07-19/18/17 queued)
+   — more data has paid every single time (57 → 63.4 → 66.0% top-1).
+3. Next trainer knobs to try, in order: `--winners-only` (clone only the winner's
+   moves), `--loss both`, more epochs (it was still improving at 30).
 
-1. `search:pol` vs `bc` — **does the search add anything at all over the clone?**
-   This is the fork in the road. n≥100.
-2. `search:pol` vs `rule:iono`, n≥100 — pins our score with a tight CI and
-   becomes the standing calibration anchor (see "Leaderboard feedback").
-3. `search:pol,noV` vs `bc` on a second deck/opponent, to check (1) generalizes.
+### N1 — Re-test search ON TOP of the good clone
 
-**If search ≈ BC:** the whole search stack is dead weight. Kill it, put everything
-into the policy net, and take the entire 600s budget back. This is also what the
-LB suggests — per the timing thread, most of the top 20 are *fast policy nets*,
-not searchers, and we have 2 vCPUs.
-**If search > BC:** go to P1, the leaf evaluator is the bottleneck.
+Do not conclude "search is worthless", only "this search, with this leaf, at
+n=24, looked worse than the clone". The rollout leaf is now implemented and
+verified (100% of rollouts terminate). The clean test is
+`search:R,noV,roll,mc12,nc6` vs `bc`, same deck, n≥50. Note the #1 player is
+reportedly "model + search using the full budget" — so search is not a dead end
+in principle, and we currently use 0.1s of a 600s pool.
 
-### P1 — The leaf evaluator is the prime suspect
+### N2 — The abomasnow hole
 
-Two independent negative results point at the same place. More determinizations
-did nothing (variance reduction on a *biased* estimator can't help) and the value
-net did nothing (trained off-distribution). Both are consistent with "the leaf
-signal is biased or uninformative."
+BC scores 0.360 vs `rule:abomasnow` but 0.48–0.52 vs everything else. One
+matchup this far below the rest is a real, addressable weakness, and the LB pool
+contains such decks. Diagnose before tuning: dump a few losses and look.
 
-**The one experiment that tests this AND the untested compute axis at once:**
-replace the leaf with a **rollout to terminal** (policy-argmax to game end, score
-the actual win/loss) instead of `evaluate()`. If terminal rollouts beat the
-handcrafted leaf, `evalfn.py` is the bug — and the fix is depth
-(`MAX_PLAYOUT_STEPS`), which is exactly where the unused 97% of the time budget
-should go. Highest expected value of anything on this list. Run it early.
+### N3 — Deck choice is settled: grimmsnarl
 
-### P2 — Value net trained on the right distribution
-
-Only if P1 says terminal rollouts help but cost too much. Then the correct object
-is a value net trained on **search-leaf states labeled by rollout outcome**
-(bootstrapped / self-play), not on replay states. That is the known structural
-defect, stated precisely. Do NOT re-enable the current value net on val loss.
-
-### P3 — Widen the measurement surface (run in background)
-
-Every number we own is one agent, one deck, one opponent. Add `rule:dragapult`
-and `rule:abomasnow`; A/B grimmsnarl vs crispin_box with the same agent. We may
-be tuning to one matchup's quirks. Pure compute, no thinking — background it.
-
-### P4 — More data (background, lowest leverage now)
-
-Still pays (policy 57 → 63.4 → 66.0% with corpus size; value still peaks at epoch
-0, i.e. data-starved). Deepen to top-800/day, add 07-19 and earlier. But note the
-returns: the corpus doubled for +2.6pp, and a 66%-accurate clone still scores
-0.25. Data is not what stands between us and 0.93. Queue it, don't wait on it.
+Do not spend more time here. Measured, same agent, vs `rule:iono`: grimmsnarl
+0.480 > alakazam 0.320 >> crispin_box 0.068 > iono 0.023. The clone can only
+pilot decks it has actually seen in the top replays.
 
 ### Submission discipline (changed as of today)
 
