@@ -186,25 +186,54 @@ clone has only really learned grimmsnarl. **Grimmsnarl is settled; stop
 re-testing this.** Corollary: if the corpus ever shifts, re-run `deck_sweep.ps1`
 (it costs ~10 min) before assuming grimmsnarl is still right.
 
-### Policy training: the loss function was wrong
+### Policy training: the loss function was wrong — but it barely moved strength
 
 The old trainer used pointwise BCE (each option scored independently), which
 does not model "which of these options is best" — the thing the agent actually
 does. `--loss listwise` (softmax cross-entropy within each select's option set)
-reaches **0.6216 val top-1 after ONE epoch**; BCE needed ~4 epochs to get there
-and finished at 0.6596 after 20. The net was also underfit (still improving at
-epoch 19), so it is now deeper as well (`--state-h 512,256 --head-h 256,128`).
-Layers export generically, so depth changes need no inference edit.
+reaches **0.6216 val top-1 after ONE epoch**; BCE needed ~4 epochs to get there.
+The net was also underfit, so it is deeper now (`--state-h 512,256 --head-h
+256,128`). Layers export generically, so depth changes need no inference edit.
 
-### Terminal rollouts work mechanically but were deprioritized
+Val top-1: **0.6596 (old BCE) → 0.6711 (listwise, epoch 19 of 30; plateaus by
+epoch ~5 then overfits)**.
+
+**And yet, head-to-head at n=2000, the new net scores 0.514 [0.492, 0.536]
+against the old one — not separated from 0.5.** Use `bc:<tag>,net=<path>` to
+play two nets against each other in one process; going through a third opponent
+needs ~2x the games for the same resolution.
+
+**This is the third time a metric has failed to predict strength in this
+project** (value-net val loss, policy top-1 twice). +1.15pp of clone accuracy
+bought at most +1.4pp of win rate, and not significantly. Read that as a
+warning about the whole "improve the clone" axis: it is real but *slow*, and
+it will not cover the 865 → 1210 gap on its own. Always confirm a net in the
+arena before spending a submission slot on it.
+
+### Terminal rollouts — implemented, running as the N1 test
 
 `search:...,roll` plays the policy to game end and scores the real result
-(`agents/sa/planner.py`). Verified: **100% of rollouts reach terminal**, ~98
-steps each, ~156s of the 600s pool per game. It is implemented and ready.
-It was **not** run to a conclusion: it costs ~150s/game to measure, and its
-premise ("fix the leaf and search becomes good") was written when BC was
-believed to score 0.25. BC scoring 0.480 inverts that premise, so the CPU went
-to the clone instead. Re-run it as `search:R,noV,roll,mc12,nc6` vs `bc`.
+(`agents/sa/planner.py`). Verified: **100% of rollouts reach terminal**, ~88–98
+steps each. Two things were added because raw Monte-Carlo would have been
+misleading here:
+
+- **`pb<margin>` (prior anchor, default 0.15).** A rollout mean over ~12 worlds
+  of a 0/1 outcome has SE ≈ 0.14, so raw MC will overrule the clone on pure
+  noise — and the clone is our strongest component. The search must beat the
+  policy's own pick by this margin before deviating from it.
+- **Thinking-pool tracking.** The harness never enforced the 600s pool, so a
+  too-slow agent could win in the arena and *lose by timeout* on the ladder.
+  `arena.py` now records `pool0`/`pool1` per game and warns below 300s left.
+  Rollout mode measured **~288s of the 600s pool per game** — inside budget but
+  only ~2x margin, so re-check this before shipping any rollout config.
+
+### Tooling added today
+
+- `scripts/tally.py <agent-name> <archive-glob>` — pool sharded runs and print a
+  Wilson interval. A 30-game shard cannot resolve a 15pp effect; always pool.
+- `scripts/bc_sweep.ps1`, `deck_sweep.ps1`, `fetch_days.ps1`, `build_days.ps1`.
+- **Gotcha:** never name a PowerShell param `$Matches` — it collides with the
+  automatic regex variable and every assignment throws.
 
 ## Leaderboard feedback — the arena is CALIBRATED (2026-07-28)
 
@@ -341,26 +370,42 @@ is the players it imitates — and those players are rated 1170–1210, i.e. the
 target.** So "make the clone imitate them better" is a path that actually
 reaches the goal, and it iterates in minutes instead of hours.
 
-### N0 — Finish and ship the better clone (in flight)
+### N0 — A better clone (in flight, but expect small returns)
 
-1. `out/policy_lw.npz` is training (listwise, 512/256 + 256/128, 30 epochs).
-   Evaluate with
-   `SA_PNET_PATH=out/policy_lw.npz` + `arena.py play bc rule:iono --deck-a
-   grimmsnarl --deck-b iono --matches 500`. **Beat 0.480 → ship it.**
-   (`SA_PNET_PATH` scores a candidate net without overwriting the shipped one.)
-2. Then retrain on the enlarged corpus (07-27 is downloading; 07-19/18/17 queued)
-   — more data has paid every single time (57 → 63.4 → 66.0% top-1).
-3. Next trainer knobs to try, in order: `--winners-only` (clone only the winner's
-   moves), `--loss both`, more epochs (it was still improving at 30).
+`out/policy_lw_final.npz` (listwise, deeper) is **not** a proven upgrade:
+0.514 [0.492, 0.536] head-to-head at n=2000. Do not ship it on its own.
 
-### N1 — Re-test search ON TOP of the good clone
+1. `out/policy_lw2.npz` is training on the corpus **including 07-27**; all of
+   07-17/18/19 are downloaded (400 each) and their shards are building. Full
+   corpus is ~3,600 games vs the 2,410 the shipped net used.
+2. Evaluate any candidate the cheap way, always head-to-head:
+   `arena.py play "bc:new,net=out/policy_lw2.npz" bc --deck-a grimmsnarl
+   --deck-b grimmsnarl --matches 1000` (~10 min, n=2000, SE ≈ 0.011).
+   Ship only if the interval clears 0.5.
+3. Untried trainer knobs: `--winners-only` (clone only the winner's moves),
+   `--loss both`, LR decay (val plateaus at ~epoch 5 while train loss keeps
+   falling — it is overfitting, not underfitting, past that point).
 
-Do not conclude "search is worthless", only "this search, with this leaf, at
-n=24, looked worse than the clone". The rollout leaf is now implemented and
-verified (100% of rollouts terminate). The clean test is
-`search:R,noV,roll,mc12,nc6` vs `bc`, same deck, n≥50. Note the #1 player is
-reportedly "model + search using the full budget" — so search is not a dead end
-in principle, and we currently use 0.1s of a 600s pool.
+### N1 — Search on top of the clone (RUNNING — this is the big one)
+
+Two shards in flight, pool them with `tally.py`:
+```
+python -X utf8 scripts/arena.py play "search:R,noV,roll,mc12,nc6,pb0.15" bc \
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 20 \
+    --archive out/arena/n1_roll_vs_bc_a.jsonl
+python -X utf8 scripts/tally.py "search:R,noV,roll,mc12,nc6,pb0.15" \
+    "out/arena/n1_roll_vs_bc_*.jsonl"
+```
+**Why this is the priority:** the clone axis is measurably slow (N0), the LB
+gap is 865 → 1210, and the reported #1 is "model + search using the full time
+budget". We use 0.1s of a 600s pool with the BC agent. If rollout search clears
+0.5 here, that is the only lever on the board with enough headroom to close the
+gap. If it does not, the honest read is that BC + more data is a ~900-Elo
+plateau and the next move is self-play RL from the BC initialization (the
+standard way to *exceed* the demonstrators, which BC by construction cannot).
+
+Budget note: rollout mode burns ~288s of the 600s pool per game. Before
+shipping any rollout config, check the `pool left` line the arena now prints.
 
 ### N2 — The abomasnow hole
 
