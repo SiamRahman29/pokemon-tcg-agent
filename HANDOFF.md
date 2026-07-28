@@ -1,171 +1,128 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** win the public LB (target 1200+ Elo; current #1 "flg" = 1210, 5792 teams).
-Deadline 2026-08-16, then ~2 weeks of continued play. User gives full token budget
-for ~2 days (day 1 was 2026-07-27). Kaggle CLI is authenticated and the user has
-entered the competition. **We are not stopping until we win — this file should
-always end with a live plan, never a summary.**
+**Mission:** win the public LB (target 1200+; #1 "flg" = 1210, 5,792 teams).
+Deadline **2026-08-16**, then ~2 weeks of continued play. Kaggle CLI is
+authenticated and the user has entered. **This file must always end with a live
+plan, never a summary.**
 
-**Status 2026-07-28 (day 2):** the search stack is not what we thought. Measured
-at **n=1000** instead of n=24, the **BC clone alone scores 0.480 vs `rule:iono`**
-— far above the search agent's 0.33 (n=24) that produced our live 666.1.
-Submitted it: `55046717` has read 865.2 → 697.9 → 739.7 and is **still moving**
-— do not quote any single reading (see Submission). A v2 clone (`55048039`,
-listwise loss + 2,810-game corpus, +2.4pp head-to-head at n=2000) is converging
-behind it.
+---
 
-The day's work moved from "fix the search" to "make the clone better": the
-clone is stronger and ~1000x cheaper to measure. **Search is now settled
-negative** — rollout search scored 0.323 vs the clone (n=31) and we instrumented
-why (it overrules the clone on 52% of decisions, on noise). The clone axis works
-but is slow: +1.6pp accuracy ≈ +17 Elo.
-Read "Day-2 results", then **"N2 — THE PLAN FROM HERE"**.
+## 1. Where we are (end of day 2, 2026-07-28)
 
-## Competition hard facts
+**The agent is the BC policy clone** (`agents/sa/bcagent.py`, ~1 ms/move). The
+determinized search is measured *worse* than the clone and is not shipped.
 
-- Submission: **.tar.gz** with `main.py` + `deck.csv` at **top level** + `cg/` engine.
-  Cap 197.7 MiB. 5/day, latest 2 active. Runs at `/kaggle_simulations/agent/`.
-- Runtime: 2 vCPUs, 12.2 GiB RAM. `actTimeout=0`; each agent has a **600s
-  thinking pool per game** (`obs["remainingOverageTime"]`); exceed → timeout loss.
-  Validation episode = self-play vs itself first (crash ⇒ Error status).
-- Rating: TrueSkill-ish, new submissions start μ=600. Episodes vs similar-rated.
-- Engine: `cg` (C++ DLL + Python ctypes). Search API (`search_begin`/`search_step`)
-  supports branching tree search over determinized worlds (opponent hand visible
-  in search), ~2600 steps/s. Local engine at `data/sample_submission/sample_submission/`.
+Live leaderboard (all still converging — see the reading rule in §2):
 
-## Approach (current architecture, all in `agents/sa/`)
-
-**What we actually ship is `bcagent.py` — the BC policy clone, ~1ms/move.**
-The determinized search below is measured *worse* than the clone (see N1) and
-is not in the submission. It is kept because it is the scaffolding any future
-search would reuse, and because its instrumentation is what proved it dead.
-
-- `fastsearch.py` — raw-dict wrapper over engine search API (bypasses slow dataclasses).
-- `worlds.py` — determinization; opponent decklist predicted from `deck_library.json`
-  (built from mined top replays via `scripts/build_deck_library.py`).
-- `tracker.py` — cross-turn log tracking (known cards in opponent hand by serial).
-- `evalfn.py` + `textdmg.py` — handcrafted eval; text-parsed expected damage
-  (bench-aware threat). Used for playout greedy fallback + leaf fallback.
-- `features.py` — **v2** state featurization (DENSE_DIM=242, PER_SLOT=18) shared
-  by trainers and numpy inference. v2 added attack-readiness + own-type energy count.
-- `valuenet.py` / `policynet.py` — numpy-only inference (no torch in bundle) of
-  `value_net.npz` / `policy_net.npz`; both have **dim guards** (stale net → None → fallback).
-- `optfeat.py` — **v2** per-option features for policy (returns dense, card_id,
-  attack_id, target_id; target = attach/evolve destination).
-- `planner.py` — per-decision: determinize N worlds (≤12), root candidates
-  (`candidate_combos`, policy-pruned to ~10), playout = policy-argmax for BOTH
-  sides until our next MAIN (1.5 turns), leaf = value net (or evaluate() if no net),
-  successive halving of root candidates across worlds. Rollout mode (`roll`)
-  plays to terminal instead; `pb` anchors to the clone, `HALVE_AFTER_WORLDS`
-  stops pruning on noise. Env knobs: `SA_DEBUG`, `SA_NO_VNET`, `SA_NO_PNET`,
-  `SA_SPEND_MULT`, `SA_MAIN_CAP`, `SA_MINOR_CAP`.
-- `timemgr.py` — budgets the 600s pool (reserve 45s, mains ≤4.5s, scaled by
-  branching); per-instance overrides via `main_cap`/`minor_cap`.
-- `agent.py` — `SearchAgent` (hybrid; `main_only` lets the clone answer non-MAIN
-  selects), `bcagent.py` — `PolicyAgent` (BC-only, ~ms/move; `net_path` pins a
-  specific npz). Both never raise: fallback = `list(range(minCount))`.
-
-## Experimental results (local arena, seat-swapped) — REVISED 2026-07-27 (day 1 pm)
-
-### Correction: earlier numbers in this file were measured through broken controls
-
-The pre-2026-07-27 results above/below were invalid for three separate reasons.
-**Do not trust any strength claim in this file dated before 2026-07-27 pm.**
-
-1. Nets were trained pre-v2 (DENSE_DIM=218 vs 242) so **both dim guards silently
-   rejected them**. Every "hybrid" result was really search+handcrafted-eval.
-2. "3× compute made it worse (17%)" was tested via `SA_SPEND_MULT`, which only
-   grants more *time*. Time was never binding — `MAX_WORLDS=12` was. That
-   experiment changed nothing and measured noise.
-3. The "50% search+handcrafted" figure was a **mirror** matchup (iono vs iono);
-   it was then compared against cross-deck (grimmsnarl vs iono) runs. Measuring
-   the same no-nets config cross-deck now gives **21%**, not 50%.
-
-### Current measured truth (nets = full 6-day corpus)
-
-vs `rule:iono` (grimmsnarl vs iono, n=24 each, wall-clock-contention caveat below):
-- search, **both nets off** (pure handcrafted): **21%** (5/24)
-- search, **policy ON**, value off: **33%** (8/24)  ← best config
-- BC-only (policy alone, no search): **25%**
-
-Head-to-head A/Bs (same process, same deck both sides — immune to CPU contention,
-the only fully trustworthy comparisons):
-- **policy ON vs policy OFF: 0.696 [0.567, 0.801], W38/D2/L16 over 56 games.**
-  CI excludes 0.5 → the policy net is a real improvement. Settled.
-  (Two independent 28-game runs of the same config ran concurrently by accident:
-  0.750 [0.566,0.873] and 0.643 [0.458,0.793]. The second alone would NOT have
-  been significant — 28 games is not enough to call a ~15pp effect. Always
-  combine, and treat any single 24–28 game arena number as barely indicative.)
-- **value ON vs value OFF: 0.396 [0.228, 0.592], W9/D1/L14 over 24 games.**
-  CI *includes* 0.5, so this does NOT prove the value net hurts — it proves there
-  is **no evidence it helps**, with a negative point estimate. Since it also costs
-  compute per leaf, ship without it. (Tested with the *good* full-corpus net,
-  val 0.5878 — i.e. the net that improved most on paper is the one we exclude.)
-- **worlds 48 vs 12 — SETTLED NEGATIVE. Do not retry this axis.**
-  | variant | score | n | CI |
-  |---|---|---|---|
-  | handcrafted leaf (arena5) | 0.500 | 24 | [0.314, 0.686] |
-  | both nets on (arena7) | 0.458 | 24 | [0.279, 0.649] |
-  | **combined** | **0.479** | **48** | **[0.345, 0.617]** |
-  4× the determinizations buys nothing, with or without nets. It also does not
-  hurt → the old "3× compute made it worse" claim is refuted (that test used
-  `SA_SPEND_MULT`, which could not bind while `MAX_WORLDS` did).
-  **Interpretation:** 12 determinizations already average out most hidden-info
-  variance; more worlds cut *variance* but cannot fix a *biased* leaf evaluator.
-  The 3%-of-budget headroom is real but is NOT free upside on this axis.
-  If spending the budget, try a *different* axis: `MAX_PLAYOUT_STEPS` (rollout
-  depth / horizon), `ROOT_CAP` (root width), or `PLAYOUT_CAP` — i.e. the
-  quality/depth of each rollout, not the number of worlds.
-
-### Two structural lessons
-
-**Value net: val loss does NOT predict arena strength.** The net is trained on
-states from top players' *real* games but queried at *search leaves* mid-playout
-(after greedy/policy continuations). Those are off-distribution, so replay
-accuracy does not transfer. Judge the value net by arena results only, never by
-val loss. It now clearly beats logreg (0.5878 vs 0.634) and still appears to
-make play worse.
-
-**Data volume drives net quality, and it kept paying:**
-| corpus | policy top-1 | value best val |
-|---|---|---|
-| 768 games (v1) | 57% | — |
-| 1,211 / 1,188 games | 63.4% | 0.6327 |
-| **2,410 / 2,387 games** | **66.0%** | **0.5878** |
-Value net still peaks at *epoch 0* even at 2.4k games → still data-starved.
-Late-game acc went 0.396 (noise, only 18 val games in that bucket) → 0.608.
-
-### The biggest open lever: the agent uses 3% of its compute
-
-`MAX_WORLDS` binds on **every** decision. Measured with `SA_DEBUG` instrumentation:
-| MAX_WORLDS | worlds/decide | per-decision budget used | 600s pool used |
+| ref | what | public | state |
 |---|---|---|---|
-| 12 (default) | 12.0 | 15% | ~20s |
-| 48 | 47.5 | 42% | ~89s |
-Raising it is free headroom with no timeout risk. Whether it *helps* is unresolved
-(arena5/arena7). Note arena5 runs a handcrafted leaf, where more determinizations
-may just amplify eval bias — arena7 retests with nets on.
+| `55049206` | **`rule:iono` LIVE baseline** | 629.0, rising | **active — do not evict** |
+| `55048039` | **clone v2** (listwise, 2,810-game corpus) | 752.8, rising | **active** |
+| `55046717` | clone v1 | 739.6 | frozen (evicted) |
+| `55028156` | search + policy clone | 666.1 | frozen |
+| `54647126` | `rule:iono` submitted 07-13 | 763.7 | **stale — see §2** |
 
-## Day-2 results (2026-07-28) — measure BC at n=1000, not n=24
+**The single most important number to read next:** where `55049206`
+(live `rule:iono`) settles. If it lands well below clone v2, we are *above* the
+rule baseline and the old 763.7 was just an inflated number from a weaker July
+pool. Early signs say yes (629 vs 753), and the local arena agrees (clone scores
+0.480 vs `rule:iono` ≈ parity). **Do not submit anything until it converges** —
+a new submission evicts it and kills the experiment.
 
-### The headline: the clone beats the search stack
+### The day's real conclusion
 
-| agent | score vs `rule:iono` | n | implied LB |
-|---|---|---|---|
-| **`bc` (policy clone, ~1ms/move)** | **0.480 [0.449, 0.511]** | **1000** | **~750** |
-| `search:pol,noV` | 0.33 [0.18, 0.52] | 24 | 666 (observed) |
+Both compute-side levers are now settled negative, and the imitation lever has
+plateaued:
 
-The n=24 arena numbers this project ran on were **noise**. A BC agent plays a
-game in ~0.17s, so 1000 games cost 17 seconds of CPU — there was never a reason
-to measure it at n=24. Do not accept an n<100 strength claim again for anything
-that can be measured cheaply.
+- **Search does not work** (§4) — and we know exactly why, quantitatively.
+- **Clone accuracy has decoupled from strength** (§3). Going 2,810 → 4,010
+  training games raised val top-1 by +1.8pp and produced **zero** arena gain
+  (0.491 [0.469, 0.513], n=2000).
 
-**Cross-run comparison is valid for BC agents.** The contention caveat below
-applies to `search` (wall-clock time budgets); a BC agent is not time-budgeted,
-so two BC configs measured in separate processes against the same opponent are
-directly comparable. This is what makes the fast loop possible.
+So the cheap axes are exhausted. §7 is the plan; the honest headline is that
+reaching 1210 now needs **self-play RL from the BC initialization**, because BC
+cannot exceed its demonstrators and more imitation is no longer buying wins.
 
-### BC vs the whole rule-based field (grimmsnarl, seat-swapped)
+---
+
+## 2. How not to fool yourself (read this before trusting any number)
+
+This project has repeatedly drawn wrong conclusions from bad measurement. Every
+rule below was paid for.
+
+1. **n=24 is noise.** A BC game costs ~0.17 s, so n=1000 is 17 seconds of CPU.
+   The project ran on n=24 for weeks; at n=1000 the "worse" agent turned out to
+   be much better. **Never accept an n<100 strength claim for anything cheap to
+   measure.** For a ~2pp effect you need n≈2000.
+2. **A fresh LB score is not a result.** `55046717` read 865.2 → 697.9 → 739.7
+   within two hours; `55028156` peaked ~925 and settled at 666.1. **Require two
+   readings ≥1 h apart that agree.** And *frozen ≠ converged*: only the latest 2
+   submissions play episodes, so an evicted submission's score just stops moving.
+3. **Old submission scores are not comparable to new ones.** `rule:iono`'s 763.7
+   was earned 07-13 against a smaller pool and frozen. That is why it is being
+   re-measured live.
+4. **Validation metrics do not predict playing strength here — four times now.**
+   Value-net val loss (best net played worst), and policy top-1 three separate
+   times. Judge every net in the arena, head-to-head, before shipping.
+5. **Compare nets head-to-head, not through a third opponent.** `bc:<tag>,net=
+   <path>` plays two nets in one process; going via `rule:iono` needs ~2x the
+   games for the same resolution.
+6. **CPU contention distorts `search` results but not `bc` results.** `search`
+   budgets on wall-clock, so two search configs measured under different load
+   are not comparable — use same-process head-to-head. BC agents are not
+   time-budgeted, so cross-run BC comparisons are valid.
+7. **This machine delivers ~1.4 cores of real throughput** (Ryzen 5500U, 15 W,
+   plugged in, Balanced is the only power scheme). Running 4+ heavy jobs makes
+   everything slower with no extra work done. Run 2–3. Prefer BC experiments
+   (0.3 s/game) over search experiments (90–290 s/game) whenever a question can
+   be posed either way.
+
+---
+
+## 3. The clone (what ships)
+
+`agents/sa/policy_net.npz` = **`policy_lw2`**, shipped as `55048039`.
+Backups: `out/policy_net_bce_shipped.npz` (v1), `out/policy_lw3.npz` (rejected).
+
+All head-to-head, n=2000, same deck both sides, vs the *previously shipped* net:
+
+| net | corpus | val top-1 | vs prev shipped | ship? |
+|---|---|---|---|---|
+| v1 (BCE, 256/128) | 2,410 | 0.6596 | — | shipped `55046717` |
+| listwise, 512,256/256,128 | 2,410 | 0.6711 | 0.514 [0.492, 0.536] | **no** |
+| **v2 (`policy_lw2`) = + 07-27** | **2,810** | **0.6755** | **0.524 [0.502, 0.546]** | **YES — live** |
+| `policy_lw3` = + 07-17/18/19 | 4,010 | **0.6933** | 0.491 [0.469, 0.513] | **no** |
+
+**Read the last two rows together — this is the important result.** +1.6pp of
+val top-1 bought a marginal +2.4pp of win rate; the next +1.8pp bought
+**nothing** (point estimate slightly negative, tight CI). The clone has
+plateaued near 0.68–0.69 top-1, and additional imitation accuracy no longer
+converts into wins. More replay data is *not* the answer any more.
+
+(Caveat worth keeping in mind: v2's win had a lower bound of 0.502 — barely
+separated. It is possible v2 ≈ v1 too and the whole listwise/depth/data
+sequence has bought less than it appears.)
+
+### Trainer
+
+`scripts/train_policy.py` — `--loss listwise` (softmax CE within each select's
+option set) is the right objective and reaches in 1 epoch what BCE took 4 to
+reach. Layers export generically (`sfc{i}_w`/`head{i}_w` + counts), so depth
+changes need no inference edit. Val plateaus by epoch ~5–10 while train loss
+keeps falling — it overfits after that, so ~12 epochs is plenty.
+
+Untried: `--winners-only` (we currently imitate the losing side's moves too) —
+the last cheap idea on this axis, and worth one run.
+
+### Deck choice: SETTLED — grimmsnarl. Stop re-testing.
+
+Same clone, vs `rule:iono`: grimmsnarl **0.480** > alakazam 0.320 >
+dragapult_ex 0.153 > crispin_box 0.068 > mega_abomasnow_ex 0.037 >
+mega_lucario_ex 0.030 > iono 0.023. A deck's *meta* win-rate says nothing about
+whether our clone can pilot it — `crispin_box` has the best meta WR (61.9%) and
+scores 7%. Re-run `scripts/deck_sweep.ps1` only if the corpus changes a lot.
+
+### Clone vs the rule field (grimmsnarl, seat-swapped)
 
 | opponent | score | n |
 |---|---|---|
@@ -173,450 +130,212 @@ directly comparable. This is what makes the fast loop possible.
 | `rule:iono` | 0.480 [0.449, 0.511] | 1000 |
 | `rule:lucario` | 0.475 [0.427, 0.524] | 400 |
 | **`rule:abomasnow`** | **0.360 [0.314, 0.408]** | 400 |
+| `random` | 0.995 | 200 |
 
-Roughly parity with the field, with **abomasnow a real, measured weakness** —
-the one matchup that is significantly below the rest. Worth a targeted look.
+---
 
-### Deck choice is NOT free — the clone can only pilot grimmsnarl
+## 4. Search: SETTLED NEGATIVE — do not re-tune it
 
-Same agent, same opponent (`rule:iono`), different deck:
+`search:M,noV,roll,mo,mc20,pb0.15` vs `bc`: **0.323 [0.186, 0.499], n=31 —
+significantly worse than the clone alone.**
 
-| our deck | score | n |
+**Why, measured not guessed: the search overrules the clone on 52% of anchored
+decisions.** A terminal rollout returns 0/1, so a mean over 12 determinizations
+has SE ≈ 0.14; the max over ~9 rival candidates sits ~0.21–0.28 above its true
+value by chance, clearing any sane anchor margin. Half of all MAIN decisions
+replaced the clone's judgment with a noisy tiebreak among its own top-10
+candidates — and the clone is far better than that.
+
+**This is a variance problem, not a tuning problem.** Raise the margin until
+deviations are rare and you have reproduced the clone; lower it and you lose
+harder. Real action differences are worth a few pp of win probability, and
+resolving those with 0/1 rollouts needs ~100x more samples than the 600 s pool
+buys (we already spend 92 s/game).
+
+Also settled negative: **more determinizations** (48 vs 12: 0.479, n=48) and the
+**value net** (0.396, n=24 — no evidence it helps, and it costs compute).
+
+**The only unlock for search is a low-variance leaf evaluator.** The existing
+value net was trained on *replay* states but queried at *search leaves* —
+off-distribution, which is exactly why it failed. The correct object is a value
+net trained on **states sampled from the search-leaf distribution, labeled by
+rollout outcome**. Self-play RL (§7) would produce this as a by-product.
+
+Implementation kept for that day: `roll` (rollout to terminal, 100% terminate,
+~88–98 steps), `pb<margin>` (prior anchor), `mo` (MAIN-only — the clone answers
+non-MAIN selects; cuts cost 288 s → 92 s per game), `HALVE_AFTER_WORLDS` (don't
+prune on 1–2 noisy samples), and the `anchored`/`deviated` counters that proved
+all this.
+
+---
+
+## 5. Code map (`agents/sa/`)
+
+- `bcagent.py` — **`PolicyAgent`, what we ship.** `net_path` pins a specific npz.
+- `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
+  (stale net → `None` → fallback, never remove it); `load()` is separable from
+  the `get()` singleton so two nets can coexist.
+- `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
+  trainers and inference. **Any npz trained pre-v2 fails the dim guard.**
+- `agent.py` — `SearchAgent` (`main_only` knob). `planner.py` — determinized
+  search (see §4). `timemgr.py` — 600 s pool budgeting, per-instance caps.
+- `evalfn.py` + `textdmg.py` — handcrafted eval / expected damage.
+- `worlds.py`, `tracker.py`, `fastsearch.py`, `deck_library.json` — determin-
+  ization, cross-turn opponent-card tracking, raw-dict search wrapper.
+- Both agents never raise: fallback = `list(range(minCount))`.
+
+---
+
+## 6. Commands
+
+```powershell
+# Head-to-head net A/B (the only comparison that counts). ~10-15 min, n=2000.
+python -X utf8 scripts/arena.py play "bc:new,net=out/policy_X.npz" bc `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/ab_X.jsonl
+
+# Absolute score vs the field
+python -X utf8 scripts/arena.py play bc rule:iono --deck-a grimmsnarl --deck-b iono --matches 500
+
+# Pool sharded runs into one Wilson interval
+python -X utf8 scripts/tally.py "<agent-name>" "out/arena/foo_*.jsonl"
+
+# Train (12 epochs is plenty; it overfits after ~5-10)
+python -X utf8 scripts/train_policy.py --ds artifacts/pds --epochs 12 `
+    --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_X.npz
+
+# Data
+python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-16 --max 400   # idempotent
+python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d16 replays/2026-07-16
+
+# Build + submit (smoke-tests the extracted bundle the way Kaggle loads it)
+python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
+python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission.tar.gz','msg','pokemon-tcg-ai-battle')"
+```
+
+Batch helpers: `bc_sweep.ps1`, `deck_sweep.ps1`, `fetch_days.ps1`,
+`build_days.ps1` (edit the `$Days`/`$Dates` default and launch with **no**
+arguments — see Gotchas).
+
+### Data on disk
+
+`replays/`: 07-17..07-22, 07-24, 07-26, 07-27 = 400 each; **07-23 = 175 and
+07-25 = 268 (incomplete — re-fetch)**; 07-16 = 115 and 07-13/14/15 = 0 (fetch
+was still running). Plus 366 old-repo replays at
+`E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays\2026-07-06..12`.
+`artifacts/pds/`: `old, d17, d18, d19, d21..d27` → 4,010 games / 607k rows.
+Each daily manifest holds ~4,400–4,800 episodes and we take only the top 400
+(cutoff avg_score ~1174–1205), so `--max 800` would roughly double the corpus —
+**but see §3: more data stopped helping.**
+
+---
+
+## 7. THE PLAN (day 3)
+
+Ordered by expected value. The first item is free and blocking.
+
+### P0 — Read the live baseline, then decide (blocking, costs nothing)
+
+Wait for `55049206` (live `rule:iono`) and `55048039` (clone v2) to converge;
+two readings ≥1 h apart. This resolves the biggest open question in the project:
+**are we above or below the real rule-based bar?** Do not submit anything until
+it lands — a submission evicts the baseline. Then re-fit the ladder
+(rating ≈ base + 400·log10(S/(1−S))) against *live* numbers; the old ladder,
+anchored on the stale 763.7, over-predicted us by ~50 points.
+
+### P1 — The abomasnow hole (best remaining cheap win)
+
+0.360 vs 0.475–0.519 everywhere else, and the ladder over-predicted our rating
+in exactly the way a matchup hole explains. **First diagnostic is already done
+and it points at a lockdown, not subtle misplay** — our selects per turn:
+
+| opponent | selects/turn | avg turns (W/L) |
 |---|---|---|
-| **`grimmsnarl`** | **0.480 [0.449, 0.511]** | 1000 |
-| `alakazam` | 0.320 [0.276, 0.367] | 400 |
-| `dragapult_ex` | 0.153 [0.117, 0.198] | 300 |
-| `crispin_box` | 0.068 [0.047, 0.096] | 400 |
-| `mega_abomasnow_ex` | 0.037 [0.021, 0.064] | 300 |
-| `mega_lucario_ex` | 0.030 [0.016, 0.056] | 300 |
-| `iono` (mirror) | 0.023 [0.011, 0.047] | 300 |
+| `rule:iono` | 16.6 | 12.4 / 13.2 |
+| `rule:dragapult` | 12.9 | 13.1 / 13.7 |
+| `rule:lucario` | 12.5 | 12.3 / 11.8 |
+| **`rule:abomasnow`** | **8.6** | **10.3 / 12.4** |
 
-`crispin_box` has the best raw win-rate in the mined meta (61.9%) and our agent
-scores **7%** with it. A deck's meta win-rate says nothing about whether *our*
-policy can pilot it — the clone has to have learned that deck's lines, and the
-clone has only really learned grimmsnarl. **Grimmsnarl is settled; stop
-re-testing this.** Corollary: if the corpus ever shifts, re-run `deck_sweep.ps1`
-(it costs ~10 min) before assuming grimmsnarl is still right.
+We take roughly *half* as many actions per turn and the games are shorter.
+Something stops us acting — item/ability lock, status, or failure to develop.
+Next: replay a loss with `SA_DEBUG=1` and look at the actual select options on
+our turns. Then ask whether the corpus even *contains* grimmsnarl-vs-abomasnow
+games (`scripts/mine_meta.py`); if not, no amount of general data fixes it and
+targeted replays are needed.
 
-### Policy training: the loss function was wrong — but it barely moved strength
+### P2 — `--winners-only` (last cheap clone idea)
 
-The old trainer used pointwise BCE (each option scored independently), which
-does not model "which of these options is best" — the thing the agent actually
-does. `--loss listwise` (softmax cross-entropy within each select's option set)
-reaches **0.6216 val top-1 after ONE epoch**; BCE needed ~4 epochs to get there.
-The net was also underfit, so it is deeper now (`--state-h 512,256 --head-h
-256,128`). Layers export generically, so depth changes need no inference edit.
+One training run + one n=2000 A/B, ~40 min total. We currently clone the losing
+side's moves as well as the winner's. Low odds given §3, but cheap.
 
-All head-to-head vs the previously shipped BCE net, n=2000 each
-(`bc:<tag>,net=<path>` plays two nets in one process; going through a third
-opponent needs ~2x the games for the same resolution):
+### P3 — Self-play RL from the BC initialization (the only path to 1210)
 
-| net | corpus | val top-1 | vs prev shipped net | separated? |
-|---|---|---|---|---|
-| shipped v1 (BCE, 256/128) | 2,410 | 0.6596 | — | — |
-| listwise, 512,256/256,128 | 2,410 | 0.6711 | 0.514 [0.492, 0.536] | **no** |
-| **v2 = + 07-27 (`policy_lw2`)** | **2,810** | **0.6755** | **0.524 [0.502, 0.546]** | **yes** |
-| **`policy_lw3` = + 07-17/18/19** | **4,010** | **0.687+** | *see `out/arena/ab_lw3.jsonl`* | — |
+BC cannot exceed its demonstrators by construction, and imitation accuracy has
+stopped converting into wins (§3). This is the standard next step and the one
+thing on this list that can actually reach the target. It also produces, as a
+by-product, the on-distribution value function that would revive search (§4).
 
-**Data is by far the strongest lever on this axis.** Corpus 2,810 → 4,010 gave
-+1.2pp of val top-1 in six epochs — more than the loss function and the depth
-change put together. Keep fetching days (top-800/day deepening, 07-16 and
-earlier) and keep retraining; it is cheap, it is the only thing that has
-reliably moved the number, and it needs no new ideas.
+Scope it honestly before starting: it is days of work, the engine does ~2,600
+search-steps/s, and **this machine gives ~1.4 cores**. Consider whether to rent
+compute. Start from the shipped clone as both policy init and opponent pool.
 
-So: the loss/architecture change alone was **not** a demonstrated improvement;
-adding data on top of it was (barely — the lower bound is 0.502). `policy_lw2`
-is now installed as `agents/sa/policy_net.npz` and shipped as `55048039`. The
-old BCE net is kept at `out/policy_net_bce_shipped.npz`.
+### Submission discipline
 
-**A metric has now failed to predict strength three times here** (value-net val
-loss, policy top-1 twice). +1.6pp of clone accuracy bought +2.4pp of win rate
-≈ +17 Elo. Read that as the exchange rate for the whole "improve the clone"
-axis: real, but far too slow to cover 865 → 1210 on its own. Always confirm a
-net head-to-head in the arena before spending a submission slot on it.
+5 slots/day, **latest 2 active**. Submit only what has already won head-to-head
+at n≥2000. Always `--nets` pin the config. Never submit an unmeasured build.
+Right now both active slots are spoken for by the P0 experiment.
 
-### Terminal rollouts — implemented, running as the N1 test
+---
 
-`search:...,roll` plays the policy to game end and scores the real result
-(`agents/sa/planner.py`). Verified: **100% of rollouts reach terminal**, ~88–98
-steps each. Two things were added because raw Monte-Carlo would have been
-misleading here:
+## 8. Gotchas (all paid for)
 
-- **`pb<margin>` (prior anchor, default 0.15).** A rollout mean over ~12 worlds
-  of a 0/1 outcome has SE ≈ 0.14, so raw MC will overrule the clone on pure
-  noise — and the clone is our strongest component. The search must beat the
-  policy's own pick by this margin before deviating from it.
-- **Thinking-pool tracking.** The harness never enforced the 600s pool, so a
-  too-slow agent could win in the arena and *lose by timeout* on the ladder.
-  `arena.py` now records `pool0`/`pool1` per game and warns below 300s left.
-  Rollout mode measured **~288s of the 600s pool per game** — inside budget but
-  only ~2x margin, so re-check this before shipping any rollout config.
+- **`__file__` DOES NOT EXIST on Kaggle.** `kaggle_environments/agent.py` does
+  `exec(code_object, env)` → `NameError` → Status=ERROR before the agent runs.
+  This killed `55028078`. `main.py` resolves its dir via try/except NameError →
+  `/kaggle_simulations/agent` → cwd. The smoke test now `exec`s the source with
+  no `__file__` in globals, exactly as Kaggle does — **keep it that way**; the
+  old `import main` smoke defined `__file__` and hid the bug.
+- **Kaggle sets no env vars.** `SA_NO_PNET`/`SA_NO_VNET`/`SA_PNET_PATH` are all
+  inert there, so any bundled `.npz` is LIVE. Pin with `build_submission.py
+  --nets none|policy|value|both`.
+- **Do not set `SA_COUNT_MODE=expect` with a listwise-trained net.** `expect`
+  picks the multi-select count by summing per-option sigmoids, which assumes
+  calibrated probabilities; a listwise net gives a valid *ranking* only. The
+  default `table` mode is loss-independent and correct for every net we have.
+- **The harness does not enforce the 600 s pool but Kaggle does** (exhausted
+  pool = loss). `arena.py` records `pool0`/`pool1` per game and warns below
+  300 s. Check it before shipping anything that searches. BC uses 0.1 s.
+- **PowerShell `-File script.ps1 -Days a,b,c` does not bind an array.**
+  Space-separated spills onto the *next* positional param (silently making every
+  day look MISSING); comma-joined arrives as one string. Edit the script's
+  default and launch with no args.
+- **Never name a PowerShell param `$Matches`** — collides with the automatic
+  regex variable; every assignment throws `ArgumentTransformationMetadata`.
+- `kaggle competitions submit` may 400 even though the upload hit 100%; the
+  Python client works. That call **submits** — it is not a dry run.
+- Kaggle Python API returns `ApiSubmission` with **snake_case** fields
+  (`public_score`, not `publicScore`).
+- Windows: `python -X utf8` everywhere (cp1252 crashes on card names). Run from
+  the repo root; `sys.path` needs `src/`, `agents/`, root.
+- Launch long jobs with `Start-Process` (detached); bash `nohup &` dies with the
+  session. Redirecting python stdout block-buffers it — pass `-u`.
+- Some replays download truncated (exactly 3 MiB) and fail JSON parse; builders
+  skip them (`errors=N`). Delete + re-fetch to recover.
+- Old repo `E:\Kaggle\pokemon-tcg-simulation` = failed pure-RL attempts. Take
+  its replays, not its approach.
+- Commit style: fine-grained, one-line semantic messages + Claude co-author
+  trailer.
 
-### Tooling added today
+---
 
-- `scripts/tally.py <agent-name> <archive-glob>` — pool sharded runs and print a
-  Wilson interval. A 30-game shard cannot resolve a 15pp effect; always pool.
-- `scripts/bc_sweep.ps1`, `deck_sweep.ps1`, `fetch_days.ps1`, `build_days.ps1`.
-- **Gotcha:** never name a PowerShell param `$Matches` — it collides with the
-  automatic regex variable and every assignment throws.
+## 9. Superseded — do not resurrect
 
-## Leaderboard feedback — the arena is CALIBRATED (2026-07-28)
-
-`55028156` settled at **666.1** (peaked ~925 mid-convergence, then fell back).
-Our own `rule:iono` submission (`54647126`) sits at **763.7** on the same LB.
-
-**Ignore the 925.** A new submission starts at μ=600 with a wide σ, so μ swings
-hard on the first few episodes. The peak during convergence is not a strength
-estimate; the settled value is. Do not chase it, and do not report it as a result.
-
-**The important finding is that the local arena predicted the LB.**
-- Local arena: search+policy scores **0.33** vs `rule:iono` (n=24).
-- Implied rating gap: `400·log10(0.33/0.67)` = **−123** → predicts **641**.
-- Observed gap: 666.1 − 763.7 = **−98** → implies a **0.363** score.
-Arena said 0.33, LB says 0.363 — agreement well inside the n=24 CI.
-
-So `arena.py play <cfg> rule:iono --deck-a grimmsnarl --deck-b iono` is a **free,
-unlimited, same-day proxy for the leaderboard**. This is the single most valuable
-thing we learned from submitting. Stop spending submission slots to find out
-whether a config is good; measure locally, submit only what already won.
-
-**The ladder to the target** (rating = 763.7 + 400·log10(S/(1−S)), S = local score
-vs `rule:iono`):
-| local S vs rule:iono | implied LB rating |
-|---|---|
-| 0.36 ← **we are here** | 666 |
-| 0.50 | 764 |
-| 0.70 | 911 |
-| 0.80 | 1004 |
-| 0.93 | **1213 (wins the LB)** |
-
-Read that last row carefully: **the #1 agent would beat `rule:iono` ~93% of the
-time.** We are at 36% against an opponent whose source we can read. This is not a
-tuning gap — treat it as an architecture gap.
-
-Caveats, so nobody over-trusts this: TrueSkill μ is not exactly Elo-scaled, the LB
-pool is not `rule:iono`, 666.1 may not be fully converged, and this is a **single**
-calibration point. Budget ±100 on the ladder and re-check it after the next
-submission lands.
-
-## Data pipeline
-
-- `scripts/fetch_top_episodes.py --date YYYY-MM-DD --max N` — downloads manifest.csv
-  of daily dataset `kaggle/pokemon-tcg-ai-battle-episodes-<date>`, then top-N episodes
-  by avg_score into `replays/<date>/`. Idempotent (skips existing). Now parallel (4 workers).
-- Old repo has 366 top-1% replays: `E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays\2026-07-06..12`.
-- Downloaded (COMPLETE as of 2026-07-27 pm): `2026-07-26` (403), `07-25` (268),
-  `07-24` (401), `07-23` (176), `07-22` (401), `07-21` (401), `07-20` (~400).
-  Plus the old repo's 366. Datasets built for all: `artifacts/{ds,pds}/{old,d21..d26}`.
-  → value 2,387 games / 390k rows; policy 2,410 games / 363k rows.
-- A few replays download truncated (exactly 3 MiB) and fail JSON parse; the
-  builders skip them (`errors=N` in the summary). Delete + re-fetch to recover.
-- `scripts/build_dataset.py --out artifacts/ds/<tag> --stride 1 <dirs>` — value shards.
-- `scripts/build_policy_dataset.py --out artifacts/pds/<tag> <dirs>` — policy shards.
-- `scripts/train_value.py --ds artifacts/ds --epochs 4` → `agents/sa/value_net.npz`.
-- `scripts/train_policy.py --ds artifacts/pds --epochs 6 [--winners-only]` →
-  `agents/sa/policy_net.npz` (includes count_frac table for multi-select counts).
-- **IMPORTANT:** features are v2 now; any npz trained pre-v2 fails the dim guard
-  (agent silently falls back). Always rebuild datasets + retrain after feature changes.
-- A background job was mid-run rebuilding v2 datasets (old+d26+d25) and retraining
-  both nets. If dead, re-run:
-  ```
-  OLD="E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays"
-  python -X utf8 scripts/build_dataset.py --out artifacts/ds/old --stride 1 "$OLD/2026-07-06" ... "$OLD/2026-07-12"
-  python -X utf8 scripts/build_dataset.py --out artifacts/ds/d26 --stride 1 replays/2026-07-26   (etc. per day)
-  python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/<tag> <dirs>
-  python -X utf8 scripts/train_policy.py --ds artifacts/pds --epochs 6
-  python -X utf8 scripts/train_value.py --ds artifacts/ds --epochs 4
-  ```
-
-## Meta / deck choice (from mining 2026-07-26 top episodes)
-
-- #1 usage: **Marnie's Grimmsnarl ex / Munkidori** (flg, Dries, Luca…) → `decks/grimmsnarl.py`.
-- Best WR (61.9%): **Crispin multi-energy box** (James Cox #2 @1218) → `decks/crispin_box.py`.
-- Alakazam (Yushin Ito) → `decks/alakazam.py`. Sample decks: iono/dragapult_ex/mega_abomasnow_ex/mega_lucario_ex.
-- External paper (papers/From Rules to Nash Equilibria.pdf) independently supports
-  Grimmsnarl being under-played relative to strength. Default deck: **grimmsnarl**.
-- `scripts/mine_meta.py <replay_dirs>` prints archetypes/teams/exact lists.
-- `scripts/build_deck_library.py <replay_dirs>` regenerates `agents/sa/deck_library.json`
-  (18 decks currently; rebuild when new days land).
-
-## Testing
-
-- `python -X utf8 scripts/arena.py play <specA> <specB> --deck-a X --deck-b Y --matches N`
-  Specs: `search[:tag]`, `bc[:tag]`, `rule:iono|dragapult|abomasnow|lucario`, `random`.
-  Deck specs = `decks/` module names. `scripts/arena.py elo` fits Elo over archive.
-- Engine prints "No Basic Pokemon." to stdout on some determinization rejects — filter it.
-- `python -X utf8 scripts/sdk_smoke.py` — engine sanity.
-- `python -X utf8 scripts/probe_search_api.py` — search API sanity/throughput.
-
-## Submission
-
-- `python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent search
-  --nets policy` → builds + **smoke-tests** `dist/submission_*.tar.gz`.
-  `--nets` pins which npz ship (see Gotchas — this is load-bearing on Kaggle).
-- **SUBMITTED 2026-07-27:**
-  - `55028078` — **ERROR** (`__file__` NameError under Kaggle's exec loader; see Gotchas).
-  - `55028156` — **COMPLETE, settled at 666.1** (peak ~925 during convergence —
-    noise, see "Leaderboard feedback"). Config = policy ON / value OFF / worlds 12
-    (the arena-winning config). **Linux env is VALIDATED — the bundle runs on Kaggle.**
-- Full submission history (`competition_submissions`), for baselines:
-  | ref | date | score | what |
-  |---|---|---|---|
-  | **55048039** | **07-28** | *600 → 660.5, rising* | **`bc` clone v2 (listwise + 2810-game corpus)** |
-  | **55046717** | **07-28** | *865.2 → 697.9 → 739.7* | **`bc` clone v1 — NOT converged** |
-  | 55028156 | 07-27 | **666.1** | search + policy clone, grimmsnarl |
-  | 54848951 | 07-20 | 477.1 | old-repo attempt |
-  | 54727521 | 07-15 | 435.8 | ismcts |
-  | **54647126** | 07-13 | **763.7** | **`rule:iono` — the bar to clear** |
-  | 54535698 | 07-10 | 516.1 | Kaggle starter RL |
-  | 54356986 | 07-05 | 361.4 | early attempt |
-  **BC clone v1 has read 865.2, then 697.9, then 739.7 within ~2 hours.** It
-  oscillates; it is not converged. Two *separate* readings of this file have now
-  been misled by treating an in-flight number as a result (55028156 peaked ~925
-  and settled at 666.1; v1's 865.2 was reported as a win and was not one).
-  **Rule: a score is a result only after two readings ≥1h apart agree.** A
-  single reading — high OR low — is not evidence. Best current estimate for v1
-  is "somewhere in 700–780, still moving"; the honest gain over the search
-  agent's 666.1 is *small and not yet established*, certainly not the +199 the
-  peak suggested.
-
-  **`rule:iono`'s 763.7 is a STALE number and probably not the bar it looks
-  like.** It was scored 2026-07-13 against that day's pool and then frozen (only
-  the latest 2 submissions play). Our 697.9 was earned against the 07-28 field
-  of 5,792 teams, which is stronger. Comparing them directly is apples to
-  oranges. **The clean fix, worth one slot: re-submit `rule:iono` today**
-  (`scripts/build_rule_submission.py`) and read both live. Until then, treat
-  "are we above the rule baseline?" as *unknown*, not as *no*.
-
-  Ladder check with live numbers (rating = 763.7 + 400·log10(S/(1−S))):
-  arena S=0.33 predicted 641, observed 666; arena S=0.48 predicted 750,
-  observed ~698. So the ladder **over-predicts at the top end** — plausibly
-  because a single `rule:iono` matchup misses our matchup holes (we score only
-  0.360 vs `rule:abomasnow`), and the LB field is diverse. Use the *field
-  average* (≈0.46), not the iono number, if you must predict.
-- `kaggle competitions submit` returned a **400** on CreateSubmission even though
-  the upload hit 100%; the identical file went through minutes later via the
-  Python client. If the CLI 400s, use:
-  `python -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi();
-  a.authenticate(); a.competition_submit('dist/submission.tar.gz','msg','pokemon-tcg-ai-battle')"`
-  — and note that call SUBMITS; it is not a dry run.
-- Smoke caveat: the smoke opponent is trivial, so games end fast (~11s of pool).
-  It proves the bundle imports and runs, not that a long game stays in budget.
-  Arena data covers that: ~109 selects × 423ms ≈ 46s vs a 600s pool (13× headroom).
-
-## THE PLAN (live — day 2 evening, 2026-07-28)
-
-Framing has changed. The clone, not the search, is the agent. It sits at ~LB
-parity with `rule:iono` (0.480) and we need 0.93 to win. **The clone's ceiling
-is the players it imitates — and those players are rated 1170–1210, i.e. the
-target.** So "make the clone imitate them better" is a path that actually
-reaches the goal, and it iterates in minutes instead of hours.
-
-### N0 — A better clone (done for today; small but real returns)
-
-`policy_lw2` shipped as `55048039`. **The next clone retrain is already set up
-and should be the first thing done:** `artifacts/pds/` now also holds `d19`,
-`d18`, `d17` (400 replays each, built and verified — 57.7k/59.6k/… rows), which
-`train_policy.py` picks up automatically via its `rglob`. That is **~4,000
-games vs the 2,810** behind the shipped net.
-
-```
-python -X utf8 scripts/train_policy.py --ds artifacts/pds --epochs 12 \
-    --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_lw3.npz
-python -X utf8 scripts/arena.py play "bc:lw3,net=out/policy_lw3.npz" bc \
-    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 \
-    --archive out/arena/ab_lw3.jsonl
-```
-Ship only if the interval clears 0.5. 12 epochs is enough — val plateaus by
-~epoch 5–10 and train loss keeps falling after (overfitting, not underfitting).
-
-Untried trainer knobs, in order of promise: `--winners-only` (clone only the
-winning side's moves — we currently imitate losers too), `--loss both`, LR decay.
-
-### N1 — SETTLED NEGATIVE: rollout MC search cannot work on this budget
-
-**Result: `search:M,noV,roll,mo,mc20,pb0.15` scores 0.323 [0.186, 0.499] vs
-`bc`, n=31 — significantly WORSE than the clone alone.** And we know exactly
-why, which matters more than the number:
-
-**Instrumented: the search overrules the clone on 52% of anchored decisions.**
-The arithmetic says it must. A terminal rollout returns 0/1, so a mean over 12
-determinizations has SE ≈ 0.14. Taking the max over ~9 rival candidates pulls
-the winner ~0.21–0.28 above its true value by chance alone — comfortably past
-the 0.15 anchor margin. So half of all MAIN decisions replace the clone's
-judgment with a noisy tiebreak among its own top-10 candidates, and the clone
-is far better than that.
-
-**This is a variance problem, not a tuning problem — do not re-tune it.**
-Raising the margin until deviations are rare just reproduces the clone; lowering
-it deviates more and loses harder. Real action differences are worth a few pp of
-win probability, and resolving those with 0/1 rollouts needs ~100x more samples
-than the 600s pool can buy (we already spend 92s/game). Two dead ends confirmed:
-more determinizations (0.479, n=48) and now rollout leaves.
-
-**The only way search becomes viable is a low-variance leaf evaluator**, i.e. a
-value net that is actually accurate on *search-leaf* states. The existing value
-net was trained on replay states and queried at leaves — off-distribution, which
-is precisely why it failed. The correct object (old P2, now the prerequisite for
-any search at all): train a value net on **states sampled from the search-leaf
-distribution, labeled by rollout outcome**. Until that exists, search is dead
-weight and the clone should keep the whole budget.
-
-`agents/sa/planner.py` keeps `roll`/`pb`/`mo`/`HALVE_AFTER_WORLDS` and the
-`anchored`/`deviated` counters — the instrumentation to re-run this cheaply if a
-better leaf evaluator ever appears.
-
-### N1-old — the config as originally run (kept for the record)
-
-Two shards in flight, pool them with `tally.py`:
-```
-python -X utf8 scripts/arena.py play "search:M,noV,roll,mo,mc20,pb0.15" bc \
-    --deck-a grimmsnarl --deck-b grimmsnarl --matches 25 \
-    --archive out/arena/n1mo_a.jsonl
-python -X utf8 scripts/tally.py "search:M,noV,roll,mo,mc20,pb0.15" \
-    "out/arena/n1mo_*.jsonl"
-```
-`mo` = **MAIN-only**: the clone answers non-MAIN selects outright and the whole
-pool goes to MAIN decisions. That cut cost from 288s to **92s per game** (6.5x
-pool margin) with no loss of the decisions that actually branch — do not go back
-to searching every select on this hardware. The earlier all-selects variant
-stands at 0.500 (n=4) in `out/arena/n1_roll_vs_bc_*.jsonl`; that n is worthless,
-it is kept only so nobody re-derives it.
-
-**Hardware reality check:** this box delivers only **~1.4 cores of real
-throughput** (Ryzen 5500U, 15W, Balanced is the only power scheme; it is plugged
-in and still throttles). Running 4+ heavy jobs makes everything slower with no
-extra work done. Run at most 2–3, and prefer BC-vs-BC experiments (0.3s/game)
-over search experiments (~90–290s/game) whenever a question can be posed either
-way.
-Budget note: all-selects rollout burns ~288s of the 600s pool per game;
-MAIN-only ~92s. Check the `pool left` line the arena now prints before shipping
-any search config.
-
-### N2 — THE PLAN FROM HERE (day 3)
-
-With search settled negative and the clone axis worth only ~+17 Elo per +1.6pp
-of accuracy, these are the live options, best first:
-
-1. **Re-submit `rule:iono` to get a LIVE baseline.** Cheap, one slot, and it
-   resolves the single biggest open question in this file: whether 697.9 is
-   above or below the real bar. The 763.7 we keep comparing to is a frozen
-   07-13 number from a smaller pool. Do this before any strategy decision.
-2. **Keep feeding the clone — this is the reliable axis.** Corpus size has moved
-   val top-1 every single time (2,410 → 2,810 → 4,010 games gave 0.6596 →
-   0.6755 → **0.6933**), more than the loss function and depth put together.
-   Three concrete sources of more data, in order of cost:
-   - **Deepen existing days.** Each daily manifest holds ~4,400–4,800 episodes
-     and we take only the top 400 (cutoff avg_score ~1174–1205). Going to
-     top-800 roughly doubles the corpus and the marginal games are still
-     ~1100+ rated. `fetch_top_episodes.py --max 800` is idempotent — it fetches
-     only the difference.
-   - **Backfill the short days.** `2026-07-23` has 175 replays and `07-25` has
-     268, vs 400 elsewhere — those fetches were incomplete. Re-run them.
-   - **More days.** 07-13..07-16 are downloading now; earlier days exist too.
-   Then `--winners-only` (we currently imitate the losing side's moves too).
-3. **Fix the abomasnow hole** (0.360 vs 0.475–0.519 everywhere else). The ladder
-   over-predicted our LB rating in a way consistent with exactly this kind of
-   matchup hole, so this may be worth more LB points than its 0.36 suggests.
-
-   **First diagnostic is already done** — the losses look like a *lockdown*, not
-   a subtle policy error. Selects per turn, our agent, by matchup:
-
-   | opponent | selects/turn | avg turns (W/L) |
-   |---|---|---|
-   | `rule:iono` | 16.6 | 12.4 / 13.2 |
-   | `rule:dragapult` | 12.9 | 13.1 / 13.7 |
-   | `rule:lucario` | 12.5 | 12.3 / 11.8 |
-   | **`rule:abomasnow`** | **8.6** | **10.3 / 12.4** |
-
-   We take roughly *half* as many actions per turn against abomasnow, and the
-   games are shorter. Something is stopping us from acting — item/ability lock,
-   status, or an inability to develop the board. Next step: replay one loss with
-   `SA_DEBUG=1` and look at what the select options actually are on our turns.
-   Second question: does the training corpus even *contain* grimmsnarl-vs-
-   abomasnow games (`scripts/mine_meta.py`)? If not, the clone has never seen
-   this matchup and no amount of general data will fix it — targeted replays
-   would.
-4. **The real ceiling-breaker: self-play RL from the BC initialization.** BC
-   cannot exceed its demonstrators by construction, and we are cloning 1170–1210
-   players while sitting near 700 — so there is headroom in imitation *first*.
-   But if the clone plateaus below the target, this is the standard next step,
-   and it also produces exactly the leaf evaluator N1 needs. Big, slow, and the
-   one thing on this list that can reach 1210.
-
-### N2 — The abomasnow hole
-
-BC scores 0.360 vs `rule:abomasnow` but 0.48–0.52 vs everything else. One
-matchup this far below the rest is a real, addressable weakness, and the LB pool
-contains such decks. Diagnose before tuning: dump a few losses and look.
-
-### N3 — Deck choice is settled: grimmsnarl
-
-Do not spend more time here. Measured, same agent, vs `rule:iono`: grimmsnarl
-0.480 > alakazam 0.320 >> crispin_box 0.068 > iono 0.023. The clone can only
-pilot decks it has actually seen in the top replays.
-
-### Submission discipline (changed as of today)
-
-5 slots/day, 2 active, and **the arena now predicts the LB** — so slots are no
-longer how we learn things. Rules: submit only configs that already beat the
-current champion locally at n≥100; keep one slot to re-verify calibration; always
-`--nets` pin the config; never submit an unmeasured build.
-
-**"Latest 2 active" is a real constraint.** Active now: `55046717` (865.2, v1
-clone) and `55048039` (v2 clone). The free eviction has been used. **The next
-submission will evict `55046717`, our only converged good score** — so do not
-submit again until 55048039 has a settled number to compare against. Check with
-`api.competition_submissions("pokemon-tcg-ai-battle")` (fields are snake_case:
-`public_score`, not `publicScore`).
-
-## Older next-steps (superseded 2026-07-28, kept for rationale)
-
-- ~~Finish the compute question (worlds 48 vs 12)~~ — **settled negative**, see above.
-- The agent loses to `rule:iono` in every config (21–33%). A 66%-accurate clone
-  did not fix the prize race → suspect `evalfn.py`/`textdmg.py` or root candidate
-  enumeration. (This became P0/P1.)
-
-## Gotchas
-
-- **`__file__` DOES NOT EXIST on Kaggle.** `kaggle_environments/agent.py` runs
-  main.py via `exec(code_object, env)`, so `__file__` is undefined →
-  `NameError` → submission Status=ERROR before the agent ever runs. This killed
-  submission 55028078 (2026-07-27). `main.py` now resolves its dir via
-  try/except NameError → `/kaggle_simulations/agent` → cwd.
-  **The old smoke test could not catch this** because it did `import main`, and
-  importing defines `__file__`. The smoke now `exec`s the source with no
-  `__file__` in globals, exactly as Kaggle does. Keep it that way — a local
-  smoke that loads the agent differently from the grader proves nothing.
-- **Arena archiving is NOT incremental.** `arena.py` buffers rows and writes them
-  in a `finally` at the END of the run. `Stop-Process -Force` skips the `finally`
-  → **all games from that run are lost**. Let arenas finish, or stop them gently.
-- **Arena strength numbers depend on machine load.** `timemgr` budgets on
-  wall-clock, so a contended CPU searches less deeply. Two agents measured under
-  different background load are NOT comparable. Head-to-head runs (both agents in
-  one process) are immune — prefer them for every A/B.
-- Launch long jobs via PowerShell `Start-Process` (detached); bash `nohup &` jobs
-  die when the session's process group is torn down. There is no `setsid` here.
-- Redirecting python stdout to a file block-buffers it; pass `-u` or output only
-  appears in chunks. Never pipe a long run through `| grep | tail` — that buffers
-  until exit, so a killed run looks like it produced nothing (this cost a run).
-- **Do not set `SA_COUNT_MODE=expect` with a listwise-trained net.** On a
-  variable-count select, `expect` picks k by summing per-option sigmoids, which
-  assumes the logits are calibrated probabilities. A pure listwise net gives a
-  valid *ranking* only — its logits are not probabilities. The default `table`
-  mode uses the data-derived count-fraction table and is loss-independent, so
-  it is correct for every net we have. `expect` needs `--loss both` first.
-- **Kaggle sets no env vars**, so `SA_NO_PNET`/`SA_NO_VNET` are 0 there and any
-  bundled `.npz` is LIVE. `SA_PNET_PATH` is likewise inert there — the bundled
-  `sa/policy_net.npz` is always what runs. Pin the config with `build_submission.py --nets
-  none|policy|value|both` (omitting an npz → `get()` returns None → fallback).
-- Per-instance knobs (added 2026-07-27) let two configs be A/B'd in one process:
-  `search:<tag>,noP,noV,w<N>` in arena specs; `SearchAgent(deck, no_pnet=,
-  no_vnet=, max_worlds=)`. The module-level `SA_*` env vars apply to BOTH sides
-  and would silently compare two identical configs.
-- Windows: use `python -X utf8` everywhere (cp1252 crashes on card names).
-- Arena/harness must run from repo root; `sys.path` needs `src/`, `agents/`, root.
-- Background bash jobs die with the session; re-launch fetches idempotently.
-- Old repo `E:\Kaggle\pokemon-tcg-simulation` = failed pure-RL attempts; don't import
-  its approach, only its replays. gitignore keeps data/replays/artifacts/dist out of git.
-- Commit style: fine-grained, one-line semantic messages + Claude co-author trailer.
+- **Every strength claim in this file dated before 2026-07-27 pm** was measured
+  through broken controls (nets silently rejected by dim guards, a compute knob
+  that could not bind, a mirror matchup compared against cross-deck runs).
+- **All n=24 numbers**, including "search+policy scores 0.33" — at n=1000 the
+  clone alone scored 0.480.
+- **The old arena→LB ladder anchored on `rule:iono` = 763.7.** Stale pool; it
+  over-predicted. Re-fit after P0.
+- **"3× compute made it worse"** — tested via `SA_SPEND_MULT`, which only grants
+  time, and time was never binding (`MAX_WORLDS` was). It measured nothing.
