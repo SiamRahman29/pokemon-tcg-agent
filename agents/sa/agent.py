@@ -11,12 +11,14 @@ from .tracker import Tracker
 
 class SearchAgent:
     def __init__(self, decklist: list[int], no_pnet: bool | None = None,
-                 no_vnet: bool | None = None, max_worlds: int | None = None):
+                 no_vnet: bool | None = None, max_worlds: int | None = None,
+                 rollout: bool = False, main_cap: float | None = None,
+                 minor_cap: float | None = None):
         self.decklist = list(decklist)
         self.tracker = Tracker()
         self.planner = Planner(decklist, no_pnet=no_pnet, no_vnet=no_vnet,
-                               max_worlds=max_worlds)
-        self.tm = TimeManager()
+                               max_worlds=max_worlds, rollout=rollout)
+        self.tm = TimeManager(main_cap=main_cap, minor_cap=minor_cap)
 
     def __call__(self, obs: dict) -> list[int]:
         try:

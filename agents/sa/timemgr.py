@@ -13,6 +13,15 @@ MAIN = 0  # SelectType
 
 
 class TimeManager:
+    def __init__(self, main_cap: float | None = None,
+                 minor_cap: float | None = None,
+                 spend_mult: float | None = None):
+        # per-instance overrides so two configs can be A/B'd in one process
+        # (the SA_* env vars are module-level and apply to both sides)
+        self.main_cap = MAIN_CAP_S if main_cap is None else main_cap
+        self.minor_cap = MINOR_CAP_S if minor_cap is None else minor_cap
+        self.spend_mult = SPEND_MULT if spend_mult is None else spend_mult
+
     def budget(self, obs: dict, n_combos: int = 4) -> float:
         rem = float(obs.get("remainingOverageTime", 600.0))
         avail = rem - RESERVE_S
@@ -21,10 +30,10 @@ class TimeManager:
         turn = obs["current"]["turn"]
         # crude forecast of remaining *searchable* decisions this game
         est_left = max(18.0, 75.0 - 2.0 * turn)
-        per = (avail / est_left) * SPEND_MULT
+        per = (avail / est_left) * self.spend_mult
         sel = obs["select"]
         # branchier decisions deserve more of the pool
         width = 0.6 + 0.08 * min(n_combos, 20)
         if sel["type"] == MAIN:
-            return max(0.05, min(per * 1.6 * width, MAIN_CAP_S))
-        return max(0.04, min(per * width, MINOR_CAP_S))
+            return max(0.05, min(per * 1.6 * width, self.main_cap))
+        return max(0.04, min(per * width, self.minor_cap))

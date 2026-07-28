@@ -82,6 +82,18 @@ def make_random_agent(deck: list[int], seed: int = 0) -> harness.Agent:
     return agent
 
 
+def _flag_num(flags: set[str], prefix: str, cast):
+    """Pull `<prefix><number>` out of a spec's flag set (e.g. `w48`, `mc12`)."""
+    for f in flags:
+        if f.startswith(prefix):
+            rest = f[len(prefix):]
+            try:
+                return cast(rest)
+            except ValueError:
+                continue
+    return None
+
+
 def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
     """Build (canonical name, agent). The name is what the archive records, so
     the same config always archives under the same identity."""
@@ -97,10 +109,10 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
     if kind == "random":
         return "random", make_random_agent(deck)
     if kind == "search":
-        # search[:tag][,noP][,noV] -- the sa determinized-search agent. `noP` /
-        # `noV` disable the policy / value net for THIS instance only, so two
-        # configs can be A/B'd head-to-head in one process (the SA_NO_* env
-        # vars are module-level and would otherwise apply to both sides).
+        # search[:tag][,noP][,noV][,w<N>][,roll][,mc<S>][,nc<S>] -- the sa
+        # determinized-search agent. Every flag applies to THIS instance only,
+        # so two configs can be A/B'd head-to-head in one process (the SA_*
+        # env vars are module-level and would otherwise apply to both sides).
         from sa.agent import SearchAgent
 
         tag = spec.split(":", 1)[1] if ":" in spec else ""
@@ -109,11 +121,16 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         no_pnet = True if "noP" in flags else None
         no_vnet = True if "noV" in flags else None
         # w<N>: determinizations per decision (the real compute knob)
-        max_worlds = next((int(f[1:]) for f in flags
-                           if f.startswith("w") and f[1:].isdigit()), None)
+        max_worlds = _flag_num(flags, "w", int)
+        # roll: rollout to terminal instead of a 1.5-turn horizon + leaf eval.
+        # mc/nc: main / minor per-decision time cap in seconds (rollouts need
+        # more than the 4.5s default, and we use 3% of the pool today).
+        rollout = "roll" in flags
         return ((f"search:{tag}" if tag else "search"),
                 SearchAgent(deck, no_pnet=no_pnet, no_vnet=no_vnet,
-                            max_worlds=max_worlds))
+                            max_worlds=max_worlds, rollout=rollout,
+                            main_cap=_flag_num(flags, "mc", float),
+                            minor_cap=_flag_num(flags, "nc", float)))
     if kind == "bc":
         # bc[:tag] -- pure behavioral-clone policy agent
         from sa.bcagent import PolicyAgent
@@ -173,6 +190,17 @@ def cmd_play(args: argparse.Namespace) -> int:
           f"W{res['wins']}/D{res['draws']}/L{res['losses']} over {res['games']} games")
     print(f"  as P0: W/D/L={res['a_as_p0_wdl']}  as P1: W/D/L={res['a_as_p1_wdl']}")
     print(f"  elapsed {dt:.1f}s; archived {len(rows)} rows -> {games_path}")
+    if "sa.planner" in sys.modules:  # search internals, summed over both sides
+        st = sys.modules["sa.planner"].STATS
+        if st["decides"]:
+            print(f"  planner: {st['decides']} decides, "
+                  f"{st['worlds'] / st['decides']:.1f} worlds/decide, "
+                  f"{100 * st['spent_s'] / max(st['budget_s'], 1e-9):.0f}% of "
+                  f"budget used, {st['spent_s']:.0f}s total")
+        if st["rollouts"]:
+            print(f"  rollouts: {st['rollouts']} "
+                  f"({100 * st['roll_terminal'] / st['rollouts']:.0f}% reached "
+                  f"terminal), {st['roll_steps'] / st['rollouts']:.0f} steps each")
     return 0
 
 

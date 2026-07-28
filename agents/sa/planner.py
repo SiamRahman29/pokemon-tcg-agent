@@ -27,6 +27,8 @@ ROOT_CAP = 24        # max candidate combos at the root select
 ROOT_POLICY_KEEP = 10  # root candidates kept when the policy net prunes
 PLAYOUT_CAP = 8      # max candidates per playout decision
 MAX_PLAYOUT_STEPS = 160
+ROLLOUT_STEPS = 900  # step cap when rolling out all the way to terminal
+TANH_SCALE = 6.0     # prize-units -> [-1,1], so truncations mix with results
 MAX_WORLDS = int(__import__("os").environ.get("SA_MAX_WORLDS", "12"))
 
 DEBUG = bool(int(__import__("os").environ.get("SA_DEBUG", "0")))
@@ -34,7 +36,11 @@ NO_VNET = bool(int(__import__("os").environ.get("SA_NO_VNET", "0")))
 NO_PNET = bool(int(__import__("os").environ.get("SA_NO_PNET", "0")))
 
 STATS = {"decides": 0, "worlds": 0, "begin_fail": 0, "step_fail": 0,
-         "playout_steps": 0, "budget_s": 0.0, "spent_s": 0.0}
+         "playout_steps": 0, "budget_s": 0.0, "spent_s": 0.0,
+         # rollout mode: how often we actually reached a terminal state. A
+         # truncated rollout falls back to the heuristic leaf, i.e. it measures
+         # the thing rollouts are supposed to replace -- watch this number.
+         "rollouts": 0, "roll_terminal": 0, "roll_trunc": 0, "roll_steps": 0}
 
 
 def candidate_combos(sel: dict, cap: int, rng: random.Random | None = None) \
@@ -72,7 +78,8 @@ def candidate_combos(sel: dict, cap: int, rng: random.Random | None = None) \
 
 class Planner:
     def __init__(self, decklist: list[int], no_pnet: bool | None = None,
-                 no_vnet: bool | None = None, max_worlds: int | None = None):
+                 no_vnet: bool | None = None, max_worlds: int | None = None,
+                 rollout: bool = False):
         self.decklist = list(decklist)
         self.rng = random.Random(0xC0FFEE)
         # per-instance knobs; default to the process-wide env flags so two
@@ -82,21 +89,28 @@ class Planner:
         # the world cap binds on every decision well before the time budget
         # does, so this -- not SA_SPEND_MULT -- is the real compute knob
         self.max_worlds = MAX_WORLDS if max_worlds is None else max_worlds
+        # rollout: play the policy to game end and score the real result,
+        # instead of stopping after 1.5 turns and trusting the leaf evaluator
+        self.rollout = rollout
 
     # ---- greedy playout ------------------------------------------------------
 
     def _playout(self, sid: int, obs: dict, me: int, deadline: float) -> float:
         """Greedy continuation: rest of our turn, the opponent's whole turn
-        (played greedily against us), stopping at our next main select."""
+        (played greedily against us), stopping at our next main select.
+
+        In rollout mode there is no horizon: both sides keep playing to a
+        terminal state and the leaf is the real result."""
         steps = 0
         opp_turn_seen = False
-        while steps < MAX_PLAYOUT_STEPS:
+        step_cap = ROLLOUT_STEPS if self.rollout else MAX_PLAYOUT_STEPS
+        while steps < step_cap:
             state = obs.get("current")
             sel = obs.get("select")
             if state is None or sel is None or state["result"] != -1:
                 break
             acting = state["yourIndex"]
-            if sel["type"] == MAIN:
+            if sel["type"] == MAIN and not self.rollout:
                 if acting != me:
                     opp_turn_seen = True
                 elif opp_turn_seen:
@@ -139,7 +153,26 @@ class Planner:
             if best is None:
                 break
             sid, obs = best
+        if self.rollout:
+            STATS["roll_steps"] += steps
+            return self._rollout_value(obs, me)
         return self._leaf_value(obs, me)
+
+    def _rollout_value(self, obs: dict, me: int) -> float:
+        """Real game result in [-1, 1]. A rollout that ran out of budget or
+        steps falls back to a squashed heuristic on the SAME scale, so
+        terminated and truncated rollouts can be averaged together."""
+        STATS["rollouts"] += 1
+        cur = obs.get("current")
+        if cur is None:
+            STATS["roll_trunc"] += 1
+            return 0.0
+        res = cur["result"]
+        if res != -1:
+            STATS["roll_terminal"] += 1
+            return 0.0 if res == 2 else (1.0 if res == me else -1.0)
+        STATS["roll_trunc"] += 1
+        return math.tanh(evaluate(cur, me) / TANH_SCALE)
 
     def _leaf_value(self, obs: dict, me: int) -> float:
         cur = obs.get("current")
