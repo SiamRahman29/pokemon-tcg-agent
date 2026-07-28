@@ -502,10 +502,19 @@ of accuracy, these are the live options, best first:
    resolves the single biggest open question in this file: whether 697.9 is
    above or below the real bar. The 763.7 we keep comparing to is a frozen
    07-13 number from a smaller pool. Do this before any strategy decision.
-2. **Keep feeding the clone.** It is the only axis that has produced a shipped,
-   measured gain (v2, +2.4pp at n=2000). `d17/d18/d19` shards are built and
-   `policy_lw3` is training on ~4,000 games. Then `--winners-only`, then more
-   days (top-800/day deepening, 07-16 and earlier).
+2. **Keep feeding the clone — this is the reliable axis.** Corpus size has moved
+   val top-1 every single time (2,410 → 2,810 → 4,010 games gave 0.6596 →
+   0.6755 → **0.6933**), more than the loss function and depth put together.
+   Three concrete sources of more data, in order of cost:
+   - **Deepen existing days.** Each daily manifest holds ~4,400–4,800 episodes
+     and we take only the top 400 (cutoff avg_score ~1174–1205). Going to
+     top-800 roughly doubles the corpus and the marginal games are still
+     ~1100+ rated. `fetch_top_episodes.py --max 800` is idempotent — it fetches
+     only the difference.
+   - **Backfill the short days.** `2026-07-23` has 175 replays and `07-25` has
+     268, vs 400 elsewhere — those fetches were incomplete. Re-run them.
+   - **More days.** 07-13..07-16 are downloading now; earlier days exist too.
+   Then `--winners-only` (we currently imitate the losing side's moves too).
 3. **Fix the abomasnow hole** (0.360 vs 0.475–0.519 everywhere else). The ladder
    over-predicted our LB rating in a way consistent with exactly this kind of
    matchup hole, so this may be worth more LB points than its 0.36 suggests.
