@@ -160,12 +160,18 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
 
         tag = spec.split(":", 1)[1] if ":" in spec else ""
         net_path = None
+        chip = True
         for f in tag.split(",")[1:]:
-            if f.strip().startswith("net="):
-                net_path = f.strip()[4:]
+            f = f.strip()
+            if f.startswith("net="):
+                net_path = f[4:]
+            elif f == "noChip":
+                # disable the chip-damage targeting override (sa/targeting.py)
+                chip = False
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
-        return (f"bc:{tag}" if tag else "bc"), PolicyAgent(deck, net_path)
+        return ((f"bc:{tag}" if tag else "bc"),
+                PolicyAgent(deck, net_path, chip_targeting=chip))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

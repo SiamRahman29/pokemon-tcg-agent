@@ -56,6 +56,19 @@ IMPIDIMP = 646
 MORGREM = 647
 GRIMMSNARL_EX = 648
 FROSLASS = 104
+BOSS_ORDERS = 1182       # switch in an opponent's benched Pokemon
+SPIKEMUTH_GYM = 1259     # stadium: tutor a Marnie's Pokemon each turn
+TOOL_SCRAPPER = 1137     # discard up to 2 tools
+PETREL = 1219            # tutor ANY trainer -- effectively extra Boss's Orders
+
+# cards whose bare PLAY rate we want, card id -> audit name
+PLAY_CARDS = {
+    BOSS_ORDERS: "boss_orders_play",
+    SPIKEMUTH_GYM: "spikemuth_gym_play",
+    TOOL_SCRAPPER: "tool_scrapper_play",
+    PETREL: "petrel_play",
+    RARE_CANDY: "rare_candy_play",
+}
 # Crustle's Mysterious Rock Inn prevents all attack damage from ex Pokemon.
 IMMUNE_TO_EX = {345}
 
@@ -96,8 +109,8 @@ def classify(obs, option) -> str | None:
 
     if option.type == OptionType.PLAY:
         card = _card(obs, AreaType.HAND, option.index, me)
-        if card is not None and _cid(card) == RARE_CANDY:
-            return "rare_candy_play"
+        if card is not None and _cid(card) in PLAY_CARDS:
+            return PLAY_CARDS[_cid(card)]
 
     if option.type == OptionType.ABILITY:
         card = _card(obs, option.area, option.index, me)
@@ -126,8 +139,42 @@ def classify(obs, option) -> str | None:
     return None
 
 
+# Contexts where we point an effect at one of the opponent's Pokemon:
+# Shadow Bullet's 30-damage bench snipe, Adrena-Brain's counter move, and
+# Boss's Orders' drag. "Finish the cheap one" should show up here as a bias
+# toward the lowest-HP option.
+TARGET_CONTEXTS = {
+    int(SelectContext.DAMAGE): "damage_target",              # Shadow Bullet
+    int(SelectContext.DAMAGE_COUNTER): "counter_target",     # Adrena-Brain
+    int(SelectContext.DAMAGE_COUNTER_ANY): "counter_target",
+    int(SelectContext.TO_ACTIVE): "drag_target",             # Boss's Orders
+}
+
+
+def target_choice(obs, picked: list) -> tuple[str, bool] | None:
+    """(kind, chose_lowest_hp) when a select points at >=2 opponent Pokemon."""
+    kind = TARGET_CONTEXTS.get(int(obs.select.context))
+    if kind is None:
+        return None
+    me = obs.current.yourIndex
+    hps: dict[int, int] = {}
+    for i, option in enumerate(obs.select.option):
+        if option.playerIndex == me:
+            continue
+        card = _card(obs, option.area, option.index, option.playerIndex)
+        if isinstance(card, Pokemon):
+            hps[i] = card.hp
+    if len(hps) < 2:
+        return None
+    chosen = [i for i in list(picked)[:1] if i in hps]
+    if not chosen:
+        return None
+    return kind, hps[chosen[0]] == min(hps.values())
+
+
 def wrap(agent, avail: Counter, taken: Counter, turn_avail: dict,
-         turn_taken: dict, game: list):
+         turn_taken: dict, game: list, tgt_n: Counter = None,
+         tgt_low: Counter = None):
     """Count tracked opportunities offered to, and used by, `agent`."""
 
     def wrapped(obs_dict):
@@ -136,7 +183,14 @@ def wrap(agent, avail: Counter, taken: Counter, turn_avail: dict,
             if obs_dict.get("select") is None:
                 return picked
             obs = to_observation_class(obs_dict)
-            if obs.select is None or obs.select.context != SelectContext.MAIN:
+            if obs.select is None:
+                return picked
+            if tgt_n is not None:
+                hit = target_choice(obs, picked)
+                if hit is not None:
+                    tgt_n[hit[0]] += 1
+                    tgt_low[hit[0]] += hit[1]
+            if obs.select.context != SelectContext.MAIN:
                 return picked
             kinds: dict[str, list[int]] = {}
             for i, option in enumerate(obs.select.option):
@@ -167,10 +221,10 @@ OPT_PLAY, OPT_ATTACH, OPT_EVOLVE, OPT_ABILITY = 7, 8, 9, 10
 
 # name -> (option type, card id, target card id or None)
 CORPUS_RULES = {
-    "rare_candy_play": (OPT_PLAY, RARE_CANDY, None),
     "munkidori_adrena_brain": (OPT_ABILITY, MUNKIDORI, None),
     "dark_energy_to_munkidori": (OPT_ATTACH, DARK_ENERGY, MUNKIDORI),
     "evolve_impidimp_to_morgrem": (OPT_EVOLVE, MORGREM, IMPIDIMP),
+    **{name: (OPT_PLAY, cid, None) for cid, name in PLAY_CARDS.items()},
 }
 
 
@@ -263,7 +317,10 @@ def main() -> int:
     turn_avail: dict = {}
     turn_taken: dict = {}
     game = [0]
-    audited = wrap(agent_a, avail, taken, turn_avail, turn_taken, game)
+    tgt_n: Counter = Counter()
+    tgt_low: Counter = Counter()
+    audited = wrap(agent_a, avail, taken, turn_avail, turn_taken, game,
+                   tgt_n, tgt_low)
 
     wins = 0
     for m in range(args.matches):
@@ -279,6 +336,14 @@ def main() -> int:
     print(f"\n{name_a} [{args.deck}] vs {name_b} [{args.deck_b}], "
           f"{args.matches} games  (won {wins})\n")
     _table(avail, taken, turn_avail, turn_taken)
+    if tgt_n:
+        print(f"\n{'target choice (>=2 opp Pokemon)':<32}{'selects':>9}"
+              f"{'chose lowest HP':>18}")
+        for kind in sorted(tgt_n, key=lambda k: -tgt_n[k]):
+            n = tgt_n[kind]
+            print(f"{kind:<32}{n:>9}{tgt_low[kind] / n:>18.1%}")
+        print("  (chance is ~1/k for k candidates; low here means we are not "
+              "finishing the cheap target)")
     return 0
 
 
