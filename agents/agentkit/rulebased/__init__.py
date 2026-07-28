@@ -20,8 +20,10 @@ DECK_MODULE = {
     "abomasnow": "mega_abomasnow_ex",
     "lucario": "mega_lucario_ex",
     # the public LB 950+ baseline (scripts/import_v10_agent.py) -- the only
-    # opponent we have that is measured well above the sample agents
+    # opponent we have that is measured well above the sample agents.
+    # `v10x` is the same agent with its unreachable MCTS made reachable.
     "v10": "lucario_v10",
+    "v10x": "lucario_v10",
 }
 
 

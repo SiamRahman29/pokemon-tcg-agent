@@ -112,8 +112,11 @@ python -X utf8 scripts/arena.py play bc "rule:v10,noS" `
 ```
 
 Flags: `noS` disables its MCTS, `tb<sec>` sets its per-decision wall-clock
-budget (default 1.5). **Use `noS` for any comparison run under varying load**
-(rule 6). `rule:v10,noS` costs ~0.15 s/game — as cheap as the clone.
+budget (default 1.5). In practice the flags do nothing, because the MCTS never
+runs (§5) — `rule:v10` and `rule:v10,noS` are the same agent, and both cost
+~0.15 s/game, as cheap as the clone. Keep passing `noS` anyway so the archived
+agent name records the intent. `rule:v10x` is the variant with the search made
+reachable (it still falls back to the policy; see §5).
 
 `agentkit.rulebased.make_rule_agent(name, deck, overrides)` pokes module globals
 after exec, so two configs of the same agent stay independent in one process.
@@ -171,7 +174,7 @@ can pilot — nothing about which deck is strong.** Re-rank against `rule:v10`.
 
 ---
 
-## 5. Search: our version is settled negative, but the field's version is not
+## 5. Search: settled negative here AND in the field
 
 **Ours:** `search:M,noV,roll,mo,mc20,pb0.15` vs `bc` = 0.323 [0.186, 0.499],
 n=31. Measured cause: **the search overrules the clone on 52% of anchored
@@ -180,27 +183,39 @@ has SE ≈ 0.14; the max over ~9 rivals sits ~0.21–0.28 above its true value b
 chance. Also negative: more determinizations (48 vs 12: 0.479, n=48) and the
 value net (0.396, n=24). **Do not re-tune this.**
 
-**But V10 does search, and it is at 950.** The difference is the leaf evaluator,
-exactly as §4 of the old handoff predicted — except the fix is not a learned
-value net. V10:
+**V10 appears to do a smarter search — a shallow MCTS with a dense handcrafted
+`evaluate_state` at a 1-turn horizon, which is exactly the low-variance leaf
+evaluator our search lacks. It has never once executed.** Two independent bugs,
+both verified by instrumenting the agent (`sim_calls` counters):
 
-- rolls out **only to the end of the current turn** (`rollout_turn`, ≤20 steps),
-  not to terminal;
-- scores the leaf with a **dense handcrafted `evaluate_state`** — continuous, so
-  no 0/1 variance;
-- searches **only MAIN decisions**, ~8 candidates, UCB1, 1.5 s each;
-- uses one determinization per simulation (`random.sample(my_deck, deckCount)`).
+1. **The candidate set is always a single element.** `SEARCH_ALGO` builds it
+   from `AdvancedPolicy.choose()`, which truncates to `select.maxCount` — and
+   *every* MAIN select in this game has `maxCount == 1` (measured: 70/70 MAIN
+   selects over 3 games, 2–27 options each, all maxCount 1). So `SEARCH_ALGO`
+   takes its `len(candidates) == 1` early return every time and
+   `simulate_action` is never called.
+2. **Its `search_begin` call does not typecheck.** V10 calls
+   `search_begin(obs, your_deck=yd)`; the SDK signature is
+   `search_begin(obs, your_deck, your_prize, opponent_deck, opponent_prize,
+   opponent_hand, opponent_active, manual_coin=False)`. It raises `TypeError`,
+   which `SEARCH_ALGO`'s bare `except Exception: return None` swallows.
 
-We already own every piece of this: `evalfn.py` + `textdmg.py` are a handcrafted
-eval and expected-damage model, and `planner.py` has a non-`roll` shallow mode.
-The old conclusion "the only unlock is self-play RL" was wrong — **the unlock is
-a dense handcrafted leaf eval at a 1-turn horizon.**
+`rule:v10x` (same importer) fixes bug 1 so the search is reachable; bug 2 then
+raises on every simulation, so it still falls back to the policy. Confirming
+A/B, both ways: `rule:v10,tb0.2` vs `rule:v10,noS` = 0.492 [0.424, 0.561],
+n=200, **11.8 s for 200 games** — the timing alone proves nothing ran.
 
-Running now: `rule:v10,tb0.2` vs `rule:v10,noS` (n=100 matches, same process,
-`out/v10_search_ab.log`). **This is the decisive experiment** — it isolates
-whether V10's MCTS is worth anything over its own policy. If yes, shallow search
-with a dense eval is a live lever for us; if no, V10's 950 is all policy and we
-should ignore search entirely.
+**Therefore V10's LB 950+ is 100% handcrafted policy.** Nothing in this
+competition has yet demonstrated that search is worth anything: ours measured
+negative, and the field's best public example never ran. Treat search as
+unproven, not promising.
+
+The open question (not a blocker, and no longer the priority): fixing bug 2 is
+easy for us — `agents/sa/worlds.py`'s `World` is *precisely* the `search_begin`
+argument bundle, so `simulate_action` just needs a determinization from
+`worlds.py` instead of `random.sample(my_deck, deckCount)`. That would give the
+first real measurement of shallow-search-with-dense-eval in this game. Do it
+only after P2 has a policy worth searching over.
 
 ---
 
@@ -273,13 +288,12 @@ strongest work is hand-written domain logic. **Stop trying to learn the policy
 and start writing it**, using the clone as a fallback for the decisions the
 rules do not cover.
 
-### P0 — Read `out/v10_search_ab.log` (running, blocking, free)
+### P0 — DONE. Search is out (§5)
 
-`rule:v10,tb0.2` vs `rule:v10,noS`, n=100 matches, same process. If search wins,
-§5 is a live lever and P2 gets much more valuable. If it does not, V10's 950 is
-pure policy and we drop search for good. Note tb0.2 is 7.5x below its shipped
-1.5 s; a null result at 0.2 s is weak evidence, so re-run at tb1.0 if it is
-close.
+V10's MCTS never executes. Its 950 is pure handcrafted policy, so there is no
+evidence anywhere that search helps in this game. All remaining effort goes into
+the policy. (One loose end: `55049206`'s LB score is still moving — take one
+more reading tomorrow to close the §1 table, then its slot is free.)
 
 ### P1 — Re-rank the decks against `rule:v10` (cheap, unblocks everything)
 
@@ -291,11 +305,15 @@ a weak deck before investing in the pilot. Cost: ~7 decks × 400 games × 0.3 s
 
 ### P2 — Write a real agent for one deck (the actual path up)
 
-This is where the leaderboard is. Pick the deck P1 endorses and write V10-style
-logic for it: explicit attack planning (attacker/target/attack index with
-weakness and prize arithmetic), per-option scoring, and matchup branches for the
-archetypes that beat us. Then, if P0 says so, a shallow MCTS over the top-k
-candidates with a dense leaf eval at a 1-turn horizon.
+This is where the leaderboard is, and after P0 it is the *only* thing on the
+list that moves us. Pick the deck P1 endorses and write V10-style logic for it:
+explicit attack planning (attacker/target/attack index with weakness and prize
+arithmetic), per-option scoring, and matchup branches for the archetypes that
+beat us. No search — §5.
+
+**The bar to clear is 0.5 against `rule:v10,noS` in a near-mirror.** V10 is
+~350 lines of readable scoring rules and it is worth ~950; that is the shape of
+the thing to write, and it is a tractable amount of code.
 
 Two concrete accelerants:
 - **`rule:v10` is a working, readable template** for exactly this, and it is
@@ -371,8 +389,9 @@ finishes P0; after that its slot is free.
   predicted through that anchor is meaningless.
 - **The deck sweep's ranking** (§4) — measured deck-vs-iono matchup, not strength.
 - **"The clone is comfortably above the rule baseline."** P0 says parity.
-- **"The only unlock for search is a learned on-distribution value net."** V10
-  gets there with a handcrafted one (§5).
+- **"The only unlock for search is a learned on-distribution value net."** And
+  its successor, "V10 proves a handcrafted leaf eval works." V10's search has
+  never executed (§5). Search is unproven in this competition, full stop.
 - **All n=24 numbers**, and every strength claim dated before 2026-07-27 pm.
 - **"3× compute made it worse"** — tested via `SA_SPEND_MULT`, which only grants
   time, and time was never binding. It measured nothing.

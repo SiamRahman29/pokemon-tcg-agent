@@ -9,8 +9,20 @@ It is imported the same way as `import_rule_agents.py` does the samples: the
 `%%writefile main.py` cell verbatim, except the deck.csv round-trip is replaced
 with `my_deck = list(MY_DECK)` so the arena can inject the dealt deck.
 
-  agents/agentkit/rulebased/sources/v10.py   the agent body
+  agents/agentkit/rulebased/sources/v10.py   the agent body, verbatim
+  agents/agentkit/rulebased/sources/v10x.py  + the candidate-set bug fixed
   decks/lucario_v10.py                       its exact 60 cards
+
+**V10's MCTS is dead code.** `SEARCH_ALGO` builds its candidate set from
+`AdvancedPolicy.choose()`, which truncates to `select.maxCount` -- and every
+MAIN select in this game has `maxCount == 1` (measured over 3 games: 70/70 MAIN
+selects, 2..27 options, all maxCount 1). So `candidates` is always a 1-element
+list, `SEARCH_ALGO` takes its `len(candidates) == 1` early return, and
+`simulate_action` is never called once. Its LB 950+ is pure handcrafted policy.
+
+`v10x` is the same agent with the candidate set taken from the *untruncated*
+ranking, which is plainly what was intended. It is the only way to find out what
+that search is worth -- keep `v10` verbatim as the control.
 
 Its deck is *not* `decks/mega_lucario_ex.py` -- V10 retuned the list (4 Riolu,
 3 Boss's Orders, 14 energy, 2 Poke Pad against the sample's 3/2/13/4). It
@@ -29,7 +41,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NB = ROOT / "notebooks" / "strong-start-baseline-agent-v10-lb-950.ipynb"
 SRC = ROOT / "agents" / "agentkit" / "rulebased" / "sources" / "v10.py"
+SRC_FIXED = ROOT / "agents" / "agentkit" / "rulebased" / "sources" / "v10x.py"
 DECK = ROOT / "decks" / "lucario_v10.py"
+
+# The one line that makes the search reachable, plus the method it needs.
+CANDIDATE_LINE = "    base_order = AdvancedPolicy(obs).choose()\n"
+CANDIDATE_FIX = "    base_order = AdvancedPolicy(obs).rank_all()\n"
+RANK_ALL = '''
+
+# ---- added by scripts/import_v10_agent.py (not in the notebook) ----
+def _rank_all(self) -> list[int]:
+    """`choose()` without the `[: maxCount]` truncation.
+
+    Every MAIN select has maxCount == 1, so feeding `choose()` into
+    SEARCH_ALGO's candidate set leaves exactly one candidate and the search
+    short-circuits. This returns the full ranking so there is something to
+    search over."""
+    if not self.select.option or self.select.maxCount == 0:
+        return []
+    if self.context == SelectContext.MAIN:
+        self._plan_attack()
+    scores = [self._score_option(option) for option in self.select.option]
+    ranked = [i for i, _ in sorted(enumerate(scores),
+                                   key=lambda item: item[1], reverse=True)]
+    self._remember_lunatone_ability(ranked)
+    return ranked
+
+
+AdvancedPolicy.rank_all = _rank_all
+'''
 
 # The notebook writes deck.csv from a literal DECK list, then reads it back.
 # Replace the whole round-trip with the arena's injection point.
@@ -120,9 +160,17 @@ def main() -> int:
     if "deck.csv" in body:
         raise SystemExit("a deck.csv reference survived the rewrite")
 
+    if body.count(CANDIDATE_LINE) != 1:
+        raise SystemExit("SEARCH_ALGO's candidate line moved; re-check the fix")
+    # `AdvancedPolicy.rank_all = ...` runs at exec time, before any agent()
+    # call, so appending it at the end of the module is enough.
+    fixed = body.replace(CANDIDATE_LINE, CANDIDATE_FIX) + RANK_ALL
+
     SRC.write_text(body, encoding="utf-8")
+    SRC_FIXED.write_text(fixed, encoding="utf-8")
     DECK.write_text(_emit_deck(cards), encoding="utf-8")
     print(f"wrote {SRC.relative_to(ROOT)} ({len(body)} bytes)")
+    print(f"wrote {SRC_FIXED.relative_to(ROOT)} (search reachable)")
     print(f"wrote {DECK.relative_to(ROOT)} ({len(set(cards))} unique cards)")
     return 0
 
