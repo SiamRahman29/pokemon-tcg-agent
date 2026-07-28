@@ -262,6 +262,9 @@ python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
 python -X utf8 scripts/opportunity_audit.py --matches 100
 python -X utf8 scripts/opportunity_audit.py --corpus artifacts/pds_v2
 
+# Where is the net weak, per select context? (finds P2c-style feature blindness)
+python -X utf8 scripts/context_accuracy.py
+
 # Import public notebook agents
 python -X utf8 scripts/import_v10_agent.py     # rule:v10 + decks/lucario_v10
 python -X utf8 scripts/import_rule_agents.py   # the four sample agents
@@ -462,6 +465,51 @@ Standing lesson: the deck was mined as an exact 60 seen 290x in one day's top
 episodes. Deviating from it needs evidence, and the clone is trained on that
 exact list, so any variant is off-distribution for the net too.
 
+### P2e — The systematic hunt for more P2c-style wins
+
+`scripts/context_accuracy.py` scores the shipped net over the held-out
+demonstrator split and breaks top-1 down by SelectContext, against the accuracy
+a uniform random pick would get. This is the instrument for finding the next
+"the features cannot express the answer" bug.
+
+| context | rows | top1 | random | lift | errors |
+|---|---|---|---|---|---|
+| MAIN | 10,863 | 63.8% | 16.2% | +47.6% | **3,930** |
+| TO_HAND | 2,711 | 55.3% | 24.1% | +31.2% | **1,213** |
+| DAMAGE_COUNTER | 618 | 56.5% | 21.1% | +35.4% | 269 |
+| REMOVE_DAMAGE_COUNTER | 421 | 55.8% | 40.0% | **+15.8%** | 186 |
+| SWITCH | 474 | 66.5% | 25.9% | +40.6% | 159 |
+| ATTACH_FROM | 654 | 76.3% | 37.6% | +38.7% | 155 |
+| DAMAGE | 378 | 64.0% | 26.6% | +37.5% | 136 |
+| TO_ACTIVE | 620 | 79.2% | 26.3% | +52.9% | 129 |
+| ACTIVATE | 690 | 95.1% | 50.0% | +45.1% | 34 |
+
+18,924 single-choice rows, 6,424 misses (33.9%). Useful validation: it
+independently flags `DAMAGE_COUNTER` and `DAMAGE` — exactly the two contexts
+P2c fixed — before we knew to look there.
+
+**Two hypotheses tested and closed negative.** Both were cheap, and both would
+have been plausible rules to write blind:
+
+1. **TO_HAND duplicate-avoidance.** V10 scores deck searches with
+   `200 - hand_counts[card.id] * 100`, so "don't fetch what you already hold"
+   looked like the missing rule behind TO_HAND's 1,213 errors. Measured, on
+   rows where a non-duplicate was available: demonstrators fetch a duplicate
+   **5.8%** of the time (n=57,053) and our clone fetches one **5.8%** of the
+   time (n=482). Already correct. TO_HAND's weakness is *which* card to fetch —
+   real judgment, not a blind spot.
+2. **REMOVE_DAMAGE_COUNTER** (Adrena-Brain's "from 1 of YOUR Pokemon" source
+   pick, which `targeting.py` deliberately leaves to the net) has the lowest
+   lift on the board, which looked like the same HP-blindness as P2c. But the
+   demonstrators are not consistent either: they pick the Active 33.6% and a
+   max-prize Pokemon 60.6% of the time over ~2.8 options (n=9,911). **A low
+   lift can mean a noisy label, not a blind feature** — do not write a rule
+   here on a guess.
+
+**Where that leaves the search for more wins: MAIN is 3,930 of the 6,424
+misses.** There is no more low-hanging fruit in the small contexts. MAIN is
+what P2 is for, and it is the 350 lines V10 spends its 950 on.
+
 ### P3 — The abomasnow hole (still open, still cheap)
 
 0.360 vs 0.418–0.519 elsewhere, and our selects/turn collapse from 12.5–16.6 to
@@ -481,8 +529,14 @@ into P2 as a matchup branch rather than fixing it in the net.
 
 5 slots/day, **latest 2 active**. Submit only what has won head-to-head at
 n≥500 against `rule:v10,noS`. Always `--nets` pin the config.
-`55049206` (live `rule:iono`) is still converging — one more reading tomorrow
-finishes P0; after that its slot is free.
+
+**There is an unsubmitted, measured improvement sitting in `dist/`.** The P2c
+targeting build passes that bar (0.537 [0.506, 0.568], n=1000) and is built and
+smoke-tested. The user chose on 2026-07-28 to **hold it and keep improving
+locally** rather than spend a slot, so the two active submissions are still
+`55049206` (live `rule:iono`) and `55048039` (clone v2, pre-targeting). Rebuild
+before submitting rather than trusting the old tarball, and take one more
+`55049206` reading first — it closes P0 for free while the slot is still alive.
 
 ---
 
