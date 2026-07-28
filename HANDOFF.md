@@ -1,9 +1,13 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** win the public LB. Top is now **1179.6** (`flg`); we are at ~750.
+**Mission:** win the public LB. Top is now **1179.6** (`flg`). Our *submitted*
+agent reads ~750; our *local* agent is +54 Elo better than that and has never
+been submitted (§8, submission discipline).
 Deadline **2026-08-16**, then ~2 weeks of continued play. Kaggle CLI is
 authenticated and the user has entered. **This file must always end with a live
 plan, never a summary.**
+
+**Start here:** §1 for state, §2 before trusting any number, §8 for what to do.
 
 ---
 
@@ -26,15 +30,21 @@ qualitative answer is stable and it is the *opposite* of day 2's hypothesis:
 the old `rule:iono` = 763.7 was **not** an inflated stale number, and two days
 of behavioural cloning have produced an agent level with a sample rule agent.
 
-**The field answer: a public notebook beats us, and it is not close.**
+**The field answer: a public notebook beat us — then one bug fix reversed it.**
 `romanrozen/strong-start-baseline-agent-v10-lb-950` is a copy-pasteable public
-agent measured at **LB 950+**. It is now imported as `rule:v10` (§3).
+agent measured at **LB 950+**. It is now imported as `rule:v10` (§3) and is the
+only real yardstick we have.
 
-> **`bc` vs `rule:v10,noS`: 0.418 [0.388, 0.449], n=1000.**
-> We lose to a public baseline — with its search *switched off*.
+> **`bc` vs `rule:v10,noS`: 0.418 [0.388, 0.449] → 0.537 [0.506, 0.568], n=1000.**
 
-So the ~430-point gap to #1 is not a compute gap and not an "RL would fix it"
-gap. We are below freely available work.
+The 0.418 was the state after two days of behavioural cloning: below freely
+available work. The 0.537 is after the P2c targeting fix (+54 Elo), which is
+**measured and committed but deliberately not submitted** — so the LB still
+shows the old agent. That fix is the single most important thing in this file:
+it came from a *missing feature*, not more training, and its lesson drives §8.
+
+The ~430-point gap to #1 was never a compute gap and never an "RL would fix it"
+gap.
 
 ### What the top of the board is actually doing
 
@@ -163,6 +173,10 @@ can pilot — nothing about which deck is strong.** Re-rank against `rule:v10`.
 
 ### Clone vs the field (grimmsnarl, seat-swapped)
 
+`bc` now means net + `targeting.py` (§P2c). The net itself is unchanged since
+`policy_lw2`; only the `rule:v10,noS` row has been re-measured since the fix, so
+the other rows are pre-fix and understate current strength.
+
 | opponent | score | n |
 |---|---|---|
 | `rule:dragapult` | 0.519 [0.470, 0.567] | 400 |
@@ -222,7 +236,12 @@ only after P2 has a policy worth searching over.
 
 ## 6. Code map (`agents/sa/`)
 
-- `bcagent.py` — **`PolicyAgent`, what we ship.** `net_path` pins a specific npz.
+- `bcagent.py` — **`PolicyAgent`, what we ship.** `net_path` pins a specific
+  npz; `chip_targeting` toggles the override below (`bc:noChip` in the arena).
+- `targeting.py` — **the +54 Elo rule (§P2c).** Overrides the DAMAGE /
+  DAMAGE_COUNTER / DAMAGE_COUNTER_ANY selects, which the net cannot answer
+  because `optfeat` gives it no HP. Fires only when every option is an opponent
+  Pokemon. Any further "the features cannot express this" fix belongs here.
 - `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
   (stale net → `None` → fallback, never remove it).
 - `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
@@ -251,6 +270,13 @@ python -X utf8 scripts/arena.py play "bc:new,net=out/policy_X.npz" bc `
 # Against the real bar
 python -X utf8 scripts/arena.py play bc "rule:v10,noS" `
     --deck-a grimmsnarl --deck-b lucario_v10 --matches 500
+
+# A/B a rule override against the pure clone (this is how P2c was measured)
+python -X utf8 scripts/arena.py play bc "bc:old,noChip" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000
+
+# Which deck can the clone pilot? (defaults to rule:v10,noS; no args needed)
+powershell -File scripts/deck_sweep.ps1
 
 python -X utf8 scripts/tally.py "<agent-name>" "out/arena/foo_*.jsonl"
 
@@ -290,11 +316,26 @@ python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=Kaggl
 
 ## 8. THE PLAN (day 4)
 
-The strategy changed today. Two days of imitation learning produced an agent at
-parity with a sample rule agent, ~200 below a public notebook. The field's
-strongest work is hand-written domain logic. **Stop trying to learn the policy
-and start writing it**, using the clone as a fallback for the decisions the
-rules do not cover.
+The strategy changed on day 3. Two days of imitation learning produced an agent
+at parity with a sample rule agent; one missing-feature fix then beat the
+public LB-950 baseline. The field's strongest work is hand-written domain
+logic. **Stop trying to learn the policy and start writing it**, using the clone
+as a fallback for the decisions the rules do not cover.
+
+**Do next, in order** — everything else in this section is a finding, kept
+because it says what has already been ruled out:
+
+| | item | state | cost |
+|---|---|---|---|
+| 1 | Read `55049206` once more, then **submit the P2c build** | free, unblocks LB feedback | minutes |
+| 2 | **P1** — re-rank decks against `rule:v10` | not started | ~20 min |
+| 3 | **P2** — write MAIN-decision rules for the chosen deck | not started, *this is the job* | days |
+| 4 | **P3** — abomasnow / Crustle lockdowns | not started, fold into P2 | hours |
+
+Findings, do not redo: **P0** (search is out), **P2b** (the three replay lines
+are already played at demonstrator rates), **P2c** (the +54 Elo fix, done),
+**P2d** (decklist change is not the lever), **P2e** (two more feature-blindness
+hypotheses, both negative).
 
 ### P0 — DONE. Search is out (§5)
 
@@ -305,11 +346,16 @@ more reading tomorrow to close the §1 table, then its slot is free.)
 
 ### P1 — Re-rank the decks against `rule:v10` (cheap, unblocks everything)
 
-The deck sweep is invalid (§4). Re-run `scripts/deck_sweep.ps1` with
-`rule:v10,noS` as the opponent instead of `rule:iono`, n≥400 each. Grimmsnarl
-may well still win *for our clone*, but we need to know whether we are piloting
-a weak deck before investing in the pilot. Cost: ~7 decks × 400 games × 0.3 s
-≈ 15 min.
+The deck sweep is invalid (§4). `scripts/deck_sweep.ps1` now defaults to
+`rule:v10,noS` / `lucario_v10` and covers all 7 decks, so just run it with no
+arguments (see the gotcha about PowerShell array params). Grimmsnarl may well
+still win *for our clone*, but we need to know whether we are piloting a weak
+deck before investing in the pilot. Cost: 7 decks × 400 games × ~0.3 s ≈ 20 min.
+
+Read the result with rule 8 in hand: it still ranks decks by *our clone's*
+ability to pilot them against one opponent. That is the right question for
+"what should P2 be written for", and the wrong question for "which deck is
+strongest".
 
 ### P2 — Write a real agent for one deck (the actual path up)
 
@@ -401,7 +447,7 @@ wall". Then re-run the audit against it.
 Extending the audit is a table edit: add a card-id rule to `classify()` and to
 `CORPUS_RULES`. Any future "it misplayed X" observation should land there first.
 
-### P2c — SHIPPED FIX: aim chip damage (the first big win in days)
+### P2c — DONE, MEASURED, NOT SUBMITTED: aim chip damage (+54 Elo)
 
 Second round of replay-watching (user): *"we prioritise attacking stronger
 Pokemon when we should knock out easier ones to take prizes sooner."* That is
@@ -428,8 +474,10 @@ when *every* option resolves to an opponent Pokemon, leaving mixed selects
 
 That is +54 Elo, the largest single gain measured in this project (clone v2 over
 v1 was 0.524), and **it flips us from losing to the public LB-950 baseline to
-beating it.** Bundle built and smoke-tested (`sa/targeting.py` included, pool
-599.9 s, lat_max 0.04 s); see the submission question in §8.
+beating it.** It is committed and live in `bc`; it is **not on Kaggle** — the
+user chose to hold the slot (§8, submission discipline). A bundle was built and
+smoke-tested (`sa/targeting.py` included, pool 599.9 s, lat_max 0.04 s), but
+rebuild rather than trusting that tarball.
 
 **The generalisable lesson: look for decisions the features cannot express.**
 Three axes of *more training* bought nothing (§4), and one missing feature was
@@ -512,7 +560,8 @@ what P2 is for, and it is the 350 lines V10 spends its 950 on.
 
 ### P3 — The abomasnow hole (still open, still cheap)
 
-0.360 vs 0.418–0.519 elsewhere, and our selects/turn collapse from 12.5–16.6 to
+0.360 vs 0.475–0.519 elsewhere (all pre-P2c; re-measure it), and our
+selects/turn collapse from 12.5–16.6 to
 **8.6** with shorter games — a lockdown, not subtle misplay. Replay a loss with
 `SA_DEBUG=1` and look at the actual select options on our turns. Fold the answer
 into P2 as a matchup branch rather than fixing it in the net.
