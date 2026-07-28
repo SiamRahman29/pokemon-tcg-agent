@@ -415,7 +415,40 @@ Ship only if the interval clears 0.5. 12 epochs is enough — val plateaus by
 Untried trainer knobs, in order of promise: `--winners-only` (clone only the
 winning side's moves — we currently imitate losers too), `--loss both`, LR decay.
 
-### N1 — Search on top of the clone (RUNNING — this is the big one)
+### N1 — SETTLED NEGATIVE: rollout MC search cannot work on this budget
+
+**Result: `search:M,noV,roll,mo,mc20,pb0.15` scores 0.323 [0.186, 0.499] vs
+`bc`, n=31 — significantly WORSE than the clone alone.** And we know exactly
+why, which matters more than the number:
+
+**Instrumented: the search overrules the clone on 52% of anchored decisions.**
+The arithmetic says it must. A terminal rollout returns 0/1, so a mean over 12
+determinizations has SE ≈ 0.14. Taking the max over ~9 rival candidates pulls
+the winner ~0.21–0.28 above its true value by chance alone — comfortably past
+the 0.15 anchor margin. So half of all MAIN decisions replace the clone's
+judgment with a noisy tiebreak among its own top-10 candidates, and the clone
+is far better than that.
+
+**This is a variance problem, not a tuning problem — do not re-tune it.**
+Raising the margin until deviations are rare just reproduces the clone; lowering
+it deviates more and loses harder. Real action differences are worth a few pp of
+win probability, and resolving those with 0/1 rollouts needs ~100x more samples
+than the 600s pool can buy (we already spend 92s/game). Two dead ends confirmed:
+more determinizations (0.479, n=48) and now rollout leaves.
+
+**The only way search becomes viable is a low-variance leaf evaluator**, i.e. a
+value net that is actually accurate on *search-leaf* states. The existing value
+net was trained on replay states and queried at leaves — off-distribution, which
+is precisely why it failed. The correct object (old P2, now the prerequisite for
+any search at all): train a value net on **states sampled from the search-leaf
+distribution, labeled by rollout outcome**. Until that exists, search is dead
+weight and the clone should keep the whole budget.
+
+`agents/sa/planner.py` keeps `roll`/`pb`/`mo`/`HALVE_AFTER_WORLDS` and the
+`anchored`/`deviated` counters — the instrumentation to re-run this cheaply if a
+better leaf evaluator ever appears.
+
+### N1-old — the config as originally run (kept for the record)
 
 Two shards in flight, pool them with `tally.py`:
 ```
@@ -438,16 +471,32 @@ in and still throttles). Running 4+ heavy jobs makes everything slower with no
 extra work done. Run at most 2–3, and prefer BC-vs-BC experiments (0.3s/game)
 over search experiments (~90–290s/game) whenever a question can be posed either
 way.
-**Why this is the priority:** the clone axis is measurably slow (N0), the LB
-gap is 865 → 1210, and the reported #1 is "model + search using the full time
-budget". We use 0.1s of a 600s pool with the BC agent. If rollout search clears
-0.5 here, that is the only lever on the board with enough headroom to close the
-gap. If it does not, the honest read is that BC + more data is a ~900-Elo
-plateau and the next move is self-play RL from the BC initialization (the
-standard way to *exceed* the demonstrators, which BC by construction cannot).
+Budget note: all-selects rollout burns ~288s of the 600s pool per game;
+MAIN-only ~92s. Check the `pool left` line the arena now prints before shipping
+any search config.
 
-Budget note: rollout mode burns ~288s of the 600s pool per game. Before
-shipping any rollout config, check the `pool left` line the arena now prints.
+### N2 — THE PLAN FROM HERE (day 3)
+
+With search settled negative and the clone axis worth only ~+17 Elo per +1.6pp
+of accuracy, these are the live options, best first:
+
+1. **Re-submit `rule:iono` to get a LIVE baseline.** Cheap, one slot, and it
+   resolves the single biggest open question in this file: whether 697.9 is
+   above or below the real bar. The 763.7 we keep comparing to is a frozen
+   07-13 number from a smaller pool. Do this before any strategy decision.
+2. **Keep feeding the clone.** It is the only axis that has produced a shipped,
+   measured gain (v2, +2.4pp at n=2000). `d17/d18/d19` shards are built and
+   `policy_lw3` is training on ~4,000 games. Then `--winners-only`, then more
+   days (top-800/day deepening, 07-16 and earlier).
+3. **Fix the abomasnow hole** (0.360 vs 0.475–0.519 everywhere else). This is a
+   *matchup* weakness, and the ladder over-predicted our LB rating in a way
+   consistent with exactly this kind of hole. Diagnose from replays first.
+4. **The real ceiling-breaker: self-play RL from the BC initialization.** BC
+   cannot exceed its demonstrators by construction, and we are cloning 1170–1210
+   players while sitting near 700 — so there is headroom in imitation *first*.
+   But if the clone plateaus below the target, this is the standard next step,
+   and it also produces exactly the leaf evaluator N1 needs. Big, slow, and the
+   one thing on this list that can reach 1210.
 
 ### N2 — The abomasnow hole
 

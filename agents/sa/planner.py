@@ -42,7 +42,11 @@ STATS = {"decides": 0, "worlds": 0, "begin_fail": 0, "step_fail": 0,
          # rollout mode: how often we actually reached a terminal state. A
          # truncated rollout falls back to the heuristic leaf, i.e. it measures
          # the thing rollouts are supposed to replace -- watch this number.
-         "rollouts": 0, "roll_terminal": 0, "roll_trunc": 0, "roll_steps": 0}
+         "rollouts": 0, "roll_terminal": 0, "roll_trunc": 0, "roll_steps": 0,
+         # how often the search overrules the clone. If this is high, the
+         # rollout estimator is not resolving anything -- it is just noise
+         # beating the prior (see PRIOR_BONUS).
+         "anchored": 0, "deviated": 0}
 
 
 def candidate_combos(sel: dict, cap: int, rng: random.Random | None = None) \
@@ -301,6 +305,11 @@ class Planner:
             v = totals[bonus_i] / counts[bonus_i] + self.prior_bonus
             if best_v is None or v > best_v:
                 best_i = bonus_i
+
+        if bonus_i >= 0:
+            STATS["anchored"] += 1
+            if best_i != bonus_i:
+                STATS["deviated"] += 1
 
         STATS["decides"] += 1
         STATS["worlds"] += worlds

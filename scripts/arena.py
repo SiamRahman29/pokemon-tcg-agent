@@ -230,6 +230,10 @@ def cmd_play(args: argparse.Namespace) -> int:
             print(f"  rollouts: {st['rollouts']} "
                   f"({100 * st['roll_terminal'] / st['rollouts']:.0f}% reached "
                   f"terminal), {st['roll_steps'] / st['rollouts']:.0f} steps each")
+        if st["anchored"]:
+            print(f"  search overruled the clone on "
+                  f"{100 * st['deviated'] / st['anchored']:.0f}% of anchored "
+                  f"decisions ({st['deviated']}/{st['anchored']})")
     return 0
 
 
