@@ -11,11 +11,19 @@ whole archive (`rule:iono` anchored at 1000).
 Agent specs:
 
     rule:<name>  (sample rule-based agents: dragapult, iono, abomasnow, lucario)
+    rule:v10[,noS][,tb<sec>]  (the public LB 950+ baseline -- our only strong
+                 opponent; `noS` disables its MCTS, `tb` sets its per-decision
+                 wall-clock budget in seconds, default 1.5)
     random       (uniform legal choice -- the floor to measure against)
 
 A `rule:<name>` agent is bound to the deck it was tuned for, so pass its own
 deck: `rule:iono --deck-a iono`, `rule:dragapult --deck-a dragapult_ex`,
-`rule:abomasnow --deck-a mega_abomasnow_ex`, `rule:lucario --deck-a mega_lucario_ex`.
+`rule:abomasnow --deck-a mega_abomasnow_ex`, `rule:lucario --deck-a mega_lucario_ex`,
+`rule:v10 --deck-a lucario_v10`.
+
+`rule:v10`'s MCTS budgets on wall-clock, so gotcha "CPU contention distorts
+timed agents" applies to it exactly as it does to `search:` -- prefer `noS` for
+comparisons run under varying load.
 
 Deck specs: `sample` (the SDK sample deck), a `decks/` module name (`iono`,
 `dragapult_ex`, ...), or a path to a headerless 60-line deck.csv.
@@ -104,8 +112,19 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         # counting is correct; see agentkit.rulebased.DECK_MODULE).
         from agentkit.rulebased import make_rule_agent
 
-        rname = spec.split(":", 1)[1].split(",")[0]
-        return f"rule:{rname}", make_rule_agent(rname, deck)
+        parts = spec.split(":", 1)[1].split(",")
+        rname = parts[0]
+        flags = {p.strip() for p in parts[1:]}
+        overrides: dict = {}
+        name = f"rule:{rname}"
+        if "noS" in flags:
+            overrides["USE_SEARCH"] = False
+            name += ",noS"
+        budget = _flag_num(flags, "tb", float)
+        if budget is not None:
+            overrides["SEARCH_TIME_BUDGET"] = budget
+            name += f",tb{budget:g}"
+        return name, make_rule_agent(rname, deck, overrides)
     if kind == "random":
         return "random", make_random_agent(deck)
     if kind == "search":
