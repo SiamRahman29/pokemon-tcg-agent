@@ -506,9 +506,28 @@ of accuracy, these are the live options, best first:
    measured gain (v2, +2.4pp at n=2000). `d17/d18/d19` shards are built and
    `policy_lw3` is training on ~4,000 games. Then `--winners-only`, then more
    days (top-800/day deepening, 07-16 and earlier).
-3. **Fix the abomasnow hole** (0.360 vs 0.475–0.519 everywhere else). This is a
-   *matchup* weakness, and the ladder over-predicted our LB rating in a way
-   consistent with exactly this kind of hole. Diagnose from replays first.
+3. **Fix the abomasnow hole** (0.360 vs 0.475–0.519 everywhere else). The ladder
+   over-predicted our LB rating in a way consistent with exactly this kind of
+   matchup hole, so this may be worth more LB points than its 0.36 suggests.
+
+   **First diagnostic is already done** — the losses look like a *lockdown*, not
+   a subtle policy error. Selects per turn, our agent, by matchup:
+
+   | opponent | selects/turn | avg turns (W/L) |
+   |---|---|---|
+   | `rule:iono` | 16.6 | 12.4 / 13.2 |
+   | `rule:dragapult` | 12.9 | 13.1 / 13.7 |
+   | `rule:lucario` | 12.5 | 12.3 / 11.8 |
+   | **`rule:abomasnow`** | **8.6** | **10.3 / 12.4** |
+
+   We take roughly *half* as many actions per turn against abomasnow, and the
+   games are shorter. Something is stopping us from acting — item/ability lock,
+   status, or an inability to develop the board. Next step: replay one loss with
+   `SA_DEBUG=1` and look at what the select options actually are on our turns.
+   Second question: does the training corpus even *contain* grimmsnarl-vs-
+   abomasnow games (`scripts/mine_meta.py`)? If not, the clone has never seen
+   this matchup and no amount of general data will fix it — targeted replays
+   would.
 4. **The real ceiling-breaker: self-play RL from the BC initialization.** BC
    cannot exceed its demonstrators by construction, and we are cloning 1170–1210
    players while sitting near 700 — so there is headroom in imitation *first*.
