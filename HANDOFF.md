@@ -168,7 +168,8 @@ can pilot — nothing about which deck is strong.** Re-rank against `rule:v10`.
 | `rule:dragapult` | 0.519 [0.470, 0.567] | 400 |
 | `rule:iono` | 0.480 [0.449, 0.511] | 1000 |
 | `rule:lucario` | 0.475 [0.427, 0.524] | 400 |
-| **`rule:v10,noS`** | **0.418 [0.388, 0.449]** | **1000** |
+| **`rule:v10,noS`** | **0.537 [0.506, 0.568]** | **1000** |
+| `rule:v10,noS` (before the P2c targeting fix) | 0.418 [0.388, 0.449] | 1000 |
 | `rule:abomasnow` | 0.360 [0.314, 0.408] | 400 |
 | `random` | 0.995 | 200 |
 
@@ -396,6 +397,70 @@ wall". Then re-run the audit against it.
 
 Extending the audit is a table edit: add a card-id rule to `classify()` and to
 `CORPUS_RULES`. Any future "it misplayed X" observation should land there first.
+
+### P2c — SHIPPED FIX: aim chip damage (the first big win in days)
+
+Second round of replay-watching (user): *"we prioritise attacking stronger
+Pokemon when we should knock out easier ones to take prizes sooner."* That is
+correct, it is measurable, and the cause is in the **features**, not the
+weights.
+
+`optfeat.option_features` gives the net a card-id embedding plus eight
+positional scalars per option — **no HP, no damage**. The net cannot represent
+"this one dies to 30", so it aimed at chance:
+
+| target select | lowest-HP pick, before | after |
+|---|---|---|
+| `counter_target` (Adrena-Brain) | **25.7%** | 100% |
+| `damage_target` (Shadow Bullet snipe) | **42.1%** | 100% |
+
+With 2–4 candidates on board, 25.7% *is* chance. `agents/sa/targeting.py`
+overrides those selects: both effects deal exactly 30, so kill whatever dies to
+30 (most prizes first), else concentrate on the closest to dying. It fires only
+when *every* option resolves to an opponent Pokemon, leaving mixed selects
+(Adrena-Brain's "from 1 of YOUR Pokemon") to the net. Disable with `bc:noChip`.
+
+> **`bc` vs `bc:noChip` = 0.577 [0.555, 0.599], n=2000.**
+> **`bc` vs `rule:v10,noS` = 0.418 → 0.537 [0.506, 0.568], n=1000.**
+
+That is +54 Elo, the largest single gain measured in this project (clone v2 over
+v1 was 0.524), and **it flips us from losing to the public LB-950 baseline to
+beating it.** Bundle built and smoke-tested (`sa/targeting.py` included, pool
+599.9 s, lat_max 0.04 s); see the submission question in §8.
+
+**The generalisable lesson: look for decisions the features cannot express.**
+Three axes of *more training* bought nothing (§4), and one missing feature was
+worth +54 Elo. The other target-selection and count decisions deserve the same
+audit — and `optfeat` gaining an HP/damage feature (bumping `VERSION`, so every
+net retrains) is now a serious candidate.
+
+### P2d — Decklist change: tested, NOT the lever
+
+Same session, user proposed +2 Boss's Orders, -1 Tool Scrapper, -1 Spikemuth
+Gym. Built as `decks/grimmsnarl_boss.py` and measured, same net both sides:
+**0.490 [0.468, 0.512], n=2000** — no gain.
+
+The audit explains why. Per turn where the card was legal, demonstrators vs us:
+
+| card | top players | our clone |
+|---|---|---|
+| `boss_orders_play` | 31.4% | **38.2%** |
+| `spikemuth_gym_play` | 95.6% | 100% |
+| `petrel_play` | 61.4% | 62.1% |
+| `tool_scrapper_play` | 81.4% | 100% |
+
+We already play Boss's Orders *more* than the demonstrators, so more copies do
+not fix a usage deficit — the deficit was aim, not access. Two facts worth
+keeping: **Team Rocket's Petrel (4x) tutors any Trainer**, so the list already
+has on-demand Boss's Orders access and the 2-of looks deliberate; and
+**Spikemuth Gym is played ~100% of the turns it is legal by both sides**, so
+"seems to be plenty" is not supported — do not cut it. Tool Scrapper *is* the
+weakest slot (legal on 318 turns corpus-wide against Boss's Orders' 10,677),
+but cutting it alone did not show up either.
+
+Standing lesson: the deck was mined as an exact 60 seen 290x in one day's top
+episodes. Deviating from it needs evidence, and the clone is trained on that
+exact list, so any variant is off-distribution for the net too.
 
 ### P3 — The abomasnow hole (still open, still cheap)
 
