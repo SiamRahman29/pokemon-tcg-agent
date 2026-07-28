@@ -257,6 +257,10 @@ python -X utf8 scripts/tally.py "<agent-name>" "out/arena/foo_*.jsonl"
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
     --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_X.npz
 
+# Does the agent take its deck's core lines? (vs what the demonstrators do)
+python -X utf8 scripts/opportunity_audit.py --matches 100
+python -X utf8 scripts/opportunity_audit.py --corpus artifacts/pds_v2
+
 # Import public notebook agents
 python -X utf8 scripts/import_v10_agent.py     # rule:v10 + decks/lucario_v10
 python -X utf8 scripts/import_rule_agents.py   # the four sample agents
@@ -323,6 +327,75 @@ Two concrete accelerants:
   starts strictly above whichever component is better on that decision class.
 
 Measure every increment near-mirror against `rule:v10,noS` (rule 8), n≥500.
+
+### P2b — Deck knowledge from watching replays (user, 2026-07-28)
+
+The user watched our games and flagged three lines. **All three are real cards
+with real interactions** (text pulled from the SDK, `decks/grimmsnarl.py`
+confirmed), and two of them are stronger than they look:
+
+- **Rare Candy (1079)** — "put a Stage 2 from hand onto a Basic in play,
+  skipping the Stage 1. Not on your first turn, not on a Basic played this
+  turn." Impidimp → Marnie's Grimmsnarl ex directly. **And Grimmsnarl ex's
+  ability `Punk Up` fires "when you play this Pokémon from your hand to evolve":
+  search the deck for up to 5 Basic {D} Energy and attach them to your Marnie's
+  Pokémon.** So Rare Candy is not just a tempo skip, it is the deck's energy
+  engine firing a turn early. Timing this right is high-value.
+- **Crustle (345) `Mysterious Rock Inn`** — "Prevent all damage done to this
+  Pokémon by attacks from your opponent's Pokémon {ex}." Grimmsnarl ex is
+  `ex=True`, so **it does literally zero damage to Crustle.** Attacking into it
+  is a wasted turn, every turn — the same lockdown signature as the abomasnow
+  hole (P3). The user's instinct to wall instead is right, and there is a
+  further out: `Adrena-Brain` and `Freezing Shroud` *move/place damage
+  counters*, which is not "damage done by attacks", so they should bypass the
+  prevention entirely — and Crustle has an Ability, so Froslass chips it every
+  Checkup. **Verify that reading in-engine before building rules on it.**
+- **Munkidori (112) `Adrena-Brain`** — "Once during your turn, if this Pokémon
+  has any {D} Energy attached, move up to 3 damage counters from 1 of your
+  Pokémon to 1 of your opponent's." Works from the bench. Pairs with Froslass,
+  which damages *our own* ability-holders: Munkidori then relocates that
+  self-damage onto the opponent as free damage.
+
+**Measured: the clone is not missing these lines.** `scripts/opportunity_audit.py`
+counts, for each tracked line, the turns where it was legal and the turns where
+it was played — the same logic run over our games and over the demonstrator
+shards (which store the option type one-hot, card id, target id and what the
+player chose). Per *turn* (the per-select rate is misleading; these options stay
+legal all turn, so declining one to play a supporter first is not a miss):
+
+| line | top players | our clone |
+|---|---|---|
+| `munkidori_adrena_brain` | 97.2% | 99.3% |
+| `evolve_impidimp_to_morgrem` | 90.6% | 91.6% |
+| `rare_candy_play` | 78.6% | 82.0% |
+| `dark_energy_to_munkidori` | 70.0% | 78.3% |
+
+(demonstrators n=4,331–10,444 turns; clone n=50–207 turns, 60 games vs
+`rule:v10,noS`.)
+
+We take every one of them *slightly more often* than the 1174–1205-rated players
+we cloned. So these are **not** where our points are going, and "the net forgot
+Rare Candy" is not the bug. Two caveats that keep this from closing the topic:
+
+1. **Frequency is not correctness.** Playing Rare Candy on 82% of legal turns
+   says nothing about whether the skipped 18% were the right 18%, or whether it
+   was played at the right point *within* the turn. The user watched one game
+   and saw one wrong spot; aggregate parity is fully compatible with that.
+   Conditional rates (given a specific board) are the next cut.
+2. **Matching the demonstrators is the ceiling.** They are rated ~1174–1205 and
+   we clone their average, mistakes included. Where game knowledge says a line
+   is mandatory and they only take it 78% of the time, copying them is wrong.
+   This is the argument for P2 in miniature.
+
+**The Crustle case is the untested one and the most likely real bug — there is
+no Crustle deck in the repo**, so `attack_into_ex_immune_active` (already
+implemented in the audit) never fires. Build one first:
+`dashimaki360/beating-the-day-1-1-crustle-bot` is a public notebook on exactly
+this matchup and should carry a list; V10 hardcodes 344/345 as "the crustle
+wall". Then re-run the audit against it.
+
+Extending the audit is a table edit: add a card-id rule to `classify()` and to
+`CORPUS_RULES`. Any future "it misplayed X" observation should land there first.
 
 ### P3 — The abomasnow hole (still open, still cheap)
 
