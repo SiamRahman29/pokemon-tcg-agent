@@ -171,13 +171,18 @@ Same agent, same opponent (`rule:iono`), different deck:
 |---|---|---|
 | **`grimmsnarl`** | **0.480 [0.449, 0.511]** | 1000 |
 | `alakazam` | 0.320 [0.276, 0.367] | 400 |
-| **`crispin_box`** | **0.068 [0.047, 0.096]** | 400 |
+| `dragapult_ex` | 0.153 [0.117, 0.198] | 300 |
+| `crispin_box` | 0.068 [0.047, 0.096] | 400 |
+| `mega_abomasnow_ex` | 0.037 [0.021, 0.064] | 300 |
+| `mega_lucario_ex` | 0.030 [0.016, 0.056] | 300 |
 | `iono` (mirror) | 0.023 [0.011, 0.047] | 300 |
 
 `crispin_box` has the best raw win-rate in the mined meta (61.9%) and our agent
 scores **7%** with it. A deck's meta win-rate says nothing about whether *our*
-policy can pilot it — the clone has to have learned that deck's lines. Do not
-switch decks on meta stats alone; arena it first (it costs ~1 minute).
+policy can pilot it — the clone has to have learned that deck's lines, and the
+clone has only really learned grimmsnarl. **Grimmsnarl is settled; stop
+re-testing this.** Corollary: if the corpus ever shifts, re-run `deck_sweep.ps1`
+(it costs ~10 min) before assuming grimmsnarl is still right.
 
 ### Policy training: the loss function was wrong
 
