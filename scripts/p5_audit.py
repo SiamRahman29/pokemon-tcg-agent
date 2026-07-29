@@ -45,7 +45,7 @@ from sa import cards as cdb  # noqa: E402
 from sa.targeting import best_damage  # noqa: E402
 import arena  # noqa: E402
 
-MAIN, DAMAGE_COUNTER, DAMAGE_COUNTER_ANY = 0, 13, 14
+MAIN, SWITCH, DAMAGE_COUNTER, DAMAGE_COUNTER_ANY = 0, 3, 13, 14
 OPT_PLAY, OPT_ABILITY, OPT_ATTACK, OPT_END = 7, 10, 13, 14
 _HAND, _ACTIVE, _BENCH = 2, 4, 5
 MUNKIDORI, DARK_TYPE, BOSS_ORDERS = 112, 7, 1182
@@ -72,6 +72,7 @@ class Probe:
         self.b = Counter()   # P5b
         self.c = Counter()   # P5c
         self.c_dmg = Counter()
+        self.d = Counter()   # P5b: the drag HP tiebreak
         self._turn = None
         self._used = set()
 
@@ -96,6 +97,8 @@ class Probe:
                 self._main(sel, opts, chosen, mypl, oppl, me, state)
             elif ctx in (DAMAGE_COUNTER, DAMAGE_COUNTER_ANY):
                 self._chip(sel, opts, chosen, mypl, oppl, me, state)
+            elif ctx == SWITCH:
+                self._drag(sel, opts, chosen, mypl, oppl, me, state)
         except Exception as e:  # noqa: BLE001
             self.a[f"ERR {type(e).__name__}: {e}"] += 1
         return picked
@@ -139,6 +142,36 @@ class Probe:
                        if opp_act else 0.0)
                 name = cdb.card(active["id"]).get("name", "?")
                 self.c_dmg[f"{name} could have done {int(dmg)}"] += 1
+
+    # -- P5b, second half: does the HP tiebreak ever bite? -----------------
+    def _drag(self, sel, opts, chosen, mypl, oppl, me, state):
+        """The user also proposed dragging the HIGHEST-HP KO-able target
+        rather than the lowest. That is a tiebreak *inside* the KO-able group,
+        so it only changes a decision when two KO-able targets carry the SAME
+        prize value and different HP. Size that before A/B-ing it."""
+        if len(opts) < 2:
+            return
+        active = mypl["active"][0] if mypl.get("active") else None
+        if not active:
+            return
+        kills = []
+        for i, o in enumerate(opts):
+            if o.get("playerIndex") in (None, me) or o.get("area") != _BENCH:
+                return
+            pk = self._at(state, 1 - me, _BENCH, o.get("index") or 0)
+            if pk is None or pk.get("hp") is None:
+                return
+            if best_damage(active, mypl, oppl, pk) >= pk["hp"]:
+                kills.append(pk)
+        if len(kills) < 2:
+            self.d["fewer than 2 KO-able targets -- no tiebreak"] += 1
+            return
+        top = max(cdb.prize_value(pk["id"]) for pk in kills)
+        tied = [pk for pk in kills if cdb.prize_value(pk["id"]) == top]
+        if len(tied) >= 2 and len({pk["hp"] for pk in tied}) > 1:
+            self.d["TIEBREAK BITES: >=2 KO-able, same prizes, different HP"] += 1
+        else:
+            self.d["prizes already separate them"] += 1
 
     # -- P5a --------------------------------------------------------------
     def _chip(self, sel, opts, chosen, mypl, oppl, me, state):
@@ -251,6 +284,7 @@ def main() -> int:
     show("P5a  ... and how many of those pooled KOs were a real choice",
          probe.a2)
     show("P5b  Boss's Orders plays", probe.b)
+    show("P5b  drag selects: does the HP tiebreak ever decide?", probe.d)
     show("P5c  turns with a payable attack on the table", probe.c)
     show("P5c  what the unused attack would have done", probe.c_dmg)
     return 0
