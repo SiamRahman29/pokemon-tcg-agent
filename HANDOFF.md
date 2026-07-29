@@ -1,8 +1,9 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** win the public LB. Top is **1179.6** (`flg`). Our best live
-submission reads **958.2** (one reading — see §1). Deadline **2026-08-16**,
-then ~2 weeks of continued play. Kaggle CLI is authenticated, user has entered.
+**Mission:** win the public LB. Top is **1179.6** (`flg`). Our best *scored*
+submission reads **958.2**; a newer one (`55077709`, P6a) is pending and is the
+first thing to check. Deadline **2026-08-16**, then ~2 weeks of continued play.
+Kaggle CLI is authenticated, user has entered.
 
 **Read §2 before trusting any number. §3 is the live plan.**
 **This file must always end with a live plan, never a summary.**
@@ -15,7 +16,8 @@ then ~2 weeks of continued play. Kaggle CLI is authenticated, user has entered.
 
 | submission | what | LB |
 |---|---|---|
-| `55072063` | **clone v2 + `chip_target` + `energy_spread` (P4b)** — live | **958.2** ⏳ |
+| `55077709` | **+ `counter_source` (P6a)** — submitted this session | **PENDING — read it first** |
+| `55072063` | clone v2 + `chip_target` + `energy_spread` (P4b) — live | **958.2** ⏳ |
 | `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → 901.6 → **905.2** |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
@@ -143,32 +145,32 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
 
 ## 3. THE PLAN (day 7)
 
-**P4b shipped (`55072063`, 958.2). All of P5 is closed. The whole Boss's
-Orders lever is closed, four interventions deep. P6a won and is default-ON but
-NOT yet submitted.** Then P1/P2.
+**P4b shipped (`55072063`, 958.2). P6a shipped (`55077709`, pending). All of P5
+is closed, and the whole Boss's Orders lever is closed four interventions
+deep.** What is left is P1/P2.
 
-### 0. Do this first: P6a is built and unsubmitted
+### 0. Do this first: read `55077709`'s score
 
-`counter_source` cleared both bars — 0.534 [0.513, 0.556] n=2000 in the mirror
-and **0.626 [0.604, 0.647] n=2000 vs `rule:v10,noS`** against a bare `bc`'s
-0.593. It is on by default, so `build_submission.py` will pick it up with no
-flags. **Nothing has been built or sent — ask the user first** (§7: 5/day,
-latest 2 active; a new submission would displace `55054446` at ~905, not the
-958.2 one). Build and send with:
+**P6a was submitted 2026-07-29 ~15:21 local and was still PENDING at the end of
+the session — nobody has seen its score.** It is a bare `bc` with
+chip + spread + counter-source, all four Boss's Orders rules off, built by:
 
 ```powershell
 python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
 ```
 
-> bc clone v2 + chip/spread/counter-source (P6a): mirror 0.534 [0.513,0.556]
-> n=2000; 0.626 [0.604,0.647] vs rule:v10 n=2000
+Expect it to land near `55072063`'s 958.2 and, if the arena is telling the
+truth, above it — the arena said +0.033 against `rule:v10,noS`. **Two readings
+≥1 h apart (rule 2), and remember what `55054446` did**: it read 979 on day 6
+and 905.2 today. If P6a comes in below 958.2, that is not automatically a
+refutation at one reading; it is a reason to read it again.
 
 ### The board
 
 | | item | state | arena |
 |---|---|---|---|
 | — | ship P4b | **DONE — `55072063` live at 958.2** | 0.702 n=4000 |
-| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON, confirmed, default ON — not yet submitted** | **0.534 n=2000; 0.626 vs `rule:v10`** |
+| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON, default ON, SUBMITTED as `55077709`** | **0.534 n=2000; 0.626 vs `rule:v10`** |
 | P6b | post-KO promotion (`TO_ACTIVE`) | sized: 9 misses in 120 games — **too small, closed** | — |
 | P6c | how many counters to move (`..._COUNT`) | **closed — already 100% max** | — |
 | P5a/b/c | the three live-game findings | **all three closed**, see below | — |
