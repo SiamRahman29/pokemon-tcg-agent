@@ -1,28 +1,37 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** win the public LB. Top is **1179.6** (`flg`). We are at **~979 and
-still climbing**. Deadline **2026-08-16**, then ~2 weeks of continued play.
-Kaggle CLI is authenticated, user has entered.
+**Mission:** win the public LB. Top is **1179.6** (`flg`). Our best live
+submission reads **958.2** (one reading — see §1). Deadline **2026-08-16**,
+then ~2 weeks of continued play. Kaggle CLI is authenticated, user has entered.
 
 **Read §2 before trusting any number. §3 is the live plan.**
 **This file must always end with a live plan, never a summary.**
 
 ---
 
-## 1. Where we are (day 6, 2026-07-29)
+## 1. Where we are (day 7, 2026-07-29 pm)
 
-**The targeting fix landed and it was worth ~184 LB points.**
+**Both targeting rules are shipped and live. P4b is our best submission.**
 
 | submission | what | LB |
 |---|---|---|
-| `55054446` | **clone v2 + `chip_target`** — live | **916.8 → 936.0 → 979** ✅ |
+| `55072063` | **clone v2 + `chip_target` + `energy_spread` (P4b)** — live | **958.2** ⏳ |
+| `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → **901.6 (settled)** |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
 
-✅ **Confirmed under rule 2**: three readings hours apart, all far above the
-758.6 of the same clone without `targeting.py`, and still trending up. **The
-`energy_spread` rule below is NOT in this submission** — it is built and
-waiting in `dist/`, see §3.0.
+⏳ **958.2 is ONE reading — rule 2 is not satisfied yet.** Two readings ≥1 h
+apart this session were identical, which is consistent with "not updated"
+rather than "converged". Re-read before treating it as fact.
+
+⚠ **And read `55054446` as a warning about rule 2.** Day 6 recorded it at
+"916.8 → 936.0 → **979**, three readings, trending up" and reasoned from the
+trend. It settled at **901.6** — *below* its own first reading. Three agreeing
+readings did not stop the number moving 77 points once it stopped playing new
+episodes. Treat a rising score as unconverged, not as momentum.
+
+The +184-point claim for `chip_target` survives this: 901.6 vs 758.6 for the
+same clone without `targeting.py` is still +143, same sign, same conclusion.
 
 That jump came from **one missing feature**, not from more training. `optfeat`
 gives the net no HP and no damage, so it could not represent "this one dies to
@@ -31,13 +40,17 @@ overrides those selects with a rule. Arena said `bc` vs `bc:noChip` = 0.577
 [0.555, 0.599] n=2000 (+54 Elo) and `bc` vs `rule:v10,noS` = 0.418 → **0.537**
 [0.506, 0.568] n=1000, flipping us past the public LB-950 agent. The LB agreed.
 
-**This is now the project's central method, confirmed end-to-end:**
+**This is the project's central method, confirmed end-to-end:**
 > Find decisions the features cannot express, and write a rule for them.
 > Three separate axes of *more training* bought nothing. One missing feature
-> bought 184 LB points.
+> bought ~150 LB points.
 
-§3 is three more candidates of exactly that shape, from the user watching the
-936 agent's real games.
+**But day 7 sharpened it, and the sharpening is the important part.** Six rules
+have now been A/B'd. The two that won both delete an option that is *provably
+worthless*; the four that did nothing all pick a side in a *tradeoff* — and
+every one of those four moved its audit rate exactly as designed first. It is
+not enough for the net to be blind to a decision; the decision has to have a
+right answer that arithmetic can prove. **Rule 11 in §2 is the test.**
 
 ### What the top of the board does
 
@@ -93,153 +106,195 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
     pipeline instead of the training one. **Arena-A/B every rule, no
     exceptions** — and prefer rules that delete a *dominated* option over rules
     that pick a side in a *tradeoff* (§3 P4a).
-11. **The local arena is ONE opponent deck.** Everything routine is measured
+11. **Prefer rules that delete a DOMINATED option; distrust rules that pick a
+    side in a TRADEOFF.** This is now the project's most reliable predictor,
+    at **3 for 3 and 0 for 4**:
+
+    | rule | class | arena |
+    |---|---|---|
+    | `chip_target` | dominated | **0.577** → +~150 LB |
+    | `energy_spread` | dominated | **0.702** |
+    | `counter_source` | dominated | **0.534** |
+    | `drag_target` (aim the drag) | tradeoff | 0.489 |
+    | `boss_converts` (force the play) | tradeoff | 0.493 |
+    | `boss_veto` (suppress the play) | tradeoff | 0.493 |
+    | `drag_target` high-HP tiebreak | tradeoff | 0.490 |
+
+    The net has watched 2,810 games of humans making those trades and is
+    already as good at them as our arithmetic. What it *cannot* do is see HP,
+    damage or attached energy, so it loses to pure arithmetic every time the
+    answer is arithmetic. **Before writing a rule, ask which column it is in.**
+12. **The local arena is ONE opponent deck.** Everything routine is measured
     against `rule:v10,noS` on `lucario_v10`. A pattern the user watched in a
-    real game can be genuinely absent locally without being absent on the LB —
-    P5a is exactly that (26 opportunities in 200 local games, 0 mishandled).
+    real game can be genuinely absent locally without being absent on the LB.
     **When the user reports something from a live game and the local audit says
     it never happens, measure it on `replays/submission_replay_2026-07-29/`
-    before closing it.**
+    before closing it** — `scripts/p5a_replays.py` is the worked example, and it
+    reads our real selects against 54 distinct LB opponents.
+13. **Check the denominator is a real CHOICE, not just a real count.** P5a read
+    "the rule takes the best target 26/26" — but 90 of its 95 pooled-KO rows
+    offered only one prize value, so there was nothing to get wrong and the
+    row could not fail. The honest denominator was **5**. Same disease as
+    rule 8/9 one step further in: a rate over forced moves measures nothing.
 
 ---
 
-## 3. THE PLAN (day 6)
+## 3. THE PLAN (day 7)
 
-### 0. Do this first: the submission that is already built and waiting
-
-**`dist/submission.tar.gz` is built, smoke-tested, and has NOT been sent.**
-`bc-grimmsnarl-netspolicy`, 4.0 MiB, chip+spread on, drag/boss off — exactly a
-bare `bc`. The user was deciding when to send it because `55054446` was still
-climbing (916.8 → 936.0 → **979**, three readings, trending up). **Ask before
-submitting; do not send it unprompted.** If it is stale by then, rebuild rather
-than trusting the tarball (§7). Description:
-
-> bc clone v2 + chip targeting + Munkidori {D} spread (P4b): mirror 0.702
-> [0.687,0.715] n=4000; 0.593 [0.562,0.623] vs rule:v10 n=1000
-
-It cleared the §7 bar: **`bc` vs `rule:v10,noS` = 0.593 [0.562, 0.623] n=1000**
-against 0.537 [0.506, 0.568] for the live agent — an independent opponent
-agreeing with the mirror A/B.
+**P4b shipped (`55072063`, 958.2). All of P5 is closed. The whole Boss's
+Orders lever is closed, four interventions deep.** What is left is P6 — the
+same feature-blindness hunt, done systematically instead of from live-game
+anecdotes — and then P1/P2.
 
 ### The board
 
 | | item | state | arena |
 |---|---|---|---|
-| — | ship P4b | **built, awaiting the user's go-ahead** | 0.702 n=4000 |
-| **P5b** | **veto Boss's Orders with no KO-able bench target** | **best open lever**, sized not built | — |
-| P5a | pool the turn's Adrena-Brain budget before aiming | sized: rare locally, verify on real replays first | — |
-| P5c | "never end a turn without attacking" | **closed — already 100%** | — |
+| — | ship P4b | **DONE — `55072063` live at 958.2** | 0.702 n=4000 |
+| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON its A/B — confirm vs `rule:v10`, then ship** | **0.534 [0.513, 0.556] n=2000** |
+| P6b | post-KO promotion (`TO_ACTIVE`) | sized: 9 misses in 120 games — **too small, closed** | — |
+| P6c | how many counters to move (`..._COUNT`) | **closed — already 100% max** | — |
+| P5a/b/c | the three live-game findings | **all three closed**, see below | — |
 | P1 | re-rank decks against `rule:v10` | not started | ~20 min |
-| P2 | MAIN-decision rules for the chosen deck | not started | days |
+| P2 | MAIN-decision rules for the chosen deck | not started — **the real remaining mass** | days |
 | P3 | abomasnow / Crustle lockdowns | not started, fold into P2 | hours |
 | P4 | all three items | **closed**, see below and §6 | — |
 
 Replays of the live agent vs real opponents are at
-**`replays/submission_replay_2026-07-29/`** (user-supplied, 55 games). These are
-the only games we have against the *actual* LB field rather than our six local
-rule agents — use them for diagnosis, not training (§6: more imitation data is
-dead). **P5a specifically needs them** — see below.
+**`replays/submission_replay_2026-07-29/`** (user-supplied, 55 games, 54
+distinct LB opponents — team name `Scio` is us, one game is the self-play
+validation episode). These are the only games we have against the *actual* LB
+field rather than our six local rule agents — use them for diagnosis, not
+training (§6: more imitation data is dead). `scripts/p5a_replays.py` shows how
+to read our own selects out of them.
 
 ---
 
-### P5 — three findings from the user watching the live agent (day 6)
+### P6 — hunt the blind selects systematically
 
-Sized with `scripts/p5_audit.py --matches 200` (bc / grimmsnarl vs
-`rule:v10,noS` / lucario_v10). **Nothing here is built yet.** Read rule 10 in
-§2 before writing any of it.
+The two rules that won both patched the same defect: `optfeat` gives the net no
+HP, no damage and no attached-energy count, so any select whose right answer is
+that arithmetic is decided at chance. P5 looked for those by watching live
+games. P6 enumerates them instead: **`scripts/p6_recon.py --matches 120`**
+buckets every select the agent faces by (context, whose options they are) and
+reports how many are a real decision. That table is the menu.
 
-#### P5b — Boss's Orders should be VETOED, not aimed. Best open lever.
+What it found, in descending size:
 
-**User observation:** *"I saw Boss's Orders bring out a Pokémon that we couldn't
-finish from bench to active, and then the opponent evolved it and it was its
-main hitter."*
+| select | share | verdict |
+|---|---|---|
+| `MAIN` | 47.7% | **P2.** The remaining mass, and it is not one decision. |
+| `TO_HAND` ours | 15.3% | already at demonstrator parity (§6) |
+| `DAMAGE_COUNTER` theirs | 5.6% | `chip_target` owns it |
+| `ATTACH_FROM` ours | 5.5% | unexamined — every option is a {D} energy, likely degenerate |
+| `REMOVE_DAMAGE_COUNTER_COUNT` | 5.2% | **closed — already 100% max** |
+| `TO_ACTIVE` ours | 3.9% | **closed — 91.2% right already** |
+| `DAMAGE` theirs | 3.7% | `chip_target` owns it |
+| `REMOVE_DAMAGE_COUNTER` ours | 2.9% | **P6a — the one live finding** |
 
-**Measured: 35 of 108 Boss's Orders plays (32.4%) had NOTHING on the opponent's
-bench that our attack could KO.** Those plays hand the opponent a free
-promotion of a Pokemon they wanted promoted anyway.
+#### P6a — `counter_source`: Adrena-Brain was moving 10 where 30 was available
 
-**This is NOT closed by the P4a negative, and that is the whole point.** P4a
-tested *forcing* the play when it converts (0.493) and *aiming* the drag
-(0.489). **It never tested suppressing the play when it converts nothing.**
-Those are three different interventions and only two were measured.
+Adrena-Brain moves "up to 3 damage counters" from one of our Pokemon to one of
+theirs, and **the source is its own select** — `REMOVE_DAMAGE_COUNTER`, all
+options ours, which is exactly the case `chip_target` declines by design. How
+many counters then move is capped by what the source carries: the follow-up
+`REMOVE_DAMAGE_COUNTER_COUNT` select offers "1,2,3" off a source with 3+ but
+only "1,2" off a source with 2.
 
-The user's full proposal, which is a good one:
-1. Play Boss's Orders **only** when we cannot KO the Pokemon in front of us but
-   *can* KO something on their bench. (`targeting.boss_converts` already
-   computes exactly this predicate — reuse it, inverted, as a veto.)
-2. Among KO-able targets, drag the **highest-HP** one, not the lowest.
-   `targeting.drag_target` currently tie-breaks on *lowest* HP, the opposite.
-   Rationale: a big benched Pokemon is a developing threat; a small basic is
-   cheap for them to replace.
+**The clone takes the maximum on that second select 100% of the time** (n=481),
+so all of the loss is one select earlier, in the source pick — which is exactly
+where the features go blind.
 
-**Do:** (a) add the veto as a third flag (`bc:veto`), leaving `drag`/`boss`
-off; A/B it alone at n≥2000. (b) Separately flip `drag_target`'s HP tiebreak to
-descending and A/B that alone — it is a one-character change to an existing
-measured-null rule, so it is cheap to test and cheap to discard.
+**Measured (120 games, 291 source selects with ≥2 options): it picked a source
+carrying fewer than 3 counters while one with 3+ was on the table 59 times —
+20.3%**, moving 10 or 20 damage where 30 was available.
 
-**Honest prior:** a veto removes an option the net chose, so it is a *tradeoff*
-rule, not a dominated-option rule — the class that failed in P4a. What makes it
-more promising than P4a is that the user watched the failure mode do concrete
-harm, and 32.4% is a large denominator. Measure it; do not assume it.
+`targeting.counter_source` (`bc:<label>,src`) takes that to **0**, and full
+3-counter moves go from 67.1% to 76.5% of activations.
 
-#### P5a — Adrena-Brain should pool the turn's budget and chase prizes
+**arena: `bc:s,src` vs `bc` = 0.534 [0.513, 0.556], n=2000, grimmsnarl
+mirror.** The interval clears 0.5, and it is balanced across seats (534/466 as
+P0, 535/465 as P1), so it is not a seat artifact. Third dominated-option rule,
+third win.
 
-**User observation:** *"we have two Munkidori with Adrena-Brain active. We can
-move 60 to the opposing Lucario ex sitting on 60 HP, or to a benched 50 HP
-Budew. If we target weakest we get Budew, but Lucario ex is much better — it
-KOs for two prizes and ruins the opponent's work."*
+**Why this one is worth believing more than P5b was:** it is a *dominated*
+option, not a tradeoff (rule 11). The heavily-damaged source is better in both
+directions at once — it transfers more damage **and** it heals the Pokemon that
+actually needed healing — so there is no trade to get wrong and no judgment of
+the net's to override. Same shape as `energy_spread`, which scored 0.702.
+Same minimalism too: it never changes *whether* counters move, only which of
+our Pokemon they come off, and among sources that pay the full 3 it keeps the
+net's own preference.
 
-**The user is right about the mechanism.** `targeting.chip_target` hardcodes
-`CHIP_DAMAGE = 30` and evaluates each select **in isolation**. With two armed
-Munkidori the turn actually has 60 to spend, so a 60-HP two-prize target reads
-as unkillable, the rule falls through to "closest to dying", and it takes the
-50-HP one-prize Budew — then finishes it with the second activation. Exactly as
-described.
+**Still: rule 10. The A/B decides, not the audit rate.**
 
-**But it did not happen once in 200 local games.** 909 chip selects: 26.2%
-something already died to a single activation, 71.0% nothing died even with the
-pooled budget, and 2.9% (26 selects) had a pooled KO — of which the current
-rule took the best-prize target **26 times out of 26**. Zero misses.
+---
 
-**Do not conclude it is a non-issue.** The local opponent is one deck
-(`lucario_v10`); the user saw this against the real field. So:
+### P5 — the three live-game findings, all three now closed
 
-1. **First, measure it where it was seen.** Re-run the P5a counter over
-   `replays/submission_replay_2026-07-29/` rather than local games. Those
-   contain our agent's actual selects against real opponents. If the miss rate
-   there is non-zero, build it; if it is zero there too, close it.
-2. Only then write it: budget = `min(30 × armed-and-unused Munkidori,
-   total damage counters on our own board)`. **The second term is not optional**
-   — Adrena-Brain moves counters *from* our Pokemon, so a pooled plan we cannot
-   pay for wastes both activations. `p5_audit.py` already computes this.
-3. Note the sequencing subtlety: Adrena-Brain fires *before* the attack, so a
-   target that our Shadow Bullet would kill anyway does not need counters, and
-   a bench target will also eat the 30-damage snipe. Neither is modelled.
+#### P5b — Boss's Orders: CLOSED NEGATIVE, and it closes the whole card
 
-**Prior: good.** Unlike P5b this spends no extra resource — the counters are
-being moved either way, only the aim changes. That is the same shape as
-`chip_target` and `energy_spread`, the two rules that won.
+The veto was day 6's "best open lever". It is null, and so is the last
+untested variant:
+
+| intervention | arena, grimmsnarl mirror | verdict |
+|---|---|---|
+| `drag_target` — aim the drag | 0.489 [0.467, 0.511] n=2000 | null |
+| `boss_converts` — force the play when it converts | 0.493 [0.471, 0.515] n=2000 | null |
+| **`boss_veto` — suppress the play when it converts nothing** | **0.493 [0.471, 0.515] n=2000** | **null** |
+| **`drag_target` high-HP tiebreak** | **0.490 [0.469, 0.512] n=2000** | **null** |
+| both P4a rules together | 0.452 [0.435, 0.470] n=3000 | negative |
+
+The veto was well-founded on paper — the user watched a dragged Pokemon get
+evolved into their main attacker, and 32.4% of our plays had nothing KO-able on
+their bench — and the mechanism engaged exactly as designed (`p5b_check.py`:
+fires on 57.6% of the plays the net wants, and the fallback is safe — of the 50
+vetoed plays that fell through to END, **50/50 had no attack available**, so it
+never threw a turn away). It still won nothing.
+
+The high-HP tiebreak likewise **decides 56.5% of drag selects** and moved the
+score by 0.001.
+
+**Four interventions, four nulls, on a card we play 38% of legal turns. Stop
+writing Boss's Orders rules.** The read from rule 11: every one of them picks a
+side in a trade the net has already seen thousands of humans make. All the code
+is in `targeting.py` behind default-off flags — leave it there as the record.
+
+#### P5a — pooled Adrena-Brain budget: CLOSED, and the instrument was broken
+
+Day 6 sized this at "26 pooled-KO selects in 200 games, 26/26 correct". **Both
+halves of that were wrong, and it still closes.**
+
+1. **The budget was off by one activation.** `p5_audit` computed
+   `left = max(1, len(armed - used))`, but the Munkidori being activated *right
+   now* is already in `used` — the MAIN select that fires the ability precedes
+   the DAMAGE_COUNTER select. So `armed - used` is what remains *afterwards*,
+   and the pool is this activation **plus** those. It read `left == 1` on every
+   row ever measured, including all 54 real-replay rows with two armed
+   Munkidori, so **a 60-point pool was never once representable** — the audit
+   was structurally incapable of detecting the exact scenario the user
+   described. Fixed to `left = 1 + len(armed - used)`; the local pooled-KO
+   denominator roughly tripled (26 → 89-95 per 200 games).
+2. **The 26/26 was mostly forced moves** (rule 13). Of 95 pooled KOs, **90 had
+   only one prize value among the candidates** — nothing to get wrong. The real
+   denominator is ~5-7 per 200 games, and across three runs the rule missed
+   2 of ~19.
+3. **On the real replays it is rarer still.** `scripts/p5a_replays.py` over the
+   55 live games: 266 chip selects, 6 pooled KOs, and **all 6 had a single
+   prize value — not one real choice in 55 games against the actual field.**
+
+So the mechanism the user described is real and the arithmetic is right, but it
+is worth ~0.5 decisions per 200 games. Not a lever. **Do not rebuild it** — but
+note the fixed budget term matters to anything else that reasons about
+Adrena-Brain's per-turn output.
 
 #### P5c — "never end a turn without attacking" — CLOSED, nothing to fix
 
-**User observation:** *"I think we are underutilizing Impidimp's Filch and
-Morgrem's attack. If they can do damage we should not end a turn without doing
-damage."*
+Unchanged from day 6 and re-confirmed twice: the clone attacked on **3,683 of
+3,683** turns where an END option and a payable ATTACK option were both on the
+table. Detail below.
 
-**Measured: 3,659 turns where both an END option and a payable ATTACK option
-were on the table. The clone attacked on 3,659 of them — 100.0%.** It never
-passes with an attack available. There is no lever here.
-
-The reading was sound — Filch is {C} for 0 damage and *draws a card*, so
-passing instead of Filching would be strictly worse — the clone simply already
-does it. What remains is the half the user themselves flagged as needing
-balance: whether to **invest** energy into a fragile Morgrem to *enable*
-Corkscrew Punch, knowing it may die and take 2 {D} with it. That is a tradeoff,
-not a dominated option, so by rule 10 it does not become a rule without its own
-A/B — and the deck is less energy-pressed than it looks (Punk Up fetches 5,
-Night Stretcher ×3 recovers basics from the discard). **Unmeasured:** how often
-a turn ends with *no* attack available that one attachment would have enabled.
-That is the real version of this question if anyone wants to reopen it.
+---
 
 ---
 
@@ -411,23 +466,30 @@ is a public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall
 
 - `bcagent.py` — **what we ship.** `net_path` pins an npz; `chip_targeting`
   toggles the override (`bc:noChip` in the arena). Default True.
-- `targeting.py` — **all the rule overrides.** Four of them now, each with its
-  own `PolicyAgent` flag and its own `bc:` arena switch, so any one can be A/B'd
-  alone. **Every new rule belongs here.**
+- `targeting.py` — **all the rule overrides.** Each has its own `PolicyAgent`
+  flag and its own `bc:` arena switch, so any one can be A/B'd alone.
+  **Every new rule belongs here.**
 
   | function | select | switch | arena |
   |---|---|---|---|
-  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577, n=2000 → **+184 LB** |
+  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577, n=2000 → **+~150 LB** |
   | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702, n=4000** |
+  | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `src`, **off** | see §3 P6a |
   | `drag_target` | SWITCH (Boss's Orders' drag) | `drag`, **off** | 0.489 n=2000 — null |
+  | `drag_target(prefer_high_hp)` | ditto, KO-able tiebreak | `dragHi`, **off** | 0.490 n=2000 — null |
   | `boss_converts` | MAIN, plays Boss's Orders | `boss`, **off** | 0.493 n=2000 — null |
+  | `boss_veto` | MAIN, suppresses Boss's Orders | `veto`, **off** | 0.493 n=2000 — null |
 
-  `chip_target` / `drag_target` replace the whole ranking and fire only when
-  *every* option is an opponent's Pokemon. `energy_spread` is different in kind:
-  it takes the net's pick and only redirects it, never creating or suppressing
-  an attach. `boss_converts` is the only one that forces an action outright.
-  The two that won are the two that delete a **dominated** option; the two that
-  did nothing both pick a side in a **tradeoff** — see P4a.
+  Three shapes, and the shape predicts the result (rule 11):
+  - **Replace the whole ranking** — `chip_target`, `drag_target`. Fire only
+    when *every* option is an opponent's Pokemon.
+  - **Redirect the net's own pick** — `energy_spread`, `counter_source`. Never
+    create or suppress an action, only change its target. Both need
+    `full_rank(net, obs)` … `counter_source` does, because MAIN and
+    REMOVE_DAMAGE_COUNTER selects have `maxCount == 1`, so `choose()` returns a
+    single index with no runner-up to fall back to.
+  - **Force or suppress an action outright** — `boss_converts`, `boss_veto`.
+    Both null. Both tradeoffs.
 - `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
   (stale net → `None` → fallback; never remove it).
 - `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
@@ -469,9 +531,11 @@ python -X utf8 scripts/arena.py play bc "rule:v10,noS" `
     --deck-a grimmsnarl --deck-b lucario_v10 --matches 500
 
 # A/B a rule override against the pure clone (how every targeting.py rule is judged).
-# Off-switches: noChip, noSpread. Opt-in (default off): drag, boss.
+# Off-switches: noChip, noSpread. Opt-in (default off): src, drag, dragHi, boss, veto.
 # Isolate ONE rule per run: the P4a pair measured 0.452 while each alone was null.
-python -X utf8 scripts/arena.py play bc "bc:old,noChip" `
+# NOTE the first token after `bc:` is a LABEL, not a flag -- `bc:veto` is a plain
+# `bc` named "veto" (§7). Write `bc:<label>,<flag>`.
+python -X utf8 scripts/arena.py play "bc:s,src" bc `
     --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000
 
 # Net A/B, two nets in one process (~5 min, n=2000)
@@ -486,6 +550,9 @@ python -X utf8 scripts/opportunity_audit.py --matches 100        # our games
 python -X utf8 scripts/opportunity_audit.py --corpus artifacts/pds_v2   # demonstrators
 python -X utf8 scripts/context_accuracy.py                       # per-context top-1
 python -X utf8 scripts/p5_audit.py --matches 200   # sizes the three P5 findings
+python -X utf8 scripts/p6_recon.py --matches 120   # EVERY select, bucketed -- the menu
+python -X utf8 scripts/p5a_replays.py              # the same counters on 55 REAL games
+python -X utf8 scripts/p5b_check.py --matches 150  # does a rule actually fire? (rule 9)
 
 # Train (12 epochs; artifacts/pds_v2 is the shipped corpus)
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
@@ -576,12 +643,21 @@ has ever demonstrated search is worth anything.** Loose end if ever revisited:
   n=9,911). **A low lift can mean a noisy label, not a blind feature.**
 - **Self-play RL — dropped.** Days of work on 1.4 cores to maybe reach where
   hand-written rules already sit. Nothing at the top of this board is learned.
-- **Boss's Orders rules (P4a)** — target ranking 0.489 [0.467, 0.511] n=2000,
-  forced play-when-it-converts 0.493 [0.471, 0.515] n=2000, the two together
-  0.452 [0.435, 0.470] n=3000. Both fixed their audit rate completely and
-  neither won a game. See §3 P4a for why, and rule 10. **This does NOT close
-  the P5b veto** — suppressing the play is a third intervention that was never
-  measured.
+- **Boss's Orders, ALL FOUR interventions — the card is closed.** Aim the drag
+  0.489, force the play 0.493, **suppress the play 0.493**, **high-HP drag
+  tiebreak 0.490**, all n=2000; the P4a pair together 0.452 n=3000. Every one
+  of them moved its audit rate exactly as designed (the drag 85/99 → 99/99, the
+  conversion turns 36.9% → 100%, the veto firing on 57.6% of wanted plays with
+  a verified-safe fallback, the tiebreak deciding 56.5% of drags) and not one
+  won a game. See §3 P5b, rule 10 and rule 11. **Do not write a fifth.**
+- **Adrena-Brain pooled budget (P5a)** — real mechanism, ~0.5 real decisions
+  per 200 games, and zero in 55 games against the actual field. §3 P5a.
+- **`REMOVE_DAMAGE_COUNTER_COUNT`** — the clone already moves the maximum
+  offered **100%** of the time (n=481, 120 games). Nothing to fix; all of the
+  loss was one select earlier, in the source pick (§3 P6a).
+- **Post-KO promotion (`TO_ACTIVE`)** — promotes a Pokemon that cannot attack
+  while an attacker was benched **9 times in 120 games** (91.2% right on the
+  102 selects where it mattered). Too small, and a tradeoff besides.
 - **"Never end a turn without attacking" (P5c)** — the clone already attacks on
   **100.0%** of the 3,659 turns where an END option and a payable ATTACK option
   were both on the table (200 games). Nothing to fix.
@@ -623,6 +699,11 @@ valid for once-per-turn lines.** Re-derive them after the P4c instrument fix.
   works, and that call **submits** — it is not a dry run.
 - Kaggle Python API returns **snake_case** (`public_score`, `team_name`);
   `competition_leaderboard_view` paginates at 20 rows.
+- **The first token after `bc:` is a LABEL, not a flag.** `bc:veto` silently
+  builds a plain `bc` named "veto" — the flag parser starts at token 1, so the
+  A/B compares the clone against itself. Write `bc:<label>,<flag>`
+  (`bc:p5b,veto`). `arena.py` now raises on an unrecognised flag, which is what
+  caught it, but the label slot itself still swallows anything.
 - **PowerShell `-File script.ps1 -Days a,b,c` does not bind an array.** Edit the
   script default and launch with no args. **Never name a param `$Matches`** —
   collides with the automatic regex variable.
