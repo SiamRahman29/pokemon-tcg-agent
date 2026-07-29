@@ -41,6 +41,7 @@ class Probe:
         self.inner = inner
         self.buckets = Counter()
         self.src = Counter()      # own-side damage-counter source picks
+        self.promo = Counter()    # post-KO promotion
 
     def __call__(self, obs):
         picked = self.inner(obs)
@@ -82,9 +83,36 @@ class Probe:
                              else f"took {got} dmg when {best} was available"] += 1
                 else:
                     self.src["all sources carry the same damage"] += 1
+            # Post-KO promotion (TO_ACTIVE, all options ours). Also HP-blind,
+            # and 3.9% of selects. Most of "which one" is a tradeoff -- and
+            # tradeoff rules are 0 for 4 here -- but one edge is close to
+            # dominated: promoting a Pokemon that CANNOT attack next turn when
+            # one that can was on the bench costs a whole turn of offence.
+            if sel.get("context") == 4 and side == "ours" and picked:
+                can = []
+                for o in opts:
+                    pk = _at(state, me, o.get("area"), o.get("index") or 0)
+                    can.append(bool(pk) and _can_attack(pk))
+                if any(can) and not all(can):
+                    got = can[picked[0]] if 0 <= picked[0] < len(can) else False
+                    self.promo["promoted one that can attack" if got
+                               else "PROMOTED one that CANNOT attack, "
+                                    "an attacker was available"] += 1
+                else:
+                    self.promo["all/none of them could attack anyway"] += 1
         except Exception as e:  # noqa: BLE001
             self.buckets[f"ERR {type(e).__name__}: {e}"] += 1
         return picked
+
+
+def _can_attack(pk) -> bool:
+    """Can this Pokemon pay for any of its attacks with what it holds now?"""
+    from sa import cards as cdb
+    for aid in cdb.card(pk["id"]).get("attacks") or []:
+        a = cdb.attacks().get(aid)
+        if a and cdb.energy_satisfied(a["energies"], pk.get("energies") or []):
+            return True
+    return False
 
 
 def _at(state, player, area, index):
@@ -128,6 +156,10 @@ def main() -> int:
           f"(n={t2})")
     for k, v in probe.src.most_common():
         print(f"  {k:<40}{v:>7}{v / t2:>8.1%}")
+    t3 = sum(probe.promo.values())
+    print(f"\nTO_ACTIVE -- who we promote after a KO (n={t3})")
+    for k, v in probe.promo.most_common():
+        print(f"  {k:<40}{v:>7}{v / t3:>8.1%}")
     return 0
 
 
