@@ -1,41 +1,68 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** win the public LB. Top is **1179.6** (`flg`). Our best *scored*
-submission reads **958.2**; a newer one (`55077709`, P6a) is pending and is the
-first thing to check. Deadline **2026-08-16**, then ~2 weeks of continued play.
-Kaggle CLI is authenticated, user has entered.
+**Mission:** win the public LB. Top is **1179.8** (`Majkel1337`; `flg` is 2nd at
+1173.7). Our best agent reads **970.1**. Deadline **2026-08-16**, then ~2 weeks
+of continued play. Kaggle CLI is authenticated, user has entered.
 
 **Read §2 before trusting any number. §3 is the live plan.**
 **This file must always end with a live plan, never a summary.**
 
+> ⛔ **DO NOT SUBMIT ANYTHING until §3.0 is resolved.** Only the **latest 2**
+> submissions play episodes. The active pair is `55077709` (762.2, on trial)
+> and `55072063` (**970.1, our best**). A third submission today **evicts
+> `55072063` from active play** and leaves the unproven agent as our best live
+> entry. There is no way to un-evict it except resubmitting and waiting out
+> another climb from μ=600.
+
 ---
 
-## 1. Where we are (day 7, 2026-07-29 pm)
+## 1. Where we are (day 7, 2026-07-29, end of session)
 
-**Both targeting rules are shipped and live. P4b is our best submission.**
+**P4b is our best agent at 970.1 and still rising. P6a shipped this session and
+is reading 762.2 — unresolved, and §3.0 is about resolving it.**
 
 | submission | what | LB |
 |---|---|---|
-| `55077709` | **+ `counter_source` (P6a)** — submitted this session | **600.0 = the μ=600 start, not a score. Read it first.** |
-| `55072063` | clone v2 + `chip_target` + `energy_spread` (P4b) — live | **958.2** ⏳ |
-| `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → 901.6 → **905.2** |
+| `55077709` | **+ `counter_source` (P6a)** — shipped this session | 600 → **762.2** after ~1 h ⚠ |
+| `55072063` | clone v2 + `chip_target` + `energy_spread` (P4b) | 958.2 → **970.1** ✅ **our best** |
+| `55054446` | clone v2 + `chip_target` | 916.8 → 936 → 979 → 901.6 → **905.2** (inactive) |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
 
-⏳ **958.2 is ONE reading — rule 2 is not satisfied yet.** Two readings ≥1 h
-apart this session were identical, which is consistent with "not updated"
-rather than "converged". Re-read before treating it as fact.
+**What 762.2 does and does not mean.** It is one reading, ~1 hour after a
+μ=600 start, and every submission starts at 600 and climbs: `55072063` needed
+roughly 4+ hours to reach 958. So 762.2 is **not yet evidence that
+`counter_source` hurt** — it is exactly what a mid-climb reading looks like.
 
-⚠ **And read `55054446` as a warning about rule 2.** Day 6 recorded it at
-"916.8 → 936.0 → **979**, three readings, trending up" and reasoned from the
-trend. It is now **905.2** — *below* its own first reading, ~74 points off the
-value the plan was written against, and still moving (901.6 → 905.2 within one
-hour). Three agreeing readings did not pin it down. **Treat a rising score as
-unconverged, not as momentum**, and never let a plan depend on the third
-decimal of an LB number that is still playing episodes.
+**But it is not reassuring either, and here is the part that matters:**
+`55072063` rose 958.2 → **970.1** over the same window, against the same field.
+So whatever the meta is doing, it is not dragging our agents down generically.
+**The next session's first job is to read `55077709` again** (§3.0), and it is
+the only thing that should be done before anything else.
 
-The +184-point claim for `chip_target` survives this: 901.6 vs 758.6 for the
-same clone without `targeting.py` is still +143, same sign, same conclusion.
+⚠ **`55054446` is the standing warning about rule 2.** Day 6 recorded it at
+"916.8 → 936.0 → **979**, three readings, trending up" and wrote the plan
+against that. It is now **905.2** — *below* its own first reading and ~74
+points off what the plan assumed. **Treat a rising score as unconverged, not as
+momentum.** The same caution now cuts the other way for `55077709`: a low
+reading on a young submission is equally uninformative.
+
+The `chip_target` claim survives all of this: 905.2 vs 758.6 for the same clone
+without `targeting.py` is still ~+147, same sign, same conclusion.
+
+### ⚠ The meta has shifted (user-reported, 2026-07-29)
+
+The user reports the field has moved, and the top of the board has reshuffled
+(`Majkel1337` 1179.8 now leads; day 6 had `flg` at 1179.6 in first). **This
+matters more than any single rule**, because *every* routine measurement in
+this repo is taken against **one** opponent: `rule:v10,noS` piloting
+`lucario_v10` (rule 12). If the real field no longer looks like that, our local
+bar is measuring against a ghost, and a rule can clear it while losing games on
+the actual ladder — which is a candidate explanation for §3.0 that does not
+require `counter_source` to be a bad rule at all.
+
+**Re-anchoring the arena on the current meta is now the highest-value
+infrastructure work in the project.** See §3.1.
 
 That jump came from **one missing feature**, not from more training. `optfeat`
 gives the net no HP and no damage, so it could not represent "this one dies to
@@ -118,7 +145,7 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
     |---|---|---|
     | `chip_target` | dominated | **0.577** → +~150 LB |
     | `energy_spread` | dominated | **0.702** |
-    | `counter_source` | dominated | **0.534** |
+    | `counter_source` | **half dominated, half tradeoff — see §3.0** | 0.534, **LB unresolved** |
     | `drag_target` (aim the drag) | tradeoff | 0.489 |
     | `boss_converts` (force the play) | tradeoff | 0.493 |
     | `boss_veto` (suppress the play) | tradeoff | 0.493 |
@@ -128,6 +155,15 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
     already as good at them as our arithmetic. What it *cannot* do is see HP,
     damage or attached energy, so it loses to pure arithmetic every time the
     answer is arithmetic. **Before writing a rule, ask which column it is in.**
+
+    ⚠ **And be strict about it — "dominated" is easy to talk yourself into.**
+    `counter_source` was filed as dominated because the heavily-damaged source
+    is better *both* on damage transferred and on healing. The first is real
+    arithmetic; the second is a judgment (a heal is only worth it if the
+    Pokemon is savable) that was **asserted, not measured**. It then won the
+    arena and read 762 on the LB. **A rule is only in the dominated column if
+    EVERY dimension it moves is arithmetic — if one of them is a judgment, it
+    belongs in the tradeoff column no matter how good the other one looks.**
 12. **The local arena is ONE opponent deck.** Everything routine is measured
     against `rule:v10,noS` on `lucario_v10`. A pattern the user watched in a
     real game can be genuinely absent locally without being absent on the LB.
@@ -145,49 +181,176 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
 
 ## 3. THE PLAN (day 7)
 
-**P4b shipped (`55072063`, 958.2). P6a shipped (`55077709`, pending). All of P5
-is closed, and the whole Boss's Orders lever is closed four interventions
-deep.** What is left is P1/P2.
+All of P5 is closed and the whole Boss's Orders lever is closed four
+interventions deep. P6a won locally and shipped. **The open questions are now
+(0) is P6a actually good, (1) are we even measuring against the right
+opponents, and (2) Crustle.**
 
-### 0. Do this first: read `55077709`'s score
+### 0. FIRST: resolve `55077709` (P6a / `counter_source`)
 
-**P6a was submitted 2026-07-29 ~15:21 local. It validated COMPLETE and read
-600.0 — that is the μ=600 every new submission starts at (§7), not a result.**
-It climbs as it plays episodes; `55054446` went 916.8 → 936 → 979 → 905 over
-two days. It is a bare `bc` with chip + spread + counter-source, all four
-Boss's Orders rules off, built by:
+`counter_source` won both local bars — 0.534 [0.513, 0.556] n=2000 mirror, and
+0.626 [0.604, 0.647] n=2000 vs `rule:v10,noS` against a bare `bc`'s 0.593 — and
+then read **762.2** on its first LB reading. Resolve that before anything else.
+
+**Step 1: read it again.** Two readings ≥1 h apart (rule 2), and compare
+against `55072063`'s **contemporaneous** score, never against a remembered one.
+Both are active and playing the same field, so the comparison is fair only if
+both numbers are read at the same time.
 
 ```powershell
-python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
+python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(s.ref, s.date, s.status, s.public_score) for s in a.competition_submissions('pokemon-tcg-ai-battle')[:3]]"
 ```
 
-Expect it to land near `55072063`'s 958.2 and, if the arena is telling the
-truth, above it — the arena said +0.033 against `rule:v10,noS`. **Two readings
-≥1 h apart (rule 2), and remember what `55054446` did**: it read 979 on day 6
-and 905.2 today. If P6a comes in below 958.2, that is not automatically a
-refutation at one reading; it is a reason to read it again.
+**Step 2, if it stays well below `55072063`:** do **not** immediately resubmit
+(see the ⛔ box at the top — a third submission evicts our best agent). Instead
+work out *why*, because there are two very different candidate causes and they
+have opposite fixes:
+
+**Cause A — the local anchor is stale (§3.1).** `counter_source` was measured
+against exactly one opponent deck. If the meta moved, it can be a fine rule
+that we validated against the wrong field. Fix: re-anchor, then re-measure.
+
+**Cause B — my dominance argument for it was half wrong, and this is the more
+likely of the two.** I classified `counter_source` as a *dominated-option* rule
+on the grounds that the heavily-damaged source is better in both directions at
+once. **Only one of those directions actually holds:**
+
+- *Damage transferred* — genuinely dominated. A source with 3+ counters moves
+  30; a source with 1 moves 10. No judgment, pure arithmetic. This half is
+  sound.
+- *Healing* — **this is a tradeoff, and I asserted it rather than measured
+  it.** Moving 30 off our most-damaged Pokemon is only the best heal if that
+  Pokemon is *savable*. If it dies next turn regardless, the 30 is wasted, and
+  healing a Pokemon you can actually keep alive would have been better. The
+  clone may well have been making that judgment correctly with information the
+  rule throws away.
+
+So `counter_source` is **not** a clean member of the 3-for-3 dominated column;
+it is a dominated half welded to a tradeoff half. If it is genuinely hurting,
+this is where to look, and the fix is a narrower rule: **only redirect when the
+net's pick is strictly worse on transfer AND not obviously the better heal** —
+e.g. leave the net alone when its chosen source is the Active, or when the
+max-counter source is already beyond saving (its HP ≤ incoming damage). That
+variant preserves the arithmetic win and returns the judgment to the net.
+
+**Step 3, the rollback if needed.** A bare `bc` with `counter_source` off is
+one flag: `PolicyAgent(..., counter_source=False)` in `agents/sa/bcagent.py`,
+or rebuild from the `55072063` tree. Do this only once a submission slot is
+genuinely free (i.e. you are willing to lose `55054446`'s slot, not
+`55072063`'s).
+
+### 1. Re-anchor the arena on the CURRENT meta — the highest-value work here
+
+**Everything routine in this repo is measured against `rule:v10,noS` piloting
+`lucario_v10`, and the user reports the field has moved.** Rule 12 says one
+opponent deck is not the field; a shifted meta makes that far worse, because
+now it may not even be a *representative* deck. Every number in §3, §6 and the
+rule table in §4 was earned against that single anchor.
+
+**Do this:**
+1. Fetch the newest top episodes and mine what is actually being played —
+   `scripts/mine_meta.py` exists for exactly this, and `fetch_top_episodes.py`
+   pulls the days. The last fetched day is **2026-07-27**; get 07-28 and 07-29.
+2. Rank the decks by frequency **among high-rated players**, not overall.
+3. Import or reconstruct the top 2–3 as arena opponents. `decks/crustle.py`
+   (below) is a worked example of reconstructing a decklist straight from
+   replays — the same method generalises.
+4. **Then re-run the A/Bs that decide what ships**, at minimum `bc` vs
+   `bc:x,noSrc` and `bc` vs `bc:x,noChip`/`noSpread`, against each new anchor.
+   A rule that wins against all of them is real; one that wins only against
+   `rule:v10` was never measured properly.
+
+⚠ **Do not treat a cross-deck score as skill** (rule 5) — use each new anchor
+the way `rule:v10` is used: as a fixed opponent for A/B *deltas*, where both
+sides of the A/B face the identical opponent.
+
+### 2. Crustle — the deck is now in the repo, unpiloted
+
+**`decks/crustle.py` exists** (user-supplied this session), reconstructed as the
+most common exact 60 across replays containing card 345. It resolves in the
+arena: `arena.resolve_deck('crustle')` → 60 cards. Notable contents: Dwebble ×4
+/ Crustle ×3, Cornerstone Mask Ogerpon ex, Mega Kangaskhan ex ×2, Crushing
+Hammer ×4, Boss's Orders ×4.
+
+**Two things are missing and both matter:**
+
+1. **No pilot.** A decklist alone cannot reproduce the lockdown — the wall only
+   works if the pilot sets it up and sits behind it. `bc` would play it
+   off-distribution and `rule:v10` is Lucario-specific scoring. Options: find
+   the public Crustle bot (`dashimaki360/beating-the-day-1-1-crustle-bot`
+   implies one exists), or write a minimal rule pilot. **A weak pilot will
+   under-read the matchup and make the hole look smaller than it is.**
+2. **The `crustle-replays/` directory the decklist docstring cites is not in
+   the repo.** Only the decklist survived. Ask the user for it if the source
+   games are needed.
+
+**The user's idea, recorded but NOT committed to (their instruction):** lean
+harder into passive damage — Munkidori's Adrena-Brain and Froslass's Freezing
+Shroud — to beat Crustle, either by (a) running more copies or (b) prioritising
+those Pokemon when fetching from deck/discard.
+
+Facts already established for it:
+
+- **Munkidori is already at 4 — the copy cap. There is no room to add any.**
+  Only the Froslass line (2 Snorunt / 2 Froslass) can grow. That substantially
+  weakens option (a).
+- Option (a) has a measured headwind besides: the last decklist variant scored
+  0.490 [0.468, 0.512] n=2000, and the net is trained on this exact 60, so any
+  change is off-distribution for the policy too (§6).
+- **Option (b) has the better prior.** It changes no cards, and *conditional on
+  the Crustle matchup* "fetch the Pokemon whose damage actually goes through"
+  is close to a dominated choice rather than a tradeoff — the column that is
+  3-for-3. It would be a matchup-branch rule, which is what the top of the
+  board is built out of. It lands on `TO_HAND` (15.3% of selects; only the
+  duplicate-avoidance question there has been closed, not this one).
+
+**⚠ VERIFY THE PREMISE FIRST — one probe game, before any of the above.** The
+whole idea rests on "Adrena-Brain and Freezing Shroud *move/place* damage
+counters, which is not damage from an attack, so Mysterious Rock Inn should not
+prevent them." **That has never been checked in-engine**, and our card db
+carries no ability text for card 345 (`abilities: None`), so it cannot be
+settled by reading — only by playing. Use the `probe_adrena.py` pattern that
+settled P4b's four mechanics. **If counters do not bypass the prevention, the
+entire passive-damage line is dead and no decklist work should happen.**
+
+Also still unverified from day 5: that Grimmsnarl ex really deals **zero** to
+Crustle. `attack_into_ex_immune_active` has been in `opportunity_audit.py` for
+days and **has never fired**, purely because there was no Crustle deck to fire
+against (rule 9). It can fire now.
 
 ### The board
 
 | | item | state | arena |
 |---|---|---|---|
-| — | ship P4b | **DONE — `55072063` live at 958.2** | 0.702 n=4000 |
-| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON, default ON, SUBMITTED as `55077709`** | **0.534 n=2000; 0.626 vs `rule:v10`** |
+| **§3.0** | **is `55077709` (P6a) actually good?** | **OPEN — do this first, submit nothing until it resolves** | 0.534; 0.626 vs `rule:v10` |
+| **§3.1** | **re-anchor the arena on the current meta** | **OPEN — highest-value work, the meta shifted** | — |
+| **§3.2** | **Crustle** | deck now in repo, **no pilot**; premise unverified | — |
 | P6b | post-KO promotion (`TO_ACTIVE`) | sized: 9 misses in 120 games — **too small, closed** | — |
 | P6c | how many counters to move (`..._COUNT`) | **closed — already 100% max** | — |
 | P5a/b/c | the three live-game findings | **all three closed**, see below | — |
-| P1 | re-rank decks against `rule:v10` | not started | ~20 min |
-| P2 | MAIN-decision rules for the chosen deck | not started — **the real remaining mass** | days |
-| P3 | abomasnow / Crustle lockdowns | not started, fold into P2 | hours |
+| P1 | re-rank decks | **superseded by §3.1** — do that instead | ~20 min |
+| P2 | MAIN-decision rules — start with the **lethal audit** | not started — the real remaining mass | days |
 | P4 | all three items | **closed**, see below and §6 | — |
 
-Replays of the live agent vs real opponents are at
+**Replays of a live agent vs real opponents** are at
 **`replays/submission_replay_2026-07-29/`** (user-supplied, 55 games, 54
 distinct LB opponents — team name `Scio` is us, one game is the self-play
-validation episode). These are the only games we have against the *actual* LB
-field rather than our six local rule agents — use them for diagnosis, not
-training (§6: more imitation data is dead). `scripts/p5a_replays.py` shows how
-to read our own selects out of them.
+validation episode). `scripts/p5a_replays.py` shows how to read our own selects
+out of them. Use them for diagnosis, not training (§6: more imitation data is
+dead).
+
+⚠ **The folder's date is misleading and it cost a conclusion.** Despite the
+`2026-07-29` name these are **`55054446`'s games — the chip-only agent, before
+`energy_spread`** — not the 958/970 P4b agent. The user has said future dumps
+will be named to avoid this. **Two consequences:**
+
+- Any measurement about Munkidori that depends on *two armed* Munkidori is
+  understated in this corpus, because `energy_spread` is exactly the rule that
+  arms the second one. The P5a replay result below (6 pooled KOs, 0 real
+  choices) is confounded in that direction. **P5a's closure rests on the local
+  numbers, which do include `energy_spread`** — the replay figure corroborates
+  but cannot carry it.
+- **Before using this folder for anything, check which agent produced it.**
 
 ---
 
@@ -243,9 +406,15 @@ submission bar): `bc:s,src` vs `rule:v10,noS` = 0.626 [0.604, 0.647], n=2000**,
 against **0.593 [0.562, 0.623] n=1000** for a bare `bc`. +0.033 there vs +0.034
 in the mirror — two different measurements, same size, same sign.
 
-**`counter_source` is therefore ON by default** in `PolicyAgent` and in
+**`counter_source` is ON by default** in `PolicyAgent` and in
 `arena.build_agent`, so a bare `bc` ships it. `bc:<label>,noSrc` turns it off.
-It is the first rule to go on by default since `energy_spread`.
+
+🔴 **AND THEN IT READ 762.2 ON THE LB. This rule is on trial — see §3.0.** Both
+"independent" confirmations above share the same opponent deck
+(`lucario_v10`) and the same era of the meta, so they are less independent than
+they look. The mirror A/B and the `rule:v10` A/B can both be right about that
+opponent and both irrelevant to the current field. §3.0 has the two candidate
+causes and the narrower rule that would keep the arithmetic half.
 
 **Why this one is worth believing more than P5b was:** it is a *dominated*
 option, not a tradeoff (rule 11). The heavily-damaged source is better in both
@@ -439,22 +608,20 @@ but the demonstrator-corpus side of the new `opps` column has not been run
 (`--corpus artifacts/pds_v2`); `artifacts/` is gitignored and may need the
 rebuild in §5.
 
-### P1 — Re-rank decks against `rule:v10` (cheap, still unstarted)
+### P1 — Re-rank decks — **superseded by §3.1, but the caveats still apply**
 
-The old sweep ranked decks by how well our clone beat `rule:iono`, which rule 5
-kills. `mega_lucario_ex` came **last** there yet is the deck the LB-950 agent
-plays. `scripts/deck_sweep.ps1` now defaults to `rule:v10,noS` / `lucario_v10`
-and covers all 7 decks — run with no arguments (§7 PowerShell gotcha).
-~20 min. It answers "what should P2 be written for", **not** "which deck is
-strongest".
+`scripts/deck_sweep.ps1` defaults to `rule:v10,noS` / `lucario_v10` and covers
+all 7 decks (now 8 with `crustle`) — run with no arguments (§7 PowerShell
+gotcha), ~20 min. **Do §3.1 first**: re-ranking decks against a stale anchor
+answers the wrong question, and that anchor is what §3.1 is replacing.
 
-⚠ **Read the result with a thumb on the scale for grimmsnarl.** `chip_target`
-and `energy_spread` are both grimmsnarl-specific (Shadow Bullet's snipe,
-Munkidori's Adrena-Brain), so the sweep now measures "our agent + two
-grimmsnarl-only rules" against decks that get neither. That is the right
-question if you are asking *what to ship*; it is the wrong question if you are
-asking *which deck has the higher ceiling*. For the latter, re-run with
-`bc:plain,noChip,noSpread`.
+⚠ **Read any sweep with a thumb on the scale for grimmsnarl.** `chip_target`,
+`energy_spread` and `counter_source` are all grimmsnarl-specific (Shadow
+Bullet's snipe, Munkidori's Adrena-Brain), so the sweep measures "our agent +
+three grimmsnarl-only rules" against decks that get none of them. That is the
+right question if you are asking *what to ship*; it is the wrong question if
+you are asking *which deck has the higher ceiling*. For the latter, re-run with
+`bc:plain,noChip,noSpread,noSrc`.
 
 ### P2 — Write a real agent for one deck — **now the main line**
 
@@ -480,20 +647,42 @@ should come from, and they are the parts `rule:v10` is explicitly built around.
 Do not expect a general MAIN scorer to beat the clone; expect a lethal-detector
 to.
 
+**Concrete first step — the lethal audit.** Do not write a MAIN scorer. Measure
+one thing: *given the board, does a payable attack KO the opponent's Active,
+and did we take it?* Missing an available KO is arithmetic, not judgment, and
+`textdmg.estimate` is exact for this deck (§4), so the measurement is
+trustworthy. **Size it in two separate cuts and do not merge the
+denominators** — they are different classes and rule 11 predicts different
+outcomes:
+
+1. **Our current Active has a payable attack that KOs, and we chose a different
+   attack.** Dominated. High prior. If this reads near zero the way
+   `REMOVE_DAMAGE_COUNTER_COUNT` did (100% already correct), it closes cheaply
+   and you have lost an hour, not a day.
+2. **The KO needs a different attacker promoted first.** That costs a retreat
+   and a turn of setup, so it is a tradeoff. Lower prior. Measure separately.
+
+`scripts/p6_recon.py` is the template for this kind of counter, and
+`p5b_check.py` is the template for confirming a rule actually fires (rule 9)
+before spending an A/B on it.
+
 ### P3 — The abomasnow hole (open)
 
 0.360 vs 0.475–0.519 elsewhere (pre-P2c, re-measure), and our selects/turn
 collapse from 12.5–16.6 to **8.6** with shorter games — a lockdown, not subtle
 misplay. Replay a loss with `SA_DEBUG=1` and read the actual select options.
 
-**Related and untested: Crustle.** `Mysterious Rock Inn` (card 345) prevents all
-damage from opponent {ex} attacks, and Grimmsnarl ex is `ex=True`, so **it deals
-literally zero to Crustle** — attacking into it wastes every turn. **There is no
-Crustle deck in the repo**, so `attack_into_ex_immune_active` (already in the
-audit) has never fired. The out: Adrena-Brain and Freezing Shroud *move/place
-damage counters*, which is not "damage done by attacks", so they should bypass
-the prevention — **verify in-engine.** `dashimaki360/beating-the-day-1-1-crustle-bot`
-is a public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall".
+**Crustle has moved to §3.2 — the deck now exists.** Summary of the mechanics
+claim, which is still unverified: **Mysterious Rock Inn is an ABILITY on
+Crustle itself** (card 345; 344 is Dwebble — earlier drafts of this file wrote
+it as if it were a separate stadium card, and our own card db exposes no
+ability text for it at all, `abilities: None`). It prevents damage from
+opponent {ex} attacks, and Grimmsnarl ex is `ex=True`, so it should take
+**zero** from Shadow Bullet. The proposed out is that Adrena-Brain and Freezing
+Shroud *move/place damage counters*, which is not "damage done by an attack".
+**None of this has been confirmed in-engine — see §3.2, which is where the
+probe is specified.** `dashimaki360/beating-the-day-1-1-crustle-bot` is a
+public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall".
 
 ---
 
@@ -610,6 +799,13 @@ python -X utf8 scripts/import_rule_agents.py   # the four sample agents
 # Find new public notebooks (this is how V10 was found — redo periodically)
 python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(k.ref,'|',k.title) for k in a.kernels_list(competition='pokemon-tcg-ai-battle',sort_by='voteCount',page_size=30)]"
 
+# The current leaderboard (top is Majkel1337 1179.8; paginates at 20)
+python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(i, r.team_name, r.score) for i, r in enumerate(a.competition_leaderboard_view('pokemon-tcg-ai-battle')[:20], 1)]"
+
+# §3.1 re-anchor: what is the field ACTUALLY playing now? (last fetched: 07-27)
+python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-29 --max 400
+python -X utf8 scripts/mine_meta.py
+
 # Rebuild data only (more data is NOT a lever — §6)
 python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-26 --max 400
 python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d26 replays/2026-07-26
@@ -618,10 +814,17 @@ python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d26 replays/2
 ### Data on disk
 
 `replays/`: 07-17..07-22, 07-24, 07-26, 07-27 = 400 each; 07-23 = 175,
-07-25 = 268, 07-16 = 115; 07-13/14/15 = 0. Plus 366 old-repo replays at
+07-25 = 268, 07-16 = 115; 07-13/14/15 = 0. **Nothing newer than 07-27 — and
+the meta has shifted since (§3.1).** Plus 366 old-repo replays at
 `E:\Kaggle\pokemon-tcg-simulation\replay_miner\replays\2026-07-06..12`.
-**`replays/submission_replay_2026-07-29/` = our live 936 agent vs the real
-field** (user-supplied; the only non-local opposition we have).
+
+**`replays/submission_replay_2026-07-29/` = `55054446` (the chip-only agent)
+vs the real field**, 55 games, user-supplied. ⚠ The folder name is a date, not
+an agent — it is **not** the P4b agent despite being dated the same day. See
+the warning in §3.
+
+`decks/crustle.py` was reconstructed from a `crustle-replays/` directory that
+is **not in the repo** — only the decklist survived (§3.2).
 
 `artifacts/**` is gitignored. `artifacts/pds/` = 4,010 games (the *rejected*
 lw3 corpus); `artifacts/pds_v2/` = 2,810 (the shipped v2 corpus) and exists
@@ -703,6 +906,12 @@ has ever demonstrated search is worth anything.** Loose end if ever revisited:
   **100.0%** of the 3,659 turns where an END option and a payable ATTACK option
   were both on the table (200 games). Nothing to fix.
 
+⚠ **Everything in this section was measured against ONE opponent
+(`rule:v10,noS` / `lucario_v10`) in the pre-shift meta.** The negatives are
+probably safe — a rule that could not win against that anchor is unlikely to be
+a hidden gem — but the *positives* are the ones to re-check after §3.1, and
+`counter_source` is already under suspicion for exactly this reason (§3.0).
+
 **Do not resurrect:** the arena→LB ladder anchored on `rule:iono`; the old deck
 sweep's ranking; "the clone is comfortably above the rule baseline"; every n=24
 number and every strength claim dated before 2026-07-27 pm (measured through
@@ -733,6 +942,17 @@ valid for once-per-turn lines.** Re-derive them after the P4c instrument fix.
   `arena.py` prints `WOULD TIME OUT ON KAGGLE` off that single game. Check the
   distribution before believing it: in `ab_spread.jsonl` the worst pool was
   −3606.9 s and the *next* worst was 599.2 s, median 599.9 s, p99 latency 1.6 ms.
+- **⛔ "Latest 2 active" is a TRAP, not a footnote.** Submitting a third agent
+  today silently **evicts your best one from active play** — it stops playing
+  episodes and its score freezes wherever it was. This is exactly the position
+  at the end of day 7: `55072063` (970.1, our best) is only active because
+  nothing has been submitted after `55077709`. **Before every submission, list
+  the active pair and name which one you are willing to lose.** A rollback is
+  itself a submission and pays this cost too.
+- **A young submission reads low and it means nothing.** Everything starts at
+  μ=600 and climbs for hours (`55072063` took ~4+ h to reach 958). Never
+  compare a fresh submission against a mature one, and never compare either
+  against a remembered number — **read both scores in the same call** (§3.0).
 - **Submission:** `.tar.gz`, `main.py` + `deck.csv` at TOP level (+ `cg/`, `sa/`).
   Cap 197.7 MiB. 5/day, **latest 2 active**. New submissions start μ=600.
   Validation episode is self-play first — a crash there means Error.
