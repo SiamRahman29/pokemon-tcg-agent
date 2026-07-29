@@ -183,10 +183,13 @@ def counter_source(obs: dict, chosen: list[int], rank) -> list[int] | None:
     already takes the maximum on that second select **100% of the time**
     (n=481, 120 games), so all the loss is here, one select earlier.
 
-    Measured on the shipped clone (120 games, 249 source selects with >= 2
-    options and unequal damage on them): it picked a source carrying fewer than
-    3 counters while one with 3+ was on the table in ~20% of them, moving 10 or
-    20 damage where 30 was available.
+    Measured on the shipped clone (120 games, 291 source selects with >= 2
+    options): in **59 of them (20.3%)** it picked a source that moves fewer
+    counters than an available alternative -- 10 or 20 damage where 30 was on
+    the table. With the rule that goes to 0, and activations that move the full
+    3 counters rise from 67.1% to 76.5%.
+
+    arena: `bc:s,src` vs `bc` = **0.534 [0.513, 0.556], n=2000**, mirror.
 
     This is the `energy_spread` shape, not the `boss_converts` shape: the
     heavily damaged source is better in BOTH directions at once -- it transfers

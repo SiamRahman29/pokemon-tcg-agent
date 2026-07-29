@@ -205,9 +205,9 @@ only "1,2" off a source with 2.
 so all of the loss is one select earlier, in the source pick — which is exactly
 where the features go blind.
 
-**Measured (120 games, 291 source selects with ≥2 options): it picked a source
-carrying fewer than 3 counters while one with 3+ was on the table 59 times —
-20.3%**, moving 10 or 20 damage where 30 was available.
+**Measured (120 games, 291 source selects with ≥2 options): in 59 of them
+(20.3%) it picked a source that moves fewer counters than an available
+alternative** — 10 or 20 damage where 30 was on the table.
 
 `targeting.counter_source` (`bc:<label>,src`) takes that to **0**, and full
 3-counter moves go from 67.1% to 76.5% of activations.
