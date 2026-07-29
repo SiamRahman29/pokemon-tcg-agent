@@ -162,8 +162,10 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         net_path = None
         chip = True
         spread = True
-        drag = True
-        boss = True
+        # off by default, matching PolicyAgent: unproven rules are opt-in, so
+        # a plain `bc` is always exactly what a submission would ship
+        drag = False
+        boss = False
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -174,12 +176,12 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
             elif f == "noSpread":
                 # disable the Munkidori {D}-spread override (sa/targeting.py)
                 spread = False
-            elif f == "noDrag":
-                # disable Boss's Orders target ranking (sa/targeting.py)
-                drag = False
-            elif f == "noBoss":
-                # disable "play Boss's Orders when it buys a KO"
-                boss = False
+            elif f in ("drag", "noDrag"):
+                # Boss's Orders target ranking (sa/targeting.py), default off
+                drag = f == "drag"
+            elif f in ("boss", "noBoss"):
+                # "play Boss's Orders when it buys a KO", default off
+                boss = f == "boss"
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
         return ((f"bc:{tag}" if tag else "bc"),

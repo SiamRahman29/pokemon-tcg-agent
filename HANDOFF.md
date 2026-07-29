@@ -173,9 +173,12 @@ correct *local* arithmetic can still be a bad trade globally. Note also that it
 fires at the first MAIN select of the turn, before any Rare Candy line could
 upgrade our Active into something that KOs the opposing Active outright.
 
-**Whatever the split says, `boss_converts` must not ship on a "the arithmetic
-is obviously right" argument.** It is currently `boss_converts=True` by default
-in `PolicyAgent`; flip that default to False unless its isolation clears 0.5.
+**Both now default to False** in `PolicyAgent` and in `bc:`, and are opt-in via
+`bc:drag` / `bc:boss`. The submission's `main.py` does a bare `_A(_deck)`, so a
+plain `bc` in the arena is exactly what ships — turn a flag's default on only
+after that rule clears 0.5 by itself. The isolation runs were launched under
+the older opt-out defaults, so their repro commands today are
+`bc:drag` vs `bc:base` and `bc:boss` vs `bc:base`.
 
 ### P4c — Count opportunities, not turns — DONE
 

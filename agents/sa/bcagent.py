@@ -10,7 +10,7 @@ from . import policynet, targeting
 class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
                  chip_targeting: bool = True, energy_spread: bool = True,
-                 drag_target: bool = True, boss_converts: bool = True):
+                 drag_target: bool = False, boss_converts: bool = False):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -25,7 +25,11 @@ class PolicyAgent:
         # count per option, so it stacks a dead second {D} on one Munkidori.
         self.energy_spread = energy_spread
         # Boss's Orders: which benched Pokemon to drag, and when the drag is
-        # worth the Supporter. Both need damage-vs-HP arithmetic.
+        # worth the Supporter. Both need damage-vs-HP arithmetic, and both
+        # default OFF: together they measured 0.452 [0.435, 0.470] over 3000
+        # mirror games. Whatever the per-rule isolation says, `_A(_deck)` in
+        # the submission's main.py takes these defaults -- so a rule turns on
+        # here only once it has cleared 0.5 on its own.
         self.drag_target = drag_target
         self.boss_converts = boss_converts
 
