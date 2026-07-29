@@ -16,7 +16,7 @@ then ~2 weeks of continued play. Kaggle CLI is authenticated, user has entered.
 | submission | what | LB |
 |---|---|---|
 | `55072063` | **clone v2 + `chip_target` + `energy_spread` (P4b)** — live | **958.2** ⏳ |
-| `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → **901.6 (settled)** |
+| `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → 901.6 → **905.2** |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
 
@@ -26,9 +26,11 @@ rather than "converged". Re-read before treating it as fact.
 
 ⚠ **And read `55054446` as a warning about rule 2.** Day 6 recorded it at
 "916.8 → 936.0 → **979**, three readings, trending up" and reasoned from the
-trend. It settled at **901.6** — *below* its own first reading. Three agreeing
-readings did not stop the number moving 77 points once it stopped playing new
-episodes. Treat a rising score as unconverged, not as momentum.
+trend. It is now **905.2** — *below* its own first reading, ~74 points off the
+value the plan was written against, and still moving (901.6 → 905.2 within one
+hour). Three agreeing readings did not pin it down. **Treat a rising score as
+unconverged, not as momentum**, and never let a plan depend on the third
+decimal of an LB number that is still playing episodes.
 
 The +184-point claim for `chip_target` survives this: 901.6 vs 758.6 for the
 same clone without `targeting.py` is still +143, same sign, same conclusion.
@@ -142,16 +144,31 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
 ## 3. THE PLAN (day 7)
 
 **P4b shipped (`55072063`, 958.2). All of P5 is closed. The whole Boss's
-Orders lever is closed, four interventions deep.** What is left is P6 — the
-same feature-blindness hunt, done systematically instead of from live-game
-anecdotes — and then P1/P2.
+Orders lever is closed, four interventions deep. P6a won and is default-ON but
+NOT yet submitted.** Then P1/P2.
+
+### 0. Do this first: P6a is built and unsubmitted
+
+`counter_source` cleared both bars — 0.534 [0.513, 0.556] n=2000 in the mirror
+and **0.626 [0.604, 0.647] n=2000 vs `rule:v10,noS`** against a bare `bc`'s
+0.593. It is on by default, so `build_submission.py` will pick it up with no
+flags. **Nothing has been built or sent — ask the user first** (§7: 5/day,
+latest 2 active; a new submission would displace `55054446` at ~905, not the
+958.2 one). Build and send with:
+
+```powershell
+python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
+```
+
+> bc clone v2 + chip/spread/counter-source (P6a): mirror 0.534 [0.513,0.556]
+> n=2000; 0.626 [0.604,0.647] vs rule:v10 n=2000
 
 ### The board
 
 | | item | state | arena |
 |---|---|---|---|
 | — | ship P4b | **DONE — `55072063` live at 958.2** | 0.702 n=4000 |
-| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON its A/B — confirm vs `rule:v10`, then ship** | **0.534 [0.513, 0.556] n=2000** |
+| **P6a** | **`counter_source` — Adrena-Brain's source pick** | **WON, confirmed, default ON — not yet submitted** | **0.534 n=2000; 0.626 vs `rule:v10`** |
 | P6b | post-KO promotion (`TO_ACTIVE`) | sized: 9 misses in 120 games — **too small, closed** | — |
 | P6c | how many counters to move (`..._COUNT`) | **closed — already 100% max** | — |
 | P5a/b/c | the three live-game findings | **all three closed**, see below | — |
@@ -216,6 +233,15 @@ alternative** — 10 or 20 damage where 30 was on the table.
 mirror.** The interval clears 0.5, and it is balanced across seats (534/466 as
 P0, 535/465 as P1), so it is not a seat artifact. Third dominated-option rule,
 third win.
+
+**Confirmed against an independent opponent (rule 4's spirit, and the §7
+submission bar): `bc:s,src` vs `rule:v10,noS` = 0.626 [0.604, 0.647], n=2000**,
+against **0.593 [0.562, 0.623] n=1000** for a bare `bc`. +0.033 there vs +0.034
+in the mirror — two different measurements, same size, same sign.
+
+**`counter_source` is therefore ON by default** in `PolicyAgent` and in
+`arena.build_agent`, so a bare `bc` ships it. `bc:<label>,noSrc` turns it off.
+It is the first rule to go on by default since `energy_spread`.
 
 **Why this one is worth believing more than P5b was:** it is a *dominated*
 option, not a tradeoff (rule 11). The heavily-damaged source is better in both
@@ -485,7 +511,7 @@ is a public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall
   |---|---|---|---|
   | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577, n=2000 → **+~150 LB** |
   | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702, n=4000** |
-  | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `src`, **off** | see §3 P6a |
+  | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `noSrc` | **0.534, n=2000** |
   | `drag_target` | SWITCH (Boss's Orders' drag) | `drag`, **off** | 0.489 n=2000 — null |
   | `drag_target(prefer_high_hp)` | ditto, KO-able tiebreak | `dragHi`, **off** | 0.490 n=2000 — null |
   | `boss_converts` | MAIN, plays Boss's Orders | `boss`, **off** | 0.493 n=2000 — null |

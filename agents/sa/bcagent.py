@@ -12,7 +12,7 @@ class PolicyAgent:
                  chip_targeting: bool = True, energy_spread: bool = True,
                  drag_target: bool = False, boss_converts: bool = False,
                  drag_high_hp: bool = False, boss_veto: bool = False,
-                 counter_source: bool = False):
+                 counter_source: bool = True):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -42,7 +42,10 @@ class PolicyAgent:
         # its own A/B clears 0.5, same discipline as the two above.
         self.boss_veto = boss_veto
         # Adrena-Brain's source pick: same HP blindness, and the source caps
-        # how many counters the ability can move at all.
+        # how many counters the ability can move at all. ON by default -- it
+        # cleared 0.5 alone (0.534 [0.513, 0.556] n=2000 mirror) and an
+        # independent opponent agreed (0.626 [0.604, 0.647] vs rule:v10,noS
+        # against 0.593 for a bare bc). `bc:<label>,noSrc` turns it off.
         self.counter_source = counter_source
 
     def __call__(self, obs: dict) -> list[int]:

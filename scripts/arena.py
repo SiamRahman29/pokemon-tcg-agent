@@ -168,7 +168,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         boss = False
         drag_hi = False
         veto = False
-        source = False
+        # on by default, matching PolicyAgent: it cleared its own A/B
+        source = True
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -191,7 +192,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 drag_hi = f == "dragHi"
             elif f in ("src", "noSrc"):
                 # take Adrena-Brain's counters off a source that HAS 3 of
-                # them (sa/targeting.counter_source), default off
+                # them (sa/targeting.counter_source), default ON
                 source = f == "src"
             elif f in ("veto", "noVeto"):
                 # P5b: DON'T play Boss's Orders when nothing on their bench is
