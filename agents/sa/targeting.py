@@ -20,6 +20,10 @@ otherwise concentrate on the one closest to dying.
 Deliberately narrow. It fires only when *every* option in the select resolves
 to an opponent Pokemon, which leaves the mixed selects (Adrena-Brain's "from 1
 of YOUR Pokemon" source pick) to the net.
+
+`energy_spread` is the same idea one select over: the net cannot see how much
+energy an ATTACH target already carries, so it stacks a second {D} on a
+Munkidori that already has one instead of arming a bare one.
 """
 from __future__ import annotations
 
@@ -32,7 +36,13 @@ DAMAGE = 15
 CHIP_CONTEXTS = (DAMAGE_COUNTER, DAMAGE_COUNTER_ANY, DAMAGE)
 
 # AreaType ints
-_ACTIVE, _BENCH = 4, 5
+_HAND, _ACTIVE, _BENCH = 2, 4, 5
+
+MAIN = 0            # SelectContext.MAIN
+OPT_ATTACH = 8      # OptionType.ATTACH
+MUNKIDORI = 112
+DARK_ENERGY = 7     # Basic {D} Energy, card id
+DARK_TYPE = 7       # ... and energy type; pk["energies"] holds types
 
 # Shadow Bullet's bench snipe and Adrena-Brain's 3 counters are both 30.
 CHIP_DAMAGE = 30
@@ -85,3 +95,72 @@ def chip_target(obs: dict) -> list[int] | None:
 
     scored.sort()
     return [i for _, i in scored]
+
+
+def _hand_card_id(state: dict, me: int, index: int) -> int:
+    try:
+        hand = state["players"][me]["hand"]
+        card = hand[index]
+        return card["id"] if card else 0
+    except (KeyError, IndexError, TypeError):
+        return 0
+
+
+def _dark(pk: dict) -> int:
+    return sum(1 for e in (pk.get("energies") or []) if e == DARK_TYPE)
+
+
+def energy_spread(obs: dict, chosen: list[int]) -> list[int] | None:
+    """Redirect a wasted second {D} on a Munkidori to a bare one.
+
+    Verified in-engine over 40 games: Adrena-Brain is once **per Pokemon**
+    (we activated it twice in a turn 35 times, and a slot that had used it was
+    never re-offered), and its "has any {D} Energy attached" is a **threshold,
+    not a cost** -- the energy is never consumed (n=138, unchanged every time).
+    So two Munkidori holding one {D} each move 6 damage counters a turn; one
+    Munkidori holding two moves 3, and the second {D} does nothing else either:
+    Munkidori's only attack is Mind Bend, cost {P}{C}, and this deck runs zero
+    Psychic energy. Nor is Munkidori a *Marnie's* Pokemon, so Grimmsnarl ex's
+    Punk Up cannot attach to it -- the 1-per-turn hand attach is the only
+    source, which is what makes spending it on a no-op expensive.
+
+    Measured on the shipped clone (`opportunity_audit.py`, 150 games): when a
+    select offered both a bare and an already-loaded Munkidori and the clone
+    attached to one of them, it picked the loaded one **143 times to 94** --
+    worse than a coin flip, because `optfeat` gives it no attached-energy count.
+
+    Narrow on purpose: this only reorders *which Munkidori* gets the energy the
+    net already decided to attach. It never creates or suppresses an attach.
+    """
+    sel = obs.get("select") or {}
+    if sel.get("context") != MAIN:
+        return None
+    options = sel.get("option") or []
+    if not chosen:
+        return None
+    pick = chosen[0]
+    if not 0 <= pick < len(options):
+        return None
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+
+    bare: list[int] = []
+    loaded: list[int] = []
+    for i, opt in enumerate(options):
+        if opt.get("type") != OPT_ATTACH:
+            continue
+        if (opt.get("area") or _HAND) != _HAND:
+            continue
+        if _hand_card_id(state, me, opt.get("index") or 0) != DARK_ENERGY:
+            continue
+        pk = _pokemon_at(state, me, opt.get("inPlayArea"),
+                         opt.get("inPlayIndex") or 0)
+        if pk is None or pk.get("id") != MUNKIDORI:
+            continue
+        (bare if _dark(pk) == 0 else loaded).append(i)
+
+    if pick not in loaded or not bare:
+        return None
+    return [bare[0]] + [i for i in chosen[1:] if i != bare[0]]

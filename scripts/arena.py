@@ -161,6 +161,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         tag = spec.split(":", 1)[1] if ":" in spec else ""
         net_path = None
         chip = True
+        spread = True
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -168,10 +169,14 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
             elif f == "noChip":
                 # disable the chip-damage targeting override (sa/targeting.py)
                 chip = False
+            elif f == "noSpread":
+                # disable the Munkidori {D}-spread override (sa/targeting.py)
+                spread = False
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
         return ((f"bc:{tag}" if tag else "bc"),
-                PolicyAgent(deck, net_path, chip_targeting=chip))
+                PolicyAgent(deck, net_path, chip_targeting=chip,
+                            energy_spread=spread))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

@@ -9,7 +9,7 @@ from . import policynet, targeting
 
 class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
-                 chip_targeting: bool = True):
+                 chip_targeting: bool = True, energy_spread: bool = True):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -20,6 +20,9 @@ class PolicyAgent:
         # chip damage at chance. Per-instance so the two sides of an A/B can
         # differ inside one process.
         self.chip_targeting = chip_targeting
+        # Same blindness on the other side of the board: no attached-energy
+        # count per option, so it stacks a dead second {D} on one Munkidori.
+        self.energy_spread = energy_spread
 
     def __call__(self, obs: dict) -> list[int]:
         try:
@@ -40,7 +43,12 @@ class PolicyAgent:
             net = self.net or policynet.get()
             if net is None:
                 return list(range(mn))
-            return net.choose(obs)
+            picked = net.choose(obs)
+            if self.energy_spread:
+                fixed = targeting.energy_spread(obs, list(picked))
+                if fixed is not None:
+                    return fixed
+            return picked
         except Exception:
             traceback.print_exc(file=sys.stderr)
             try:
