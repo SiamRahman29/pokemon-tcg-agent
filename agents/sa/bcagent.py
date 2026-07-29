@@ -9,7 +9,8 @@ from . import policynet, targeting
 
 class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
-                 chip_targeting: bool = True, energy_spread: bool = True):
+                 chip_targeting: bool = True, energy_spread: bool = True,
+                 drag_target: bool = True, boss_converts: bool = True):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -23,6 +24,10 @@ class PolicyAgent:
         # Same blindness on the other side of the board: no attached-energy
         # count per option, so it stacks a dead second {D} on one Munkidori.
         self.energy_spread = energy_spread
+        # Boss's Orders: which benched Pokemon to drag, and when the drag is
+        # worth the Supporter. Both need damage-vs-HP arithmetic.
+        self.drag_target = drag_target
+        self.boss_converts = boss_converts
 
     def __call__(self, obs: dict) -> list[int]:
         try:
@@ -36,10 +41,19 @@ class PolicyAgent:
                 return []
             if mn == mx == n:
                 return list(range(n))
+            want = max(min(mn, mx, n), 1)
             if self.chip_targeting:
                 order = targeting.chip_target(obs)
                 if order is not None:
-                    return order[:max(min(mn, mx, n), 1)]
+                    return order[:want]
+            if self.drag_target:
+                order = targeting.drag_target(obs)
+                if order is not None:
+                    return order[:want]
+            if self.boss_converts:
+                order = targeting.boss_converts(obs)
+                if order is not None:
+                    return order[:want]
             net = self.net or policynet.get()
             if net is None:
                 return list(range(mn))

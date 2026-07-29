@@ -162,6 +162,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         net_path = None
         chip = True
         spread = True
+        drag = True
+        boss = True
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -172,11 +174,18 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
             elif f == "noSpread":
                 # disable the Munkidori {D}-spread override (sa/targeting.py)
                 spread = False
+            elif f == "noDrag":
+                # disable Boss's Orders target ranking (sa/targeting.py)
+                drag = False
+            elif f == "noBoss":
+                # disable "play Boss's Orders when it buys a KO"
+                boss = False
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
         return ((f"bc:{tag}" if tag else "bc"),
                 PolicyAgent(deck, net_path, chip_targeting=chip,
-                            energy_spread=spread))
+                            energy_spread=spread, drag_target=drag,
+                            boss_converts=boss))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

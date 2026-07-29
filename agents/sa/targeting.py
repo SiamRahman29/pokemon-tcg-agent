@@ -28,6 +28,7 @@ Munkidori that already has one instead of arming a bare one.
 from __future__ import annotations
 
 from . import cards
+from .textdmg import estimate
 
 # SelectContext ints (mirror cg.api without importing it)
 DAMAGE_COUNTER = 13
@@ -39,7 +40,10 @@ CHIP_CONTEXTS = (DAMAGE_COUNTER, DAMAGE_COUNTER_ANY, DAMAGE)
 _HAND, _ACTIVE, _BENCH = 2, 4, 5
 
 MAIN = 0            # SelectContext.MAIN
+SWITCH = 3          # SelectContext.SWITCH -- what Boss's Orders drags with
+OPT_PLAY = 7        # OptionType.PLAY
 OPT_ATTACH = 8      # OptionType.ATTACH
+BOSS_ORDERS = 1182
 MUNKIDORI = 112
 DARK_ENERGY = 7     # Basic {D} Energy, card id
 DARK_TYPE = 7       # ... and energy type; pk["energies"] holds types
@@ -164,3 +168,114 @@ def energy_spread(obs: dict, chosen: list[int]) -> list[int] | None:
     if pick not in loaded or not bare:
         return None
     return [bare[0]] + [i for i in chosen[1:] if i != bare[0]]
+
+
+# --- Boss's Orders: drag something we can actually kill -------------------
+
+def best_damage(active: dict, mypl: dict, oppl: dict, target: dict) -> float:
+    """Best damage `active` can pay for right now, applied to `target`.
+
+    `estimate` is text-pattern-based and approximate in general, but every
+    attack this deck can pay for is flat damage (Shadow Bullet 180, Corkscrew
+    Punch 60, Frost Smash 60), so here it is exact. Where it is not, it
+    under-reads, which only makes the callers below more conservative."""
+    if not active:
+        return 0.0
+    atk_type = cards.card(active["id"]).get("energyType")
+    weak = cards.card(target["id"]).get("weakness")
+    mult = 2.0 if (weak is not None and weak == atk_type) else 1.0
+    best = 0.0
+    for aid in cards.card(active["id"]).get("attacks") or []:
+        a = cards.attacks().get(aid)
+        if a and cards.energy_satisfied(a["energies"], active["energies"]):
+            best = max(best, estimate(aid, active, mypl, oppl) * mult)
+    return best
+
+
+def drag_target(obs: dict) -> list[int] | None:
+    """Ranked option indices for Boss's Orders' drag, else None.
+
+    Boss's Orders resolves through a **SWITCH** select (not TO_ACTIVE, which is
+    our own post-KO promotion) whose options are the opponent's benched
+    Pokemon. Same blind spot as `chip_target`: no HP in the features, so the
+    net cannot tell which of them dies to the attack we are about to make.
+
+    Measured on the shipped clone (300 games): given a KO-able bench target it
+    took the best available KO 85 times out of 99 -- 12 drags of a Pokemon that
+    survives, 2 that took fewer prizes than were on offer.
+
+    Rank: dies to our attack first, most prizes among those, then closest to
+    dying. Same guard as `chip_target` -- every option must be an opponent's
+    benched Pokemon, so our own retreats and switches are left to the net."""
+    sel = obs.get("select") or {}
+    if sel.get("context") != SWITCH:
+        return None
+    options = sel.get("option") or []
+    if len(options) < 2:
+        return None
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+    try:
+        mypl, oppl = state["players"][me], state["players"][1 - me]
+    except (KeyError, IndexError, TypeError):
+        return None
+    active = mypl["active"][0] if mypl.get("active") else None
+
+    scored: list[tuple[tuple, int]] = []
+    for i, opt in enumerate(options):
+        if opt.get("playerIndex") in (None, me) or opt.get("area") != _BENCH:
+            return None
+        pk = _pokemon_at(state, 1 - me, _BENCH, opt.get("index") or 0)
+        if pk is None or pk.get("hp") is None:
+            return None
+        kills = best_damage(active, mypl, oppl, pk) >= pk["hp"]
+        scored.append(((0 if kills else 1,
+                        -cards.prize_value(pk["id"]) if kills else 0,
+                        pk["hp"]), i))
+
+    scored.sort()
+    return [i for _, i in scored]
+
+
+def boss_converts(obs: dict) -> list[int] | None:
+    """Play Boss's Orders when the drag turns a nothing turn into a prize.
+
+    The frequency question was already closed -- we play Boss's Orders on 32.4%
+    of legal turns against the demonstrators' 31.4%. The open one was *when*.
+    Over 300 games there were 157 turns where our attack would not KO the
+    opponent's Active but would KO something on their bench, and the clone
+    played Boss's Orders on only 58 of them (36.9%; it plays it on 25.7% of all
+    other legal turns, so it does discriminate -- just barely).
+
+    Fires only on that exact shape: we can attack, the Active survives, a
+    benched Pokemon does not. It costs the turn's Supporter, which is why it
+    stays pinned to the case where the payoff is a guaranteed prize."""
+    sel = obs.get("select") or {}
+    if sel.get("context") != MAIN:
+        return None
+    options = sel.get("option") or []
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+    boss = [i for i, o in enumerate(options)
+            if o.get("type") == OPT_PLAY
+            and _hand_card_id(state, me, o.get("index") or 0) == BOSS_ORDERS]
+    if not boss:
+        return None
+    try:
+        mypl, oppl = state["players"][me], state["players"][1 - me]
+    except (KeyError, IndexError, TypeError):
+        return None
+    active = mypl["active"][0] if mypl.get("active") else None
+    opp_active = oppl["active"][0] if oppl.get("active") else None
+    if not active or not opp_active:
+        return None
+    if best_damage(active, mypl, oppl, opp_active) >= opp_active["hp"]:
+        return None  # the Active already dies; the drag would trade down
+    for pk in oppl.get("bench") or []:
+        if pk and best_damage(active, mypl, oppl, pk) >= pk["hp"]:
+            return [boss[0]]
+    return None
