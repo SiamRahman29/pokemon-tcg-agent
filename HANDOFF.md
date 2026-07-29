@@ -15,13 +15,12 @@ authenticated, user has entered.
 
 | submission | what | LB |
 |---|---|---|
-| *(new, ref TBD)* | **clone v2 + `targeting.py`** — live | **936** ⚠ one reading |
-| `55048039` | clone v2, no targeting | 752 (settled, 3 reads) |
-| `55049206` | `rule:iono` sample agent | ~700 (settled, 3 reads) |
+| `55054446` | **clone v2 + `targeting.py`** — live | **936.0 / 916.8** ✅ |
+| `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
+| `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
 
-⚠ **936 is a single reading.** Rule 2 requires two ≥1 h apart before it is real.
-Take the second one and record it here. Ref ID needs filling in — the user
-submitted from the browser, so pull it with the submissions command in §5.
+✅ **Confirmed under rule 2**: 936.0 and 916.8, readings 8 h apart, both far
+above the 758.6 of the same clone without `targeting.py`.
 
 That jump came from **one missing feature**, not from more training. `optfeat`
 gives the net no HP and no damage, so it could not represent "this one dies to
@@ -75,8 +74,17 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
    comparison is valid for them.
 7. **This machine gives ~1.4 cores of real throughput** (Ryzen 5500U, 15 W).
    Run 2–3 jobs, not 4+.
-8. **Frequency is not correctness, and per-turn binary audits hide multiplicity.**
-   See §3c — this one is new and it invalidated an "already correct" verdict.
+8. **Frequency is not correctness, and per-turn binary audits hide
+   multiplicity.** `munkidori_adrena_brain` read 99.4% per *turn* and 96.9% per
+   *opportunity* — because with two Munkidori a turn offers two activations and
+   `any()` scores one as 100%. **Count opportunities, not turns**
+   (`MULTIPLICITY` in `opportunity_audit.py`).
+9. **A metric that never prints is not a metric that passed.** `drag_target`
+   was in the audit for days reading zero rows: it was keyed on `TO_ACTIVE`, but
+   Boss's Orders drags through **`SWITCH`**. `TO_ACTIVE` is our own post-KO
+   promotion, so every option was on our side and the opponent-only filter
+   dropped them all, silently. **Check that each row has a non-zero
+   denominator before believing the table.**
 
 ---
 

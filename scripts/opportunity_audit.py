@@ -187,7 +187,10 @@ TARGET_CONTEXTS = {
     int(SelectContext.DAMAGE): "damage_target",              # Shadow Bullet
     int(SelectContext.DAMAGE_COUNTER): "counter_target",     # Adrena-Brain
     int(SelectContext.DAMAGE_COUNTER_ANY): "counter_target",
-    int(SelectContext.TO_ACTIVE): "drag_target",             # Boss's Orders
+    # Boss's Orders drags through SWITCH, not TO_ACTIVE. TO_ACTIVE is our own
+    # post-KO promotion (options are always our side), so it never survived
+    # target_choice's opponent-only filter and this row silently never printed.
+    int(SelectContext.SWITCH): "drag_target",
 }
 
 
