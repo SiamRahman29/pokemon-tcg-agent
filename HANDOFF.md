@@ -85,6 +85,12 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
    promotion, so every option was on our side and the opponent-only filter
    dropped them all, silently. **Check that each row has a non-zero
    denominator before believing the table.**
+10. **Moving an audit rate is not winning games.** The P4a rules took the drag
+    from 85/99 to 99/99 and the conversion turns from 36.9% to 100%, and then
+    measured 0.489 and 0.493 in the arena. Rule 3 one level up, in the *rule*
+    pipeline instead of the training one. **Arena-A/B every rule, no
+    exceptions** — and prefer rules that delete a *dominated* option over rules
+    that pick a side in a *tradeoff* (§3 P4a).
 
 ---
 
@@ -98,7 +104,7 @@ watching the live 936 agent. Two landed, one is negative and being split.
 | 0 | Second LB reading + ref | **done** — `55054446`, 936.0 / 916.8 | — |
 | 3 | **P4c** — audit counts opportunities, not turns | **done** | — |
 | 2 | **P4b** — spread {D} across two Munkidori | **done, huge** | **0.702 [0.687, 0.715]** n=4000 |
-| 1 | **P4a** — Boss's Orders (drag target + when to play) | **negative as a pair**; isolating | 0.452 [0.435, 0.470] n=3000 |
+| 1 | **P4a** — Boss's Orders (drag target + when to play) | **closed negative**, both off | pair 0.452 n=3000; each alone null |
 | 4 | **P1** — re-rank decks against `rule:v10` | not started | ~20 min |
 | 5 | **P2** — MAIN-decision rules for the chosen deck | not started | days |
 | 6 | **P3** — abomasnow / Crustle lockdowns | not started, fold into P2 | hours |
@@ -118,8 +124,8 @@ Submit with the §5 command; suggested description:
 > clone v2 + chip targeting + Munkidori {D} spread (P4b): mirror 0.702
 > [0.687,0.715] n=4000, vs rule:v10 0.593 [0.562,0.623] n=1000
 
-Then, in order: (a) finish the P4a split below, (b) validate the shipped config
-head-to-head against `rule:v10,noS` at n≥500, (c) P1, (d) P2.
+Then, in order: (a) **P1** — re-rank decks (cheap, unstarted), (b) **P2** — the
+real work. P4a is closed; do not reopen it.
 
 Replays of the live 936 agent vs real opponents are at
 **`replays/submission_replay_2026-07-29/`** (user-supplied). These are the only
@@ -156,17 +162,20 @@ moves 3. The clone chose the wasted attach **143 times to 94** — worse than a
 coin flip, because `optfeat` gives it no attached-energy count. The rule takes
 that to 0 and lifts Adrena-Brain activations from 1.26 to 1.60 per turn.
 
-### P4a — Boss's Orders: NEGATIVE as a pair, being split
+### P4a — Boss's Orders: CLOSED NEGATIVE. Do not redo.
 
 **User observation:** *"we had the chance to play Boss's Orders to bring out a
 weaker benched Pokémon to the active spot and knock it out with Shadow Bullet
 but we didn't."* The observation was accurate; the fix was not.
 
-**arena: `bc` vs `bc:noDrag,noBoss` = 0.452 [0.435, 0.470], n=3000 — the two
-rules together cost ~33 Elo.** Both isolations are running
-(`out/arena/ab_drag_only.jsonl`, `out/arena/ab_boss_only.jsonl`, n=2000 each).
+| what | arena, grimmsnarl mirror | verdict |
+|---|---|---|
+| both rules | 0.452 [0.435, 0.470] n=3000 | **negative** |
+| `drag_target` alone | 0.489 [0.467, 0.511] n=2000 | null |
+| `boss_converts` alone | 0.493 [0.471, 0.515] n=2000 | null |
 
-Two separate rules were written, both in `targeting.py`:
+Two rules, both in `targeting.py`, both now default False and opt-in via
+`bc:drag` / `bc:boss`:
 
 - `drag_target` — rank the drag by (dies to our attack, prizes, lowest HP).
   Small lever: the clone already took the best available KO 85 times out of 99.
@@ -176,20 +185,30 @@ Two separate rules were written, both in `targeting.py`:
   25.7% of all other legal turns — so it does discriminate, barely). The rule
   takes that to 100%.
 
-**The prior is that `boss_converts` is the guilty one**, and if so it is a
-lesson worth writing down: it spends the turn's **Supporter** — the slot that
-otherwise plays Petrel or Lillie's Determination, i.e. the deck's whole engine —
-to buy one guaranteed prize, often only 1 prize off a small bench sitter. A
-correct *local* arithmetic can still be a bad trade globally. Note also that it
-fires at the first MAIN select of the turn, before any Rare Candy line could
-upgrade our Active into something that KOs the opposing Active outright.
+**The lesson, and it is the important output of this item.** Both rules did
+exactly what they were written to do — the drag went 85/99 → 99/99, the
+conversion turns went 36.9% → 100% — and **neither bought a single game.**
+Together they lost. So:
 
-**Both now default to False** in `PolicyAgent` and in `bc:`, and are opt-in via
-`bc:drag` / `bc:boss`. The submission's `main.py` does a bare `_A(_deck)`, so a
-plain `bc` in the arena is exactly what ships — turn a flag's default on only
-after that rule clears 0.5 by itself. The isolation runs were launched under
-the older opt-out defaults, so their repro commands today are
-`bc:drag` vs `bc:base` and `bc:boss` vs `bc:base`.
+> **Rule 10: moving an audit rate is not winning games.** This is rule 3
+> (val accuracy ≠ strength) reappearing one level up, in the *rule* pipeline
+> rather than the training one. Every rule gets an arena A/B, no exceptions,
+> and a rule that only measures well stays off.
+
+**And the discriminator between P4b and P4a, which is what to steer by next:**
+P4b overrides an option that is **provably worthless** — a second {D} on a
+Munkidori does literally nothing, no judgment involved. P4a overrides a
+**tradeoff** — Supporter for a prize, this KO versus that KO — and the clone's
+implicit judgment there was already as good as our arithmetic. Prefer rules
+that delete a dominated option. Be suspicious of rules that pick a side in a
+trade; the net has seen 2,810 games of humans making that trade.
+
+Note the pair being worse than either alone (0.452 vs ~0.49) is only marginally
+outside the intervals, so read it as "no evidence of benefit, some evidence of
+harm" rather than as a precise interaction estimate.
+
+The isolation runs were launched under the older opt-out defaults; the repro
+commands today are `bc:drag` vs `bc:base` and `bc:boss` vs `bc:base`.
 
 ### P4c — Count opportunities, not turns — DONE
 
@@ -274,14 +293,15 @@ is a public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall
   |---|---|---|---|
   | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577, n=2000 → **+184 LB** |
   | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702, n=4000** |
-  | `drag_target` | SWITCH (Boss's Orders' drag) | `noDrag` | isolating |
-  | `boss_converts` | MAIN, plays Boss's Orders | `noBoss` | isolating; pair was **0.452** |
+  | `drag_target` | SWITCH (Boss's Orders' drag) | `drag`, **off** | 0.489 n=2000 — null |
+  | `boss_converts` | MAIN, plays Boss's Orders | `boss`, **off** | 0.493 n=2000 — null |
 
   `chip_target` / `drag_target` replace the whole ranking and fire only when
   *every* option is an opponent's Pokemon. `energy_spread` is different in kind:
   it takes the net's pick and only redirects it, never creating or suppressing
-  an attach. `boss_converts` is the only one that forces an action outright,
-  which is very likely why the pair measured negative.
+  an attach. `boss_converts` is the only one that forces an action outright.
+  The two that won are the two that delete a **dominated** option; the two that
+  did nothing both pick a side in a **tradeoff** — see P4a.
 - `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
   (stale net → `None` → fallback; never remove it).
 - `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
@@ -425,6 +445,10 @@ has ever demonstrated search is worth anything.** Loose end if ever revisited:
   n=9,911). **A low lift can mean a noisy label, not a blind feature.**
 - **Self-play RL — dropped.** Days of work on 1.4 cores to maybe reach where
   hand-written rules already sit. Nothing at the top of this board is learned.
+- **Boss's Orders rules (P4a)** — target ranking 0.489 [0.467, 0.511] n=2000,
+  forced play-when-it-converts 0.493 [0.471, 0.515] n=2000, the two together
+  0.452 [0.435, 0.470] n=3000. Both fixed their audit rate completely and
+  neither won a game. See §3 P4a for why, and rule 10.
 
 **Do not resurrect:** the arena→LB ladder anchored on `rule:iono`; the old deck
 sweep's ranking; "the clone is comfortably above the rule baseline"; every n=24
