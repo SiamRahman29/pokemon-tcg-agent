@@ -23,22 +23,27 @@ is reading 762.2 — unresolved, and §3.0 is about resolving it.**
 
 | submission | what | LB |
 |---|---|---|
-| `55077709` | **+ `counter_source` (P6a)** — shipped this session | 600 → **762.2** after ~1 h ⚠ |
+| `55077709` | **+ `counter_source` (P6a)** — shipped this session | 600 → 762.2 → **746.4** ⚠ **falling** |
 | `55072063` | clone v2 + `chip_target` + `energy_spread` (P4b) | 958.2 → **970.1** ✅ **our best** |
 | `55054446` | clone v2 + `chip_target` | 916.8 → 936 → 979 → 901.6 → **905.2** (inactive) |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
 
-**What 762.2 does and does not mean.** It is one reading, ~1 hour after a
-μ=600 start, and every submission starts at 600 and climbs: `55072063` needed
-roughly 4+ hours to reach 958. So 762.2 is **not yet evidence that
-`counter_source` hurt** — it is exactly what a mid-climb reading looks like.
+**What those numbers mean.** A μ=600 start climbing is normal — `55072063`
+needed ~4+ h to reach 958 — so a low *early* reading proves nothing on its own.
+Two things make this one worrying anyway:
 
-**But it is not reassuring either, and here is the part that matters:**
-`55072063` rose 958.2 → **970.1** over the same window, against the same field.
-So whatever the meta is doing, it is not dragging our agents down generically.
-**The next session's first job is to read `55077709` again** (§3.0), and it is
-the only thing that should be done before anything else.
+1. **It fell.** 762.2 at 10:22 UTC → **746.4 at 10:27 UTC**. A submission
+   climbing toward 958 does not track downward; one settling near its true
+   rating does.
+2. **`55072063` rose 958.2 → 970.1 over the same window, against the same
+   field.** So the meta is not dragging our agents down generically, and the
+   gap is now ~220 points between two agents that differ by **one flag**.
+
+That is still only ~1.5 h of episodes and two readings minutes apart, so it is
+**suggestive, not settled** (rule 2 wants ≥1 h between readings). **The next
+session's first job is to read it again** — §3.0 — and nothing else should
+happen first.
 
 ⚠ **`55054446` is the standing warning about rule 2.** Day 6 recorded it at
 "916.8 → 936.0 → **979**, three readings, trending up" and wrote the plan
@@ -190,7 +195,14 @@ opponents, and (2) Crustle.**
 
 `counter_source` won both local bars — 0.534 [0.513, 0.556] n=2000 mirror, and
 0.626 [0.604, 0.647] n=2000 vs `rule:v10,noS` against a bare `bc`'s 0.593 — and
-then read **762.2** on its first LB reading. Resolve that before anything else.
+then read **762.2 → 746.4** on the LB while the otherwise-identical
+`55072063` sat at **970.1**. Resolve that before anything else.
+
+**The prior going in should be "this rule is probably bad", not "the LB is
+noisy".** Two agents differing by one flag, ~220 points apart, with the newer
+one trending down rather than up. If step 1 confirms it, the local arena
+produced a confident false positive — and understanding *why* is worth more
+than the rule was, because every other rule was validated the same way.
 
 **Step 1: read it again.** Two readings ≥1 h apart (rule 2), and compare
 against `55072063`'s **contemporaneous** score, never against a remembered one.
