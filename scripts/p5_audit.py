@@ -68,6 +68,7 @@ class Probe:
         self.inner = inner
         self.game = 0
         self.a = Counter()   # P5a
+        self.a2 = Counter()  # P5a: was there a choice at all?
         self.b = Counter()   # P5b
         self.c = Counter()   # P5c
         self.c_dmg = Counter()
@@ -156,7 +157,15 @@ class Probe:
         armed = {s for s, pk in mine.items()
                  if pk["id"] == MUNKIDORI
                  and any(e == DARK_TYPE for e in (pk.get("energies") or []))}
-        left = max(1, len(armed - self._used))
+        # The Munkidori being activated RIGHT NOW is already in `_used`: the
+        # MAIN select that fired the ability precedes this DAMAGE_COUNTER
+        # select. So `armed - _used` is what is left AFTERWARDS, and the pool
+        # is this activation plus those. The old `max(1, len(armed - _used))`
+        # read 1 on every row ever measured -- including all 54 replay rows
+        # with two armed Munkidori -- so a 60-point pool was never once
+        # representable, and P5a's headline "0 misses" was measuring a budget
+        # that could not exceed 30. Rule 9: check the denominator.
+        left = 1 + len(armed - self._used)
         # you can only move counters you actually have on your own board
         own = sum(max(0, (pk.get("maxHp") or 0) - pk["hp"]) for pk in
                   mine.values())
@@ -174,6 +183,15 @@ class Probe:
         best = max(cdb.prize_value(cand[i]["id"]) for i in pooled)
         c = chosen[0] if chosen and chosen[0] in cand else None
         got = cdb.prize_value(cand[c]["id"]) if c is not None else 0
+        # A "miss" needs a CHOICE: two pooled targets whose prize values
+        # differ. With one pooled candidate `best == got` by construction and
+        # the row is vacuous, so count the live denominator separately --
+        # otherwise "80/80 correct" is 80 forced moves, not 80 good ones.
+        if len({cdb.prize_value(cand[i]["id"]) for i in pooled}) > 1:
+            self.a2["pooled KOs where the prize values DIFFER"] += 1
+        else:
+            self.a2["only one prize value among the pooled KOs "
+                    "(no choice to get wrong)"] += 1
         if c is not None and c in pooled and got >= best:
             self.a["pooled KO taken, best prizes"] += 1
         elif best > got:
@@ -230,6 +248,8 @@ def main() -> int:
     print(f"\n=== {args.matches} games, {args.agent} [{args.deck}] "
           f"vs {args.opponent} [{args.deck_b}] ===")
     show("P5a  Adrena-Brain target vs the turn's POOLED budget", probe.a)
+    show("P5a  ... and how many of those pooled KOs were a real choice",
+         probe.a2)
     show("P5b  Boss's Orders plays", probe.b)
     show("P5c  turns with a payable attack on the table", probe.c)
     show("P5c  what the unused attack would have done", probe.c_dmg)
