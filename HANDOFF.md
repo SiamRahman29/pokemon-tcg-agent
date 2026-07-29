@@ -186,7 +186,7 @@ What it found, in descending size:
 | `MAIN` | 47.7% | **P2.** The remaining mass, and it is not one decision. |
 | `TO_HAND` ours | 15.3% | already at demonstrator parity (§6) |
 | `DAMAGE_COUNTER` theirs | 5.6% | `chip_target` owns it |
-| `ATTACH_FROM` ours | 5.5% | unexamined — every option is a {D} energy, likely degenerate |
+| `ATTACH_FROM` ours | 5.5% | 2–4 options over 2 areas; the deck runs only {D}, so the cards are identical and the choice is *where from* — a resource tradeoff, so rule 11 says distrust. Unexamined. |
 | `REMOVE_DAMAGE_COUNTER_COUNT` | 5.2% | **closed — already 100% max** |
 | `TO_ACTIVE` ours | 3.9% | **closed — 91.2% right already** |
 | `DAMAGE` theirs | 3.7% | `chip_target` owns it |
@@ -426,18 +426,29 @@ question if you are asking *what to ship*; it is the wrong question if you are
 asking *which deck has the higher ceiling*. For the latter, re-run with
 `bc:plain,noChip,noSpread`.
 
-### P2 — Write a real agent for one deck
+### P2 — Write a real agent for one deck — **now the main line**
 
-Where the leaderboard is. Explicit attack planning (attacker/target/attack index
-with weakness and prize arithmetic), per-option scoring, matchup branches. No
-search (§6). **Bar: 0.5 against `rule:v10,noS` in a near-mirror, n≥500.**
-`rule:v10` is a working readable template and is already in-process. The clone
-stays as fallback for every select the rules do not cover — a hybrid starts
-strictly above whichever component is better per decision class.
+Where the leaderboard is, and after P5/P6 it is what is left. Explicit attack
+planning (attacker/target/attack index with weakness and prize arithmetic),
+per-option scoring, matchup branches. No search (§6). **Bar: 0.5 against
+`rule:v10,noS` in a near-mirror, n≥500.** `rule:v10` is a working readable
+template and is already in-process. The clone stays as fallback for every
+select the rules do not cover — a hybrid starts strictly above whichever
+component is better per decision class.
 
 `scripts/context_accuracy.py` says **MAIN holds 3,930 of the net's 6,424 misses**
-(18,924 rows, 33.9% miss). The small contexts are picked over; MAIN is the
-remaining mass and it is what P2 is for.
+(18,924 rows, 33.9% miss), and `p6_recon` says MAIN is **47.7% of all selects
+with ≥2 options**. Every other bucket is now either owned by a rule, measured
+at parity, or measured too small — see the P6 table. **MAIN is the remaining
+mass and it is what P2 is for.**
+
+⚠ **Carry rule 11 into it.** MAIN is mostly tradeoffs (which Supporter, spend
+the attach now or later, evolve or develop), which is precisely the class where
+four straight rules did nothing. The parts of MAIN that are *arithmetic* — "can
+I KO the Active this turn, and with which attacker" — are where P2's edge
+should come from, and they are the parts `rule:v10` is explicitly built around.
+Do not expect a general MAIN scorer to beat the clone; expect a lethal-detector
+to.
 
 ### P3 — The abomasnow hole (open)
 
