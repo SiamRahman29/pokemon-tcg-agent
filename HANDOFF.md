@@ -107,6 +107,17 @@ watching the live 936 agent. Two landed, one is negative and being split.
 produced — bigger than the +184-point targeting fix — and it is independent of
 the P4a question. Do not wait for P4a to resolve before submitting.
 
+It has cleared the §7 pre-submission bar: **`bc` vs `rule:v10,noS` = 0.593
+[0.562, 0.623], n=1000** (grimmsnarl / lucario_v10), against 0.537 [0.506,
+0.568] for the live 936 agent — an independent opponent agreeing with the
+mirror A/B. **The bundle is built, smoke-tested and waiting at
+`dist/submission.tar.gz`** (`bc-grimmsnarl-netspolicy`, 4.0 MiB, chip+spread on,
+drag/boss off). It has NOT been submitted — the user asked to approve that.
+Submit with the §5 command; suggested description:
+
+> clone v2 + chip targeting + Munkidori {D} spread (P4b): mirror 0.702
+> [0.687,0.715] n=4000, vs rule:v10 0.593 [0.562,0.623] n=1000
+
 Then, in order: (a) finish the P4a split below, (b) validate the shipped config
 head-to-head against `rule:v10,noS` at n≥500, (c) P1, (d) P2.
 
