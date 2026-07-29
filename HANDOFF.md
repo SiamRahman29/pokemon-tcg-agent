@@ -16,7 +16,7 @@ Kaggle CLI is authenticated, user has entered.
 
 | submission | what | LB |
 |---|---|---|
-| `55077709` | **+ `counter_source` (P6a)** — submitted this session | **PENDING — read it first** |
+| `55077709` | **+ `counter_source` (P6a)** — submitted this session | **600.0 = the μ=600 start, not a score. Read it first.** |
 | `55072063` | clone v2 + `chip_target` + `energy_spread` (P4b) — live | **958.2** ⏳ |
 | `55054446` | clone v2 + `chip_target` — live | 916.8 → 936.0 → 979 → 901.6 → **905.2** |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
@@ -151,9 +151,11 @@ deep.** What is left is P1/P2.
 
 ### 0. Do this first: read `55077709`'s score
 
-**P6a was submitted 2026-07-29 ~15:21 local and was still PENDING at the end of
-the session — nobody has seen its score.** It is a bare `bc` with
-chip + spread + counter-source, all four Boss's Orders rules off, built by:
+**P6a was submitted 2026-07-29 ~15:21 local. It validated COMPLETE and read
+600.0 — that is the μ=600 every new submission starts at (§7), not a result.**
+It climbs as it plays episodes; `55054446` went 916.8 → 936 → 979 → 905 over
+two days. It is a bare `bc` with chip + spread + counter-source, all four
+Boss's Orders rules off, built by:
 
 ```powershell
 python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
