@@ -192,7 +192,7 @@ def best_damage(active: dict, mypl: dict, oppl: dict, target: dict) -> float:
     return best
 
 
-def drag_target(obs: dict) -> list[int] | None:
+def drag_target(obs: dict, prefer_high_hp: bool = False) -> list[int] | None:
     """Ranked option indices for Boss's Orders' drag, else None.
 
     Boss's Orders resolves through a **SWITCH** select (not TO_ACTIVE, which is
@@ -206,7 +206,14 @@ def drag_target(obs: dict) -> list[int] | None:
 
     Rank: dies to our attack first, most prizes among those, then closest to
     dying. Same guard as `chip_target` -- every option must be an opponent's
-    benched Pokemon, so our own retreats and switches are left to the net."""
+    benched Pokemon, so our own retreats and switches are left to the net.
+
+    `prefer_high_hp` (`bc:drag,dragHi`) flips the tiebreak **inside the KO-able
+    group only**: they all die this turn, so "closest to dying" buys nothing
+    there, and the user's argument is that the big one is a developing threat
+    while a small basic is cheap for them to replace. The non-KO-able fallback
+    keeps ascending HP -- there "closest to dying" is the whole point, and
+    flipping it would be a different intervention."""
     sel = obs.get("select") or {}
     if sel.get("context") != SWITCH:
         return None
@@ -231,12 +238,83 @@ def drag_target(obs: dict) -> list[int] | None:
         if pk is None or pk.get("hp") is None:
             return None
         kills = best_damage(active, mypl, oppl, pk) >= pk["hp"]
+        hp = -pk["hp"] if (kills and prefer_high_hp) else pk["hp"]
         scored.append(((0 if kills else 1,
                         -cards.prize_value(pk["id"]) if kills else 0,
-                        pk["hp"]), i))
+                        hp), i))
 
     scored.sort()
     return [i for _, i in scored]
+
+
+def full_rank(net, obs: dict) -> list[int]:
+    """The net's complete ranking, not the top-k that `choose` returns.
+
+    A veto needs the runner-up, and every MAIN select measured here has
+    maxCount == 1. Plain sort rather than argsort so this module stays
+    numpy-free."""
+    scores = net.scores(obs)
+    return sorted(range(len(scores)), key=lambda i: -float(scores[i]))
+
+
+def boss_veto(obs: dict, chosen: list[int], rank) -> list[int] | None:
+    """Suppress Boss's Orders when their bench holds nothing we can KO.
+
+    **This is the third Boss's Orders intervention, and the only untested one.**
+    P4a measured *forcing* the play when it converts (0.493) and *aiming* the
+    drag (0.489), both null. Neither touched the case here: the play happening
+    at all when it buys nothing. Measured with `scripts/p5_audit.py --matches
+    200`: **35 of 108 Boss's Orders plays (32.4%) had no KO-able target on the
+    opponent's bench at all.** Those hand the opponent a free promotion --- the
+    user watched one drag get evolved into their main attacker the next turn.
+
+    Shape: this deletes an option rather than picking a side in a trade, but the
+    option is only *conditionally* dominated (a drag can still strand their
+    attacker in the Active, which `best_damage` cannot see), so it sits between
+    the P4b class and the P4a class. Per rule 10 it lives or dies by its A/B.
+
+    `rank` is a zero-argument callable returning the net's FULL ranking. It is
+    needed because MAIN selects have maxCount == 1 --- `choose` hands back one
+    index, so vetoing it leaves nothing to play instead. Called only when the
+    veto actually fires, which is why it is lazy.
+    """
+    sel = obs.get("select") or {}
+    if sel.get("context") != MAIN:
+        return None
+    options = sel.get("option") or []
+    if not chosen:
+        return None
+    pick = chosen[0]
+    if not 0 <= pick < len(options):
+        return None
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+    opt = options[pick]
+    if opt.get("type") != OPT_PLAY:
+        return None
+    if _hand_card_id(state, me, opt.get("index") or 0) != BOSS_ORDERS:
+        return None
+    try:
+        mypl, oppl = state["players"][me], state["players"][1 - me]
+    except (KeyError, IndexError, TypeError):
+        return None
+    active = mypl["active"][0] if mypl.get("active") else None
+    if not active:
+        return None
+    for pk in oppl.get("bench") or []:
+        if pk and pk.get("hp") is not None \
+                and best_damage(active, mypl, oppl, pk) >= pk["hp"]:
+            return None  # the drag buys a prize: let it through
+
+    # Nothing on their bench dies. Fall through to the net's next choice,
+    # skipping every other Boss's Orders copy in hand for the same reason.
+    vetoed = {i for i, o in enumerate(options)
+              if o.get("type") == OPT_PLAY
+              and _hand_card_id(state, me, o.get("index") or 0) == BOSS_ORDERS}
+    rest = [i for i in rank() if i not in vetoed]
+    return rest[:len(chosen)] or None
 
 
 def boss_converts(obs: dict) -> list[int] | None:

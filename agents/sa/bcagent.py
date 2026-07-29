@@ -10,7 +10,8 @@ from . import policynet, targeting
 class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
                  chip_targeting: bool = True, energy_spread: bool = True,
-                 drag_target: bool = False, boss_converts: bool = False):
+                 drag_target: bool = False, boss_converts: bool = False,
+                 drag_high_hp: bool = False, boss_veto: bool = False):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -32,6 +33,13 @@ class PolicyAgent:
         # here only once it has cleared 0.5 on its own.
         self.drag_target = drag_target
         self.boss_converts = boss_converts
+        # `drag_high_hp` only reorders the KO-able group inside drag_target, so
+        # it does nothing unless drag_target is on too.
+        self.drag_high_hp = drag_high_hp
+        # The third Boss's Orders intervention (P5b): suppress the play when
+        # their bench holds nothing we can KO -- 32.4% of our plays. Off until
+        # its own A/B clears 0.5, same discipline as the two above.
+        self.boss_veto = boss_veto
 
     def __call__(self, obs: dict) -> list[int]:
         try:
@@ -51,7 +59,7 @@ class PolicyAgent:
                 if order is not None:
                     return order[:want]
             if self.drag_target:
-                order = targeting.drag_target(obs)
+                order = targeting.drag_target(obs, self.drag_high_hp)
                 if order is not None:
                     return order[:want]
             if self.boss_converts:
@@ -62,6 +70,13 @@ class PolicyAgent:
             if net is None:
                 return list(range(mn))
             picked = net.choose(obs)
+            if self.boss_veto:
+                # lazy: the full ranking costs a second forward pass, and the
+                # veto fires only when the net's top pick is Boss's Orders
+                fixed = targeting.boss_veto(
+                    obs, list(picked), lambda: targeting.full_rank(net, obs))
+                if fixed is not None:
+                    return fixed
             if self.energy_spread:
                 fixed = targeting.energy_spread(obs, list(picked))
                 if fixed is not None:

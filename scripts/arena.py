@@ -166,6 +166,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         # a plain `bc` is always exactly what a submission would ship
         drag = False
         boss = False
+        drag_hi = False
+        veto = False
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -182,12 +184,30 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
             elif f in ("boss", "noBoss"):
                 # "play Boss's Orders when it buys a KO", default off
                 boss = f == "boss"
+            elif f in ("dragHi", "noDragHi"):
+                # drag the HIGHEST-HP KO-able target instead of the lowest.
+                # Only bites with `drag` on -- it reorders drag_target's output.
+                drag_hi = f == "dragHi"
+            elif f in ("veto", "noVeto"):
+                # P5b: DON'T play Boss's Orders when nothing on their bench is
+                # KO-able (32.4% of our plays). Default off until it A/Bs.
+                veto = f == "veto"
+            else:
+                # The FIRST token of a bc tag is a free-text label
+                # (`bc:old,noChip`), so a flag typed as `bc:veto` lands in the
+                # label slot and is silently ignored -- that cost one wasted
+                # run. Everything after it must be a real flag.
+                raise SystemExit(
+                    f"unknown bc flag {f!r} in {spec!r}. Note the first token "
+                    f"after `bc:` is a LABEL, not a flag -- write "
+                    f"`bc:<label>,{f}`.")
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
         return ((f"bc:{tag}" if tag else "bc"),
                 PolicyAgent(deck, net_path, chip_targeting=chip,
                             energy_spread=spread, drag_target=drag,
-                            boss_converts=boss))
+                            boss_converts=boss, drag_high_hp=drag_hi,
+                            boss_veto=veto))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 
