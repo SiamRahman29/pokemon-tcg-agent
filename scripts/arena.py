@@ -168,6 +168,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         boss = False
         drag_hi = False
         veto = False
+        source = False
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -188,6 +189,10 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 # drag the HIGHEST-HP KO-able target instead of the lowest.
                 # Only bites with `drag` on -- it reorders drag_target's output.
                 drag_hi = f == "dragHi"
+            elif f in ("src", "noSrc"):
+                # take Adrena-Brain's counters off a source that HAS 3 of
+                # them (sa/targeting.counter_source), default off
+                source = f == "src"
             elif f in ("veto", "noVeto"):
                 # P5b: DON'T play Boss's Orders when nothing on their bench is
                 # KO-able (32.4% of our plays). Default off until it A/Bs.
@@ -207,7 +212,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 PolicyAgent(deck, net_path, chip_targeting=chip,
                             energy_spread=spread, drag_target=drag,
                             boss_converts=boss, drag_high_hp=drag_hi,
-                            boss_veto=veto))
+                            boss_veto=veto, counter_source=source))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

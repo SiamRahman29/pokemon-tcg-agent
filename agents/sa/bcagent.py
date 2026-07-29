@@ -11,7 +11,8 @@ class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
                  chip_targeting: bool = True, energy_spread: bool = True,
                  drag_target: bool = False, boss_converts: bool = False,
-                 drag_high_hp: bool = False, boss_veto: bool = False):
+                 drag_high_hp: bool = False, boss_veto: bool = False,
+                 counter_source: bool = False):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -40,6 +41,9 @@ class PolicyAgent:
         # their bench holds nothing we can KO -- 32.4% of our plays. Off until
         # its own A/B clears 0.5, same discipline as the two above.
         self.boss_veto = boss_veto
+        # Adrena-Brain's source pick: same HP blindness, and the source caps
+        # how many counters the ability can move at all.
+        self.counter_source = counter_source
 
     def __call__(self, obs: dict) -> list[int]:
         try:
@@ -74,6 +78,11 @@ class PolicyAgent:
                 # lazy: the full ranking costs a second forward pass, and the
                 # veto fires only when the net's top pick is Boss's Orders
                 fixed = targeting.boss_veto(
+                    obs, list(picked), lambda: targeting.full_rank(net, obs))
+                if fixed is not None:
+                    return fixed
+            if self.counter_source:
+                fixed = targeting.counter_source(
                     obs, list(picked), lambda: targeting.full_rank(net, obs))
                 if fixed is not None:
                     return fixed

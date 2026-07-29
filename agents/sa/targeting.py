@@ -41,6 +41,8 @@ _HAND, _ACTIVE, _BENCH = 2, 4, 5
 
 MAIN = 0            # SelectContext.MAIN
 SWITCH = 3          # SelectContext.SWITCH -- what Boss's Orders drags with
+REMOVE_DAMAGE_COUNTER = 16   # Adrena-Brain's SOURCE pick, all options ours
+MAX_MOVE = 3        # Adrena-Brain moves "up to 3 damage counters"
 OPT_PLAY = 7        # OptionType.PLAY
 OPT_ATTACH = 8      # OptionType.ATTACH
 BOSS_ORDERS = 1182
@@ -168,6 +170,68 @@ def energy_spread(obs: dict, chosen: list[int]) -> list[int] | None:
     if pick not in loaded or not bare:
         return None
     return [bare[0]] + [i for i in chosen[1:] if i != bare[0]]
+
+
+def counter_source(obs: dict, chosen: list[int], rank) -> list[int] | None:
+    """Take Adrena-Brain's counters off a Pokemon that HAS three of them.
+
+    Adrena-Brain moves "up to 3 damage counters" from one of our Pokemon to one
+    of theirs, and the source is its own select (REMOVE_DAMAGE_COUNTER, all
+    options ours). How many it then moves is capped by what the source actually
+    carries -- the follow-up REMOVE_DAMAGE_COUNTER_COUNT select offers "1,2,3"
+    off a source with 3+ counters but only "1,2" off a source with 2. The clone
+    already takes the maximum on that second select **100% of the time**
+    (n=481, 120 games), so all the loss is here, one select earlier.
+
+    Measured on the shipped clone (120 games, 249 source selects with >= 2
+    options and unequal damage on them): it picked a source carrying fewer than
+    3 counters while one with 3+ was on the table in ~20% of them, moving 10 or
+    20 damage where 30 was available.
+
+    This is the `energy_spread` shape, not the `boss_converts` shape: the
+    heavily damaged source is better in BOTH directions at once -- it transfers
+    more damage AND it heals the Pokemon that actually needed healing -- so
+    there is no trade being made and no judgment to override. `optfeat` simply
+    has no HP or damage per option, so the net cannot see which is which.
+
+    Deliberately minimal, exactly like `energy_spread`: it never changes
+    whether counters move, only which of our Pokemon they come off, and among
+    the sources that can pay the full 3 it keeps the net's own preference.
+    """
+    sel = obs.get("select") or {}
+    if sel.get("context") != REMOVE_DAMAGE_COUNTER:
+        return None
+    options = sel.get("option") or []
+    if len(options) < 2 or not chosen:
+        return None
+    pick = chosen[0]
+    if not 0 <= pick < len(options):
+        return None
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+
+    movable: list[int] = []
+    for opt in options:
+        if opt.get("playerIndex") != me:
+            return None  # not the own-side source pick: leave it to the net
+        pk = _pokemon_at(state, me, opt.get("area"), opt.get("index") or 0)
+        if pk is None:
+            return None
+        hp, mx = pk.get("hp"), pk.get("maxHp")
+        if hp is None or mx is None:
+            return None
+        movable.append(min(max(0, (mx - hp) // 10), MAX_MOVE))
+
+    best = max(movable)
+    if movable[pick] >= best:
+        return None  # the net already picked a source that pays in full
+    top = {i for i, m in enumerate(movable) if m == best}
+    for i in rank():
+        if i in top:
+            return [i] + [j for j in chosen[1:] if j != i]
+    return None
 
 
 # --- Boss's Orders: drag something we can actually kill -------------------
