@@ -90,107 +90,118 @@ Every rule below was paid for. Rules 1, 2 and 8 have each invalidated real work.
 
 ## 3. THE PLAN (day 5)
 
-**P4 is the job.** The user watched the live 936 agent and flagged three things.
-All three have the P2c signature — decisions requiring HP/damage arithmetic the
-net's features cannot represent — and P2c was worth 184 LB points.
+**P4 was the job and it is mostly done.** All three items came from the user
+watching the live 936 agent. Two landed, one is negative and being split.
 
-**Do them in this order. Verify mechanics before writing any rule.**
-
-| | item | state | cost |
+| | item | state | arena |
 |---|---|---|---|
-| 0 | Second LB reading on the 936; fill in its ref | free | minutes |
-| 1 | **P4a** — Boss's Orders → drag a KO-able benched target | not started | hours |
-| 2 | **P4b** — spread {D} energy across two Munkidori | not started | hours |
-| 3 | **P4c** — fix the audit's per-turn blindness | not started, *unblocks 4a/4b* | ~1 h |
+| 0 | Second LB reading + ref | **done** — `55054446`, 936.0 / 916.8 | — |
+| 3 | **P4c** — audit counts opportunities, not turns | **done** | — |
+| 2 | **P4b** — spread {D} across two Munkidori | **done, huge** | **0.702 [0.687, 0.715]** n=4000 |
+| 1 | **P4a** — Boss's Orders (drag target + when to play) | **negative as a pair**; isolating | 0.452 [0.435, 0.470] n=3000 |
 | 4 | **P1** — re-rank decks against `rule:v10` | not started | ~20 min |
 | 5 | **P2** — MAIN-decision rules for the chosen deck | not started | days |
 | 6 | **P3** — abomasnow / Crustle lockdowns | not started, fold into P2 | hours |
+
+**Next action: ship P4b.** It is the biggest measured effect this project has
+produced — bigger than the +184-point targeting fix — and it is independent of
+the P4a question. Do not wait for P4a to resolve before submitting.
+
+Then, in order: (a) finish the P4a split below, (b) validate the shipped config
+head-to-head against `rule:v10,noS` at n≥500, (c) P1, (d) P2.
 
 Replays of the live 936 agent vs real opponents are at
 **`replays/submission_replay_2026-07-29/`** (user-supplied). These are the only
 games we have against the *actual* LB field rather than our six local rule
 agents — use them for diagnosis, not training (§6: more imitation data is dead).
 
-### P4a — Boss's Orders should drag something we can kill
+### P4b — Spread {D} across two Munkidori — DONE, +148 Elo
+
+**The user's reading was right, and it is the biggest effect measured here yet.**
+`targeting.energy_spread`, `bc:noSpread` turns it off.
+
+**arena: `bc` vs `bc:noSpread` = 0.702 [0.687, 0.715], n=4000, grimmsnarl
+mirror.** For comparison the +184-LB-point chip-targeting fix scored 0.577.
+
+Four facts, all verified in-engine (`probe_adrena.py` pattern, 40 games with a
+wrapper that greedily takes every Munkidori ability):
+
+1. Adrena-Brain is **once per Pokemon**, not once per turn. We activated it
+   twice in a turn 35 times; a slot that had used it was never re-offered.
+2. The {D} condition is a **threshold, not a cost** — energy after use was
+   unchanged 138 times out of 138.
+3. **Munkidori is not a "Marnie's Pokemon"** (card 112 is plain `Munkidori`;
+   the others are `Marnie's Impidimp/Morgrem/Grimmsnarl ex`). Punk Up cannot
+   attach to it: in 40 games every attach option targeting a Munkidori came
+   from the hand, i.e. the 1-per-turn manual attach. That is what makes the
+   wasted attach expensive.
+4. **A second {D} on a Munkidori is dead, full stop.** Munkidori's only attack
+   is Mind Bend, cost {P}{C}, and this deck runs zero Psychic energy — so it
+   cannot even be attack setup.
+
+So: two Munkidori at 1 {D} each move 6 damage counters a turn (a 60-point swing,
+since Adrena-Brain both heals us and damages them); one Munkidori at 2 {D}
+moves 3. The clone chose the wasted attach **143 times to 94** — worse than a
+coin flip, because `optfeat` gives it no attached-energy count. The rule takes
+that to 0 and lifts Adrena-Brain activations from 1.26 to 1.60 per turn.
+
+### P4a — Boss's Orders: NEGATIVE as a pair, being split
 
 **User observation:** *"we had the chance to play Boss's Orders to bring out a
 weaker benched Pokémon to the active spot and knock it out with Shadow Bullet
-but we didn't."*
+but we didn't."* The observation was accurate; the fix was not.
 
-**Why this is credible and not already closed.** P2d measured Boss's Orders
-*frequency* at 38.2% of legal turns against demonstrators' 31.4% — we play it
-**more** than they do. That closed "we lack access." It says nothing about
-**which Pokémon we drag**, and target choice is precisely the axis P2c proved
-the net is blind on: `optfeat` has no HP, so "this benched Pokémon dies to
-Shadow Bullet" is unrepresentable. Same bug, different select.
+**arena: `bc` vs `bc:noDrag,noBoss` = 0.452 [0.435, 0.470], n=3000 — the two
+rules together cost ~33 Elo.** Both isolations are running
+(`out/arena/ab_drag_only.jsonl`, `out/arena/ab_boss_only.jsonl`, n=2000 each).
 
-**Note the compound structure** — this is harder than P2c. P2c overrode a single
-select in isolation. This one is *Boss's Orders + attack* as a two-step plan:
-the gadget is only worth playing if a specific bench target dies to a specific
-attack this turn. `targeting.py` fires on a select it can answer locally; P4a
-needs damage arithmetic across two decisions.
+Two separate rules were written, both in `targeting.py`:
 
-**Do:** (1) instrument the Boss's Orders target select the way P2c was
-instrumented — what fraction of the time do we drag a target that our available
-attack can KO, when such a target exists? (2) `agents/sa/textdmg.py` already
-computes expected damage — reuse it, do not rewrite. (3) Rule goes in
-`targeting.py` alongside `chip_target`.
+- `drag_target` — rank the drag by (dies to our attack, prizes, lowest HP).
+  Small lever: the clone already took the best available KO 85 times out of 99.
+- `boss_converts` — **play** Boss's Orders when our attack would not KO the
+  opponent's Active but would KO something on their bench. Big lever on paper:
+  157 such turns in 300 games, and the clone played it on 36.9% of them (vs
+  25.7% of all other legal turns — so it does discriminate, barely). The rule
+  takes that to 100%.
 
-### P4b — Two Munkidori want one energy each, not two on one
+**The prior is that `boss_converts` is the guilty one**, and if so it is a
+lesson worth writing down: it spends the turn's **Supporter** — the slot that
+otherwise plays Petrel or Lillie's Determination, i.e. the deck's whole engine —
+to buy one guaranteed prize, often only 1 prize off a small bench sitter. A
+correct *local* arithmetic can still be a bad trade globally. Note also that it
+fires at the first MAIN select of the turn, before any Rare Candy line could
+upgrade our Active into something that KOs the opposing Active outright.
 
-**User observation:** *"we sometimes put two dark energies on Munkidori when we
-had two Munkidoris on the bench. If we had attached one each we'd have been able
-to use Adrena-Brain twice."*
+**Whatever the split says, `boss_converts` must not ship on a "the arithmetic
+is obviously right" argument.** It is currently `boss_converts=True` by default
+in `PolicyAgent`; flip that default to False unless its isolation clears 0.5.
 
-**The arithmetic, if the reading is right:** Adrena-Brain (Munkidori, card 112)
-is *"Once during your turn, if this Pokémon has any {D} Energy attached, move up
-to 3 damage counters from 1 of your Pokémon to 1 of your opponent's."* The
-energy condition is **"this Pokémon"** — per copy. So 1 energy on each of two
-Munkidori = **two activations = 6 counters = 60 damage relocated**; 2 energy on
-one = one activation = 30. The second energy on a single Munkidori is doing
-nothing at all. The user is very likely right.
-
-**Verify in-engine before building on it** — three things, all cheap:
-1. Is the ability once **per Pokémon** per turn, or once per turn globally? The
-   whole idea dies if it is global.
-2. Does one {D} suffice, i.e. is it a threshold not a cost? ("has any" reads as
-   a threshold — nothing is discarded.)
-3. **Is Munkidori a "Marnie's Pokémon"?** This decides whether spreading is
-   cheap or slow. Grimmsnarl ex's `Punk Up` searches up to 5 Basic {D} and
-   attaches to *your Marnie's Pokémon*. If Munkidori qualifies, Punk Up can
-   spread in one shot. If not, energy comes from the 1-per-turn manual attach
-   and the spread costs two turns — which makes getting the *first* attachment
-   right much more valuable, and makes the rule simple: **never attach a second
-   {D} to a Munkidori that already has one while another Munkidori has zero.**
-
-**Do:** verify (1)–(3) against the SDK card text and a live engine probe, then
-write the rule as an ATTACH-select override in `targeting.py`.
-
-### P4c — The audit is blind to exactly these bugs (instrument fix)
+### P4c — Count opportunities, not turns — DONE
 
 **User observation:** *"I think we are not using Adrena-Brain at every chance."*
+The instrument was wrong, as suspected — but the corrected number is small.
 
-**This directly contradicts a measurement we already trusted, and the user is
-right — the instrument is wrong.** `scripts/opportunity_audit.py` reported
-`munkidori_adrena_brain` at **99.3%** for our clone vs 97.2% for demonstrators,
-which reads as "already maxed, nothing to find here."
+`opportunity_audit.py` now declares a `MULTIPLICITY` per line and prints an
+`opps` column beside `turns`. `munkidori_adrena_brain` reads **99.4% per turn
+but 96.9% per opportunity** (452 opportunities over 359 turns, 150 games). Real,
+but a ~3% miss — the activation itself was never the lever. The lever was
+upstream, in P4b: getting a second Munkidori armed at all.
 
-That number is computed **per turn, as a binary**: did we use it at all this
-turn? **With two Munkidori on the bench, using it once scores 100%** — a missed
-second activation is completely invisible to the metric. P4b and P4c are the
-same bug seen from two sides, and the audit cannot see either. The same
-blindness applies to `dark_energy_to_munkidori` (78.3%): per-turn binary cannot
-see *which* Munkidori got the energy.
+Only `munkidori_adrena_brain` is a `"count"` line today, because it is the only
+one whose copies are countable **on both sides** (one ABILITY option per
+Munkidori, live and in the shards). Items are repeatable too, but a Rare Candy
+option carries no target, so counting options would invent a denominator. The
+docstring explains this; do not widen `"count"` without a real target count.
 
-**Generalisable lesson, add to §2 as rule 8:** a per-turn binary "did we take
-this line" metric cannot detect under-use of a repeatable ability or
-misallocation among identical copies. **Count opportunities, not turns.**
+The audit also gained a live-only allocation metric (bare vs loaded Munkidori)
+and its `drag_target` row now works at all — see §2 rule 9.
 
-**Do:** change the audit to count *activations available vs activations taken*
-per turn, not `any()`. Then re-run it over
-`replays/submission_replay_2026-07-29/` and the demonstrator shards. This
-re-opens the P2b table — those "already at demonstrator parity" verdicts are
-only trustworthy for once-per-turn lines.
+**Still open from this item:** the P2b parity verdicts were only re-derived for
+`munkidori_adrena_brain`. The others are once-per-turn lines and so unaffected,
+but the demonstrator-corpus side of the new `opps` column has not been run
+(`--corpus artifacts/pds_v2`); `artifacts/` is gitignored and may need the
+rebuild in §5.
 
 ### P1 — Re-rank decks against `rule:v10` (cheap, still unstarted)
 
@@ -241,10 +252,22 @@ is a public notebook on this matchup; V10 hardcodes 344/345 as "the crustle wall
 
 - `bcagent.py` — **what we ship.** `net_path` pins an npz; `chip_targeting`
   toggles the override (`bc:noChip` in the arena). Default True.
-- `targeting.py` — **the +184 LB rule.** Overrides DAMAGE / DAMAGE_COUNTER /
-  DAMAGE_COUNTER_ANY selects, which the net cannot answer because `optfeat`
-  gives it no HP. Fires only when every option is an opponent Pokemon.
-  **Every P4 rule belongs here.**
+- `targeting.py` — **all the rule overrides.** Four of them now, each with its
+  own `PolicyAgent` flag and its own `bc:` arena switch, so any one can be A/B'd
+  alone. **Every new rule belongs here.**
+
+  | function | select | switch | arena |
+  |---|---|---|---|
+  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577, n=2000 → **+184 LB** |
+  | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702, n=4000** |
+  | `drag_target` | SWITCH (Boss's Orders' drag) | `noDrag` | isolating |
+  | `boss_converts` | MAIN, plays Boss's Orders | `noBoss` | isolating; pair was **0.452** |
+
+  `chip_target` / `drag_target` replace the whole ranking and fire only when
+  *every* option is an opponent's Pokemon. `energy_spread` is different in kind:
+  it takes the net's pick and only redirects it, never creating or suppressing
+  an attach. `boss_converts` is the only one that forces an action outright,
+  which is very likely why the pair measured negative.
 - `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
   (stale net → `None` → fallback; never remove it).
 - `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
@@ -282,7 +305,8 @@ python -X utf8 scripts/arena.py play "rule:v10,noS" rule:lucario `
 python -X utf8 scripts/arena.py play bc "rule:v10,noS" `
     --deck-a grimmsnarl --deck-b lucario_v10 --matches 500
 
-# A/B a rule override against the pure clone (how P2c was measured; how to measure P4)
+# A/B a rule override against the pure clone (how every targeting.py rule is judged).
+# Switches: noChip, noSpread, noDrag, noBoss -- combine to isolate one rule.
 python -X utf8 scripts/arena.py play bc "bc:old,noChip" `
     --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000
 
@@ -414,6 +438,10 @@ valid for once-per-turn lines.** Re-derive them after the P4c instrument fix.
   calibrated probabilities; listwise gives a valid *ranking* only.
 - **Kaggle enforces the 600 s pool** (exhausted = loss) though the harness does
   not. `arena.py` records `pool0`/`pool1` and warns below 300 s. BC uses 0.1 s.
+  ⚠ **If the machine sleeps mid-run, one game eats the whole nap** and
+  `arena.py` prints `WOULD TIME OUT ON KAGGLE` off that single game. Check the
+  distribution before believing it: in `ab_spread.jsonl` the worst pool was
+  −3606.9 s and the *next* worst was 599.2 s, median 599.9 s, p99 latency 1.6 ms.
 - **Submission:** `.tar.gz`, `main.py` + `deck.csv` at TOP level (+ `cg/`, `sa/`).
   Cap 197.7 MiB. 5/day, **latest 2 active**. New submissions start μ=600.
   Validation episode is self-play first — a crash there means Error.
