@@ -194,6 +194,18 @@ rules, can help. B3 gates B5-step-3 and half of Track C. B4 is the most
 speculative and the most original — **run its cheap probe early** (one afternoon)
 so the investment decision is data-driven.
 
+**B6 — `deckfacts.py`, rule generalization (user-agreed, parked with a
+condition).** Compute payable attacks / provably-dead attaches / damage
+thresholds from the decklist + card db, so `targeting.py` rules consume *facts*
+instead of hardcoded card ids. **Do it WITH the first decklist change** (a hard
+prerequisite for Track C step 4), **not before** — it buys zero Elo on an
+unchanged deck and needs its own regression A/B. It now has three concrete
+instances waiting: `MUNKIDORI`/`DARK_ENERGY`/`BOSS_ORDERS` in `targeting.py`, and
+as of 2026-07-30 **`WALL_POKEMON = {345}`** — the Crustle branch's condition,
+which the general version would learn from the event log (an attack that logged
+`value: 0` against that card id) instead of naming a card. Also the natural home
+for keeping only `counter_source`'s arithmetic half.
+
 **Rule-11 discipline applies inside every candidate:** B2's edge is the arithmetic
 cut, not a general MAIN scorer; B4's scorer is handcrafted eval, not a learned
 value net (measured dead); B5's changes are measured against three anchors, not
@@ -205,7 +217,8 @@ vibes.
 
 | window | Track A (LB) | Track B/C (dossier) | gate |
 |---|---|---|---|
-| **07-30 – 08-01** | resolve §3.0 (two readings ≥1 h); fetch 07-28/29/30, mine the meta, build 2–3 new anchors (§3.1); **launch B1 retrain + B2 lethal audit + B4 branching probe** (all cheap, all independent of the re-anchor) | ✅ `EVIDENCE.md` created and backfilled; ✅ pre-shift meta snapshot archived; start `STRATEGY.md` skeleton | know whether `counter_source` ships or rolls back; know the real meta; B1/B2/B4 probe verdicts |
+| **07-30** (day 8, DONE) | ✅ §3.0 resolved — `counter_source` **stays** (+0.052 vs the new anchor); ✅ meta measured (`lucario_v10` → **0%**, Crustle 0.06% → **18.1%**); ✅ `rule:crustle` pilot imported + 2 anchor decks; ✅ **all 3 shipped rules re-A/B'd at n=2000 — found `chip_target` at −0.126** and ✅ **shipped the matchup branch** (0.559 → 0.663); ✅ §3.2 premise verified in-engine (+ the **Morgrem** out); ✅ **B2 killed** | ✅ `EVIDENCE.md` created and backfilled (§8b/8c/8d added same session); ✅ both meta snapshots archived; ⏭ `STRATEGY.md` still not started | ✅ met: `counter_source` verdict, the real meta, B2 verdict. **Not** done: B1, B4 probe |
+| **07-31 – 08-01** | **Morgrem out** (size → rule → A/B vs Crustle **and** mirror); **pilot for `crispin_toolbox`** (the #1 LB deck — no `bc`-piloted anchors); re-mine 07-30; **then B1 retrain + B4 branching probe** | matchup win-rate matrix among high-rated players; start `STRATEGY.md` skeleton | a second measured improvement in hand → a bundle worth submitting |
 | **08-01 – 08-08** | re-run shipping A/Bs vs the new anchors; **B3 archetype detector; Track C steps 1–3 (Crustle pilot + mechanic probe + priority adaptation)**; follow up whichever of B1/B2/B4 survived; matchup win-rate matrix | log every concluded experiment same-session; deck sweep vs the new anchors | ≥1 breakthrough candidate validated at n≥2000 **OR** all five killed with written verdicts |
 | **08-08 – 08-14** | consolidate: winners integrated, large-n consistency runs vs every anchor; **Track C step 4 only if steps 1–3 justified it**; submit early enough to converge (~4 h+ climb, slots scarce) | collect figures/tables from arena archives as produced | best agent submitted with ≥3 days of episode history before the deadline |
 | **08-14 – 08-17** | **freeze** — no risky submissions (latest-2 eviction trap) | — | sim track locked with the settled pair active |

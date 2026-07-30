@@ -15,6 +15,34 @@ a snapshot, and **paginate: `competition_leaderboard_view` returns 20 rows and a
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
+### ▶ START HERE — the next actions, in order (set 2026-07-30, end of day 8)
+
+Nothing is mid-flight; the tree is clean and every result below is archived.
+
+1. **Size, then build, the Morgrem out** (§3.3b, `EVIDENCE` §8d). Non-ex
+   attackers are not covered by an anti-{ex} ability: **Marnie's Morgrem deals 60
+   through the Crustle wall while Grimmsnarl ex deals 0.** We already run 3
+   copies as the evolution stage, so this needs **no decklist change** — only a
+   "don't evolve Morgrem into Grimmsnarl ex against a Crustle board" priority
+   rule. **Size it first** (how often do we hold a Morgrem that could attack a
+   wall and evolve it away?), then A/B vs `rule:crustle` **and** the mirror.
+   Biggest known lever in the matchup that is eating our win rate.
+2. **Get a pilot for `crispin_toolbox` — it is the #1 LB deck's archetype**
+   (`James Cox & Henry Chao`, 1192.7). Without it, every new rule carries exactly
+   the single-anchor exposure that just cost us (rule 12). **Do not use a
+   `bc`-piloted anchor** — that measured 0.911 and cannot resolve anything.
+   Check `notebooks/pulled/` and hunt public notebooks (§3.1).
+3. **Re-mine the meta.** 07-30's episodes become fetchable on 07-31 (the current
+   day always 403s). Confirm the Crustle/Crispin shares, and build the **deck
+   matchup win-rate matrix** among high-rated players (ROADMAP Track B/C figure).
+4. **Then ROADMAP B1** (feature-augmented retrain) — the top-ranked unstarted
+   breakthrough candidate, and the control experiment for the report's thesis.
+5. **Do not submit yet.** Today's shipped gain is ~+10–15 Elo, **below the LB's
+   resolution** (§1). Accumulate improvements and submit **one bundle**. The
+   daily quota is free; the cost is the active-pair slot (box below).
+6. **`report/STRATEGY.md` does not exist yet** — the only Track B deliverable not
+   started. `report/EVIDENCE.md` is backfilled and ready to draft from.
+
 ### The four files, and what each owns
 
 | file | owns |
@@ -50,7 +78,7 @@ EVIDENCE (any experiment that concluded) together.**
 
 ---
 
-## 1. Where we are (day 7 end, 2026-07-29)
+## 1. Where we are (day 8 end, 2026-07-30)
 
 | submission | what | LB |
 |---|---|---|
@@ -242,12 +270,14 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
 
 ---
 
-## 3. THE PLAN (day 7 → day 8)
+## 3. THE PLAN (day 8 → day 9)
 
-P5 is closed, the Boss's Orders lever is closed four interventions deep, and P6a
-won locally and shipped. **The open questions: (0) is P6a actually good, (1) are
-we measuring against the right opponents at all, (2) Crustle.** `ROADMAP.md`
-§2.5 holds the ranked breakthrough candidates (B1–B5) that run alongside.
+**Day 8 closed all three of day 7's open questions** (§3.0 `counter_source` is
+good and stays; §3.1 we were *not* measuring against the right opponents, and the
+correction found a harmful rule; §3.2 the Crustle premise is verified) **and
+shipped a fix (§3.3).** It also killed ROADMAP B2. The live work is now the
+▶ START HERE list at the top of this file; §2.5 of `ROADMAP.md` holds the ranked
+breakthrough candidates (B1, B3–B5) that run alongside.
 
 ### 3.0 ✅ RESOLVED (2026-07-30): `counter_source` stays
 
@@ -316,7 +346,7 @@ Preserved builds, so nothing ever needs rebuilding under time pressure:
 `dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz` (P4b) and
 `...-152103.tar.gz` (P6a).
 
-### 3.1 Re-anchor the arena on the CURRENT meta — steps 1–4 DONE, 5 is the work
+### 3.1 ✅ Re-anchored (2026-07-30) — done for Crustle; Crispin still needs a pilot
 
 Every number in §3, §6 and `EVIDENCE.md` was earned against `lucario_v10`, which
 **is now 0% of the meta** (§1). So the bar itself has to be rebuilt.
@@ -387,7 +417,7 @@ identical opponent.
 Also: **archive the per-anchor A/B tables.** They are the rubric's
 consistency/robustness exhibit and go into the report verbatim.
 
-### 3.2 Crustle — **this is the meta now**, and it is still unpiloted
+### 3.2 ✅ Crustle — **this is the meta now**, piloted, and the premise is verified
 
 **Measured (§1): 1 seat in 1,600 pre-shift → 18.1% of the field at 56.6% WR on
 07-29, with the LB's top two players on it, while our win rate fell 52.2% →
@@ -664,7 +694,7 @@ python -X utf8 scripts/arena.py play bc "rule:v10,noS" `
     --deck-a grimmsnarl --deck-b lucario_v10 --matches 500
 
 # A/B a rule override against the pure clone (how every targeting.py rule is judged).
-# Off-switches: noChip, noSpread, noSrc. Opt-in (default off): drag, dragHi, boss, veto.
+# Off-switches: noChip, noSpread, noSrc, noWall. Opt-in (default off): drag, dragHi, boss, veto.
 # Isolate ONE rule per run: the P4a pair measured 0.452 while each alone was null.
 # NOTE the first token after `bc:` is a LABEL, not a flag (§7). Write `bc:<label>,<flag>`.
 python -X utf8 scripts/arena.py play "bc:s,noSrc" bc `
@@ -686,10 +716,21 @@ python -X utf8 scripts/p5_audit.py --matches 200   # sizes the three P5 findings
 python -X utf8 scripts/p5a_replays.py              # the same counters on 55 REAL games
 python -X utf8 scripts/p5b_check.py --matches 150  # does a rule actually fire? (rule 9)
 
-# §3.1 re-anchor: what is the field ACTUALLY playing now? (last fetched: 07-27)
+# §3.1 re-anchor: what is the field ACTUALLY playing now?
+# On disk: 07-26, 07-27 (pre-shift), 07-28, 07-29 (post-shift).
+# ⚠ The CURRENT day 403s -- episodes publish the following day, so mine yesterday.
 python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-30 --max 400
-python -X utf8 scripts/mine_meta.py replays/2026-07-30    # takes dirs as arguments
+python -X utf8 scripts/mine_meta.py replays/2026-07-29    # takes dirs as arguments
 powershell -File scripts/fetch_days.ps1        # several days; edit $Dates default (§7)
+
+# Crustle: the counter-meta anchor (import once; idempotent)
+python -X utf8 scripts/import_crustle_agent.py
+python -X utf8 scripts/arena.py play bc rule:crustle `
+    --deck-a grimmsnarl --deck-b crustle_v1 --matches 1000
+
+# Is damage even landing? (the wall/counter census -- and the log-reading template)
+python -X utf8 scripts/p2_lethal.py --matches 200          # lethal audit (closed)
+python -X utf8 scripts/p3_crustle_probe.py --matches 60    # attack vs counter damage
 
 # Train (12 epochs; artifacts/pds_v2 is the shipped corpus)
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
@@ -813,6 +854,18 @@ demonstrator side of the `opps` column has never been run
   an old tarball in `dist/`.
 - Kaggle Python API returns **snake_case** (`public_score`, `team_name`);
   `competition_leaderboard_view` paginates at 20 rows.
+- **`obs["logs"]` is a per-observation DELTA, not a cumulative game log.**
+  Observed lengths across our own selects: `[0, 0, 48, 14, 3, 1, ...]` —
+  non-monotonic. **Never index into it as if it held the whole game**; concatenate
+  deltas, or (better) tally events without needing offsets. This produced a probe
+  that read 0.0 damage in every bucket including ones that cannot be zero
+  (`EVIDENCE` §8d). Useful entry types: **`type 15`** = an attack
+  (`cardId`, `attackId`, `playerIndex`); **`type 16`** = an HP change
+  (`playerIndex` = the owner of the changed Pokemon, `cardId`, `value` negative
+  for damage / positive for healing, and **`putDamageCounter`** True for
+  placed/moved counters vs False for attack damage). ⚠ **A PREVENTED attack logs
+  as `value: 0`**, so a filter of `value < 0` silently drops exactly the events
+  that prove a prevention ability exists.
 - **The first token after `bc:` is a LABEL, not a flag.** `bc:veto` silently
   builds a plain `bc` named "veto" — the flag parser starts at token 1, so the
   A/B compares the clone against itself. Write `bc:<label>,<flag>`
