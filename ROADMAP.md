@@ -1,0 +1,263 @@
+# ROADMAP — dual goal: public LB + WIN the Strategy Category
+
+> **This file decides what the engineering is FOR.** `HANDOFF.md` §3 is the live
+> engineering plan; `report/EVIDENCE.md` is the hypothesis log. Update all three
+> at the end of every session.
+>
+> **Deadlines (user-confirmed 2026-07-30): simulation 2026-08-17** (~18 days),
+> then ~2 weeks continued play; **strategy report 2026-09-14**. Agent work is the
+> scarce-time track; the report has a month of runway afterward — **but its
+> evidence is generated now, so log it now.**
+>
+> **Rubric (user-confirmed): Model Score 70% + Deck Score 20% + report writing
+> 10%.** Verbatim text in `competition_details_and_rubric.md`.
+
+---
+
+## 0. The verdict (2026-07-30): partial pivot, not a track switch
+
+**Keep the engineering line. Do NOT adopt the research program in the appendix.
+ADD a strategy-dossier track starting now.**
+
+Why not build MCTS + GNN + belief nets + self-play:
+
+1. **Our own measurements already falsified its core planks *for this
+   competition*:** search 0.323 vs the clone; V10's MCTS has never executed and
+   holds LB 950+ anyway; self-play RL, more data and more val accuracy all
+   negative; nothing at the top of the board is learned. 18 days on ~1.4 cores
+   cannot change those results.
+2. **The rubric rewards reasoning, not architecture.** 70% Model Score = clarity
+   of rationale + originality + *soundness* + consistency + robustness + LB
+   performance (**one bullet of five**). A half-built GNN is neither performant
+   nor sound. The description says outright that mid-tier LB + deep analysis can
+   win.
+3. **The declined program becomes report material.** "We derived testable
+   hypotheses from the AlphaGo/poker/NNUE program and here is the experimental
+   evidence for why each plank does or doesn't transfer under these constraints"
+   is a *stronger* originality story than half-building the stack — because we
+   have the negative-result receipts.
+
+Why not pure status quo either — three rubric-shaped holes:
+
+- **Deck Score is 20% and we have almost no documented deck rationale** (we
+  netdecked grimmsnarl from top episodes). *Partly fixed 07-30, see Track C.*
+- **"Avoids over-reliance on specific matchups"** — every routine number is vs
+  ONE anchor (`rule:v10,noS`/`lucario_v10`), and the meta shifted. HANDOFF §3.1
+  (re-anchor) is therefore *also* the robustness evidence. Same work, double
+  credit.
+- **The report does not exist**, and its best material (the day-by-day
+  hypothesis→measurement→verdict log) is being produced now and is cheapest to
+  capture now. *Started 07-30: `report/EVIDENCE.md`.*
+
+**Episode data:** ~20 GB of episodes is published per day. More *training* data is
+dead (EVIDENCE §1) — **never bulk-download for imitation.** But targeted mining is
+live and cheap: manifest-ranked top episodes for (a) §3.1 re-anchoring, (b) a
+**deck matchup win-rate matrix among high-rated players** — which picks our
+anchors, feeds the archetype detector's priors, and is a headline figure for both
+the robustness and the Deck Score sections. **Pull manifests broadly (they're
+tiny), episodes selectively**, and keep the manifest even when the episodes are
+pruned (`replays/manifests/`).
+
+---
+
+## 1. The narrative we are building toward
+
+> **"Clone the field, then audit the clone's blindness."** We behavior-cloned
+> 2,810 human games, systematically enumerated the decisions its features cannot
+> express (no HP, no damage, no attached energy), and repaired them with
+> arithmetic rules. We present a falsifiable discriminator — **rules that delete
+> a *dominated* option win (3/3); rules that pick a side in a *tradeoff* lose
+> (0/4)** — validated by arena A/B at n≥2000 every time. Plus a
+> measurement-discipline codex (HANDOFF §2, 13 rules, each paid for) and
+> evidence-backed negative results on search, RL and data scaling.
+
+Everything from here should either (a) raise the LB, (b) add a chapter, or (c)
+both. **Prefer (c).**
+
+---
+
+## 2. Tracks
+
+### Track A — Leaderboard (live plan: HANDOFF §3)
+
+Priority order unchanged: resolve `55077709` (§3.0) → re-anchor the arena (§3.1)
+→ Crustle probe + pilot (§3.2) → P2 lethal audit. **Bar for shipping: head-to-head
+win at n≥2000 vs the current anchors.**
+
+New lens: §3.1's multi-anchor arena is the rubric's consistency/robustness
+exhibit — **archive the per-anchor A/B tables, they go in the report verbatim.**
+
+### Track B — Strategy dossier
+
+Deliverables: **`report/EVIDENCE.md`** (the log — exists, backfilled 07-30) and
+**`report/STRATEGY.md`** (the report — not started). Outline:
+
+1. **Approach & rationale** — why imitation of the field + rule repair under
+   2 vCPU / 600 s; why not search or RL (our measurements *and* the V10
+   never-runs finding).
+2. **Hypothesis log** — from `EVIDENCE.md`; remaining backfill sources are the 76
+   semantic git commits and `out/arena/` (indexed in `out/logs/RECEIPTS.txt`).
+3. **The discriminator** — dominated vs tradeoff, the 7-rule table, and *why* it
+   predicts (the net has seen 2,810 games of human tradeoffs; it has seen zero HP
+   values).
+4. **Measurement discipline** — HANDOFF §2's 13 rules as a methods section.
+5. **Robustness & consistency** — multi-anchor A/B tables, seat balance, n and CI
+   everywhere, and the `counter_source` false-positive post-mortem (§3.0). **A
+   documented failure of our own validation process, diagnosed and fixed, is
+   rubric gold — not embarrassment.**
+6. **Opponent modeling / meta adaptation** — the measured meta shift, archetype
+   detection, the Crustle case study.
+7. **Deck concept** (feeds Deck Score — Track C).
+8. **Negative results** — search, self-play, data scaling, Boss's Orders ×4,
+   decklist variants. Honest nulls at n≥2000 are rare on Kaggle and scream
+   soundness.
+
+**Process rule:** every experiment gets an `EVIDENCE.md` entry **the session it
+concludes** — hypothesis, command, n, CI, verdict, one sentence of
+interpretation. End-of-session checklist: HANDOFF plan ✓, EVIDENCE entries ✓,
+this file's calendar ✓.
+
+### Track C — Deck Score (20%)
+
+**Documentation half — the core argument is now measured, not asserted.**
+From `out/meta/pre_shift_0722_0724.txt` (800 games, 07-22 + 07-24):
+
+- **Our archetype was the field's consensus best deck: 829 of 1,600 seats
+  (52.2% WR, 22 teams), and the top three rated teams all played it**
+  (`__Taichicchi__` 1226.4, `Luca` 1212.9, `Rmy` 1207.5). That answers "why
+  grimmsnarl" with data instead of "we netdecked it".
+- **Crustle appeared in 1 of 800 games** — so the counter-meta is genuinely *new*,
+  which is what makes Track C's second half urgent rather than speculative.
+- Still to add: the re-anchored deck sweep (HANDOFF P1 caveat: also run
+  `bc:plain,noChip,noSpread,noSrc` — with our grimmsnarl-only rules on, the sweep
+  answers "what to ship", not "which deck has the higher ceiling"), and a
+  post-shift re-mine for the same table.
+- **Key-cards section:** Munkidori/Adrena-Brain economy (two armed Munkidori =
+  60-point swing/turn), Shadow Bullet snipe + `chip_target`, and the Boss's Orders
+  saturation finding (we play it on 38% of legal turns; more copies measured null
+  at 0.490).
+
+**Experimentation half — the anti-counter program** (ordered; each step gates the
+next; the user asked for this explicitly on 2026-07-30):
+
+1. **Build the measuring instrument first: a Crustle anchor.** Deck is in repo,
+   no pilot. **No deck experiment is interpretable until this exists** — a
+   decklist change measured only against `rule:v10` answers the wrong matchup.
+2. **Probe the mechanic** (HANDOFF §3.2): do Adrena-Brain / Freezing Shroud
+   counters bypass Mysterious Rock Inn's damage prevention? One probe run. **If
+   no → the passive-damage line is dead**; enumerate other outs (Tool Scrapper?
+   stadium replacement? a non-ex attacker line?) from the card pool *before*
+   touching the list.
+3. **Play-priority adaptation before decklist surgery** (better prior, zero
+   off-distribution cost): in Crustle mode, prioritize fetching/arming the
+   passive-damage Pokemon (`TO_HAND` and attach rules, conditional on archetype
+   detection — B3).
+4. **Then decklist changes, measured properly:** the Froslass line is the only
+   growable passive-damage line (Munkidori capped at 4). Candidate swaps get A/B'd
+   **against the Crustle anchor AND the mirror AND `rule:v10`** — a tech card must
+   pay for its slot in the bad matchup without bleeding the good ones. ⚠ Every
+   change is off-distribution for the net; mitigation = rules own the changed
+   cards' decisions, or a B1 retrain absorbs them.
+
+**Stewardship narrative:** "we measured a change and kept the list" and "we
+measured a change and made it" are *both* deck analysis. Only **unmeasured** list
+edits are forbidden.
+
+---
+
+## 2.5 The breakthrough hunt — ranked candidates for 970 → 1200
+
+**The innovation gap and the LB gap are the same problem.** Incremental targeting
+rules bought ~150 points and are hitting diminishing returns (the last three
+A/B'd rules were null; the remaining selects are closed or tiny). The top is ~210
+points away, and the originality score won't be won by a fourth chip-targeting
+rule. So: qualitatively different levers, each with a **cheap probe → kill
+criterion → full A/B** ladder. **Run probes in rank order; kill fast; write up
+every kill** — every candidate is a report chapter regardless of outcome.
+
+| # | candidate | why it could be the jump | probe (cheap) | kill criterion |
+|---|---|---|---|---|
+| **B1** | **Feature augmentation + retrain** — add HP, damage and attached-energy count to `optfeat`/`features.py` (VERSION bump), retrain `policy_lw2`'s config | Every winning rule patched the *same* blindness, one select at a time. Features attack all selects at once — including MAIN (47.7% of selects, 61% of misses) where hand rules provably fail (0-for-4). **Also the missing control for the report's central thesis** — wins credibility even if it loses the A/B. | ~1 day: bump VERSION, rebuild shards, retrain 12 epochs, head-to-head vs the shipped net n=2000, mirror, full `targeting.py` both sides | ≤0.52 at n=2000 → thesis confirmed ("rules beat retraining"), chapter written, move on |
+| **B2** | **Arithmetic MAIN layer** (= HANDOFF P2, starting with the lethal audit) | The entire top-10 is handcrafted deck expertise; missed lethal is the classic gap, it is pure arithmetic, and `textdmg.estimate` is exact for this deck | lethal audit over 200 games in the two cuts P2 specifies (same-attacker vs needs-promotion) | same-attacker cut reads <2% missed → closes cheaply |
+| **B3** | **Archetype detection → matchup branches** | What the 1300-reporting notebook does (grid-searched per-matchup thresholds); prerequisite for Crustle mode (Track C step 3); the report's opponent-modeling chapter | classifier from revealed cards over the 55-game replay corpus + mined episodes: turn-N accuracy vs the final revealed deck | can't reach ~90% accuracy by turn 3 → branches would misfire, demote |
+| **B4** | **Turn-level planning with the unused 600 s pool** — enumerate within-turn action *sequences*, score end-of-turn states with `evalfn`/`textdmg` | We use 0.1 s of 600 s; the #1 player reportedly uses the full budget. **Distinct from the dead game-tree search**: no rollouts, no determinized opponent turns — just sequencing of our own turn, where the variance problem that killed our search (terminal 0/1, SE≈0.14) does not exist. Novel for this board | measure within-turn branching first (`p6_recon`-style, 100 games); if tractable, prototype on MAIN-heavy turns only, A/B n≥1000 with pool-usage logging | branching intractable even with beam limits, or A/B ≤0.52 — note that *eval quality*, not time, becomes the binding constraint |
+| **B5** | **Deck adaptation vs the counter-meta** (= Track C experimentation half) | If the meta shifted toward lock/counter decks, matchup EV moves more than any play-skill rule can | Track C steps 1–2 | probe says counters don't bypass the prevention → passive-damage line dead; enumerate other outs before any list change |
+
+**Sequencing:** B1 and B2 are independent of the re-anchor and can start as soon
+as §3.0 resolves. B3 gates B5-step-3 and half of Track C. B4 is the most
+speculative and the most original — **run its cheap probe early** (one afternoon)
+so the investment decision is data-driven, but don't build the planner before
+B1/B2 verdicts are in.
+
+**Rule-11 discipline applies inside every candidate:** B2's edge is the arithmetic
+cut, not a general MAIN scorer; B4's scorer is handcrafted eval, not a learned
+value net (measured dead); B5's changes are measured against three anchors, not
+vibes.
+
+---
+
+## 3. Calendar (sim closes 2026-08-17; report due 2026-09-14)
+
+| window | Track A (LB) | Track B/C (dossier) | gate |
+|---|---|---|---|
+| **07-30 – 08-01** | resolve §3.0 (two readings ≥1 h); fetch 07-28/29/30, mine the meta, build 2–3 new anchors (§3.1); **launch B1 retrain + B2 lethal audit + B4 branching probe** (all cheap, all independent of the re-anchor) | ✅ `EVIDENCE.md` created and backfilled; ✅ pre-shift meta snapshot archived; start `STRATEGY.md` skeleton | know whether `counter_source` ships or rolls back; know the real meta; B1/B2/B4 probe verdicts |
+| **08-01 – 08-08** | re-run shipping A/Bs vs the new anchors; **B3 archetype detector; Track C steps 1–3 (Crustle pilot + mechanic probe + priority adaptation)**; follow up whichever of B1/B2/B4 survived; matchup win-rate matrix | log every concluded experiment same-session; deck sweep vs the new anchors | ≥1 breakthrough candidate validated at n≥2000 **OR** all five killed with written verdicts |
+| **08-08 – 08-14** | consolidate: winners integrated, large-n consistency runs vs every anchor; **Track C step 4 only if steps 1–3 justified it**; submit early enough to converge (~4 h+ climb, slots scarce) | collect figures/tables from arena archives as produced | best agent submitted with ≥3 days of episode history before the deadline |
+| **08-14 – 08-17** | **freeze** — no risky submissions (latest-2 eviction trap) | — | sim track locked with the settled pair active |
+| **08-17 – 08-31** (continued play) | watch the final pair's rating — **this IS the rubric's "consistency under repeated matches" evidence**; record the trajectory | draft chapters 1–4 | continued-play data captured |
+| **09-01 – 09-14** | — | chapters 5–8, figures, full review pass, format for Kaggle, submit | report submitted well before 09-14 |
+
+**Standing constraints:** 5 submissions/day, **latest 2 active** — every
+submission near the deadline risks evicting the best agent (HANDOFF §7 ⛔). Score
+convergence takes 4+ h, so the *last safe day* for a new agent is ~08-15, and
+earlier is better because continued play rewards a settled high-μ pair.
+
+---
+
+## 4. Decision principles
+
+- **Rule 11 governs new rules:** dominated → build; tradeoff → distrust.
+- **Rule 10 governs everything:** the arena A/B decides; audit rates and
+  narratives don't. This applies to *report claims* too — every number in the
+  dossier must trace to an archived run with n and CI.
+- **Appendix ideas enter through the same gate as any rule:** cheap probe first,
+  then A/B. No architecture work on faith.
+- **When LB work and dossier work conflict for time**, note that LB is ~1 bullet
+  of 5 in a 70% category and the description explicitly says mid-tier can win —
+  **the dossier does not get sacrificed for marginal Elo.** (Being a finalist
+  likely needs a respectable LB; 970+ and climbing is already strong on this
+  board.)
+
+---
+
+## Appendix — the research program we declined (was `possible.md`)
+
+Kept as a compressed record so the report can say *what* we rejected and why,
+without carrying 300 lines of open questions. The original was a generic
+"synthesize the best of game AI" brief: modular engine → handcrafted eval +
+search → NNUE-style incremental features → policy/value nets → neural-guided
+MCTS (PUCT / IS-MCTS) → belief states and opponent modeling → object-centric
+architecture (GNN over attachments/evolutions, Set Transformers over unordered
+zones like hand/deck/discard) → large-scale self-play with league training →
+ablation studies. Inspirations and the principle taken from each: **Stockfish/
+NNUE** (incremental sparse evaluation, feature caching), **AlphaGo Zero/KataGo**
+(policy+value+search, multi-task value heads), **DeepStack/Libratus/Pluribus**
+(information sets, belief updating, opponent modeling), **Hearthstone/MTG AI**
+(action generation, sequencing, combo detection), **GNNs** (Pokémon is
+relational), **Set Transformers** (zones are unordered).
+
+**Status of each plank against our own measurements:**
+
+| plank | our evidence | disposition |
+|---|---|---|
+| neural-guided search / MCTS | ours 0.323 (n=31, rollout SE≈0.14); **V10's MCTS never executes and holds LB 950+** | **dead** — EVIDENCE §2 |
+| large-scale self-play / league | ~1.4 cores; nothing at the top of this board is learned | **dropped** — EVIDENCE §2 |
+| more data / better representations via training | lw3 (4,010 games, best val acc) lost 0.491; winners-only 0.375 | **dead as stated** — EVIDENCE §1 |
+| richer state features | this is the *one* plank our own thesis predicts should work | **live as B1** (§2.5) |
+| opponent modeling / beliefs | the top notebooks do the cheap version (matchup rules on revealed cards) | **live as B3**, minus the neural machinery |
+| within-turn sequencing (Hearthstone shape) | we use 0.1 s of a 600 s budget; no rollout variance in this restricted form | **live as B4** |
+| GNN / Set Transformer encoders | no measurement, and 18 days on 1.4 cores | **not attempted; documented as out of budget** |
+
+**The principle worth keeping from it**, which the project already follows: for
+any borrowed idea, ask *what problem does this solve; does PTCG have that
+problem; what is the PTCG-specific version; how would we falsify it cheaply?*
