@@ -54,6 +54,11 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 AGENT_KIND = {agent_kind!r}
+# Explicit rule flags, pinned at BUILD time. The defaults in sa/bcagent.py are
+# tuned for the lw2 net; an optfeat-v3 net wants them OFF (the three rules
+# measure 0.427 against it -- report/EVIDENCE.md 8f). Pinning the (net, flags)
+# PAIR here keeps both configurations shippable without a global default flip.
+AGENT_KWARGS = {agent_kwargs!r}
 
 
 def _read_deck():
@@ -68,10 +73,10 @@ _deck = _read_deck()
 
 if AGENT_KIND == "bc":
     from sa.bcagent import PolicyAgent as _A
+    _agent = _A(_deck, **AGENT_KWARGS)
 else:
     from sa.agent import SearchAgent as _A
-
-_agent = _A(_deck)
+    _agent = _A(_deck)
 
 
 def agent(obs):
@@ -102,6 +107,21 @@ main.agent = _env["agent"]
 
 deck = list(main._deck)
 assert len(deck) == 60, len(deck)
+
+# The agent "runs" perfectly well with a rejected net -- it just plays
+# list(range(minCount)), i.e. random-legal, and scores ~600. Kaggle sets no env
+# vars, so the bundled npz is the only thing that can save it. Assert the net is
+# actually live, and print the pinned rule flags so the build log records the
+# exact configuration that was shipped.
+_ag = _env.get("_agent")
+if _ag is not None and type(_ag).__name__ == "PolicyAgent":
+    from sa import policynet as _pn
+    _live = _ag.net or _pn.get()
+    assert _live is not None, "POLICY NET NOT LOADED -- agent would play random-legal"
+    print(f"NET_OK opt_in={_live.opt_in} state_in={_live.state_in}")
+    print("FLAGS chip=%s spread=%s src=%s wall=%s"
+          % (_ag.chip_targeting, _ag.energy_spread, _ag.counter_source,
+             _ag.chip_wall_defer))
 
 import cg.game as game
 
@@ -153,9 +173,22 @@ def main() -> int:
     ap.add_argument("--nets", default="both",
                     choices=["both", "policy", "value", "none"],
                     help="nets to include (default both)")
+    # Ship a candidate net instead of agents/sa/policy_net.npz. The bundle is
+    # what the grader runs, so the net and the rule flags must be pinned
+    # TOGETHER -- a v3 net with the lw2 defaults is the 0.427 configuration.
+    ap.add_argument("--policy-net", default=None,
+                    help="path to an npz to ship as sa/policy_net.npz")
+    ap.add_argument("--no-rules", action="store_true",
+                    help="disable chip_targeting/energy_spread/counter_source. "
+                         "Required with an optfeat-v3 net (EVIDENCE 8f).")
     args = ap.parse_args()
     if args.agent == "bc" and args.nets in ("value", "none"):
         raise SystemExit("--agent bc requires the policy net (--nets both|policy)")
+
+    agent_kwargs: dict[str, bool] = {}
+    if args.no_rules:
+        agent_kwargs = {"chip_targeting": False, "energy_spread": False,
+                        "counter_source": False}
 
     sdk_dir = config.find_sdk_dir()
     if sdk_dir is None:
@@ -166,8 +199,10 @@ def main() -> int:
         shutil.rmtree(build)
     build.mkdir(parents=True)
 
-    (build / "main.py").write_text(MAIN_PY.format(agent_kind=args.agent),
-                                   encoding="utf-8")
+    (build / "main.py").write_text(
+        MAIN_PY.format(agent_kind=args.agent, agent_kwargs=agent_kwargs),
+        encoding="utf-8")
+    print(f"agent kwargs: {agent_kwargs or '(bcagent.py defaults)'}")
 
     deck = importlib.import_module(f"decks.{args.deck}").DECK
     (build / "deck.csv").write_text(deck.to_csv(), encoding="utf-8")
@@ -183,6 +218,29 @@ def main() -> int:
                       ("value_net.npz", keep_value)):
         if not keep:
             (build / "sa" / npz).unlink(missing_ok=True)
+    if args.policy_net:
+        src = Path(args.policy_net)
+        if not src.is_absolute():
+            src = ROOT / src
+        if not src.exists():
+            raise SystemExit(f"--policy-net not found: {src}")
+        if not keep_policy:
+            raise SystemExit("--policy-net needs --nets both|policy")
+        shutil.copy2(src, build / "sa" / "policy_net.npz")
+        print(f"  sa/policy_net.npz <- {src}")
+        # The dim guard silently returns None for a net whose feature layout
+        # this code cannot feed, and the agent then falls back to
+        # list(range(minCount)) -- i.e. a broken agent that still "runs".
+        # Verifying HERE turns that into a build failure. (See policynet.load.)
+        # sa.cards imports cg.sim, so the SDK has to be on the path first. Done
+        # here rather than at module import to keep the builder light.
+        from ptcg.env import sdk as _sdk
+        _sdk.load()
+        from sa import policynet as _pn
+        if _pn.load(build / "sa" / "policy_net.npz") is None:
+            raise SystemExit(f"{src} FAILS the dim guard -- it would silently "
+                             "fall back to random-legal on Kaggle")
+        print("  dim guard: net loads OK")
     for extra in ("value_net.npz", "policy_net.npz", "deck_library.json"):
         present = (build / "sa" / extra).exists()
         note = "present" if present else "excluded -> handcrafted fallback"
@@ -209,8 +267,11 @@ def main() -> int:
                                   cwd=tmp, capture_output=True, text=True,
                                   timeout=1800)
             ok = proc.returncode == 0 and "RESULT=" in proc.stdout
+            if args.agent == "bc" and "NET_OK" not in proc.stdout:
+                ok = False
+                print("  smoke: net was NOT live in the extracted bundle")
             print(f"  smoke: {'OK' if ok else 'FAILED'}")
-            for line in proc.stdout.strip().splitlines()[-3:]:
+            for line in proc.stdout.strip().splitlines()[-4:]:
                 print(f"    {line}")
             if not ok:
                 print(proc.stderr[-3000:])

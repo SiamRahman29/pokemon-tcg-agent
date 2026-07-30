@@ -43,19 +43,49 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
 >
 > **▶ THE NEXT ACTION IS ITEM 0 BELOW — package and submit it.**
 
-0. **⚡ BUILD AND SUBMIT THE v3 AGENT (rules OFF).** This is the first candidate
-   that clears the "do we expect this to beat 950" bar (box below), and the
-   submission-slot arithmetic finally favours spending it. **Not yet done —
-   nothing has been packaged, and the defaults still ship `lw2` + rules.** Steps:
-   1. `bcagent.PolicyAgent` must load the v3 net **with `chip_target`,
-      `energy_spread` and `counter_source` disabled.** ⚠ **Do NOT flip the global
-      defaults** — they are still correct for `lw2`, which is what is live. Pin
-      the pair (net + flags) in the bundle instead.
-   2. `build_submission.py … --nets policy` and **smoke-test** it (the `__file__`
-      gotcha in §7 killed `55028078` this way).
-   3. ⚠ **Submitting evicts `55072063` (950.2, our best) from the active pair.**
-      That is the real cost — read the submission box before pulling the trigger.
-   4. Expect a 4+ h climb from μ=600 before the reading means anything (rule 2).
+0. ✅ **PACKAGED AND SMOKE-TESTED (2026-07-31) — awaiting only the decision to
+   spend the slot.** The bundle is built and verified; **nothing has been
+   submitted.**
+
+   ```
+   dist/submission_bc-grimmsnarl-netspolicy_20260731-000752.tar.gz  (4.0 MiB)
+   dist/submission.tar.gz  <- same file (the `latest` copy)
+   ```
+
+   Built with, and this exact command is the reproducer:
+
+   ```powershell
+   python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc `
+       --nets policy --policy-net out/policy_b1_v3.npz --no-rules
+   ```
+
+   **Verified, not assumed:**
+   - `NET_OK opt_in=37` — the **v3** net is live in the extracted bundle. ⚠ This
+     check is new and it matters: a net that fails the dim guard makes the agent
+     play `list(range(minCount))` — **random-legal, and it still "runs"**. The
+     builder now fails the build instead (`--policy-net` runs `policynet.load`),
+     and the smoke asserts `NET_OK`.
+   - `FLAGS chip=False spread=False src=False` — the rules are off, pinned in
+     `main.py` as `AGENT_KWARGS`. ⚠ **Global defaults deliberately NOT flipped** —
+     they remain correct for `lw2`, which is what is live right now. The
+     `(net, flags)` **pair** is pinned at build time; `wall=True` is inert
+     because `chip_target` never runs.
+   - **sha256 of `sa/policy_net.npz` == `out/policy_b1_v3.npz`** — the packaged
+     net is byte-identical to the one that measured 0.661.
+   - `agent_pool_left=599.9s lat_max=0.04s` — 0.1 s of the 600 s pool.
+   - Layout `main.py` + `deck.csv` + `cg/` + `sa/` at top level; 4.0 MiB of the
+     197.7 MiB cap; smoke `exec`s the source with **no `__file__`** (the §7 gotcha
+     that killed `55028078`).
+
+   **To actually submit** (⚠ **this evicts `55072063`, 950.2, our best, from the
+   active pair** — read the submission box below first):
+
+   ```powershell
+   python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission.tar.gz','optfeat v3 + rules off','pokemon-tcg-ai-battle')"
+   ```
+
+   Then expect a **4+ h climb from μ=600** before any reading means anything
+   (rule 2), and read both scores in one call (§5).
 
 1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-30 —
    do not build it** (`EVIDENCE` §8e, `out/logs/p7_morgrem_200.txt`). The veto
@@ -932,6 +962,13 @@ python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d30 replays/2
 
 # Build + submit (smoke-tests the bundle the way Kaggle loads it)
 python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
+
+# ... with a CANDIDATE net + its rule flags pinned as a PAIR (the v3 config).
+# --policy-net runs the dim guard at build time: a net this code cannot feed
+# would otherwise ship happily and play random-legal on Kaggle. --no-rules is
+# REQUIRED with a v3 net (the three rules measure 0.427 against it, EVIDENCE 8f).
+python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc `
+    --nets policy --policy-net out/policy_b1_v3.npz --no-rules
 python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission.tar.gz','msg','pokemon-tcg-ai-battle')"
 
 # Import public notebook agents
@@ -1046,6 +1083,15 @@ demonstrator side of the `opps` column has never been run
 - **Submission discipline:** submit only what has won head-to-head at n≥500
   against the current anchors. Always `--nets`-pin. Rebuild rather than trusting
   an old tarball in `dist/`.
+- ⚠ **A REJECTED NET DOES NOT CRASH — IT PLAYS RANDOM-LEGAL.** `policynet.load`
+  returns `None` on a feature-dim mismatch and `PolicyAgent` falls back to
+  `list(range(minCount))`, so a mis-built bundle smoke-tests "fine", uploads
+  fine, and quietly scores ~600. Since 2026-07-31 `--policy-net` runs the dim
+  guard at build time and the smoke asserts `NET_OK`. **Never ship a bundle whose
+  build log lacks that line.**
+- ⚠ **`dist/submission.tar.gz` is whatever was built LAST.** As of 2026-07-31 it
+  is the **v3 + rules-off** candidate, not the live `lw2` agent. Check the
+  timestamped filename before uploading.
 - Kaggle Python API returns **snake_case** (`public_score`, `team_name`);
   `competition_leaderboard_view` paginates at 20 rows.
 - **`obs["logs"]` is a per-observation DELTA, not a cumulative game log.**
