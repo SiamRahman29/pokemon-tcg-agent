@@ -485,9 +485,25 @@ willing to lose `55054446`'s slot", but **`55054446` is already inactive**):
   §3.1 and the ROADMAP §2.5 breakthrough candidates (B1/B2/B4 — none of which
   cost a submission slot) are the priority.
 
-Preserved builds, so nothing ever needs rebuilding under time pressure:
-`dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz` (P4b) and
-`...-152103.tar.gz` (P6a).
+**Preserved builds — labels VERIFIED and both smoke-tested 2026-07-31**, so
+nothing needs rebuilding under time pressure:
+
+| tarball in `dist/` | bundled rule flags | = submission | restores? |
+|---|---|---|---|
+| `...20260729-103819.tar.gz` | chip, spread (**no `counter_source` in the signature at all**) | **`55072063` — the 950.2 agent** | ✅ `NET_OK`, full game, 0.1 s pool |
+| `...20260729-152103.tar.gz` | + `counter_source` | `55077709` (824.9) | ✅ `NET_OK`, full game |
+| `...20260730-151057.tar.gz` | + `chip_wall_defer` | **never submitted** (day-8 wall branch) | — |
+| `...20260731-000752.tar.gz` | **rules OFF + v3 net** | **not submitted yet** (item 0) | ✅ `NET_OK opt_in=37` |
+
+All three lw2 bundles carry the same net (`sha256 bba02a42…` = `out/policy_lw2.npz`
+= the live `agents/sa/policy_net.npz`) and **their own copies of `sa/` and `cg/`**,
+so later repo changes cannot break them — the 07-29 bundles still report
+`opt_in=n/a` because they predate that property, and they run fine.
+
+⚠ **"Restorable" is NOT "recoverable to 950."** Re-submitting the P4b bundle
+restarts it at **μ=600** and it must climb 4+ h; the 950.2 rating itself cannot be
+restored, only re-earned. So the insurance is against *losing the code*, which we
+have not, and never against a bad submission decision.
 
 ### 3.1 ✅ Re-anchored (2026-07-30) — done for Crustle; Crispin still needs a pilot
 
