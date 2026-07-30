@@ -1,9 +1,16 @@
 # HANDOFF — PTCG AI Battle (Kaggle `pokemon-tcg-ai-battle`)
 
-**Mission:** public LB **and** the Strategy Category. LB top is **1179.8**
-(`Majkel1337`); our best agent reads **970.1**. Sim deadline **2026-08-17**, then
-~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
+**Mission:** public LB **and** the Strategy Category. Sim deadline **2026-08-17**,
+then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
+
+**Standing (read 2026-07-30 ~08:25 UTC, full 3,000-row LB):** we are **`Scio`,
+rank 226 of 3,000, 948.1**. Top is **`James Cox & Henry Chao` at 1192.7** — the
+**Crispin toolbox** pilot from our own 07-29 meta mine (§1). `flg` (Crustle) is
+5th at 1170.6, and **`Majkel1337` fell from 1st (1179.8 on day 7) to 11th
+(1122.4)**. The top of this board reshuffles fast — treat any recorded ranking as
+a snapshot, and **paginate: `competition_leaderboard_view` returns 20 rows and a
+`Next Page Token`; pass it back via `page_token` to walk all 3,000** (§5).
 
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
@@ -20,12 +27,26 @@ end with a live plan, never a summary.**
 **End of every session: update HANDOFF (plan), ROADMAP (calendar), and
 EVIDENCE (any experiment that concluded) together.**
 
-> ⛔ **THERE IS NO FREE SUBMISSION SLOT.** Only the **latest 2** submissions play
-> episodes, and the active pair is `55077709` (824.9) + `55072063` (**948.1, our
-> best**) — `55054446` is already inactive. **Any** submission evicts
-> `55072063` and freezes it at ~948; the only un-evict is resubmitting and waiting
-> out another 4 h+ climb from μ=600. **So the next submission must be something we
-> expect to beat 948 — not a rollback, and not a single small rule** (§3.0).
+> **Submission state (corrected 2026-07-30 — an earlier draft of this box
+> conflated two different limits):**
+>
+> - **Daily quota: 5/day, and today's is UNUSED.** There is no quota problem.
+> - **Only the latest 2 submissions play episodes.** Active pair: `55077709`
+>   (824.9) + `55072063` (948.1). A submission today makes it {new, `55077709`}
+>   and `55072063` stops playing.
+> - **Freezing is cheaper than it sounds.** A frozen submission keeps its score
+>   and still displays (`55054446` shows 905.2 while inactive), and our team's
+>   displayed score is **948.1 = our best submission**. `55072063` is converged
+>   (27 h; peaked 970, drifted to 948), so further episodes on it are worth ~zero.
+> - ⚠ **Open question that decides the endgame:** does the *final* standing use the
+>   displayed best-ever score, or only agents active at the close? Unknown.
+>   Until it is known, keep the best agent active through the 08-17 close and the
+>   08-31 continued-play window (ROADMAP calendar).
+>
+> **So the bar on submitting is not "is a slot free" — it is "do we expect this to
+> beat 948".** A ~12-Elo rule does not qualify (§1 resolution limit); it is
+> unmeasurable up there. A rollback especially does not qualify: it is
+> `55072063`'s own code, restarting from μ=600.
 
 ---
 
@@ -327,7 +348,7 @@ public notebooks (below) before using this anchor for anything.
 | ref | why |
 |---|---|
 | `pixiux/ptcg-crustle-v1-submit` | ✅ imported — `rule:crustle` |
-| **`makthanithin/pokemon-tcg-ai-battle-1084-5-baseline`** | **a public agent at 1084.5 — ~136 points ABOVE our best.** Read it, and consider importing it as the strong anchor that replaces `rule:v10` |
+| ~~`makthanithin/pokemon-tcg-ai-battle-1084-5-baseline`~~ | ⚠ **DO NOT TRUST THE TITLE.** "1084.5" is the author's self-report. Checked against the full 3,000-row LB: they are **`Nithin maktha`, rank 750, 819.1** — **524 places below us**, and no `makthanithin` appears at all. **A notebook title is not a measurement** (rule 10). Kept only as a lesson |
 | `jazivxt/crustle-counter-al220-v29-agents-only` | someone else's *anti-Crustle* agent — directly Track C |
 | `kokinnwakashuu/ptcg-lucario-public-lab-anti-crustle-log` | anti-Crustle analysis + logs |
 | `prvsiyan/ptcg-ai-battle-control-v11-meta-portfolio` | "meta router"/portfolio = ROADMAP B3 (archetype detection → matchup branches) |
@@ -515,8 +536,30 @@ MCTS never runs**; pass `noS` anyway so the archived name records intent.
 # LB / submission status  (§3.0 step 1 -- read BOTH scores in this one call)
 python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(s.ref, s.date, s.status, s.public_score, '|', str(s.description)[:60]) for s in a.competition_submissions('pokemon-tcg-ai-battle')[:5]]"
 
-# The leaderboard (paginates at 20)
+# The leaderboard, top 20
 python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(i, r.team_name, r.score) for i, r in enumerate(a.competition_leaderboard_view('pokemon-tcg-ai-battle')[:20], 1)]"
+
+# The FULL leaderboard (3,000 rows) -- to find our own rank or check a claim.
+# The client PRINTS "Next Page Token = ..." rather than returning it, so capture
+# stdout and feed it back via page_token. This is how "1084.5 baseline" was
+# refuted (its author is rank 750 at 819.1).
+python -X utf8 -c "
+from kaggle.api.kaggle_api_extended import KaggleApi
+import io, contextlib
+a=KaggleApi(); a.authenticate(); rows=[]; tok=None
+for _ in range(40):
+    buf=io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        batch=a.competition_leaderboard_view('pokemon-tcg-ai-battle', page_size=100, page_token=tok)
+    if not batch: break
+    rows+=batch; tok=None
+    for line in buf.getvalue().splitlines():
+        if 'Next Page Token' in line: tok=line.split('=',1)[1].strip()
+    if not tok: break
+print('rows', len(rows))
+for i,r in enumerate(rows,1):
+    if 'Scio' in (r.team_name or ''): print('RANK', i, r.score, r.team_name)
+"
 
 # Skill measurement: near-mirror head-to-head (rule 5). The only kind that counts.
 python -X utf8 scripts/arena.py play "rule:v10,noS" rule:lucario `
