@@ -1,0 +1,77 @@
+﻿
+=== ab_lw_vs_old.log  (2026-07-28 13:02) ===
+  A=bc:lw,net=out/policy_lw_final.npz: score=0.514 [0.492, 0.536] W1020/D16/L964 over 2000 games
+
+=== ab_lw2_vs_old.log  (2026-07-28 13:16) ===
+  A=bc:lw2,net=out/policy_lw2.npz: score=0.524 [0.502, 0.546] W1042/D11/L947 over 2000 games
+
+=== ab_lw3.log  (2026-07-28 14:33) ===
+  A=bc:lw3,net=out/policy_lw3.npz: score=0.491 [0.469, 0.513] W979/D5/L1016 over 2000 games
+
+=== ab_win.log  (2026-07-28 17:01) ===
+  A=bc:win,net=out/policy_win.npz: score=0.375 [0.354, 0.396] W744/D12/L1244 over 2000 games
+
+=== arena1.log  (2026-07-27 16:07) ===
+  A=search:noV: score=0.333 [0.180, 0.533] W8/D0/L16 over 24 games
+
+=== arena2.log  (2026-07-27 15:54) ===
+  A=bc:v2: score=0.250 [0.120, 0.449] W6/D0/L18 over 24 games
+
+=== arena3.log  (2026-07-27 16:30) ===
+  A=search:noPnoV: score=0.208 [0.092, 0.405] W5/D0/L19 over 24 games
+
+=== arena4.log  (2026-07-27 16:59) ===
+  A=search:pon,noV: score=0.750 [0.566, 0.873] W21/D0/L7 over 28 games
+  A=search:pon,noV: score=0.643 [0.458, 0.793] W17/D2/L9 over 28 games
+
+=== arena5.log  (2026-07-27 17:33) ===
+  A=search:w48,noP,noV,w48: score=0.500 [0.314, 0.686] W12/D0/L12 over 24 games
+
+=== arena6.log  (2026-07-27 17:09) ===
+  A=search:von,noP: score=0.396 [0.228, 0.592] W9/D1/L14 over 24 games
+
+=== arena7.log  (2026-07-27 17:54) ===
+  A=search:w48nets,w48: score=0.458 [0.279, 0.649] W11/D0/L13 over 24 games
+
+=== bc_chip_vs_v10.log  (2026-07-28 17:45) ===
+  A=bc: score=0.537 [0.506, 0.568] W536/D2/L462 over 1000 games
+
+=== bc_sweep.log  (2026-07-28 12:09) ===
+  A=bc: score=0.480 [0.449, 0.511] W479/D2/L519 over 1000 games
+  A=bc: score=0.519 [0.470, 0.567] W207/D1/L192 over 400 games
+  A=bc: score=0.360 [0.314, 0.408] W144/D0/L256 over 400 games
+  A=bc: score=0.475 [0.427, 0.524] W189/D2/L209 over 400 games
+  A=bc: score=0.068 [0.047, 0.096] W27/D0/L373 over 400 games
+  A=bc: score=0.320 [0.276, 0.367] W128/D0/L272 over 400 games
+  A=bc: score=0.995 [0.972, 0.999] W199/D0/L1 over 200 games
+
+=== bc_vs_v10.log  (2026-07-28 16:18) ===
+  A=bc: score=0.418 [0.388, 0.449] W417/D2/L581 over 1000 games
+
+=== chip_ab.log  (2026-07-28 17:43) ===
+  A=bc: score=0.577 [0.555, 0.599] W1154/D1/L845 over 2000 games
+
+=== deck_boss_ab.log  (2026-07-28 17:35) ===
+  A=bc: score=0.490 [0.468, 0.512] W975/D9/L1016 over 2000 games
+
+=== deck_sweep.log  (2026-07-28 12:16) ===
+  A=bc: score=0.023 [0.011, 0.047] W7/D0/L293 over 300 games
+  A=bc: score=0.153 [0.117, 0.198] W46/D0/L254 over 300 games
+  A=bc: score=0.037 [0.021, 0.064] W11/D0/L289 over 300 games
+  A=bc: score=0.030 [0.016, 0.056] W9/D0/L291 over 300 games
+  A=bc: score=0.350 [0.298, 0.406] W105/D0/L195 over 300 games
+
+=== luc_vs_iono.log  (2026-07-28 17:03) ===
+  A=rule:lucario: score=0.781 [0.755, 0.806] W781/D1/L218 over 1000 games
+
+=== p0_bc_vs_iono.log  (2026-07-28 11:48) ===
+  A=bc: score=0.410 [0.319, 0.508] W41/D0/L59 over 100 games
+
+=== v10_search_ab.log  (2026-07-28 17:04) ===
+  A=rule:v10,tb0.2: score=0.492 [0.424, 0.561] W98/D1/L101 over 200 games
+
+=== v10_vs_iono.log  (2026-07-28 16:57) ===
+  A=rule:v10,noS: score=0.788 [0.762, 0.812] W788/D0/L212 over 1000 games
+
+=== v10_vs_luc.log  (2026-07-28 17:03) ===
+  A=rule:v10,noS: score=0.646 [0.616, 0.675] W646/D0/L354 over 1000 games

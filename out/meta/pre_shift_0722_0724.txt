@@ -1,0 +1,192 @@
+﻿parsed 800 games
+
+=== archetypes by usage (win% excl. draws) ===
+   829 games  52.2%  Basic {D} Energy / Munkidori  (22 teams)
+   214 games  45.8%  Abra / Telepath Psychic Energy  (7 teams)
+   159 games  54.1%  Basic {F} Energy / Rock Fighting Energy  (3 teams)
+   113 games  42.5%  Basic {G} Energy / Team Rocket's Energy  (6 teams)
+    57 games  45.6%  Basic {G} Energy / Team Rocket's Tarountula  (2 teams)
+    35 games  48.6%  Basic {R} Energy / Dreepy  (1 teams)
+    35 games  40.0%  Dunsparce / Lillie's Determination  (1 teams)
+    32 games  43.8%  Mist Energy / Spiky Energy  (3 teams)
+    30 games  53.3%  Basic {D} Energy / Marnie's Impidimp  (4 teams)
+    26 games  46.2%  Buddy-Buddy Poffin / Mega Kangaskhan ex  (1 teams)
+    24 games  45.8%  Basic {G} Energy / Grookey  (1 teams)
+    13 games  61.5%  Basic {P} Energy / Basic {R} Energy  (1 teams)
+    11 games  45.5%  Grow Grass Energy / Mist Energy  (2 teams)
+     9 games  66.7%  Applin / Basic {G} Energy  (1 teams)
+     6 games  66.7%  Basic {W} Energy / Buddy-Buddy Poffin  (1 teams)
+     3 games  33.3%  Buneary / Dunsparce  (1 teams)
+     2 games  50.0%  Basic {G} Energy / Crispin  (1 teams)
+     1 games   0.0%  Basic {P} Energy / Telepath Psychic Energy  (1 teams)
+     1 games   0.0%  Crustle / Dwebble  (1 teams)
+
+=== top teams by best avg_score seen ===
+   1226.4  __Taichicchi__: Basic {D} Energy / Munkidori x244, Basic {G} Energy / Team Rocket's Energy x17
+   1226.4  Yudai Ueno: Basic {F} Energy / Rock Fighting Energy x68
+   1212.9  Luca: Basic {D} Energy / Munkidori x304
+   1207.5  Rmy: Basic {D} Energy / Munkidori x98
+   1207.5  Lunariz: Basic {D} Energy / Munkidori x16
+   1205.2  Yushin Ito: Abra / Telepath Psychic Energy x95
+   1197.8  Where is my orbit: Buddy-Buddy Poffin / Mega Kangaskhan ex x26
+   1195.7  懒惰的金枪鱼: Mist Energy / Spiky Energy x6
+   1195.6  LumenLiquidity: Basic {R} Energy / Dreepy x35
+   1195.6  Majkel1337: Abra / Telepath Psychic Energy x109
+   1194.3  kashiwashira: Basic {G} Energy / Team Rocket's Tarountula x56
+   1189.9  junlee789: Basic {F} Energy / Rock Fighting Energy x90
+   1185.5  Xiangyu Liu: Basic {G} Energy / Grookey x24, Basic {D} Energy / Munkidori x5
+   1180.2  THIRD PTCG Club: Basic {G} Energy / Team Rocket's Energy x86
+   1179.0  goonew: Grow Grass Energy / Mist Energy x10, Applin / Basic {G} Energy x9
+   1178.4  Kotaro OKUYAMA: Basic {D} Energy / Munkidori x9
+   1177.2  LiamK: Mist Energy / Spiky Energy x25, Basic {G} Energy / Team Rocket's Energy x5
+   1177.1  西松大祐: Basic {D} Energy / Marnie's Impidimp x11, Mist Energy / Spiky Energy x1
+   1176.8  Dominic Peel: Basic {D} Energy / Munkidori x47
+   1176.6  zoroark190: Basic {G} Energy / Crispin x2
+   1175.5  szlachetny snieg: Basic {D} Energy / Munkidori x26
+   1175.0  tetsu2131: Basic {D} Energy / Munkidori x2
+   1174.5  youtube.com/@BigBugginnings: Basic {P} Energy / Basic {R} Energy x13
+   1173.9  tw_shin: Dunsparce / Lillie's Determination x35
+   1173.9  KakuTakagawa: Basic {D} Energy / Marnie's Impidimp x1
+
+=== most common decklist per top archetype ===
+
+--- Basic {D} Energy / Munkidori (this exact list seen 738x) ---
+  10x Basic {D} Energy [7]
+  4x Munkidori [112]
+  4x Marnie's Impidimp [646]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Team Rocket's Petrel [1219]
+  4x Lillie's Determination [1227]
+  4x Spikemuth Gym [1259]
+  3x Marnie's Morgrem [647]
+  3x Marnie's Grimmsnarl ex [648]
+  3x Rare Candy [1079]
+  3x Night Stretcher [1097]
+  2x Froslass [104]
+  2x Snorunt [860]
+  2x Boss’s Orders [1182]
+  1x Unfair Stamp [1080]
+  1x Pokégear 3.0 [1122]
+  1x Tool Scrapper [1137]
+  1x Dawn [1231]
+
+--- Abra / Telepath Psychic Energy (this exact list seen 210x) ---
+  4x Telepath Psychic Energy [19]
+  4x Abra [741]
+  4x Kadabra [742]
+  4x Alakazam [743]
+  4x Enhanced Hammer [1081]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Hilda [1225]
+  4x Dawn [1231]
+  3x Dunsparce [305]
+  3x Rare Candy [1079]
+  3x Boss’s Orders [1182]
+  3x Xerosic’s Machinations [1197]
+  2x Basic {P} Energy [5]
+  2x Dudunsparce [66]
+  2x Nighttime Mine [1266]
+  1x Enriching Energy [13]
+  1x Fezandipiti ex [140]
+  1x Shaymin [343]
+  1x Night Stretcher [1097]
+  1x Sacred Ash [1129]
+  1x Lana’s Aid [1184]
+
+--- Basic {F} Energy / Rock Fighting Energy (this exact list seen 159x) ---
+  5x Basic {F} Energy [6]
+  4x Rock Fighting Energy [20]
+  4x Cynthia's Roselia [341]
+  4x Cynthia's Gible [379]
+  4x Cynthia's Gabite [380]
+  4x Buddy-Buddy Poffin [1086]
+  4x Fighting Gong [1142]
+  4x Poké Pad [1152]
+  4x Lillie's Determination [1227]
+  3x Cynthia's Roserade [342]
+  3x Cynthia's Garchomp ex [381]
+  3x Cynthia's Power Weight [1173]
+  3x Hilda [1225]
+  2x Cynthia's Spiritomb [387]
+  2x Night Stretcher [1097]
+  2x Boss’s Orders [1182]
+  2x Forest of Vitality [1261]
+  1x Unfair Stamp [1080]
+  1x Xerosic’s Machinations [1197]
+  1x Surfer [1203]
+
+--- Basic {G} Energy / Team Rocket's Energy (this exact list seen 79x) ---
+  7x Basic {G} Energy [1]
+  4x Team Rocket's Energy [15]
+  4x Team Rocket's Tarountula [400]
+  4x Team Rocket's Spidops [401]
+  4x Team Rocket's Transceiver [1134]
+  4x Poké Pad [1152]
+  4x Team Rocket's Ariana [1216]
+  3x Basic {P} Energy [5]
+  3x Bug Catching Set [1094]
+  3x Team Rocket's Giovanni [1218]
+  2x Team Rocket's Articuno [414]
+  2x Team Rocket's Mewtwo ex [431]
+  2x Team Rocket's Murkrow [463]
+  2x Energy Search [1119]
+  2x Team Rocket's Proton [1220]
+  2x Lillie's Determination [1227]
+  2x Team Rocket's Factory [1257]
+  1x Team Rocket's Wobbuffet [432]
+  1x Night Stretcher [1097]
+  1x Hero’s Cape [1159]
+  1x Brave Bangle [1175]
+  1x Team Rocket's Archer [1217]
+  1x Team Rocket's Petrel [1219]
+
+--- Basic {G} Energy / Team Rocket's Tarountula (this exact list seen 56x) ---
+  7x Basic {G} Energy [1]
+  4x Team Rocket's Energy [15]
+  4x Team Rocket's Tarountula [400]
+  4x Team Rocket's Spidops [401]
+  4x Team Rocket's Transceiver [1134]
+  4x Poké Pad [1152]
+  4x Team Rocket's Ariana [1216]
+  4x Team Rocket's Proton [1220]
+  3x Team Rocket's Mimikyu [434]
+  3x Bug Catching Set [1094]
+  3x Team Rocket's Giovanni [1218]
+  3x Lillie's Determination [1227]
+  3x Team Rocket's Factory [1257]
+  2x Team Rocket's Articuno [414]
+  2x Team Rocket's Mewtwo ex [431]
+  2x Ultra Ball [1121]
+  1x Buddy-Buddy Poffin [1086]
+  1x Hero’s Cape [1159]
+  1x Brave Bangle [1175]
+  1x Team Rocket's Archer [1217]
+
+--- Basic {R} Energy / Dreepy (this exact list seen 35x) ---
+  4x Basic {R} Energy [2]
+  4x Dreepy [119]
+  4x Drakloak [120]
+  4x Buddy-Buddy Poffin [1086]
+  4x Ultra Ball [1121]
+  4x Poké Pad [1152]
+  4x Lillie's Determination [1227]
+  3x Basic {P} Energy [5]
+  3x Dragapult ex [121]
+  3x Crushing Hammer [1120]
+  3x Boss’s Orders [1182]
+  3x Crispin [1198]
+  2x Duskull [131]
+  2x Dusclops [132]
+  2x Night Stretcher [1097]
+  2x Team Rocket's Watchtower [1256]
+  1x Basic {D} Energy [7]
+  1x Munkidori [112]
+  1x Dusknoir [133]
+  1x Fezandipiti ex [140]
+  1x Budew [235]
+  1x Moltres [791]
+  1x Meowth ex [1071]
+  1x Unfair Stamp [1080]
+  1x Dawn [1231]
