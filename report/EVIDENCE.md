@@ -247,7 +247,46 @@ bare `bc`'s **0.593 [0.562, 0.623] n=1000** — +0.033 there vs +0.034 in the
 mirror, two measurements, same size, same sign.
 
 **Then it read 762.2 → 746.4 on the LB while the otherwise-identical
-`55072063` sat at 970.1.** See `HANDOFF.md` §3.0 — this is the live question.
+`55072063` sat at 970.1.**
+
+### The day-8 resolution (2026-07-30): the LB was the wrong instrument
+
+| when (UTC) | P6a `55077709` | P4b `55072063` | gap |
+|---|---|---|---|
+| 07-29 09:21 | submitted (μ=600) | — | — |
+| 07-29 10:22 / 10:27 | 762.2 → 746.4 | 970.1 | ~224 |
+| 07-30 08:19 (+23 h of play) | **824.9** | **948.1** | **123** |
+
+**The agents converged toward each other from opposite directions** — P6a +78
+climbing off μ=600, P4b −22 settling off an overshoot. That is the signature of
+two close true ratings, not of a 220-point regression.
+
+**And the arithmetic nobody did on day 7: a 0.534 mirror A/B is ≈ +12 Elo, while
+LB readings swing ±50–100 during convergence.** So the leaderboard could never
+have adjudicated this rule in either direction, and **the arena and the LB were
+never in conflict.** The day-7 "the local arena produced a confident false
+positive" framing was itself a false positive — produced by asking a ±75-point
+instrument to measure a 12-point effect.
+
+**Verdict: unresolvable on the LB; re-opened as an arena question** (re-measure
+against the post-shift anchors, `HANDOFF` §3.1 step 5). The rule stays shipped
+meanwhile, because rolling it back would cost our best agent's active slot for a
+re-run of identical code (`HANDOFF` §3.0).
+
+**Interpretation — this is the most transferable methodological result of the
+week, and it is a report chapter on its own:** *state the resolution of your
+instrument before you let it overrule another instrument.* We have two measuring
+devices with a ~6× precision difference and we spent a session letting the coarse
+one veto the fine one. It also has a hard forward consequence: **if the remaining
+levers are stacks of ~10-Elo rules, no single-rule submission can ever be
+validated on the LB** — only multi-anchor arena A/Bs, then one submission of the
+bundle.
+
+⚠ **The narrower `counter_source` variant is still worth building** regardless of
+the verdict: rule 11's ⚠ clause says the shipped rule is *mis-classified* (a
+dominated half welded to an asserted-judgment half), and the narrow version —
+redirect only when strictly better on transfer AND not obviously the worse heal —
+is the one that actually belongs in the dominated column.
 
 **Interpretation (written before the verdict, deliberately):** two candidate
 causes with opposite fixes.

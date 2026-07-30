@@ -20,11 +20,12 @@ end with a live plan, never a summary.**
 **End of every session: update HANDOFF (plan), ROADMAP (calendar), and
 EVIDENCE (any experiment that concluded) together.**
 
-> ⛔ **DO NOT SUBMIT ANYTHING until §3.0 is resolved.** Only the **latest 2**
-> submissions play episodes. The active pair is `55077709` (762.2, on trial) and
-> `55072063` (**970.1, our best**). A third submission **evicts `55072063` from
-> active play**; there is no un-evict except resubmitting and waiting out another
-> climb from μ=600.
+> ⛔ **THERE IS NO FREE SUBMISSION SLOT.** Only the **latest 2** submissions play
+> episodes, and the active pair is `55077709` (824.9) + `55072063` (**948.1, our
+> best**) — `55054446` is already inactive. **Any** submission evicts
+> `55072063` and freezes it at ~948; the only un-evict is resubmitting and waiting
+> out another 4 h+ climb from μ=600. **So the next submission must be something we
+> expect to beat 948 — not a rollback, and not a single small rule** (§3.0).
 
 ---
 
@@ -32,8 +33,8 @@ EVIDENCE (any experiment that concluded) together.**
 
 | submission | what | LB |
 |---|---|---|
-| `55077709` | + `counter_source` (P6a) | 600 → 762.2 → **746.4** ⚠ **falling** |
-| `55072063` | clone v2 + `chip_target` + `energy_spread` | 958.2 → **970.1** ✅ **our best** |
+| `55077709` | + `counter_source` (P6a) | 600 → 762.2 → 746.4 → **824.9** ⚠ still climbing |
+| `55072063` | clone v2 + `chip_target` + `energy_spread` | 958.2 → 970.1 → **948.1** ✅ **our best** |
 | `55054446` | clone v2 + `chip_target` | 916.8 → 936 → 979 → 901.6 → **905.2** (inactive) |
 | `55048039` | clone v2, no targeting | 752 → 758.6 (settled) |
 | `55049206` | `rule:iono` sample agent | ~700–716 (settled) |
@@ -52,8 +53,30 @@ nothing pick a side in a **tradeoff** — and every one of those four moved its
 audit rate exactly as designed first. **Rule 11 in §2 is the test.** Full
 numbers: `report/EVIDENCE.md` §3.
 
-**The open problem:** `counter_source` won both local bars and then read 762 on
-the LB while an agent differing by *one flag* sits at 970. §3.0.
+**The open problem, reframed 2026-07-30:** `counter_source` won both local bars
+and then read low on the LB. **The gap has since halved on its own** (224 → 123)
+with the two agents converging *toward each other from opposite directions*, so
+the day-7 "confident false positive" framing was itself premature. §3.0.
+
+### ⚠ The resolution limit — the day-8 lesson, and it constrains everything
+
+**A 0.534 mirror A/B is ≈ +12 Elo. Our LB readings swing ±50–100 while
+converging.** So the LB could never have resolved `counter_source` in either
+direction, and the local arena and the LB were never actually in conflict — the
+error was asking a ±75-point instrument to measure a 12-point effect.
+
+Consequences, all of which bind on the rest of the project:
+
+- **Never nominate the LB as the referee for a rule again.** It can confirm a
+  ~150-point intervention (`chip_target`) and nothing smaller. Small rules are
+  decided in the arena, and the arena's trustworthiness is therefore the whole
+  game — which is why §3.1 outranks everything.
+- **Rules worth ~10 Elo cannot be validated one at a time on the LB, ever.** If
+  the remaining lever is a stack of small rules, the only honest validation is
+  multi-anchor arena A/Bs plus one LB submission of the *bundle*.
+- **This is a rule-2 amendment, not a new rule:** two readings ≥1 h apart that
+  agree are necessary but not sufficient — the effect also has to be **larger
+  than the instrument's precision** before an LB reading can speak to it.
 
 ### ⚠ The meta has shifted (user-reported 2026-07-29)
 
@@ -105,6 +128,14 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
    it; it settled at **905.2**, below its own first reading. **A rising score is
    unconverged, not momentum** — and a *falling* young one is equally
    uninformative (everything starts at μ=600 and climbs for hours).
+
+   ⚠ **And agreement is not sufficient — the effect must exceed the
+   instrument.** LB readings swing ±50–100 while converging, so **the LB cannot
+   resolve a rule worth ~10 Elo (a ~0.53 A/B) at all.** It confirmed
+   `chip_target` (~150 points) and it could never have adjudicated
+   `counter_source` (~12). Day 8 spent a whole session's prior on that mistake
+   (§1, §3.0). **Ask what size effect the instrument can see before you let it
+   overrule the arena.**
 3. **Validation metrics do not predict playing strength — five times.** Value-net
    loss, policy top-1 ×3, `--winners-only`. The net with the *best* val accuracy
    lost its A/B. **Judge every net in the arena, head-to-head.**
@@ -169,47 +200,63 @@ won locally and shipped. **The open questions: (0) is P6a actually good, (1) are
 we measuring against the right opponents at all, (2) Crustle.** `ROADMAP.md`
 §2.5 holds the ranked breakthrough candidates (B1–B5) that run alongside.
 
-### 3.0 FIRST: resolve `55077709` (P6a / `counter_source`)
+### 3.0 `55077709` (P6a / `counter_source`) — DOWNGRADED to "unresolvable on the LB"
 
-It won both local bars — 0.534 [0.513, 0.556] n=2000 mirror, and 0.626
-[0.604, 0.647] n=2000 vs `rule:v10,noS` against a bare `bc`'s 0.593 — then read
-**762.2 → 746.4** while the otherwise-identical `55072063` sat at **970.1**.
+**Readings (all read against the contemporaneous score, never a remembered one):**
 
-**The prior going in is "this rule is probably bad", not "the LB is noisy."**
-Two agents differing by one flag, ~220 points apart, the newer one trending
-*down*. If confirmed, the local arena produced a confident false positive — and
-understanding why is worth more than the rule was, **because every other rule was
-validated the same way.**
+| when (UTC) | P6a `55077709` | P4b `55072063` | gap |
+|---|---|---|---|
+| 07-29 09:21 | submitted (μ=600) | — | — |
+| 07-29 10:22 / 10:27 | 762.2 → 746.4 | 970.1 | ~224 |
+| 07-30 08:19 (**+23 h of play**) | **824.9** | **948.1** | **123** |
 
-**Step 1 — read it again.** Two readings ≥1 h apart (rule 2), each compared
-against `55072063`'s **contemporaneous** score, never a remembered one. Both are
-active on the same field, so the comparison is only fair read in the same call
-(command in §5).
+**The two agents are converging toward each other from opposite directions** —
+P6a +78 while climbing off μ=600, P4b −22 while settling off an overshoot. That
+is the signature of two close true ratings, not of a 220-point regression. **Do
+not read the remaining 123 as the rule's effect**: see the resolution limit in §1
+— the rule is worth ≈ +12 Elo and this instrument has ±50–100 of swing, so **the
+LB cannot answer this question and no further reading will change that.**
 
-**Step 2 — if it stays well below `55072063`, do NOT immediately resubmit** (the
-⛔ box: a third submission evicts our best agent). Work out which cause it is;
-they have opposite fixes:
+**Therefore §3.0 is closed as an LB question and re-opened as an arena question.**
+The decisive experiment is local and is §3.1 step 5: **re-measure `counter_source`
+against the post-shift anchors.** If it wins against all of them, keep it and the
+story is "the LB was never able to see a 12-Elo rule". If it loses against
+post-shift anchors, we have both the diagnosis (Cause A) and the fix (Cause B).
 
 - **Cause A — the local anchor is stale.** Both "independent" confirmations share
   the same opponent deck and the same era of the meta. Fix: §3.1, then
-  re-measure.
-- **Cause B — the dominance argument was half wrong (the more likely).**
-  *Transfer* is dominated (3+ counters move 30, 1 moves 10). *Healing* is a
-  tradeoff that was asserted: moving 30 off our most-damaged Pokemon is only the
-  best heal if that Pokemon is **savable**. The clone may have been judging that
-  correctly with information the rule discards. Fix: a narrower rule — **redirect
-  only when the net's pick is strictly worse on transfer AND not obviously the
-  better heal** (e.g. leave the net alone when its pick is the Active, or when
-  the max-counter source is already beyond saving: HP ≤ incoming damage). That
-  keeps the arithmetic and returns the judgment to the net.
+  re-measure. **This is now the leading hypothesis for anything that looks like a
+  rule/LB disagreement.**
+- **Cause B — the dominance argument was half wrong.** *Transfer* is dominated
+  (3+ counters move 30, 1 moves 10). *Healing* is a tradeoff that was asserted:
+  moving 30 off our most-damaged Pokemon is only the best heal if that Pokemon is
+  **savable**. The clone may have been judging that correctly with information
+  the rule discards. Fix: a narrower rule — **redirect only when the net's pick
+  is strictly worse on transfer AND not obviously the better heal** (e.g. leave
+  the net alone when its pick is the Active, or when the max-counter source is
+  already beyond saving: HP ≤ incoming damage). That keeps the arithmetic and
+  returns the judgment to the net. **Worth building regardless of the verdict** —
+  rule 11's ⚠ clause says the current rule is mis-classified, and the narrow
+  variant is the version that belongs in the dominated column.
 
-**Step 3 — the rollback, if needed.** One flag:
-`PolicyAgent(..., counter_source=False)` in `agents/sa/bcagent.py`. The `55072063`
-tarball is preserved at
-`dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz` (and the P6a
-build at `...152103.tar.gz`) so a rollback needs no rebuild — but **a rollback is
-itself a submission and pays the eviction cost.** Only do it once you are
-willing to lose `55054446`'s slot, not `55072063`'s.
+**⛔ There is NO free submission slot, and the rollback is worse than pointless.**
+Corrected slot arithmetic (the earlier note in this file was wrong — it said "be
+willing to lose `55054446`'s slot", but **`55054446` is already inactive**):
+
+- Active pair today = `55077709` (824.9) + `55072063` (948.1, our best).
+- **Any** new submission → active = {new, `55077709`}, i.e. it **evicts
+  `55072063`** and freezes our best at ~948.
+- A `counter_source=False` rollback *is* `55072063`'s agent. So rolling back
+  would evict a 23-h-converged 948.1 agent in order to restart **the identical
+  code** from μ=600 and spend 4+ h climbing back. **Never do this.**
+- **The next submission must therefore be something we expect to beat 948, not a
+  rollback and not a small rule.** That is a high bar, and it is the real reason
+  §3.1 and the ROADMAP §2.5 breakthrough candidates (B1/B2/B4 — none of which
+  cost a submission slot) are the priority.
+
+Preserved builds, so nothing ever needs rebuilding under time pressure:
+`dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz` (P4b) and
+`...-152103.tar.gz` (P6a).
 
 ### 3.1 Re-anchor the arena on the CURRENT meta — highest-value work
 
@@ -291,8 +338,8 @@ actually goes through" is near-dominated rather than a tradeoff. It lands on
 
 | | item | state |
 |---|---|---|
-| **§3.0** | is `55077709` (P6a) actually good? | **OPEN — do this first, submit nothing until it resolves** |
-| **§3.1** | re-anchor the arena on the current meta | **OPEN — highest-value work; pre-shift baseline now archived** |
+| **§3.0** | is `55077709` (P6a) actually good? | **closed as an LB question** (unresolvable — 12 Elo vs a ±75 instrument); re-opened as §3.1 step 5 |
+| **§3.1** | re-anchor the arena on the current meta | **OPEN — now the top priority outright; pre-shift baseline archived** |
 | **§3.2** | Crustle | deck in repo, **no pilot**, premise unverified |
 | **P2** | MAIN-decision rules — start with the **lethal audit** | not started — the real remaining mass |
 | P1 | re-rank decks | **superseded by §3.1** |
