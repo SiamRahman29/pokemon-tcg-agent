@@ -169,6 +169,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         drag_hi = False
         veto = False
         # on by default, matching PolicyAgent: it cleared its own A/B
+        wall = True
+        # on by default, matching PolicyAgent: it cleared its own A/B
         source = True
         for f in tag.split(",")[1:]:
             f = f.strip()
@@ -198,6 +200,14 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 # P5b: DON'T play Boss's Orders when nothing on their bench is
                 # KO-able (32.4% of our plays). Default off until it A/Bs.
                 veto = f == "veto"
+            elif f in ("wall", "noWall"):
+                # The matchup branch: stop applying chip_target when their
+                # Active is a damage-prevention wall (Crustle), because the rule
+                # measured -0.126 there while paying +0.077 in the mirror.
+                # Default ON: 0.663 [0.642, 0.684] vs rule:crustle against
+                # 0.559 for unconditional chip_target, n=2000 each, and it
+                # cannot fire in the mirror. `noWall` restores the old behaviour.
+                wall = f == "wall"
             else:
                 # The FIRST token of a bc tag is a free-text label
                 # (`bc:old,noChip`), so a flag typed as `bc:veto` lands in the
@@ -213,7 +223,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 PolicyAgent(deck, net_path, chip_targeting=chip,
                             energy_spread=spread, drag_target=drag,
                             boss_converts=boss, drag_high_hp=drag_hi,
-                            boss_veto=veto, counter_source=source))
+                            boss_veto=veto, counter_source=source,
+                            chip_wall_defer=wall))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

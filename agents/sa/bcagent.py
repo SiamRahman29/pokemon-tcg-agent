@@ -12,7 +12,7 @@ class PolicyAgent:
                  chip_targeting: bool = True, energy_spread: bool = True,
                  drag_target: bool = False, boss_converts: bool = False,
                  drag_high_hp: bool = False, boss_veto: bool = False,
-                 counter_source: bool = True):
+                 counter_source: bool = True, chip_wall_defer: bool = True):
         self.decklist = list(decklist)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
@@ -47,6 +47,18 @@ class PolicyAgent:
         # independent opponent agreed (0.626 [0.604, 0.647] vs rule:v10,noS
         # against 0.593 for a bare bc). `bc:<label>,noSrc` turns it off.
         self.counter_source = counter_source
+        # The matchup branch (2026-07-30): `chip_target` is worth +0.077 in the
+        # mirror and **-0.126 against `rule:crustle`**, because "kill what dies
+        # to 30" farms Dwebbles while the undamageable wall survives. This defers
+        # the select to the net whenever their Active is a wall.
+        #
+        # ON by default -- it cleared its bar on the anchor that motivated it
+        # (0.663 [0.642, 0.684] vs 0.559 [0.537, 0.581] for unconditional
+        # chip_target, n=2000 each vs `rule:crustle`) and it cannot fire in the
+        # matchups where chip_target pays, so the mirror is untouched by
+        # construction -- confirmed at 0.521 [0.490, 0.552] n=1000, containing
+        # 0.5. `bc:<label>,noWall` turns it off. See report/EVIDENCE.md §8c.
+        self.chip_wall_defer = chip_wall_defer
 
     def __call__(self, obs: dict) -> list[int]:
         try:
@@ -62,7 +74,7 @@ class PolicyAgent:
                 return list(range(n))
             want = max(min(mn, mx, n), 1)
             if self.chip_targeting:
-                order = targeting.chip_target(obs)
+                order = targeting.chip_target(obs, self.chip_wall_defer)
                 if order is not None:
                     return order[:want]
             if self.drag_target:

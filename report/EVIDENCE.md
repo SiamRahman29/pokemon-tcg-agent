@@ -543,6 +543,42 @@ head-to-head in the mirror, which is 52% of the field) **but to branch it on the
 matchup** — exactly ROADMAP candidate B3, now promoted from speculation to the
 repair for a measured defect.
 
+### Verdict 3: the matchup branch works, and it shipped the same session
+
+`targeting.chip_target(obs, wall_defer=True)` — hand the select back to the net
+whenever the opponent's Active is a known damage-prevention Pokemon
+(`WALL_POKEMON = {345}`), because there our counters are the only way to remove
+it and the net was measured to aim them correctly on its own.
+
+| variant | score vs `rule:crustle`, n=2000 |
+|---|---|
+| `bc` — unconditional `chip_target` | 0.559 [0.537, 0.581] |
+| **`bc:w,wall` — the branch** | **0.663 [0.642, 0.684]** |
+| `bc:x,noChip` — rule off entirely | 0.685 [0.665, 0.705] |
+
+**It recovers +0.104 of the −0.126 (82%)**, with an interval disjoint from
+unconditional `chip_target`'s and overlapping the "off entirely" ceiling. So the
+branch captures nearly all of the available gain while keeping the rule where it
+pays.
+
+**Mirror control: 0.521 [0.490, 0.552], n=1000 — contains 0.5, i.e. no bleed.**
+This is expected *by construction*: the branch cannot fire unless a card 345 is
+the opponent's Active, and neither `grimmsnarl` nor `lucario_v10` nor
+`crispin_toolbox` contains one, so `bc:w,wall` and `bc` are behaviourally
+identical there. **The control is still worth running** — it is the only thing
+that would catch an implementation error that fired the branch when it shouldn't.
+
+**Shipped ON by default** (`chip_wall_defer=True`; `bc:<label>,noWall` restores
+the old behaviour). Remaining headroom is the 0.663 → 0.685 gap, i.e. a bespoke
+wall-aware *ranker* rather than deferral — small, and explicitly deferred until
+something larger is exhausted (HANDOFF §3.3).
+
+⚠ **LB expectation, stated in advance so it cannot be rationalised later:** the
+gain is ~+0.10 of score in **18%** of the field, so of order **+10–15 Elo
+overall** — **below this instrument's resolution** (§7). **This change must not be
+submitted on its own to "see if it works"**; that is the exact error this file
+documents twice. Bundle it with further improvements and submit once.
+
 ## 8d. Crustle mechanics — the §3.2 premise, verified in-engine
 
 **Hypothesis (never checked before today):** Mysterious Rock Inn, an ABILITY on

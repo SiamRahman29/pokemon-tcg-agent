@@ -53,6 +53,20 @@ DARK_TYPE = 7       # ... and energy type; pk["energies"] holds types
 # Shadow Bullet's bench snipe and Adrena-Brain's 3 counters are both 30.
 CHIP_DAMAGE = 30
 
+# Pokemon whose ABILITY prevents damage from our {ex} attacks, so our only way
+# to remove them is damage counters. Verified in-engine 2026-07-30 over 60 games
+# (`scripts/p3_crustle_probe.py`): 209 of 224 attack-damage events onto Crustle
+# logged `value: 0` (93.3% prevented), while 1,298 of 1,386 damage-counter events
+# landed (93.7%). See `report/EVIDENCE.md` §8d.
+#
+# ⚠ Hardcoded card ids because the card db exposes no ability text for 345
+# (`abilities: None`), so the condition cannot be read off the card, and
+# `best_damage` does not model prevention either -- it happily reports 180 for
+# Shadow Bullet into a Crustle. V10 hardcodes 344/345 the same way. The general
+# version would learn it in-game from the event log (an attack that logged 0
+# against this card id), which is the upgrade path if a second wall appears.
+WALL_POKEMON = frozenset({345})   # Crustle -- Mysterious Rock Inn
+
 
 def _pokemon_at(state: dict, player: int, area: int, index: int) -> dict | None:
     try:
@@ -69,8 +83,28 @@ def _pokemon_at(state: dict, player: int, area: int, index: int) -> dict | None:
     return None
 
 
-def chip_target(obs: dict) -> list[int] | None:
-    """Ranked option indices for an opponent-targeting select, else None."""
+def chip_target(obs: dict, wall_defer: bool = False) -> list[int] | None:
+    """Ranked option indices for an opponent-targeting select, else None.
+
+    `wall_defer` (`bc:<label>,wall`) is the matchup branch measured on
+    2026-07-30. This rule ranks "dies to 30 first, most prizes among those, then
+    lowest HP" -- which is right when prizes are the currency, and **wrong
+    against a deck whose Active cannot be damaged by our attacks at all**. There,
+    damage counters are the only way to remove the blocker, and spending them to
+    farm a 1-prize Dwebble loses the game slowly.
+
+    Measured (n=2000 each, fixed `rule:crustle` opponent): `bc` scores 0.559 and
+    `bc:x,noChip` scores **0.685** -- this rule is worth **-0.126** in that
+    matchup while being worth +0.077 head-to-head in the mirror. The cause is
+    measured too: with the rule on, 235 counter-placement events land on Dwebble
+    and 1,386 on Crustle; with it off, Dwebble drops to **24** and Crustle rises
+    to **1,583** at a higher mean (12.9 -> 15.0). `report/EVIDENCE.md` §8c.
+
+    So when their Active is a wall, hand the select back to the net -- which was
+    measured to concentrate counters correctly on its own. Deliberately the
+    one-line version of the fix: a bespoke wall-aware ranker is only worth
+    building if this fails to recover the -0.126 (HANDOFF §3.3).
+    """
     sel = obs.get("select") or {}
     if sel.get("context") not in CHIP_CONTEXTS:
         return None
@@ -81,6 +115,15 @@ def chip_target(obs: dict) -> list[int] | None:
     me = state.get("yourIndex")
     if me is None:
         return None
+
+    if wall_defer:
+        try:
+            opp_active = state["players"][1 - me]["active"]
+            active = opp_active[0] if opp_active else None
+        except (KeyError, IndexError, TypeError):
+            active = None
+        if active is not None and active.get("id") in WALL_POKEMON:
+            return None  # counters are our only out here: let the net aim them
 
     scored: list[tuple[tuple, int]] = []
     for i, opt in enumerate(options):

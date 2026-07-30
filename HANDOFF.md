@@ -440,7 +440,28 @@ cards change, and *conditional on the matchup* "fetch the Pokemon whose damage
 actually goes through" is near-dominated rather than a tradeoff. It lands on
 `TO_HAND` (15.3% of selects, where only duplicate-avoidance has been closed).
 
-### 3.3 🔴 NEW TOP PRIORITY: branch `chip_target` on the matchup
+### 3.3 ✅ FIXED AND SHIPPED (2026-07-30): the matchup branch
+
+`chip_target` now defers to the net when the opponent's Active is a wall
+(`targeting.WALL_POKEMON = {345}`), **ON by default**, `bc:<label>,noWall` to
+disable.
+
+| variant | vs `rule:crustle`, n=2000 |
+|---|---|
+| `bc` before (unconditional) | 0.559 [0.537, 0.581] |
+| **`bc` now (branch on)** | **0.663 [0.642, 0.684]** |
+| `bc:x,noChip` (ceiling) | 0.685 [0.665, 0.705] |
+
+**Recovers 82% of the −0.126**, and the mirror control reads 0.521 [0.490, 0.552]
+n=1000 (contains 0.5 — no bleed, and none is possible by construction).
+
+⚠ **Do NOT submit this alone.** It is worth ~+10–15 Elo overall (a +0.10 swing in
+18% of the field), which is **below the LB's resolution** (§1). Bundle it.
+Remaining headroom: a wall-aware *ranker* instead of deferral, worth at most the
+0.663 → 0.685 gap. **Next, bigger, and in the same matchup: the Morgrem out
+below.**
+
+### 3.3b The original diagnosis (kept — it is the report's argument)
 
 **The measured defect** (`EVIDENCE` §8c): vs `rule:crustle`, `bc` scores **0.559**
 and `bc:x,noChip` scores **0.685** — **our founding rule costs us 12.6 points of
@@ -557,7 +578,8 @@ listwise, 2,810-game corpus, val top-1 0.6755) + `agents/sa/targeting.py`.
 
   | function | select | switch | mirror | vs Crustle |
   |---|---|---|---|---|
-  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577 → +~150 LB | 🔴 **−0.126 HARMFUL** (§3.3) |
+  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577 → +~150 LB | −0.126 unconditional 🔴 |
+  | ↳ `wall_defer` branch | ditto, when their Active is a wall | `noWall` | no effect by construction (0.521 control) | **+0.104 recovered** ✅ |
   | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702** n=4000 | **+0.193** ✅ |
   | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `noSrc` | 0.534 n=2000 | **+0.052** ✅ |
   | `drag_target` | SWITCH (Boss's Orders' drag) | `drag`, **off** | 0.489 — null |
