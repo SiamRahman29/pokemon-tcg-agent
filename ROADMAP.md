@@ -178,16 +178,19 @@ every kill** — every candidate is a report chapter regardless of outcome.
 | # | candidate | why it could be the jump | probe (cheap) | kill criterion |
 |---|---|---|---|---|
 | **B1** | **Feature augmentation + retrain** — add HP, damage and attached-energy count to `optfeat`/`features.py` (VERSION bump), retrain `policy_lw2`'s config | Every winning rule patched the *same* blindness, one select at a time. Features attack all selects at once — including MAIN (47.7% of selects, 61% of misses) where hand rules provably fail (0-for-4). **Also the missing control for the report's central thesis** — wins credibility even if it loses the A/B. | ~1 day: bump VERSION, rebuild shards, retrain 12 epochs, head-to-head vs the shipped net n=2000, mirror, full `targeting.py` both sides | ≤0.52 at n=2000 → thesis confirmed ("rules beat retraining"), chapter written, move on |
-| **B2** | **Arithmetic MAIN layer** (= HANDOFF P2, starting with the lethal audit) | The entire top-10 is handcrafted deck expertise; missed lethal is the classic gap, it is pure arithmetic, and `textdmg.estimate` is exact for this deck | lethal audit over 200 games in the two cuts P2 specifies (same-attacker vs needs-promotion) | same-attacker cut reads <2% missed → closes cheaply |
+| ~~**B2**~~ | ~~**Arithmetic MAIN layer** — the lethal audit~~ | ~~missed lethal is the classic handcrafted-agent gap~~ | **KILLED 2026-07-30** by `scripts/p2_lethal.py`, 200 games | **both cuts empty: 316/316 lethals taken and all 316 FORCED (honest denominator 0), 7/803 promotion cases with retreat illegal in all 7. Grimmsnarl ex has ONE payable attack, so the decision does not exist in this deck** — EVIDENCE §8 |
 | **B3** | **Archetype detection → matchup branches** | What the 1300-reporting notebook does (grid-searched per-matchup thresholds); prerequisite for Crustle mode (Track C step 3); the report's opponent-modeling chapter | classifier from revealed cards over the 55-game replay corpus + mined episodes: turn-N accuracy vs the final revealed deck | can't reach ~90% accuracy by turn 3 → branches would misfire, demote |
 | **B4** | **Turn-level planning with the unused 600 s pool** — enumerate within-turn action *sequences*, score end-of-turn states with `evalfn`/`textdmg` | We use 0.1 s of 600 s; the #1 player reportedly uses the full budget. **Distinct from the dead game-tree search**: no rollouts, no determinized opponent turns — just sequencing of our own turn, where the variance problem that killed our search (terminal 0/1, SE≈0.14) does not exist. Novel for this board | measure within-turn branching first (`p6_recon`-style, 100 games); if tractable, prototype on MAIN-heavy turns only, A/B n≥1000 with pool-usage logging | branching intractable even with beam limits, or A/B ≤0.52 — note that *eval quality*, not time, becomes the binding constraint |
 | **B5** | **Deck adaptation vs the counter-meta** (= Track C experimentation half) | If the meta shifted toward lock/counter decks, matchup EV moves more than any play-skill rule can | Track C steps 1–2 | probe says counters don't bypass the prevention → passive-damage line dead; enumerate other outs before any list change |
 
-**Sequencing:** B1 and B2 are independent of the re-anchor and can start as soon
-as §3.0 resolves. B3 gates B5-step-3 and half of Track C. B4 is the most
+**Sequencing (updated 2026-07-30 — B2 is dead, so the ladder shortened):** B1 is
+independent of the re-anchor and is now the **top-ranked unstarted candidate** —
+and B2's kill strengthens it, because the reason B2 died (this deck's arithmetic
+decisions are all in *targeting*, none in *attack selection*) means the remaining
+MAIN mass is exactly the tradeoff class where only better features, not more
+rules, can help. B3 gates B5-step-3 and half of Track C. B4 is the most
 speculative and the most original — **run its cheap probe early** (one afternoon)
-so the investment decision is data-driven, but don't build the planner before
-B1/B2 verdicts are in.
+so the investment decision is data-driven.
 
 **Rule-11 discipline applies inside every candidate:** B2's edge is the arithmetic
 cut, not a general MAIN scorer; B4's scorer is handcrafted eval, not a learned

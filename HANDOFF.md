@@ -341,7 +341,7 @@ actually goes through" is near-dominated rather than a tradeoff. It lands on
 | **§3.0** | is `55077709` (P6a) actually good? | **closed as an LB question** (unresolvable — 12 Elo vs a ±75 instrument); re-opened as §3.1 step 5 |
 | **§3.1** | re-anchor the arena on the current meta | **OPEN — now the top priority outright; pre-shift baseline archived** |
 | **§3.2** | Crustle | deck in repo, **no pilot**, premise unverified |
-| **P2** | MAIN-decision rules — start with the **lethal audit** | not started — the real remaining mass |
+| **P2** | MAIN-decision rules, via the **lethal audit** | **lethal is CLOSED (2026-07-30): this deck has one attack, so the choice doesn't exist.** MAIN's arithmetic half is empty; what remains is tradeoffs |
 | P1 | re-rank decks | **superseded by §3.1** |
 | P6b/P6c, P5a/b/c, P4a/b/c | — | **all closed** — see `report/EVIDENCE.md` |
 
@@ -353,26 +353,29 @@ options**. Every other bucket is owned by a rule, at measured parity, or measure
 too small (`EVIDENCE` §7).
 
 ⚠ **Carry rule 11 in.** MAIN is mostly tradeoffs (which Supporter, attach now or
-later, evolve or develop) — precisely where four straight rules did nothing. The
-parts that are *arithmetic* — "can I KO the Active this turn, and with which
-attacker" — are where the edge should come from, and are what `rule:v10` is built
-around. **Do not expect a general MAIN scorer to beat the clone; expect a
-lethal-detector to.**
+later, evolve or develop) — precisely where four straight rules did nothing.
 
-**Concrete first step — the lethal audit.** Do not write a scorer. Measure one
-thing: *given the board, does a payable attack KO the opponent's Active, and did
-we take it?* Missing an available KO is arithmetic, and `textdmg.estimate` is
-exact for this deck (§4), so the measurement is trustworthy. **Size it in two
-cuts and do not merge the denominators** — rule 11 predicts different outcomes:
+**The arithmetic half of MAIN was the plan, and it is now measured EMPTY.**
+`scripts/p2_lethal.py --matches 200` (2026-07-30) closed both cuts:
 
-1. **Our current Active has a payable attack that KOs and we chose another
-   attack.** Dominated, high prior. If this reads near zero (as
-   `REMOVE_DAMAGE_COUNTER_COUNT` did) it closes for an hour, not a day.
-2. **The KO needs a different attacker promoted first.** Costs a retreat and a
-   turn — a tradeoff, lower prior. Measure separately.
+- **same-attacker cut: 316/316 lethals taken, and all 316 were forced** — the
+  lethal was the *only* attack offered. Honest denominator **0** (rule 13).
+- **needs-promotion cut: 7 of 803 no-KO turns** had a bench Pokemon that could
+  KO, and **retreat was illegal in all 7**. Zero actionable cases.
 
-`p6_recon.py` is the template for the counter; `p5b_check.py` is the template for
-confirming a rule actually fires (rule 9) before spending an A/B on it.
+**Why: Grimmsnarl ex has exactly one payable attack (Shadow Bullet, 180 flat), so
+"which attack" is never a decision in this deck.** Missed lethal — the classic
+handcrafted-agent edge — cannot exist for us. Full entry and its three
+consequences: `EVIDENCE` §8 (including that a decklist change adding a second
+attacker would *create* this decision class, unpatched).
+
+**So do not write a lethal detector, and do not write a general MAIN scorer
+either.** What is left in MAIN is tradeoffs, where hand rules are 0-for-4. The
+live routes into MAIN are therefore ROADMAP **B1** (give the net the features
+instead of writing the rule) and **B4** (sequence the whole turn rather than
+score one option). `p6_recon.py` is the template for any further counter;
+`p5b_check.py` is the template for confirming a rule fires (rule 9) before
+spending an A/B on it.
 
 ### P3 — the abomasnow hole (open, low priority)
 

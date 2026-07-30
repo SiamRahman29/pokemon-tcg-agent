@@ -354,7 +354,54 @@ anything else reasoning about Adrena-Brain's per-turn output.
 denominator is a real CHOICE, not just a real count*) — a rate over forced moves
 measures nothing.
 
-### P4c — count opportunities, not turns
+### B2 / P2 — the lethal audit: closed, because this deck has one attack
+
+**Hypothesis (ROADMAP candidate B2, ranked #2):** the entire top-10 is
+handcrafted deck expertise, missed lethal is the classic gap in card-game AI, it
+is pure arithmetic (the dominated column), and `textdmg.estimate` is exact for
+this deck — so "a payable attack KOs their Active and we didn't take it" should
+be a real and winnable defect.
+
+**Instrument:** `scripts/p2_lethal.py`, 200 games vs `rule:v10,noS`, one row per
+turn scored at the turn's **final** MAIN select (the opponent's Active HP moves
+during our own turn, so an early lethal can be stale or unnecessary by the end).
+ATTACK options arrive on the MAIN select carrying `attackId`, and the engine only
+offers attacks the Active can pay for, so payability needs no modelling.
+
+| cut | n | result |
+|---|---|---|
+| **1. same attacker** (dominated, high prior) | 316 lethal-offered turns | **took the lethal 316/316** |
+| **1, on the honest denominator** — lethal **and** a non-lethal attack both offered | **0** | **the choice does not exist** |
+| **2. needs promotion** (tradeoff, lower prior) | 803 no-KO turns | 7 (0.9%) had a bench Pokemon that could KO — and **in all 7 retreat was not legal**, so the action didn't exist either |
+
+**Verdict: B2 is killed on both cuts. Do not build a lethal detector.** The kill
+criterion ("same-attacker cut reads <2% missed") is met at 0% — but the *reason*
+matters more than the number.
+
+**Interpretation — the structural finding:** **Grimmsnarl ex has exactly one
+payable attack (Shadow Bullet, 180 flat).** So "which attack" is never a decision
+in this deck, and the missed-lethal class of expertise — a real edge for decks
+with multiple attackers or damage tiers — **cannot exist for us.** Three
+consequences:
+
+1. It explains why a behavior clone with no deck expertise can be competitive
+   here: the arithmetic-heavy decisions that handcrafted agents win are
+   concentrated in **targeting** (which we patched, +150 LB) rather than in
+   **attack selection** (which is empty).
+2. It removes B2 from the breakthrough ladder and raises B1 and B4 by
+   elimination.
+3. **It is a hidden cost of any decklist change** (ROADMAP Track C step 4): add a
+   second viable attacker and this whole decision class appears, unpatched and
+   off-distribution for the net.
+
+⚠ **Methodological note, and the reason this entry is trustworthy:** the first
+run of this audit read **"94.5% took the lethal, 5.5% missed"** — 19 apparent
+misses. All 19 were turns the **game ended on**: Adrena-Brain moves counters onto
+any of their Pokemon, so a winning turn often takes the last prize via the
+*ability* and never reaches an attack, which is indistinguishable from "ended the
+turn with a lethal on the table" unless you separate it. Scoring those as misses
+would have justified building a rule to fix wins. **Rule 9/13 again: check what
+the denominator is made of before believing the rate.**
 
 **Hypothesis (user):** *"I think we are not using Adrena-Brain at every chance."*
 The instrument was indeed wrong; the corrected number is small.
