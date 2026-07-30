@@ -4,22 +4,32 @@
 then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
 
-**Standing (read 2026-07-30 ~08:25 UTC, full 3,000-row LB):** we are **`Scio`,
-rank 226 of 3,000, 948.1**. Top is **`James Cox & Henry Chao` at 1192.7** — the
-**Crispin toolbox** pilot from our own 07-29 meta mine (§1). `flg` (Crustle) is
-5th at 1170.6, and **`Majkel1337` fell from 1st (1179.8 on day 7) to 11th
-(1122.4)**. The top of this board reshuffles fast — treat any recorded ranking as
-a snapshot, and **paginate: `competition_leaderboard_view` returns 20 rows and a
-`Next Page Token`; pass it back via `page_token` to walk all 3,000** (§5).
+**Standing (read 2026-07-30 ~12:30 UTC, full LB — now 4,000 rows):** we are
+**`Scio`, rank 224 of 4,000, 950.2**. Top is **`James Cox & Henry Chao` at
+1187.4** — the **Crispin toolbox** pilot from our own 07-29 meta mine (§1). `flg`
+(Crustle) is **3rd at 1174.0**, and `Majkel1337` is 10th at 1147.6. The board
+grew by 1,000 entrants in ~4 h and the top reshuffles constantly — treat any
+recorded ranking as a snapshot, and **paginate: `competition_leaderboard_view`
+returns 20 rows and a `Next Page Token`; pass it back via `page_token` to walk
+all 4,000** (§5).
+
+⚠ **Our displayed score drifts up slowly on its own** (948.1 → 950.2 in ~4 h with
+no submission). Do not read small movements as anything.
 
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
-### ▶ START HERE — the next actions, in order (set 2026-07-31, day 9)
+### ▶ START HERE — the next actions, in order (updated 2026-07-30 ~12:30 UTC, a
+### second session on day 8)
 
 Nothing is mid-flight; the tree is clean and every result below is archived.
 
-1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-31 —
+> **⚡ THE LIVE ACTION IS NOW ROADMAP B1 (item 4).** Items 1 and 2 closed this
+> session — 1 by sizing, 2 as unobtainable — and item 3 is blocked until 07-31 by
+> Kaggle's publish delay. **B1 no longer waits on anything**, and it was already
+> the top-ranked unstarted breakthrough candidate.
+
+1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-30 —
    do not build it** (`EVIDENCE` §8e, `out/logs/p7_morgrem_200.txt`). The veto
    would fire **~0.2× per game**; the *free* version of the same out (post-KO
    promotion into a wall) is **already taken 95.4%** of the time; and the trade is
@@ -30,16 +40,49 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
    claim:** "our attacker deals 0 into theirs" is true of their **Active only** —
    Shadow Bullet's bench snipe lands **unprevented on Dwebble (82 events, mean
    73.9, 0 zeroed)** and kills the Crustle line's basics.
-2. **Get a pilot for `crispin_toolbox` — it is the #1 LB deck's archetype**
-   (`James Cox & Henry Chao`, 1192.7). Without it, every new rule carries exactly
-   the single-anchor exposure that just cost us (rule 12). **Do not use a
-   `bc`-piloted anchor** — that measured 0.911 and cannot resolve anything.
-   Check `notebooks/pulled/` and hunt public notebooks (§3.1).
-3. **Re-mine the meta.** 07-30's episodes become fetchable on 07-31 (the current
-   day always 403s). Confirm the Crustle/Crispin shares, and build the **deck
-   matchup win-rate matrix** among high-rated players (ROADMAP Track B/C figure).
-4. **Then ROADMAP B1** (feature-augmented retrain) — the top-ranked unstarted
-   breakthrough candidate, and the control experiment for the report's thesis.
+2. ⛔ **A pilot for `crispin_toolbox` DOES NOT EXIST PUBLICLY — searched
+   2026-07-30, and the public-notebook well is dry for competitive pilots of any
+   deck.** All **272** public notebooks for this competition were enumerated
+   (4 sort orders × 3 pages). No Crispin/toolbox pilot at all. Three candidates
+   whose titles claimed high ratings were pulled and **all three refuted against
+   the 4,000-row LB** (rule 10, the same trap as the "1084.5 baseline"):
+
+   | notebook (claim) | author's actual standing |
+   |---|---|
+   | `soutasakurai/max-elo-1208-libraryout-w-crustle-great-tusk` ("Max Elo 1208") | **`SOUTA Sakurai`, rank 3439/4000, 605.0** — *below the μ=600 start* |
+   | `prvsiyan/ptcg-ai-battle-static-deck-tusk-1208-v24` ("Tusk 1208") | `prvsiyan`, rank 1083, 789.1 |
+   | `pcxxxxxx/explainable-ptcg-agent-with-legal-ogerpon-deck` | `pcxxxxxx`, rank 2454, 686.6 |
+
+   Every other verifiable notebook author also sits **below us**: `kokinnwakashuu`
+   832.9, `jazivxt` 816.3, `pllinas` 739.1, `penguin069` 689.8, `naoto714` 633.0.
+   **The top 10 (1187–1147) have published nothing.** So there is no public agent
+   stronger than ours to import, and this avenue is closed — not deferred.
+
+   **Consequence, and it is good news:** rule 12's bar (**≥2 anchors, one
+   adversarial**) is *already met* by the mirror + `rule:crustle`, and
+   `rule:crustle` is competitive on our own measurement (we score 0.663, not a
+   0.911 blowout — a real number beats any notebook title). **Writing a Crispin
+   pilot ourselves is NOT recommended:** a 5-attacker multi-type toolbox with
+   Crispin tutoring is far harder to pilot than Crustle's single lockdown line,
+   and a weak self-written pilot reproduces the 0.911 no-resolving-power failure.
+   By rule 14, size that before building it.
+3. **Re-mine the meta — BLOCKED UNTIL 07-31.** 07-30's episodes publish the
+   following day (the current day always 403s) and 07-29 is already mined, so
+   there is nothing new to fetch today. On 07-31: confirm the Crustle/Crispin
+   shares and build the **deck matchup win-rate matrix** among high-rated players
+   (ROADMAP Track B/C figure). ⚠ This also gates the Crispin-anchor question —
+   check Crispin's share is still ~17% before spending any work on it.
+4. **⚡ ROADMAP B1 — THE LIVE ACTION** (feature-augmented retrain): add HP /
+   damage / attached-energy to `optfeat`, bump `VERSION`, retrain, and judge the
+   new net head-to-head in the arena (rule 3 — never on val accuracy; rule 4 —
+   `bc:<label>,net=<path>` runs both nets in one process). It is the top-ranked
+   unstarted breakthrough candidate **and the control experiment for the report's
+   thesis**: every rule we ship exists because the features cannot express HP and
+   damage, so giving the net those features either reproduces the rules' gains
+   (thesis confirmed, and the rules become redundant) or does not (thesis
+   sharpened — arithmetic beats representation here). **Either outcome is a
+   report result**, which is why it outranks more rule-hunting.
+   ⚠ Any npz trained pre-v2 fails the dim guard — expect to retrain, not patch.
 5. **Do not submit yet.** Today's shipped gain is ~+10–15 Elo, **below the LB's
    resolution** (§1). Accumulate improvements and submit **one bundle**. The
    daily quota is free; the cost is the active-pair slot (box below).
@@ -406,19 +449,25 @@ consensus list's cards through a generic fallback, so it plays them legally but
 badly; early n=20 probes read 0.620 on its own list vs 0.700 on the consensus
 one, in the direction that confirms this.
 
-🔴 **`crispin_toolbox` still has no pilot, and the first attempt proved why that
-matters: `bc` piloting it scored 0.089 — we beat it 0.911 [0.898, 0.923] at
-n=2000.** An anchor we beat 91% of the time has almost no resolving power for a
-rule worth ~1 pp, because the ceiling squeezes the delta. **A `bc`-piloted anchor
-is not good enough; do not spend A/B time on one.** Look for a pilot in the
-public notebooks (below) before using this anchor for anything.
+⛔ **`crispin_toolbox` has no pilot and CANNOT GET ONE from public code — the
+search is complete, not pending (2026-07-30).** All 272 public notebooks were
+enumerated; there is no Crispin/toolbox pilot, and **no public author outranks
+us** (details and the refuted-title table are in the ▶ START HERE item 2 above).
+The first attempt already showed why a substitute won't do: `bc` piloting it
+scored 0.089 — **we beat it 0.911 [0.898, 0.923] at n=2000**, and an anchor we
+beat 91% of the time has almost no resolving power for a rule worth ~1 pp because
+the ceiling squeezes the delta. **A `bc`-piloted anchor is not good enough; do not
+spend A/B time on one.** Rule 12's ≥2-anchor bar is met by the mirror +
+`rule:crustle` in the meantime.
 
 **Public notebooks worth mining (pulled to `notebooks/pulled/`, 2026-07-30):**
 
 | ref | why |
 |---|---|
-| `pixiux/ptcg-crustle-v1-submit` | ✅ imported — `rule:crustle` |
-| ~~`makthanithin/pokemon-tcg-ai-battle-1084-5-baseline`~~ | ⚠ **DO NOT TRUST THE TITLE.** "1084.5" is the author's self-report. Checked against the full 3,000-row LB: they are **`Nithin maktha`, rank 750, 819.1** — **524 places below us**, and no `makthanithin` appears at all. **A notebook title is not a measurement** (rule 10). Kept only as a lesson |
+| `pixiux/ptcg-crustle-v1-submit` | ✅ imported — `rule:crustle`. **Its competitiveness rests on our own number (we score 0.663), not on the title** — `pixiux` does not appear on the LB at all |
+| ~~`makthanithin/pokemon-tcg-ai-battle-1084-5-baseline`~~ | ⚠ **DO NOT TRUST THE TITLE.** "1084.5" is the author's self-report. Checked against the full LB: they are **`Nithin maktha`, rank 750, 819.1** — **hundreds of places below us**, and no `makthanithin` appears at all. **A notebook title is not a measurement** (rule 10). Kept only as a lesson |
+| ~~`soutasakurai/max-elo-1208-libraryout-w-crustle-great-tusk`~~ | ⚠ **THE SAME TRAP, SECOND TIME.** "Max Elo 1208" — the author is **rank 3439/4000 at 605.0, below the μ=600 start.** Pulled and rejected 2026-07-30 |
+| ~~`prvsiyan/ptcg-ai-battle-static-deck-tusk-1208-v24`~~, ~~`pcxxxxxx/explainable-ptcg-agent-with-legal-ogerpon-deck`~~ | ⚠ also pulled, also refuted: 789.1 (rank 1083) and 686.6 (rank 2454) |
 | `jazivxt/crustle-counter-al220-v29-agents-only` | someone else's *anti-Crustle* agent — directly Track C |
 | `kokinnwakashuu/ptcg-lucario-public-lab-anti-crustle-log` | anti-Crustle analysis + logs |
 | `prvsiyan/ptcg-ai-battle-control-v11-meta-portfolio` | "meta router"/portfolio = ROADMAP B3 (archetype detection → matchup branches) |
@@ -551,7 +600,7 @@ one-liner before building the ranker.**
 
 ~~🆕 **And a second, independent out from `EVIDENCE` §8d: Marnie's Morgrem
 (non-ex) deals 60 through the wall while Grimmsnarl ex deals 0.**~~
-❌ **CLOSED BY SIZING 2026-07-31 — do not build it** (`EVIDENCE` §8e,
+❌ **CLOSED BY SIZING 2026-07-30 — do not build it** (`EVIDENCE` §8e,
 `scripts/p7_morgrem.py`, `out/logs/p7_morgrem_200.txt`, 3× 200 games).
 
 | measurement | result |
@@ -588,10 +637,10 @@ investment), so it is a worse trade than it looks. Filed, not recommended.
 | | item | state |
 |---|---|---|
 | **§3.0** | is `55077709` (P6a) actually good? | ✅ **RESOLVED — yes, keep it.** +0.052 vs the new anchor |
-| **§3.1** | re-anchor the arena on the current meta | ✅ **DONE for Crustle** (meta measured, pilot imported, all 3 rules re-A/B'd at n=2000). Still open: a pilot for `crispin_toolbox` (now the **#1 LB deck**) |
+| **§3.1** | re-anchor the arena on the current meta | ✅ **DONE for Crustle** (meta measured, pilot imported, all 3 rules re-A/B'd at n=2000). ⛔ **A `crispin_toolbox` pilot is UNOBTAINABLE from public code** — 272 notebooks enumerated, no toolbox pilot, no public author outranks us (3 high-Elo titles pulled and refuted). Rule 12's bar is met by mirror + `rule:crustle` |
 | **§3.2** | Crustle premise probe | ✅ **VERIFIED — counters bypass the wall, AND a non-ex attacker gets through.** Track C steps 3–4 unblocked |
 | **§3.3** | `chip_target` is HARMFUL vs Crustle (−0.126) | ✅ **FIXED AND SHIPPED** — the `wall_defer` branch recovers +0.104 |
-| **§3.3b** | the Morgrem out (the non-ex attacker) | ❌ **CLOSED BY SIZING 2026-07-31 — do not build.** ~0.2 firings/game, the free route is already 95.4% right, and it is a tradeoff (`EVIDENCE` §8e) |
+| **§3.3b** | the Morgrem out (the non-ex attacker) | ❌ **CLOSED BY SIZING 2026-07-30 — do not build.** ~0.2 firings/game, the free route is already 95.4% right, and it is a tradeoff (`EVIDENCE` §8e) |
 | **P2** | MAIN-decision rules, via the **lethal audit** | **lethal is CLOSED (2026-07-30): this deck has one attack, so the choice doesn't exist.** MAIN's arithmetic half is empty; what remains is tradeoffs |
 | P1 | re-rank decks | **superseded by §3.1** |
 | P6b/P6c, P5a/b/c, P4a/b/c | — | **all closed** — see `report/EVIDENCE.md` |

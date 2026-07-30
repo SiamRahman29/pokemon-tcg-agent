@@ -608,7 +608,7 @@ value. A prevented attack logs as **`value: 0`**.
    evolution stage. **Nobody had considered this out**; it needs no decklist
    change, only a play-priority rule (don't always evolve Morgrem → Grimmsnarl ex
    into a Crustle board).
-   ⚠ **Finding 2 was sized on 2026-07-31 and does not survive it — see §8e.**
+   ⚠ **Finding 2 was sized on 2026-07-30 and does not survive it — see §8e.**
    The rule fires ~0.2× per game, the free version of the same out is already
    taken 95% of the time, and the "deals 0" half of the argument is only true of
    their **Active** (below).
@@ -619,7 +619,7 @@ entirely on damage counters (~298 per game). That asymmetry is why the two
 counter-rules pay more here than anywhere else, and why the attack-targeting rule
 pays negative.
 
-⚠ **Correction (2026-07-31): "our main attacker deals 0 into theirs" is true of
+⚠ **Correction (2026-07-30): "our main attacker deals 0 into theirs" is true of
 their ACTIVE only, and reading it as "Shadow Bullet is worthless here" is wrong.**
 Shadow Bullet also does 30 to a benched Pokemon, and re-reading the same census
 per-target shows **attack damage onto Dwebble: 82 events, mean 73.9, 0 prevented**
@@ -637,7 +637,7 @@ filed **`value == 0` events with the heals**, hiding the prevented attacks — t
 single event class the probe existed to count. **Both bugs were caught only by
 checking a bucket whose answer was known in advance.** Always include one.
 
-## 8e. The Morgrem out — CLOSED BY SIZING, before an A/B was spent (2026-07-31)
+## 8e. The Morgrem out — CLOSED BY SIZING, before an A/B was spent (2026-07-30)
 
 **Hypothesis (§8d finding 2, and the top-ranked next action at the end of day 8):**
 against a Crustle board our {ex} attacker deals 0 while Marnie's Morgrem — a
