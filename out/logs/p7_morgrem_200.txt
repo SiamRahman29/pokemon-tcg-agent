@@ -1,0 +1,43 @@
+
+bc [grimmsnarl] vs rule:crustle [crustle_v1], 200 games
+
+=== MAIN selects while THEIR Active is a wall -- who is our Active (n=8013) ===
+  our Active = Marnie's Grimmsnarl ex                          3598   44.9%
+  our Active = Marnie's Morgrem                                1764   22.0%
+  our Active = Marnie's Impidimp                               1325   16.5%
+  our Active = Munkidori                                        885   11.0%
+  our Active = Snorunt                                          275    3.4%
+  our Active = Froslass                                         166    2.1%
+
+=== PER TURN vs a wall -- THE RULE'S DENOMINATOR is the 'eligible' rows (n=377) ===
+  [not eligible] Morgrem Active but unarmed (cannot pay {D}{D})    257   68.2%
+  took the EVOLVE, deleting the 60 (what a rule would veto)      53   14.1%
+  [not eligible] armed Morgrem Active, no evolution in hand      29    7.7%
+  attacked with Morgrem (already right)                          27    7.2%
+  neither -- turn ended without using either                     11    2.9%
+
+=== PER TURN: Grimmsnarl ex attacking a wall for ZERO -- was a Morgrem benched? (n=769) ===
+  a Morgrem was on our bench                                    432   56.2%
+  no Morgrem on our bench                                       337   43.8%
+
+=== POST-KO PROMOTION into a wall (free -- no retreat cost) (n=453) ===
+  Morgrem was available -> promoted Marnie's Morgrem            288   63.6%
+  no Morgrem available to promote                               151   33.3%
+  Morgrem was available -> promoted Marnie's Grimmsnarl ex       14    3.1%
+
+=== Damage vs healing on their Crustle (totals, not counts) (n=93700) ===
+  damage that landed on their Crustle                         72630   77.5%
+  healed back off their Crustle                               21070   22.5%
+
+=== Every evolve we chose (any matchup state) (n=948) ===
+  Marnie's Impidimp (bench) -> Marnie's Morgrem                 347   36.6%
+  Snorunt (bench) -> Froslass                                   273   28.8%
+  Marnie's Morgrem (ACTIVE) -> Marnie's Grimmsnarl ex           213   22.5%
+  Marnie's Impidimp (ACTIVE) -> Marnie's Morgrem                 58    6.1%
+  Marnie's Morgrem (bench) -> Marnie's Grimmsnarl ex             37    3.9%
+  Snorunt (ACTIVE) -> Froslass                                   20    2.1%
+
+=== Attacks we used (engine log) (n=874) ===
+  Marnie's Grimmsnarl ex atk 937                                751   85.9%
+  Marnie's Impidimp atk 934                                      67    7.7%
+  Marnie's Morgrem atk 936                                       56    6.4%

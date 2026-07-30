@@ -608,12 +608,25 @@ value. A prevented attack logs as **`value: 0`**.
    evolution stage. **Nobody had considered this out**; it needs no decklist
    change, only a play-priority rule (don't always evolve Morgrem → Grimmsnarl ex
    into a Crustle board).
+   ⚠ **Finding 2 was sized on 2026-07-31 and does not survive it — see §8e.**
+   The rule fires ~0.2× per game, the free version of the same out is already
+   taken 95% of the time, and the "deals 0" half of the argument is only true of
+   their **Active** (below).
 
 **And the matchup's shape in one line:** they deal **240** per attack into our
 main attacker; our main attacker deals **0** into theirs. We still win 55.9%,
 entirely on damage counters (~298 per game). That asymmetry is why the two
 counter-rules pay more here than anywhere else, and why the attack-targeting rule
 pays negative.
+
+⚠ **Correction (2026-07-31): "our main attacker deals 0 into theirs" is true of
+their ACTIVE only, and reading it as "Shadow Bullet is worthless here" is wrong.**
+Shadow Bullet also does 30 to a benched Pokemon, and re-reading the same census
+per-target shows **attack damage onto Dwebble: 82 events, mean 73.9, 0 prevented**
+against a 70-HP basic. So the attack kills the Crustle line's basics even while
+the wall itself takes nothing. This matters because it is the *alternative* every
+proposed anti-wall play is measured against (§8e), and the original one-liner
+made that alternative look like zero.
 
 ⚠ **Instrument note (rule 9, twice in one script).** The first version of this
 probe read **0.0 damage in every bucket**, including buckets that cannot be zero.
@@ -623,6 +636,71 @@ nonsense. Rewritten as a census needing no attribution. Then the census itself
 filed **`value == 0` events with the heals**, hiding the prevented attacks — the
 single event class the probe existed to count. **Both bugs were caught only by
 checking a bucket whose answer was known in advance.** Always include one.
+
+## 8e. The Morgrem out — CLOSED BY SIZING, before an A/B was spent (2026-07-31)
+
+**Hypothesis (§8d finding 2, and the top-ranked next action at the end of day 8):**
+against a Crustle board our {ex} attacker deals 0 while Marnie's Morgrem — a
+non-ex Stage-1 we already run 3 of — deals 60. So a play-priority rule *"do not
+evolve Morgrem into Grimmsnarl ex into a wall"* should recover real damage at no
+decklist cost. It was described in `HANDOFF.md` as "the biggest known lever in the
+matchup".
+
+**Method:** `scripts/p7_morgrem.py`, 200 games vs `rule:crustle` piloting
+`crustle_v1`, three independent runs. The decision is resolved **per turn, not per
+select** — one turn hands us many MAIN selects and the evolve-or-attack question
+stays open across all of them, so scoring each select separately (the first
+version did) reports mid-turn ability activations as if they resolved the choice.
+That is rule 8 read in reverse: multiplicity can *inflate* a denominator as easily
+as it hides one. Known-in-advance bucket per rule 9: MAIN selects taken while
+their Active is a wall must be *large* vs this opponent — it printed 7,821.
+
+| measurement | 200 games | verdict |
+|---|---|---|
+| turns where an **armed** Morgrem was Active vs a wall **and** the evolution was in hand — the rule's honest denominator | **91–102** (three runs) | ~0.5/game |
+| …of which the clone **took the evolve** (the only turns a veto changes) | **38 / 49 / 53** | **~0.2 firings per game** |
+| turns where a Morgrem was Active vs a wall but **could not pay {D}{D}** | 252–257 (**66%** of Morgrem-Active turns) | the out is not even available |
+| **post-KO promotion into a wall with a Morgrem available** — the *free* version of the same out, no retreat cost | **288/302 = 95.4%** already promote the Morgrem | **already right** |
+| damage healed back off their Crustle | **21,070 of 72,630 (22.5%)** | the 60 is worth ~47 net |
+| attack damage onto their **Dwebble** | 82 events, **mean 73.9, 0 prevented** | the alternative attack is not zero |
+
+**Verdict: do not build it, and do not spend the A/B.** Three independent reasons,
+any one of which would be enough:
+
+1. **Frequency.** The veto would fire ~0.2 times per game inside the ~18% of the
+   field on Crustle. At ~47 net damage a firing against the ~352 damage per game
+   we already land on a Crustle, that is a **~2.6%** change in output — and an
+   n=2000 arena A/B resolves ±0.021 of win rate. **The instrument cannot see it**
+   (the §1 resolution limit, applied to the arena instead of the LB). Measuring it
+   honestly would need n≈20,000 per arm.
+2. **The free route is already taken.** Promotion after a KO costs nothing, while
+   retreating Grimmsnarl ex costs its retreat of **2** — the entire attack
+   investment. The clone already promotes an available Morgrem into a wall 95.4%
+   of the time. This is the "316/316 lethals, all forced" shape from §8/B2: the
+   behaviour the rule wanted already happens wherever it is cheap.
+3. **It is a TRADEOFF, not a dominated option** — rule 11's 0-for-4 column. The
+   marginal turn is *60 onto a 150-HP wall they heal 22.5% off* versus *30 onto a
+   70-HP Dwebble that dies to it, plus 220 more HP of body*. The prize arithmetic
+   is a genuine tie (Grimmsnarl ex = 2 prizes and survives exactly two 240s;
+   Morgrem = 1 prize and dies to one — 1 prize per hit either way), which is what
+   made this look dominated on paper. But "kill their basic and deny the next
+   Crustle" versus "chip the current Crustle" is a **judgment about which target
+   matters**, and rule 11's ⚠ clause is explicit: one judgment puts a rule in the
+   tradeoff column no matter how clean the other dimension looks.
+
+**Interpretation — this is the sizing discipline paying for itself.** The mechanic
+is real and was verified in-engine (§8d); what failed is the leap from *"this
+mechanic exists"* to *"this mechanic is a lever"*. A dramatic per-instance number
+(60 vs 0) says nothing about frequency, and frequency is where this died. Cost:
+one probe and no A/B. Compare rule 10 — moving an audit rate is not winning games
+— of which this is the earlier-stage cousin: **counting an opportunity is not
+finding one.**
+
+⚠ **What is NOT closed by this.** Route 3 was never measured: 451 turns per 200
+games (2.3/game) have Grimmsnarl ex attacking a wall for zero on the Active *with
+a Morgrem on our bench*. That is 10× the denominator above, but converting it
+needs a retreat costing 2 energy, so it is a much worse trade than it looks and it
+is a tradeoff besides. Filed, not recommended.
 
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 

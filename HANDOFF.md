@@ -15,18 +15,21 @@ a snapshot, and **paginate: `competition_leaderboard_view` returns 20 rows and a
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
-### ▶ START HERE — the next actions, in order (set 2026-07-30, end of day 8)
+### ▶ START HERE — the next actions, in order (set 2026-07-31, day 9)
 
 Nothing is mid-flight; the tree is clean and every result below is archived.
 
-1. **Size, then build, the Morgrem out** (§3.3b, `EVIDENCE` §8d). Non-ex
-   attackers are not covered by an anti-{ex} ability: **Marnie's Morgrem deals 60
-   through the Crustle wall while Grimmsnarl ex deals 0.** We already run 3
-   copies as the evolution stage, so this needs **no decklist change** — only a
-   "don't evolve Morgrem into Grimmsnarl ex against a Crustle board" priority
-   rule. **Size it first** (how often do we hold a Morgrem that could attack a
-   wall and evolve it away?), then A/B vs `rule:crustle` **and** the mirror.
-   Biggest known lever in the matchup that is eating our win rate.
+1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-31 —
+   do not build it** (`EVIDENCE` §8e, `out/logs/p7_morgrem_200.txt`). The veto
+   would fire **~0.2× per game**; the *free* version of the same out (post-KO
+   promotion into a wall) is **already taken 95.4%** of the time; and the trade is
+   *60 onto a wall they heal 22.5% off* vs *30 onto a 70-HP Dwebble that dies to
+   it + 220 more HP of body* — a **tradeoff**, rule 11's 0-for-4 column. The
+   effect is ~2.6% of our damage output in this matchup, which **an n=2000 A/B
+   cannot resolve** (±0.021), so no A/B was spent. **Also corrected a load-bearing
+   claim:** "our attacker deals 0 into theirs" is true of their **Active only** —
+   Shadow Bullet's bench snipe lands **unprevented on Dwebble (82 events, mean
+   73.9, 0 zeroed)** and kills the Crustle line's basics.
 2. **Get a pilot for `crispin_toolbox` — it is the #1 LB deck's archetype**
    (`James Cox & Henry Chao`, 1192.7). Without it, every new rule carries exactly
    the single-anchor exposure that just cost us (rule 12). **Do not use a
@@ -267,6 +270,22 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     "the rule takes the best target 26/26" — but 90 of its 95 pooled-KO rows
     offered only one prize value, so nothing could go wrong. The honest
     denominator was **5**. A rate over forced moves measures nothing.
+14. **SIZE BEFORE YOU BUILD: a dramatic per-instance number says nothing about
+    frequency, and frequency is where rules die.** "Morgrem deals 60 through the
+    wall while Grimmsnarl ex deals 0" was filed as *the biggest known lever in the
+    matchup*. Sized: the rule would fire **~0.2 times per game**, the free version
+    of the same out was **already taken 95.4%** of the time, and the effect
+    (~2.6% of our damage output) was **smaller than an n=2000 A/B can resolve**.
+    Closed for the price of one probe and no A/B (`EVIDENCE` §8e). This is rule 10
+    one stage earlier: **moving an audit rate is not winning games, and counting
+    an opportunity is not finding one.** Ask "how often, and how big per
+    instance?" *before* writing code — and check whether the cheap version of the
+    behaviour already happens.
+
+    ⚠ **A corollary that caught this one:** state the rule's *alternative*
+    explicitly and measure it too. The whole argument rested on the alternative
+    being worth zero; it was not (the bench snipe kills their basics), and nobody
+    would have noticed without asking what the other branch actually does.
 
 ---
 
@@ -530,12 +549,39 @@ when the opponent's Active is undamageable is a one-line version of the same ide
 and already has a measured +0.126 upper bound in this matchup. **Measure the
 one-liner before building the ranker.**
 
-🆕 **And a second, independent out from `EVIDENCE` §8d: Marnie's Morgrem (non-ex)
-deals 60 through the wall while Grimmsnarl ex deals 0.** We already run 3 copies
-as the evolution stage. So there is a play-priority rule available — **do not
-always evolve Morgrem into Grimmsnarl ex against a Crustle board** — that costs no
-decklist change. Size it before building it: count how often we hold a Morgrem
-that could attack a Crustle and evolve it away instead.
+~~🆕 **And a second, independent out from `EVIDENCE` §8d: Marnie's Morgrem
+(non-ex) deals 60 through the wall while Grimmsnarl ex deals 0.**~~
+❌ **CLOSED BY SIZING 2026-07-31 — do not build it** (`EVIDENCE` §8e,
+`scripts/p7_morgrem.py`, `out/logs/p7_morgrem_200.txt`, 3× 200 games).
+
+| measurement | result |
+|---|---|
+| turns the evolve-veto would actually fire | **38 / 49 / 53 per 200 games** = ~0.2/game |
+| Morgrem Active vs a wall but **cannot pay {D}{D}** | 66% of such turns |
+| **post-KO promotion into a wall** — the *free* route, no retreat cost | **288/302 = 95.4% already promote the Morgrem** |
+| damage healed back off their Crustle | **22.5%** — the 60 is worth ~47 net |
+| attack damage onto their **Dwebble** | **82 events, mean 73.9, 0 prevented** |
+
+**Three reasons, any one sufficient.** (1) ~0.2 firings/game × ~47 net damage
+against the ~352/game we already land = **~2.6%**, and an n=2000 A/B resolves
+±0.021 — **the instrument cannot see it** (§1, now applied to the arena, not the
+LB). (2) The cheap version of the out is already taken 95.4% of the time — the
+"316/316 lethals, all forced" shape. (3) It is a **tradeoff**, not a dominated
+option: 60 onto a healing 150-HP wall vs 30 onto a 70-HP Dwebble that *dies* to it
+plus 220 more HP of body. Prizes are a genuine tie (1 per hit either way: ex = 2
+prizes and survives exactly two 240s; Morgrem = 1 prize and dies to one), which is
+what made it look dominated on paper — but "which target matters" is a judgment,
+and rule 11's ⚠ clause is explicit that one judgment is enough.
+
+⚠ **And it corrected a load-bearing sentence.** "Our main attacker deals 0 into
+theirs" is true of their **Active only**. Shadow Bullet's 30 bench snipe is
+**unprevented**, and onto a 70-HP Dwebble it kills the Crustle line's basics. Any
+future anti-wall play is measured against *that*, not against zero.
+
+⚠ **Not closed:** the retreat/promotion route — 451 turns per 200 games (2.3/game)
+where Grimmsnarl ex attacks a wall for zero *with a Morgrem benched*. 10× the
+denominator, but Grimmsnarl ex's retreat cost is **2** (the whole attack
+investment), so it is a worse trade than it looks. Filed, not recommended.
 
 ### The board
 
@@ -544,7 +590,8 @@ that could attack a Crustle and evolve it away instead.
 | **§3.0** | is `55077709` (P6a) actually good? | ✅ **RESOLVED — yes, keep it.** +0.052 vs the new anchor |
 | **§3.1** | re-anchor the arena on the current meta | ✅ **DONE for Crustle** (meta measured, pilot imported, all 3 rules re-A/B'd at n=2000). Still open: a pilot for `crispin_toolbox` (now the **#1 LB deck**) |
 | **§3.2** | Crustle premise probe | ✅ **VERIFIED — counters bypass the wall, AND a non-ex attacker gets through.** Track C steps 3–4 unblocked |
-| **🔴 §3.3** | **`chip_target` is HARMFUL vs Crustle (−0.126)** | **NEW TOP PRIORITY — the matchup branch (B3)** |
+| **§3.3** | `chip_target` is HARMFUL vs Crustle (−0.126) | ✅ **FIXED AND SHIPPED** — the `wall_defer` branch recovers +0.104 |
+| **§3.3b** | the Morgrem out (the non-ex attacker) | ❌ **CLOSED BY SIZING 2026-07-31 — do not build.** ~0.2 firings/game, the free route is already 95.4% right, and it is a tradeoff (`EVIDENCE` §8e) |
 | **P2** | MAIN-decision rules, via the **lethal audit** | **lethal is CLOSED (2026-07-30): this deck has one attack, so the choice doesn't exist.** MAIN's arithmetic half is empty; what remains is tradeoffs |
 | P1 | re-rank decks | **superseded by §3.1** |
 | P6b/P6c, P5a/b/c, P4a/b/c | — | **all closed** — see `report/EVIDENCE.md` |
@@ -732,6 +779,10 @@ python -X utf8 scripts/arena.py play bc rule:crustle `
 python -X utf8 scripts/p2_lethal.py --matches 200          # lethal audit (closed)
 python -X utf8 scripts/p3_crustle_probe.py --matches 60    # attack vs counter damage
 
+# SIZE a rule before building it (rule 14). p7 is the per-TURN template -- resolve
+# a decision once per turn, not once per select, or multiplicity inflates it.
+python -X utf8 scripts/p7_morgrem.py --matches 200         # the Morgrem out (closed)
+
 # Train (12 epochs; artifacts/pds_v2 is the shipped corpus)
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
     --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_X.npz
@@ -801,6 +852,9 @@ one-line verdicts:
   by timing). Self-play RL dropped on the same evidence. `EVIDENCE` §2.
 - **Boss's Orders — all four interventions null, the card is closed. Do not write
   a fifth.** `EVIDENCE` §6.
+- **The Morgrem out is closed by SIZING, not by an A/B** — ~0.2 firings/game, the
+  free route already 95.4% right, and a tradeoff besides. It also corrected "our
+  attacker deals 0 into theirs": true of their **Active only**. `EVIDENCE` §8e.
 - **Closed cheaply and correctly:** P5c never-end-without-attacking (3,683/3,683),
   `REMOVE_DAMAGE_COUNTER_COUNT` (100% already), post-KO promotion (9 misses/120
   games), `TO_HAND` duplicate-avoidance (parity), the decklist variant (0.490),
