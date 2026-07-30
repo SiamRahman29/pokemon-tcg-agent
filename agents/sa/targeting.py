@@ -5,12 +5,23 @@ chooses which of the opponent's Pokemon to point an effect at, it picks the
 lowest-HP candidate 25.7% of the time for Adrena-Brain's counter move and 42.1%
 for Shadow Bullet's bench snipe. With 2-4 candidates on board that is chance.
 
-The cause is in the features, not the weights: `optfeat.option_features` gives
-the net a card-id embedding and eight positional scalars per option, and **no
-HP and no damage** -- so the net cannot represent "this one dies to 30" at all.
-No amount of training fixes that. Retraining with an HP feature would, but it
-bumps `optfeat.VERSION` and invalidates every existing net; this is the cheap
-half of the fix, and it is deterministic besides.
+The cause is in the features, not the weights -- but ⚠ **the original statement of
+it here was WRONG, corrected 2026-07-30** (`report/EVIDENCE.md` §8f). It read "no
+HP and no damage", which is false: `features.py` has always given the net per-slot
+HP, damage fraction, attached energy and prize value for all 12 slots.
+
+**The actual defect is narrower.** The v2 per-option vector encoded position only
+as *area* flags (active / bench / hand) and **never encoded `opt["index"]`**. So
+two options naming two different benched Pokemon were identical vectors apart from
+the card-id embedding -- and two options naming **two copies of the same card were
+bitwise identical inputs with different right answers.** The net could see the
+board; it could not see which option pointed where. That is why these rules win:
+they restore a missing *binding*, not missing arithmetic.
+
+`optfeat` v3 gives the net that binding directly (target HP, dies-to-30, own-type
+energy, our damage into it, and the slot index). Whether it makes these rules
+redundant is ROADMAP B1, measured head-to-head in the arena -- not by val
+accuracy, which has failed to predict strength five times (rule 3).
 
 Both effects deal exactly 30: Shadow Bullet's "30 damage to 1 of your
 opponent's Benched Pokemon", and Adrena-Brain's "move up to 3 damage counters".

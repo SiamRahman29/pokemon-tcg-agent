@@ -724,10 +724,28 @@ listwise, 2,810-game corpus, val top-1 0.6755) + `agents/sa/targeting.py`.
     null. Both tradeoffs.
 - `policynet.py` — numpy inference. `SA_PNET_PATH` env override; **dim guard**
   (stale net → `None` → fallback; never remove it).
-- `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` — shared by
-  trainer and inference. **Any npz trained pre-v2 fails the dim guard.** Adding
-  an HP/damage feature here bumps `VERSION` and retrains every net — that is
-  ROADMAP candidate **B1**.
+- `features.py` (v2, DENSE_DIM=242, PER_SLOT=18) / `optfeat.py` (**v3 as of
+  2026-07-30, OPT_DENSE 25 → 37**) — shared by trainer and inference.
+
+  ⚠ **The project's stated blind spot was MISDIAGNOSED until 2026-07-30**
+  (`EVIDENCE` §8f). "The net cannot see HP" is **false** — `features.py` has always
+  given it per-slot HP, damage, energy and prize value for all 12 slots. The real
+  gap: the v2 per-option vector encoded position only as *area* flags and **never
+  encoded `opt["index"]`**, so two options naming two different bench slots were
+  identical vectors — and two options naming **two copies of the same card were
+  bitwise identical with different right answers.** That is exactly
+  `energy_spread` (bare vs loaded Munkidori, and note it is the largest effect
+  ever measured here, 0.702) and `chip_target`. **The rules restore a missing
+  BINDING, not missing arithmetic.**
+
+  **v3 appends 12 target-state features** (target HP, maxHP, damage fraction,
+  dies-to-30, prize, energy count, own-type energy, ours/theirs, our damage into
+  it, can-KO, and the **slot index**). ⚠ **Appended, never inserted** — dims 0..24
+  are byte-identical to v2, and `policynet.Net.opt_in` derives each net's width
+  from `head_in` and slices. **That is what lets a v2 and a v3 net run in ONE
+  process for a head-to-head A/B (rule 4) across a feature change** — and it is
+  also what stops a dim bump from silently falling the shipped net back to
+  `list(range(minCount))`. **Do not replace `opt_in` with the global constant.**
 - `evalfn.py` + `textdmg.py` — handcrafted eval / expected damage.
   `targeting.best_damage` wraps `textdmg.estimate` with weakness and energy
   payability and is what every damage-vs-HP rule should call. Approximate in
@@ -835,6 +853,21 @@ python -X utf8 scripts/p7_morgrem.py --matches 200         # the Morgrem out (cl
 # Train (12 epochs; artifacts/pds_v2 is the shipped corpus)
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v2 --epochs 12 `
     --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_X.npz
+
+# ROADMAP B1: the feature A/B. artifacts/pds_v3 = 1,603 games at 37 opt-cols,
+# rebuilt from the 4 raw replay days on disk. The CONTROL is the SAME rows
+# truncated to the v2 layout (--opt-cols 25) -- so features are the only
+# difference. `--opt-cols` exists for exactly this and nothing else.
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v3 --epochs 12 `
+    --loss listwise --state-h 512,256 --head-h 256,128 `
+    --opt-cols 25 --out out/policy_b1_ctrl.npz        # control (v2 features)
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v3 --epochs 12 `
+    --loss listwise --state-h 512,256 --head-h 256,128 `
+    --out out/policy_b1_v3.npz                        # treatment (v3 features)
+python -X utf8 scripts/arena.py play "bc:v3,net=out/policy_b1_v3.npz" `
+    "bc:ctrl,net=out/policy_b1_ctrl.npz" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/b1_v3_vs_ctrl.jsonl
 
 # Rebuild shards from raw replays (more data is NOT a lever -- EVIDENCE §1)
 python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d30 replays/2026-07-30

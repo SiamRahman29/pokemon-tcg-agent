@@ -702,6 +702,86 @@ a Morgrem on our bench*. That is 10× the denominator above, but converting it
 needs a retreat costing 2 energy, so it is a much worse trade than it looks and it
 is a tradeoff besides. Filed, not recommended.
 
+## 8f. B1 — the blind spot was MISDIAGNOSED for the whole project (2026-07-30)
+
+**This entry is the setup for B1's A/B, and the diagnosis alone is a report
+result**, because it corrects the sentence the project's entire method rests on.
+
+**The standing claim** (in `targeting.py`'s docstring, `HANDOFF` §4, and every rule
+write-up here): *"`optfeat.option_features` gives the net a card-id embedding and
+eight positional scalars per option, and **no HP and no damage** — so the net
+cannot represent 'this one dies to 30' at all."*
+
+**What is actually true.** `features.py` `_slot_feats` has **always** written, for
+each of the 12 board slots: `hp/300`, `maxHp/300`, damage fraction, attached
+energy count, own-type energy count, prize value, retreat cost, and
+`best_estimated_damage`. **The net has had every HP and damage number on the board
+since v1.** The claim as written was false.
+
+**The real gap, and it is narrower and more interesting.** The v2 per-option
+vector encoded position only as *area* flags — `area == ACTIVE`, `area == BENCH`,
+`area == HAND`, plus the same two for `inPlayArea`. **`opt["index"]` and
+`opt["inPlayIndex"]` were never encoded at all.** So:
+
+- two options naming two different benched Pokemon produced **identical** dense
+  vectors, separable only by the card-id embedding;
+- therefore two options naming **two copies of the same card** were *exactly*
+  identical — bitwise indistinguishable inputs with different correct answers.
+
+**That is the mechanism behind both winning rules, and it predicts their sizes.**
+`energy_spread` is precisely the two-copies case (bare vs already-loaded
+Munkidori) and it is the **largest effect ever measured here (0.702)** — because
+there the net was not merely uninformed, it was *unable to represent the
+distinction*, and it picked the loaded Munkidori 143 times to 94, **worse than a
+coin flip**. `chip_target` (which of their Pokemon dies to 30) is the same defect
+one select over.
+
+**So the correct statement of the project's thesis is not "the net cannot see HP".
+It is: the net could see the board but could not see WHICH OPTION POINTED WHERE.**
+The rules did not supply missing arithmetic so much as supply a missing *binding*.
+
+**The intervention (`optfeat` v3, 25 → 37 columns, appended never inserted):** per
+option, the resolved target's presence, HP, maxHP, damage fraction, dies-to-30,
+prize value, energy count, own-type energy count, ours-or-theirs, our best damage
+into it, can-we-KO-it, and **the slot index** — the last being the one that fixes
+the representability failure outright.
+
+**Instrument check before training (rule 9), 20 games / 1,851 multi-option
+selects:** every new column varies *within* a select, which is the only kind of
+variation that can change a ranking. `slot_index` varies in **72.5%** of selects —
+the highest of any column, confirming the diagnosis directly. Known-in-advance
+buckets both passed: target resolution is **424/424 = 100%** on chip selects
+(these selects name Pokemon, so anything less would be a bug), and own-type energy
+varies in **53%** of MAIN selects, i.e. `energy_spread`'s signal demonstrably
+exists in the new features.
+
+**Experimental design, and why it is not the obvious one.** Comparing a v3 net
+against the shipped `policy_lw2` would confound features with corpus — `pds_v2` is
+2,810 games and 8 of its 10 raw replay days were pruned from disk, so it cannot be
+rebuilt. Instead: **one corpus at 37 columns (1,603 games, 248,985 rows, from
+07-26…07-29), and the control is the same corpus truncated to the first 25
+columns** (`--opt-cols 25`). Same games, same selects, same labels, same seed —
+**the features are the only difference.** Because the v3 block is appended,
+truncation reproduces the v2 layout exactly.
+
+⚠ **A shipping hazard handled, worth recording.** `policynet.load` guards on
+feature dims, so bumping `OPT_DENSE` would have made the *shipped* net fail its
+own guard and silently fall back to `list(range(minCount))` — i.e. quietly
+destroyed the live agent. Fixed by deriving the option width **per net** from
+`head_in` and slicing, which also lets a v2 and a v3 net run **in one process**
+for the head-to-head A/B rule 4 requires. Regression-checked: `bc` vs
+`rule:crustle` reads **0.640 [0.601, 0.677] n=600** against the archived
+0.663 [0.642, 0.684] — unchanged.
+
+**Verdict: PENDING the A/B.** Both outcomes are report material and the framing is
+committed in advance, so this cannot be rationalised after the fact:
+- **v3 wins** → the thesis is confirmed at its root, and the hand rules are
+  revealed as *manual patches for a representational hole* that the features can
+  close directly — the better engineering answer.
+- **v3 does not win** → representation was not the binding constraint, arithmetic
+  applied at the decision point beats giving a net the inputs, and the
+  rule-writing method is vindicated *against* its own best alternative.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
