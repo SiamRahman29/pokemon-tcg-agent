@@ -64,6 +64,18 @@ class Net:
     def head_in(self) -> int:
         return self.head_layers[0][0].shape[1]
 
+    @property
+    def opt_in(self) -> int:
+        """How many per-option dense features THIS net was trained on.
+
+        Derived rather than read from `optfeat.OPT_DENSE`, because a v2 net
+        (25) and a v3 net (37) have to be able to run in the same process for a
+        head-to-head A/B across the feature change (HANDOFF rule 4). The v3 block
+        is appended, so slicing to this width gives a v2 net byte-identical input
+        to what it was trained on."""
+        return (self.head_in - self.state_out
+                - 2 * self.card_emb.shape[1] - self.atk_emb.shape[1])
+
     def scores(self, obs: dict) -> np.ndarray:
         """Logit per option of obs['select']."""
         state = obs["current"]
@@ -88,11 +100,14 @@ class Net:
             return np.zeros(0, dtype=np.float32)
         feats = np.empty((n, self.head_in), dtype=np.float32)
         sw = len(srepr)
+        ow = self.opt_in
         for i, o in enumerate(opts):
             od, cid, aid, tid = option_features(obs, o)
             feats[i, :sw] = srepr
-            b = sw + len(od)
-            feats[i, sw:b] = od
+            b = sw + ow
+            # Slice to the width this net was trained at -- the v3 target block
+            # is appended, so a v2 net simply does not see it.
+            feats[i, sw:b] = od[:ow]
             feats[i, b:b + 16] = self.card_emb[cid]
             feats[i, b + 16:b + 32] = self.atk_emb[aid]
             feats[i, b + 32:] = self.card_emb[tid]
@@ -145,13 +160,13 @@ def load(path) -> Net | None:
     try:
         net = Net(np.load(path))
         from .features import DENSE_DIM
-        from .optfeat import OPT_DENSE
+        from .optfeat import KNOWN_OPT_DENSE
         expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
                         + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-        expect_head = (net.state_out + OPT_DENSE
-                       + 2 * net.card_emb.shape[1]
-                       + net.atk_emb.shape[1])
-        if net.state_in == expect_state and net.head_in == expect_head:
+        # The option width is now per-net (see Net.opt_in), so the guard asks
+        # whether it is a width we still know how to feed rather than whether it
+        # equals today's OPT_DENSE. An unrecognised width is a stale net.
+        if net.state_in == expect_state and net.opt_in in KNOWN_OPT_DENSE:
             return net
     except Exception:
         pass

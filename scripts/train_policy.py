@@ -37,7 +37,7 @@ from ptcg.env import sdk  # noqa: E402
 sdk.load()
 
 from sa.features import DENSE_DIM, N_CARD_IDS  # noqa: E402
-from sa.optfeat import OPT_DENSE, N_ATTACK_IDS  # noqa: E402
+from sa.optfeat import OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS  # noqa: E402
 
 EMB = 16
 SEL_DENSE = 14
@@ -56,8 +56,10 @@ def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential
 
 class PolicyNet(nn.Module):
     def __init__(self, state_h: tuple[int, ...] = (256,),
-                 head_h: tuple[int, ...] = (128,), dropout: float = 0.1):
+                 head_h: tuple[int, ...] = (128,), dropout: float = 0.1,
+                 opt_cols: int = OPT_DENSE):
         super().__init__()
+        self.opt_cols = opt_cols
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
@@ -65,7 +67,7 @@ class PolicyNet(nn.Module):
         self.atk_emb = nn.Embedding(N_ATTACK_IDS, EMB)
         in_state = DENSE_DIM + 12 * EMB + len(BAGS) * EMB + SEL_DENSE
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
-        in_head = state_h[-1] + OPT_DENSE + 3 * EMB
+        in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
@@ -75,7 +77,12 @@ class PolicyNet(nn.Module):
             parts.append(self.bag_emb(bag_flat[name], bag_off[name]))
         parts.append(seld)
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
-        per_opt = torch.cat([srepr[opt_row], opt_dense,
+        # Slice to `opt_cols`. The v3 target block is APPENDED to the v2 layout,
+        # so `--opt-cols 25` trains the exact v2-feature control on the identical
+        # rows -- same games, same selects, same labels, only the features differ.
+        # That is a cleaner control than comparing against the shipped net, which
+        # also differs in corpus (2,810 games vs whatever is on disk now).
+        per_opt = torch.cat([srepr[opt_row], opt_dense[:, :self.opt_cols],
                              self.card_emb(opt_card),
                              self.atk_emb(opt_atk),
                              self.card_emb(opt_tgt)], dim=1)  # (O, ...)
@@ -234,9 +241,19 @@ def main() -> int:
                     help="comma-separated hidden widths for the scoring MLP")
     ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--out", default="agents/sa/policy_net.npz")
+    ap.add_argument("--opt-cols", type=int, default=OPT_DENSE,
+                    help="per-option feature columns to use. Default = all "
+                         f"({OPT_DENSE}). Pass {OPT_DENSE_V2} to train the "
+                         "v2-feature CONTROL on identical rows (ROADMAP B1).")
     args = ap.parse_args()
+    if not 1 <= args.opt_cols <= OPT_DENSE:
+        raise SystemExit(f"--opt-cols must be in 1..{OPT_DENSE}")
 
     torch.set_num_threads(max(1, torch.get_num_threads() - 1))
+    # Seeded so that a control/treatment pair (e.g. --opt-cols 25 vs 37, ROADMAP
+    # B1) differs in its FEATURES and not in dropout masks or batch order. Weight
+    # init still differs where the layer widths differ, which cannot be avoided.
+    torch.manual_seed(0)
     paths = sorted((ROOT / args.ds).rglob("shard_*.npz"))
     if not paths:
         raise SystemExit(f"no shards under {ROOT / args.ds}")
@@ -254,8 +271,10 @@ def main() -> int:
 
     state_h = tuple(int(x) for x in args.state_h.split(","))
     head_h = tuple(int(x) for x in args.head_h.split(","))
-    model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout)
+    model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
+                      opt_cols=args.opt_cols)
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
+          f"opt_cols={args.opt_cols}/{OPT_DENSE} "
           f"params={sum(p.numel() for p in model.parameters())}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                             weight_decay=args.wd)
