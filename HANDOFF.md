@@ -24,10 +24,38 @@ end with a live plan, never a summary.**
 
 Nothing is mid-flight; the tree is clean and every result below is archived.
 
-> **⚡ THE LIVE ACTION IS NOW ROADMAP B1 (item 4).** Items 1 and 2 closed this
-> session — 1 by sizing, 2 as unobtainable — and item 3 is blocked until 07-31 by
-> Kaggle's publish delay. **B1 no longer waits on anything**, and it was already
-> the top-ranked unstarted breakthrough candidate.
+> # 🟢 B1 LANDED — THE BREAKTHROUGH, AND IT REVERSES THE METHOD
+>
+> **`optfeat` v3 (per-option target features) beats the shipped agent 0.661
+> [0.640, 0.681] n=2000 in the mirror (≈ +115 Elo) and 0.770 vs `rule:crustle`
+> where the shipped agent reads 0.663.** Two anchors, one adversarial, both agree.
+> **This is the first effect in the project LARGER than the LB's ±50–100
+> resolution** (§1) — the first thing we could actually submit and measure.
+>
+> **And it inverts the method: with v3 features the hand rules are HARMFUL, not
+> redundant — `v3+rules` vs `v3 alone` = 0.427 [0.405, 0.449].** The rules and the
+> features are **alternatives, not complements.** Ship v3 with **rules OFF**, or
+> ship `lw2` with rules ON. Never the combination.
+>
+> Full numbers, the pre-committed verdict framing, the corpus confound and the
+> pool check: **`report/EVIDENCE.md` §8f.** Nets: `out/policy_b1_v3.npz`
+> (treatment) and `out/policy_b1_ctrl.npz` (control). Corpus: `artifacts/pds_v3`.
+>
+> **▶ THE NEXT ACTION IS ITEM 0 BELOW — package and submit it.**
+
+0. **⚡ BUILD AND SUBMIT THE v3 AGENT (rules OFF).** This is the first candidate
+   that clears the "do we expect this to beat 950" bar (box below), and the
+   submission-slot arithmetic finally favours spending it. **Not yet done —
+   nothing has been packaged, and the defaults still ship `lw2` + rules.** Steps:
+   1. `bcagent.PolicyAgent` must load the v3 net **with `chip_target`,
+      `energy_spread` and `counter_source` disabled.** ⚠ **Do NOT flip the global
+      defaults** — they are still correct for `lw2`, which is what is live. Pin
+      the pair (net + flags) in the bundle instead.
+   2. `build_submission.py … --nets policy` and **smoke-test** it (the `__file__`
+      gotcha in §7 killed `55028078` this way).
+   3. ⚠ **Submitting evicts `55072063` (950.2, our best) from the active pair.**
+      That is the real cost — read the submission box before pulling the trigger.
+   4. Expect a 4+ h climb from μ=600 before the reading means anything (rule 2).
 
 1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-30 —
    do not build it** (`EVIDENCE` §8e, `out/logs/p7_morgrem_200.txt`). The veto
@@ -72,20 +100,25 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
    shares and build the **deck matchup win-rate matrix** among high-rated players
    (ROADMAP Track B/C figure). ⚠ This also gates the Crispin-anchor question —
    check Crispin's share is still ~17% before spending any work on it.
-4. **⚡ ROADMAP B1 — THE LIVE ACTION** (feature-augmented retrain): add HP /
-   damage / attached-energy to `optfeat`, bump `VERSION`, retrain, and judge the
-   new net head-to-head in the arena (rule 3 — never on val accuracy; rule 4 —
-   `bc:<label>,net=<path>` runs both nets in one process). It is the top-ranked
-   unstarted breakthrough candidate **and the control experiment for the report's
-   thesis**: every rule we ship exists because the features cannot express HP and
-   damage, so giving the net those features either reproduces the rules' gains
-   (thesis confirmed, and the rules become redundant) or does not (thesis
-   sharpened — arithmetic beats representation here). **Either outcome is a
-   report result**, which is why it outranks more rule-hunting.
-   ⚠ Any npz trained pre-v2 fails the dim guard — expect to retrain, not patch.
-5. **Do not submit yet.** Today's shipped gain is ~+10–15 Elo, **below the LB's
-   resolution** (§1). Accumulate improvements and submit **one bundle**. The
-   daily quota is free; the cost is the active-pair slot (box below).
+4. ~~**ROADMAP B1** (feature-augmented retrain)~~ ✅ **DONE AND WON 2026-07-30/31
+   — see the green box at the top.** `EVIDENCE` §8f. Follow-ups it opened, in
+   value order:
+   - **Retrain v3 on a bigger corpus.** v3 won on **1,603 games vs the shipped
+     net's 2,810** — 43% less data. The pruned days are re-fetchable from
+     `replays/manifests/` (12 days of episode ids). ⚠ But §1 says more data is
+     *not* a lever, so treat this as a cheap check, not an expected gain.
+   - **Re-A/B each rule against the v3 net individually.** We know the three
+     together are harmful (0.427); we do **not** know whether one of them is
+     still positive. `noChip` / `noSpread` / `noSrc` one at a time.
+   - **The v3 features make `wall_defer`'s hardcoded `WALL_POKEMON = {345}`
+     obsolete in principle** — "our damage into this target" is now feature 34,
+     so the wall condition is readable off the board for *any* prevention
+     ability. Only matters if a second wall deck appears.
+5. ~~**Do not submit yet.**~~ ⚠ **SUPERSEDED BY B1 (item 0).** That advice was
+   written when the best candidate was a ~12-Elo rule, which the LB cannot
+   resolve. **B1 measures ≈ +115 Elo on two anchors — above the instrument's
+   precision** — so the reasoning that said "wait and bundle" now says "submit
+   this one". The bundle it was waiting for exists.
 6. **`report/STRATEGY.md` does not exist yet** — the only Track B deliverable not
    started. `report/EVIDENCE.md` is backfilled and ready to draft from.
 
@@ -329,6 +362,24 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     explicitly and measure it too. The whole argument rested on the alternative
     being worth zero; it was not (the bench snipe kills their basics), and nobody
     would have noticed without asking what the other branch actually does.
+15. **RE-READ THE CODE THAT THE WHOLE METHOD RESTS ON. The project's founding
+    premise was false for eight days and nobody checked.** "The net cannot see
+    HP" was written in `targeting.py`, repeated in `HANDOFF`, and used to justify
+    every rule — while `features.py` had been feeding the net per-slot HP,
+    damage, energy and prize value since v1. The true gap was one line's worth:
+    `opt["index"]` was never encoded, so two options naming two copies of the
+    same card were **bitwise identical inputs with different right answers**.
+    Fixing that measured **0.878** and made the rules harmful (`EVIDENCE` §8f).
+    **A premise repeated in three files is not thereby verified — it is just
+    load-bearing.** When a claim about the code justifies weeks of work, open the
+    file and confirm it, especially if it has never been questioned.
+
+    ⚠ **The general form, and the thing to carry forward:** ask whether a blind
+    spot is **informational** (the input is absent) or **representational** (the
+    input is present but cannot be bound to the decision). They look identical
+    from the outside — the agent gets it wrong at chance — and they have opposite
+    cures. Four hand rules cured the symptom; 12 features cured the cause and
+    dominated them.
 
 ---
 
@@ -697,6 +748,13 @@ listwise, 2,810-game corpus, val top-1 0.6755) + `agents/sa/targeting.py`.
 - `targeting.py` — **all the rule overrides. Every new rule belongs here.** Each
   has its own `PolicyAgent` flag and its own `bc:` arena switch, so any one can
   be A/B'd alone.
+
+  ⚠ **EVERY NUMBER IN THIS TABLE IS CONDITIONAL ON THE `lw2` NET (2026-07-31).**
+  Against the **v3** net the same three rules measure **0.427 together — actively
+  harmful** (`EVIDENCE` §8f). They are *proxies for the option→target binding*, so
+  once the features supply it the rules override a better-informed net with cruder
+  arithmetic. **Read this table as "what the rules are worth to a net that cannot
+  see its options' targets", not as a property of the rules.**
 
   **Two anchors per row now (rule 12).** Mirror = head-to-head vs the variant;
   Crustle = this variant's score against a fixed `rule:crustle`, so its rule

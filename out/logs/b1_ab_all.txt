@@ -1,0 +1,27 @@
+=== 1. PURE FEATURE TEST: v3 vs ctrl, rules OFF both sides ===
+A=bc:v3,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc: score=0.878 [0.863, 0.892] W1753/D6/L241 over 2000 games
+  as P0: W/D/L=(886, 3, 111)  as P1: W/D/L=(867, 3, 130)
+  elapsed 592.4s; archived 2000 rows -> out\arena\b1_feat_only.jsonl
+=== 2. SHIPPING TEST: v3 vs ctrl, rules ON both sides ===
+A=bc:v3,net=out/policy_b1_v3.npz: score=0.661 [0.640, 0.682] W1322/D1/L677 over 2000 games
+  as P0: W/D/L=(662, 1, 337)  as P1: W/D/L=(660, 0, 340)
+  elapsed 544.7s; archived 2000 rows -> out\arena\b1_rules_on.jsonl
+=== 3. THE THESIS TEST: given v3 features, are the RULES still worth anything? ===
+  as P0: W/D/L=(443, 0, 557)  as P1: W/D/L=(410, 1, 589)
+  elapsed 1849.0s; archived 2000 rows -> out\arena\b1_rules_value.jsonl
+  pool left (bc:v3n,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc): min -556s of 600s  <-- WOULD TIME OUT ON KAGGLE
+ALLDONE
+=== 4. VS THE SHIPPED AGENT: v3(new corpus) vs bc(policy_lw2), rules ON both ===
+A=bc:v3,net=out/policy_b1_v3.npz: score=0.597 [0.575, 0.618] W1194/D0/L806 over 2000 games
+  as P0: W/D/L=(618, 0, 382)  as P1: W/D/L=(576, 0, 424)
+  elapsed 701.0s; archived 2000 rows -> out\arena\b1_vs_shipped.jsonl
+=== 5. ADVERSARIAL ANCHOR: v3 vs rule:crustle (bc reads 0.663 here) ===
+A=bc:v3,net=out/policy_b1_v3.npz: score=0.773 [0.754, 0.791] W1544/D5/L451 over 2000 games
+  as P0: W/D/L=(780, 4, 216)  as P1: W/D/L=(764, 1, 235)
+  elapsed 444.2s; archived 2000 rows -> out\arena\b1_v3_crustle.jsonl
+ALLDONE2
+=== 4b. THE REAL SHIPPING TEST: v3 rules-OFF vs SHIPPED bc (policy_lw2 + rules) ===
+A=bc:v3off,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc: score=0.661 [0.640, 0.681] W1322/D0/L678 over 2000 games
+=== 5b. ADVERSARIAL ANCHOR: v3 rules-OFF vs rule:crustle (shipped bc reads 0.663) ===
+A=bc:v3off,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc: score=0.770 [0.751, 0.788] W1537/D6/L457 over 2000 games
+ALLDONE3

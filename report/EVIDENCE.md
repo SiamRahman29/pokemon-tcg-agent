@@ -773,14 +773,92 @@ for the head-to-head A/B rule 4 requires. Regression-checked: `bc` vs
 `rule:crustle` reads **0.640 [0.601, 0.677] n=600** against the archived
 0.663 [0.642, 0.684] — unchanged.
 
-**Verdict: PENDING the A/B.** Both outcomes are report material and the framing is
-committed in advance, so this cannot be rationalised after the fact:
-- **v3 wins** → the thesis is confirmed at its root, and the hand rules are
-  revealed as *manual patches for a representational hole* that the features can
-  close directly — the better engineering answer.
-- **v3 does not win** → representation was not the binding constraint, arithmetic
-  applied at the decision point beats giving a net the inputs, and the
-  rule-writing method is vindicated *against* its own best alternative.
+**Verdict framing, committed BEFORE the A/B ran** (so it cannot be rationalised
+after): **v3 wins** → the thesis is confirmed at its root and the hand rules are
+*manual patches for a representational hole* the features close directly;
+**v3 does not win** → representation was not the binding constraint and the
+rule-writing method is vindicated against its best alternative.
+
+### The result (2026-07-30/31): v3 WINS, and it is the largest effect in the project
+
+Seven arena A/Bs, **n=2000 each**, archived in `out/arena/b1_*.jsonl`.
+
+**A. The feature effect — clean.** Same corpus, same rows, same labels, same seed;
+the *only* difference is the option-feature width.
+
+| | v3 vs the v2 control | |
+|---|---|---|
+| rules **OFF** both sides | **0.878** [0.863, 0.892] | the pure feature effect |
+| rules **ON** both sides | 0.661 [0.640, 0.682] | the rules carry most of the control's gap |
+
+**0.878 is the largest effect ever measured here** — `energy_spread`, the previous
+record, was 0.702. And the collapse from 0.878 to 0.661 when both sides get the
+rules *is itself the evidence for §8f's diagnosis*: what the rules were adding is
+almost exactly what the v2 features could not represent.
+
+**B. The thesis test — the rules are now ACTIVELY HARMFUL, not merely redundant.**
+
+| | |
+|---|---|
+| `v3 + rules` vs `v3 alone` (mirror) | **0.427** [0.405, 0.449] |
+| `v3 + rules` vs `v3 alone` (vs `rule:crustle`) | 0.773 vs 0.770 — **neutral**, CIs overlap |
+
+In the mirror the CI clears 0.5 comfortably: **three of the four rules that define
+this project's method now cost us games.** The mechanism is not mysterious —
+`chip_target` *replaces the whole ranking* with fixed arithmetic ("dies to 30,
+most prizes, lowest HP"), which was right when the net was **incapable of
+representing** which option pointed at which Pokemon, and is wrong now that it can
+see target HP, dies-to-30, prize value and our damage into each target. The rule
+overrides a better-informed judgment with a cruder one. On the Crustle anchor they
+are neutral rather than harmful, which fits: `wall_defer` already hands that exact
+matchup back to the net.
+
+**So the rules and the v3 features are ALTERNATIVES, not complements.** Ship v3
+with rules off, or ship `lw2` with rules on — never the combination.
+
+**C. Against the shipped agent** (`policy_lw2` + rules), i.e. the shipping question:
+
+| | v3 rules-OFF | v3 rules-ON | shipped `bc` |
+|---|---|---|---|
+| mirror vs shipped `bc` | **0.661** [0.640, 0.681] | 0.597 [0.575, 0.618] | 0.5 |
+| vs `rule:crustle` (adversarial) | **0.770** [0.751, 0.788] | 0.773 [0.754, 0.791] | **0.663** |
+
+0.661 in the mirror is **≈ +115 Elo** — for the first time, an effect *larger than
+the LB's ±50–100 resolution* (§1), i.e. the first candidate all project that the
+leaderboard could actually adjudicate. **Two anchors, one adversarial, both agree**
+— rule 12 satisfied, which is precisely the check `chip_target`'s −0.126 taught us
+to run.
+
+**Internal consistency (worth stating, since it is free):** three independent runs
+order the three agents transitively — `v3 alone` > `v3 + rules` > `shipped` — via
+0.427, 0.597 and 0.661 measured in separate processes. Nothing contradicts.
+
+⚠ **The confound, stated rather than buried.** The **vs-shipped** rows conflate two
+changes: the features *and* the corpus. v3 trains on 1,603 games from 07-26…07-29
+(which includes the **post-shift** meta) while `policy_lw2` trains on 2,810 older
+games. So **do not cite 0.661-vs-shipped as the feature effect** — the clean
+feature number is panel A's 0.878, which holds corpus fixed. For a *shipping*
+decision the conflation is harmless (we want the better agent either way); for the
+report's causal claim only panel A counts. Note also that v3 wins on **43% less
+data**, which independently re-confirms §1's "more data is not a lever".
+
+⚠ **Pool cost checked, not assumed.** v3 calls `best_damage` per *option*, and the
+A/Bs ran ~2× slower in wall-clock. Measured over 8,000 game-seats: **minimum
+599.7 s left of 600, zero games below 300 s.** No timeout risk. (Run 3's archive
+did print `WOULD TIME OUT ON KAGGLE`; per the §7 gotcha the distribution was
+checked — **1 game in 4,000** at −556 s, p1 = 599.8, median 599.9. Machine sleep,
+not the agent.)
+
+**Interpretation — this is the project's central result, and it reverses the
+method.** For eight days the working theory was *find decisions the features
+cannot express and write a rule for them*, and it was right about the diagnosis
+(the net was blind) and wrong about the cure. The blindness was **representational,
+not informational** — the net had the HP all along and could not bind it to an
+option — and the correct fix was 12 features, not four hand rules. The rules got
+~150 LB points because they *simulated* the missing binding; supplied properly, the
+binding is worth ~115 Elo more and makes the rules a liability. **The report's
+thesis should be stated as: hand-written arithmetic is a proxy for a missing
+representation, and it is dominated by fixing the representation.**
 
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
