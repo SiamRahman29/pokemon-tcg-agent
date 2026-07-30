@@ -481,6 +481,113 @@ the pre-deadline re-mine accordingly.
 
 ---
 
+## 8c. The re-anchored A/Bs (2026-07-30) — a shipped rule is HARMFUL in the new meta
+
+**Hypothesis:** rules validated against `lucario_v10` (now 0% of the field, §8b)
+still pay against the decks we actually face.
+
+**Method:** each variant plays grimmsnarl against the **same fixed opponent** —
+`rule:crustle` piloting `crustle_v1` — so per rule 5 the *differences* are
+interpretable even though the absolute level is a cross-deck matchup. n=2000 per
+row, archives `out/arena/anchor_rulecrustle_*.jsonl`.
+
+⚠ **Scale note:** these are scores against a common opponent, so a rule's value
+is the **difference between rows**. The mirror numbers in §3 are head-to-head
+scores between variants. Different scales — compare *signs and rank*, not
+magnitudes.
+
+| A-side | score vs `rule:crustle` | rule's contribution here | its mirror result |
+|---|---|---|---|
+| `bc` — all rules on | **0.559** [0.537, 0.581] | — | — |
+| `bc:x,noSpread` | 0.366 [0.345, 0.388] | **`energy_spread` +0.193** | 0.702 ✅ |
+| `bc:x,noSrc` | 0.507 [0.485, 0.529] | **`counter_source` +0.052** | 0.534 ✅ |
+| **`bc:x,noChip`** | **0.685** [0.665, 0.705] | **`chip_target` −0.126** 🔴 | 0.577 ✅ |
+
+### Verdict 1: `counter_source` is vindicated — §3.0 is resolved
+
+It pays **more** against the current meta (+0.052) than against the mirror
+(+0.034) or `lucario_v10` (+0.033). Combined with §7's resolution-limit finding,
+the whole "confident false positive" scare was an artifact of reading a ±75-point
+instrument at 12-Elo precision. **The rule stays.**
+
+### Verdict 2: `chip_target` — the founding +150-LB rule — is HARMFUL vs Crustle
+
+0.559 with it vs **0.685 without**, non-overlapping intervals at n=2000 each.
+
+**Mechanism, measured not assumed** (`scripts/p3_crustle_probe.py`, 60 games per
+arm, counting damage-counter placement events):
+
+| | counters onto **Crustle** | counters onto **Dwebble** |
+|---|---|---|
+| `chip_target` ON | 1,386 events, mean 12.9 | **235** |
+| `chip_target` OFF | **1,583 events, mean 15.0** | **24** (−90%) |
+
+`chip_target` ranks targets "anything that dies to 30 first, most prizes among
+those, then lowest HP". Against Crustle that rule farms **Dwebble** — a 1-prize
+basic — while the wall that must come down sits untouched. Switching it off moves
+~200 counter events onto Crustle and lifts total counter damage there ~33%. The
+net, left alone, concentrates correctly.
+
+**Interpretation — this is the most important methodological result of the
+project, and it is a report chapter on its own.** Our founding result, the rule
+that bought ~150 LB points and defined the whole "find the blind select and write
+a rule" method, **is matchup-conditional and we could not have known** while every
+measurement came from one opponent deck. It does not overturn the method; it
+bounds it: **an arithmetic rule encodes an objective ("kill what is killable")
+that is only correct while the strategic context holds.** Against a wall deck the
+objective itself changes — remove the wall, don't collect cheap prizes — and no
+amount of correct arithmetic inside the wrong objective helps.
+
+Forward consequence: **the fix is not to drop `chip_target`** (it is worth +0.077
+head-to-head in the mirror, which is 52% of the field) **but to branch it on the
+matchup** — exactly ROADMAP candidate B3, now promoted from speculation to the
+repair for a measured defect.
+
+## 8d. Crustle mechanics — the §3.2 premise, verified in-engine
+
+**Hypothesis (never checked before today):** Mysterious Rock Inn, an ABILITY on
+Crustle (345), prevents damage from opponent {ex} attacks — so Marnie's Grimmsnarl
+ex (`ex=True`) deals **zero** — but Adrena-Brain and Freezing Shroud *place/move
+damage counters*, which is not "damage done by an attack", so they should go
+through. Our card db exposes no ability text for 345, so only play settles it.
+
+**Method:** `scripts/p3_crustle_probe.py`, 60 games, a census of the engine's own
+`type 16` HP-change events, which carry **`putDamageCounter`** (True for
+placed/moved counters, False for attack damage), the owner, the card and the
+value. A prevented attack logs as **`value: 0`**.
+
+| measurement | n | result |
+|---|---|---|
+| attack damage onto Crustle | 224 events | **209 ZEROED (93.3%)** |
+| the 15 that landed | 15 | **60 damage each — all from Marnie's Morgrem (647, attack 936), a NON-ex attacker** |
+| damage counters onto Crustle | 1,386 events | **1,298 landed (93.7%)**, 17,850 total damage / 60 games |
+| their Superb Scissors (479) onto our Grimmsnarl ex line | 168 events | **240 every time** (120 doubled by weakness), used 253× |
+
+**Verdict: the premise holds, and there are TWO outs rather than one.**
+
+1. **Damage counters bypass the prevention** — confirmed at n=1,386. The
+   passive-damage line is **live**, so ROADMAP Track C steps 3–4 are unblocked.
+2. 🆕 **A non-ex attacker is not covered by an anti-{ex} ability.** Marnie's
+   Morgrem deals **60** through the wall, and we already run 3 copies as the
+   evolution stage. **Nobody had considered this out**; it needs no decklist
+   change, only a play-priority rule (don't always evolve Morgrem → Grimmsnarl ex
+   into a Crustle board).
+
+**And the matchup's shape in one line:** they deal **240** per attack into our
+main attacker; our main attacker deals **0** into theirs. We still win 55.9%,
+entirely on damage counters (~298 per game). That asymmetry is why the two
+counter-rules pay more here than anywhere else, and why the attack-targeting rule
+pays negative.
+
+⚠ **Instrument note (rule 9, twice in one script).** The first version of this
+probe read **0.0 damage in every bucket**, including buckets that cannot be zero.
+Cause: **`obs['logs']` is a per-observation DELTA, not a cumulative log** (lengths
+`[0, 0, 48, 14, 3, 1, ...]`, non-monotonic), so offset-based attribution was
+nonsense. Rewritten as a census needing no attribution. Then the census itself
+filed **`value == 0` events with the heals**, hiding the prevented attacks — the
+single event class the probe existed to count. **Both bugs were caught only by
+checking a bucket whose answer was known in advance.** Always include one.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is

@@ -216,13 +216,25 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     asserted, not measured. It then won the arena and read 762 on the LB. **A
     rule is only dominated if EVERY dimension it moves is arithmetic — one
     judgment puts it in the tradeoff column no matter how good the other looks.**
-12. **The local arena is ONE opponent deck.** Everything routine is measured
-    against `rule:v10,noS` on `lucario_v10`. A pattern the user watched in a real
-    game can be genuinely absent locally without being absent on the LB. **When
-    the user reports something and the local audit says it never happens, measure
-    it on `replays/submission_replay_2026-07-29/`** — `scripts/p5a_replays.py` is
-    the worked example; it reads our real selects against 54 distinct LB
-    opponents.
+12. **A single-anchor arena will eventually lie to you, and on 2026-07-30 it
+    did.** Everything routine was measured against `rule:v10,noS` on
+    `lucario_v10` — a deck that is now **0% of the meta**. Re-anchored on
+    `rule:crustle`, **`chip_target` — the rule that bought ~150 LB points and
+    defined the project's whole method — measures −0.126, i.e. actively
+    harmful**, while it is worth +0.077 in the mirror (`EVIDENCE` §8c).
+    **An arithmetic rule encodes an objective, and an objective is only correct
+    while the strategic context holds.** So:
+    - **Every rule A/B needs ≥2 anchors, one of them adversarial**, and every
+      archived number carries an anchor label.
+    - **A rule that wins on one anchor is a matchup branch candidate, not a
+      shipped rule**, until a second anchor agrees.
+    - Also: a pattern the user watched in a real game can be genuinely absent
+      locally. **When the local audit says it never happens, measure it on
+      `replays/submission_replay_2026-07-29/`** — `scripts/p5a_replays.py` reads
+      our real selects against 54 distinct LB opponents.
+    - ⚠ **An anchor must be COMPETITIVE to resolve anything.** `bc` piloting an
+      off-distribution deck gave a 0.911 blowout — a ceiling that squeezes any
+      rule delta to nothing. Import a real pilot (`import_crustle_agent.py`).
 13. **Check the denominator is a real CHOICE, not just a real count.** P5a read
     "the rule takes the best target 26/26" — but 90 of its 95 pooled-KO rows
     offered only one prize value, so nothing could go wrong. The honest
@@ -237,7 +249,16 @@ won locally and shipped. **The open questions: (0) is P6a actually good, (1) are
 we measuring against the right opponents at all, (2) Crustle.** `ROADMAP.md`
 §2.5 holds the ranked breakthrough candidates (B1–B5) that run alongside.
 
-### 3.0 `55077709` (P6a / `counter_source`) — DOWNGRADED to "unresolvable on the LB"
+### 3.0 ✅ RESOLVED (2026-07-30): `counter_source` stays
+
+Re-measured against the new meta anchor: **`counter_source` is worth +0.052 vs
+`rule:crustle`** (0.559 with, 0.507 without, n=2000 each) — *more* than it was
+worth in the mirror (+0.034) or vs `lucario_v10` (+0.033). The LB scare was an
+artifact of reading a ±75-point instrument at 12-Elo precision (§1). **Keep the
+rule; no rollback.** `EVIDENCE` §8c. History below, kept because the reasoning is
+report material.
+
+### 3.0b The original write-up — "unresolvable on the LB"
 
 **Readings (all read against the contemporaneous score, never a remembered one):**
 
@@ -419,13 +440,60 @@ cards change, and *conditional on the matchup* "fetch the Pokemon whose damage
 actually goes through" is near-dominated rather than a tradeoff. It lands on
 `TO_HAND` (15.3% of selects, where only duplicate-avoidance has been closed).
 
+### 3.3 🔴 NEW TOP PRIORITY: branch `chip_target` on the matchup
+
+**The measured defect** (`EVIDENCE` §8c): vs `rule:crustle`, `bc` scores **0.559**
+and `bc:x,noChip` scores **0.685** — **our founding rule costs us 12.6 points of
+score in 18% of the field.** In the mirror (52% of the field) it is worth +0.077
+head-to-head, so **do not delete it — branch it.**
+
+**Why it fails, measured:** `chip_target` ranks "dies to 30 first, most prizes
+among those, then lowest HP", which against Crustle farms **Dwebble** (a 1-prize
+basic) while the immune wall sits untouched. Counter-placement events onto Dwebble
+drop **235 → 24** when the rule is off, and events onto Crustle rise **1,386 →
+1,583** at a higher mean (12.9 → 15.0).
+
+**The rule to write** — and note it is a *dominated-option* rule by rule 11, which
+is the 3-for-3 column: **when the opponent's Active cannot be damaged by our
+attacks, damage counters are the only way to remove it, so concentrate them
+there** rather than spending them on a killable basic. The condition is factual,
+not a judgment: we can test "would our attack deal 0 to this target" directly
+(that is what `best_damage` / the census measures), so this is arithmetic, not a
+guess about what matters.
+
+**Design sketch (implement in `targeting.py`, default OFF until A/B'd):**
+
+1. Detect the immune-wall condition per target, not per archetype: for the
+   opponent's Active, `best_damage(our_active, ...) == 0` while a counter effect
+   is available. That generalises past Crustle to any prevention ability, and
+   needs no archetype classifier — **so it is cheaper than B3 and should be tried
+   first.**
+2. When it holds, rank counter targets by "damage that actually lands, most on
+   the blocker" instead of by killability.
+3. A/B against **all three** anchors: `rule:crustle`, the grimmsnarl mirror, and
+   `rule:v10` (for continuity with the archived numbers). It must not bleed the
+   mirror.
+
+⚠ **Also test the cheap alternative first:** simply switching `chip_target` off
+when the opponent's Active is undamageable is a one-line version of the same idea
+and already has a measured +0.126 upper bound in this matchup. **Measure the
+one-liner before building the ranker.**
+
+🆕 **And a second, independent out from `EVIDENCE` §8d: Marnie's Morgrem (non-ex)
+deals 60 through the wall while Grimmsnarl ex deals 0.** We already run 3 copies
+as the evolution stage. So there is a play-priority rule available — **do not
+always evolve Morgrem into Grimmsnarl ex against a Crustle board** — that costs no
+decklist change. Size it before building it: count how often we hold a Morgrem
+that could attack a Crustle and evolve it away instead.
+
 ### The board
 
 | | item | state |
 |---|---|---|
-| **§3.0** | is `55077709` (P6a) actually good? | **closed as an LB question** (unresolvable — 12 Elo vs a ±75 instrument); re-opened as §3.1 step 5 |
-| **§3.1** | re-anchor the arena on the current meta | **steps 1–4 DONE 07-30** (meta measured, `lucario_v10` is 0% of it, two new anchor decks committed); **step 5 = re-run every shipping A/B, blocked only on a pilot** |
-| **§3.2** | Crustle | **now known to BE the meta (18.1%, 56.6% WR, top-2 LB)**; deck rebuilt to the current list; **no pilot**, premise unverified — the critical path |
+| **§3.0** | is `55077709` (P6a) actually good? | ✅ **RESOLVED — yes, keep it.** +0.052 vs the new anchor |
+| **§3.1** | re-anchor the arena on the current meta | ✅ **DONE for Crustle** (meta measured, pilot imported, all 3 rules re-A/B'd at n=2000). Still open: a pilot for `crispin_toolbox` (now the **#1 LB deck**) |
+| **§3.2** | Crustle premise probe | ✅ **VERIFIED — counters bypass the wall, AND a non-ex attacker gets through.** Track C steps 3–4 unblocked |
+| **🔴 §3.3** | **`chip_target` is HARMFUL vs Crustle (−0.126)** | **NEW TOP PRIORITY — the matchup branch (B3)** |
 | **P2** | MAIN-decision rules, via the **lethal audit** | **lethal is CLOSED (2026-07-30): this deck has one attack, so the choice doesn't exist.** MAIN's arithmetic half is empty; what remains is tradeoffs |
 | P1 | re-rank decks | **superseded by §3.1** |
 | P6b/P6c, P5a/b/c, P4a/b/c | — | **all closed** — see `report/EVIDENCE.md` |
@@ -483,11 +551,15 @@ listwise, 2,810-game corpus, val top-1 0.6755) + `agents/sa/targeting.py`.
   has its own `PolicyAgent` flag and its own `bc:` arena switch, so any one can
   be A/B'd alone.
 
-  | function | select | switch | arena |
-  |---|---|---|---|
-  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577 n=2000 → **+~150 LB** |
-  | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702 n=4000** |
-  | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `noSrc` | 0.534 n=2000 — **LB on trial** |
+  **Two anchors per row now (rule 12).** Mirror = head-to-head vs the variant;
+  Crustle = this variant's score against a fixed `rule:crustle`, so its rule
+  value is the *difference from `bc`'s 0.559* (`EVIDENCE` §8c).
+
+  | function | select | switch | mirror | vs Crustle |
+  |---|---|---|---|---|
+  | `chip_target` | DAMAGE / DAMAGE_COUNTER(_ANY) | `noChip` | 0.577 → +~150 LB | 🔴 **−0.126 HARMFUL** (§3.3) |
+  | `energy_spread` | MAIN, {D} ATTACH onto a Munkidori | `noSpread` | **0.702** n=4000 | **+0.193** ✅ |
+  | `counter_source` | REMOVE_DAMAGE_COUNTER (ours) | `noSrc` | 0.534 n=2000 | **+0.052** ✅ |
   | `drag_target` | SWITCH (Boss's Orders' drag) | `drag`, **off** | 0.489 — null |
   | `drag_target(prefer_high_hp)` | ditto, KO-able tiebreak | `dragHi`, **off** | 0.490 — null |
   | `boss_converts` | MAIN, plays Boss's Orders | `boss`, **off** | 0.493 — null |
