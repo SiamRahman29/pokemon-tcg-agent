@@ -24,6 +24,12 @@ DECK_MODULE = {
     # `v10x` is the same agent with its unreachable MCTS made reachable.
     "v10": "lucario_v10",
     "v10x": "lucario_v10",
+    # The counter-meta pilot (scripts/import_crustle_agent.py). Crustle went
+    # from 1 seat in 1,600 to 18.1% of the field at 56.6% WR between 07-24 and
+    # 07-29 while `lucario_v10` fell to 0%, so this -- not `v10` -- is the
+    # opponent that matters now. Its own list is `crustle_v1`; the field's
+    # consensus list is `crustle` (see both decks' docstrings).
+    "crustle": "crustle_v1",
 }
 
 

@@ -294,18 +294,44 @@ Every number in §3, §6 and `EVIDENCE.md` was earned against `lucario_v10`, whi
   against `rule:v10` was never measured properly. **This is also what settles
   §3.0.**
 
-🔴 **Blocker on step 5, and it is now the project's critical path: the new anchors
-have no pilots.** `rule:v10` is Lucario-specific scoring and `bc` would play them
-off-distribution. Options, cheapest first:
+✅ **The pilot blocker is SOLVED for Crustle: `rule:crustle` now exists.**
+`scripts/import_crustle_agent.py` lifts the public `pixiux/ptcg-crustle-v1-submit`
+agent (409 lines of readable option scoring) into
+`agents/agentkit/rulebased/sources/crustle.py` + `decks/crustle_v1.py` (its own
+tuned 60), registered in `DECK_MODULE`. Idempotent. It plays the real lockdown:
+bench Dwebble → evolve → arm 3 energies incl. Grass → Hero's Cape → Battle Cage
+stadium → heal with Jumbo Ice Cream / Cook at damage ≥50 → retreat to a ready
+Crustle → Superb Scissors (479, **120 damage**, ×2 into Grass weakness).
 
-1. **`bc` piloting the new deck as a *fixed* opponent.** Crude, but for A/B
-   *deltas* the opponent only has to be identical on both sides (rule 5), not
-   strong. **Do this first — it unblocks step 5 today** — while being explicit in
-   the write-up that a weak pilot under-reads the matchup (§3.2).
-2. **A minimal rule pilot for Crustle** (the real instrument; Track C step 1).
-   Look for the public bot first: `dashimaki360/beating-the-day-1-1-crustle-bot`.
-3. Check `import_rule_agents.py` / new public notebooks for anything piloting
-   these archetypes (the LB top two play Crustle, so a notebook may exist).
+```powershell
+python -X utf8 scripts/arena.py play bc rule:crustle `
+    --deck-a grimmsnarl --deck-b crustle_v1 --matches 1000
+```
+
+⚠ **Two Crustle decks, and the difference matters.** `crustle_v1` is the pilot's
+own list — use it when you want the strongest Crustle we can run locally.
+`crustle` is the **field consensus** list (77×-seen). The pilot scores ~20 of the
+consensus list's cards through a generic fallback, so it plays them legally but
+badly; early n=20 probes read 0.620 on its own list vs 0.700 on the consensus
+one, in the direction that confirms this.
+
+🔴 **`crispin_toolbox` still has no pilot, and the first attempt proved why that
+matters: `bc` piloting it scored 0.089 — we beat it 0.911 [0.898, 0.923] at
+n=2000.** An anchor we beat 91% of the time has almost no resolving power for a
+rule worth ~1 pp, because the ceiling squeezes the delta. **A `bc`-piloted anchor
+is not good enough; do not spend A/B time on one.** Look for a pilot in the
+public notebooks (below) before using this anchor for anything.
+
+**Public notebooks worth mining (pulled to `notebooks/pulled/`, 2026-07-30):**
+
+| ref | why |
+|---|---|
+| `pixiux/ptcg-crustle-v1-submit` | ✅ imported — `rule:crustle` |
+| **`makthanithin/pokemon-tcg-ai-battle-1084-5-baseline`** | **a public agent at 1084.5 — ~136 points ABOVE our best.** Read it, and consider importing it as the strong anchor that replaces `rule:v10` |
+| `jazivxt/crustle-counter-al220-v29-agents-only` | someone else's *anti-Crustle* agent — directly Track C |
+| `kokinnwakashuu/ptcg-lucario-public-lab-anti-crustle-log` | anti-Crustle analysis + logs |
+| `prvsiyan/ptcg-ai-battle-control-v11-meta-portfolio` | "meta router"/portfolio = ROADMAP B3 (archetype detection → matchup branches) |
+| `busyaprime/what-actually-wins-on-the-ladder`, `myso1987/...deck-meta-by-score-band` | independent meta analyses to cross-check our mining against |
 
 ⚠ **Do not treat a cross-deck score as skill** (rule 5) — use each new anchor the
 way `rule:v10` was used: a fixed opponent for A/B *deltas*, both sides facing the
