@@ -120,18 +120,20 @@ this file's calendar ✓.
 ### Track C — Deck Score (20%)
 
 **Documentation half — the core argument is now measured, not asserted.**
-From `out/meta/pre_shift_0722_0724.txt` (800 games, 07-22 + 07-24):
+Both snapshots are mined (`out/meta/`, full table in HANDOFF §1 / EVIDENCE §8b):
 
-- **Our archetype was the field's consensus best deck: 829 of 1,600 seats
-  (52.2% WR, 22 teams), and the top three rated teams all played it**
-  (`__Taichicchi__` 1226.4, `Luca` 1212.9, `Rmy` 1207.5). That answers "why
-  grimmsnarl" with data instead of "we netdecked it".
-- **Crustle appeared in 1 of 800 games** — so the counter-meta is genuinely *new*,
-  which is what makes Track C's second half urgent rather than speculative.
+- **Our archetype was and remains the field's most-played deck** — 51.8% of seats
+  pre-shift (52.2% WR, 22 teams, top three rated teams all on it), 52.1%
+  post-shift. And **`decks/grimmsnarl.py` is card-for-card identical to the
+  current consensus 60** (seen 353× on 07-29, re-verified after the shift). That
+  answers "why grimmsnarl" with data instead of "we netdecked it".
+- **But our win rate fell 52.2% → 47.5% while our share held** — the field did not
+  abandon our deck, it *learned to beat it*. **Crustle: 1 seat in 1,600 → 18.1% at
+  56.6% WR, with the LB top two on it.** That is the counter-meta, measured, and
+  it makes the experimentation half urgent rather than speculative.
 - Still to add: the re-anchored deck sweep (HANDOFF P1 caveat: also run
   `bc:plain,noChip,noSpread,noSrc` — with our grimmsnarl-only rules on, the sweep
-  answers "what to ship", not "which deck has the higher ceiling"), and a
-  post-shift re-mine for the same table.
+  answers "what to ship", not "which deck has the higher ceiling").
 - **Key-cards section:** Munkidori/Adrena-Brain economy (two armed Munkidori =
   60-point swing/turn), Shadow Bullet snipe + `chip_target`, and the Boss's Orders
   saturation finding (we play it on 38% of legal turns; more copies measured null
@@ -181,7 +183,7 @@ every kill** — every candidate is a report chapter regardless of outcome.
 | ~~**B2**~~ | ~~**Arithmetic MAIN layer** — the lethal audit~~ | ~~missed lethal is the classic handcrafted-agent gap~~ | **KILLED 2026-07-30** by `scripts/p2_lethal.py`, 200 games | **both cuts empty: 316/316 lethals taken and all 316 FORCED (honest denominator 0), 7/803 promotion cases with retreat illegal in all 7. Grimmsnarl ex has ONE payable attack, so the decision does not exist in this deck** — EVIDENCE §8 |
 | **B3** | **Archetype detection → matchup branches** | What the 1300-reporting notebook does (grid-searched per-matchup thresholds); prerequisite for Crustle mode (Track C step 3); the report's opponent-modeling chapter | classifier from revealed cards over the 55-game replay corpus + mined episodes: turn-N accuracy vs the final revealed deck | can't reach ~90% accuracy by turn 3 → branches would misfire, demote |
 | **B4** | **Turn-level planning with the unused 600 s pool** — enumerate within-turn action *sequences*, score end-of-turn states with `evalfn`/`textdmg` | We use 0.1 s of 600 s; the #1 player reportedly uses the full budget. **Distinct from the dead game-tree search**: no rollouts, no determinized opponent turns — just sequencing of our own turn, where the variance problem that killed our search (terminal 0/1, SE≈0.14) does not exist. Novel for this board | measure within-turn branching first (`p6_recon`-style, 100 games); if tractable, prototype on MAIN-heavy turns only, A/B n≥1000 with pool-usage logging | branching intractable even with beam limits, or A/B ≤0.52 — note that *eval quality*, not time, becomes the binding constraint |
-| **B5** | **Deck adaptation vs the counter-meta** (= Track C experimentation half) | If the meta shifted toward lock/counter decks, matchup EV moves more than any play-skill rule can | Track C steps 1–2 | probe says counters don't bypass the prevention → passive-damage line dead; enumerate other outs before any list change |
+| **B5** ⬆ | **Deck adaptation vs the counter-meta** (= Track C experimentation half) | **PROMOTED 2026-07-30 — the premise is now measured, not hypothesised: Crustle went 0.06% → 18.1% of the field at 56.6% WR with the LB top two on it, while our WR fell 52.2% → 47.5%.** Matchup EV has moved more than any play-skill rule can recover | Track C steps 1–2 (Crustle pilot, then the mechanic probe) | probe says counters don't bypass the prevention → passive-damage line dead; enumerate other outs before any list change |
 
 **Sequencing (updated 2026-07-30 — B2 is dead, so the ladder shortened):** B1 is
 independent of the re-anchor and is now the **top-ranked unstarted candidate** —

@@ -1,0 +1,185 @@
+﻿parsed 400 games
+
+=== archetypes by usage (win% excl. draws) ===
+   417 games  47.5%  Basic {D} Energy / Munkidori  (26 teams)
+   145 games  56.6%  Mist Energy / Spiky Energy  (3 teams)
+   135 games  58.5%  Basic {G} Energy / Crispin  (1 teams)
+    53 games  41.5%  Basic {G} Energy / Team Rocket's Energy  (4 teams)
+    26 games  38.5%  Abra / Alakazam  (1 teams)
+    11 games  45.5%  Abra / Telepath Psychic Energy  (5 teams)
+     6 games  33.3%  Basic {D} Energy / Marnie's Impidimp  (2 teams)
+     5 games  40.0%  Basic {G} Energy / Grookey  (1 teams)
+     2 games   0.0%  Basic {D} Energy / Lillie's Determination  (1 teams)
+
+=== top teams by best avg_score seen ===
+   1205.7  flg: Mist Energy / Spiky Energy x77, Basic {G} Energy / Team Rocket's Energy x28
+   1205.7  Dries @ Tufa Labs: Basic {D} Energy / Munkidori x95
+   1205.1  James Cox & Henry Chao: Basic {G} Energy / Crispin x135
+   1194.1  LiamK: Basic {D} Energy / Munkidori x62, Basic {G} Energy / Team Rocket's Energy x1
+   1186.4  Luca: Basic {D} Energy / Munkidori x55
+   1186.3  Majkel1337: Mist Energy / Spiky Energy x61
+   1180.1  Raja Biswas: Basic {D} Energy / Munkidori x30
+   1179.5  やる気元気ミワハルキ: Basic {D} Energy / Munkidori x6
+   1179.3  宝糕手: Abra / Alakazam x26
+   1178.2  vvs: Basic {D} Energy / Munkidori x4
+   1177.2  miya: Abra / Telepath Psychic Energy x4
+   1175.2  Matheus, Dieter, Eduardo: Basic {G} Energy / Team Rocket's Energy x23, Basic {D} Energy / Munkidori x1
+   1174.8  想要成为kaggle大师: Basic {D} Energy / Munkidori x11, Abra / Telepath Psychic Energy x1
+   1172.2  insuperabilehart: Basic {D} Energy / Munkidori x11
+   1171.0  wwwwwwwwwwwwwwwwwwwwwwwwwwwwww: Basic {D} Energy / Munkidori x22
+   1169.7  Dominic Peel: Basic {D} Energy / Munkidori x17
+   1167.1  ANDPAD kaggler team: Basic {D} Energy / Munkidori x22
+   1166.5  szlachetny snieg: Basic {D} Energy / Munkidori x17
+   1166.2  대답해드리는게인지상정: Basic {D} Energy / Munkidori x3
+   1165.9  e-toppo + kurupical: Basic {D} Energy / Munkidori x19
+   1165.2  iwance: Basic {D} Energy / Munkidori x7
+   1163.0  李秉叡（ntumlnoob）: Basic {D} Energy / Munkidori x7
+   1159.7  MtN: Basic {D} Energy / Munkidori x11
+   1157.6  Oleksandr_Savsunenko: Mist Energy / Spiky Energy x7
+   1156.5  Pokemon Siuuuu: Basic {D} Energy / Munkidori x2
+
+=== most common decklist per top archetype ===
+
+--- Basic {D} Energy / Munkidori (this exact list seen 353x) ---
+  10x Basic {D} Energy [7]
+  4x Munkidori [112]
+  4x Marnie's Impidimp [646]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Team Rocket's Petrel [1219]
+  4x Lillie's Determination [1227]
+  4x Spikemuth Gym [1259]
+  3x Marnie's Morgrem [647]
+  3x Marnie's Grimmsnarl ex [648]
+  3x Rare Candy [1079]
+  3x Night Stretcher [1097]
+  2x Froslass [104]
+  2x Snorunt [860]
+  2x Boss’s Orders [1182]
+  1x Unfair Stamp [1080]
+  1x Pokégear 3.0 [1122]
+  1x Tool Scrapper [1137]
+  1x Dawn [1231]
+
+--- Mist Energy / Spiky Energy (this exact list seen 77x) ---
+  4x Mist Energy [11]
+  4x Spiky Energy [14]
+  4x Grow Grass Energy [18]
+  4x Dwebble [344]
+  4x Pokégear 3.0 [1122]
+  4x Jumbo Ice Cream [1147]
+  4x Boss’s Orders [1182]
+  4x Team Rocket's Petrel [1219]
+  4x Lillie's Determination [1227]
+  3x Crustle [345]
+  2x Basic {G} Energy [1]
+  2x Rock Fighting Energy [20]
+  2x Mega Kangaskhan ex [756]
+  2x Buddy-Buddy Poffin [1086]
+  2x Ultra Ball [1121]
+  2x Colress’s Tenacity [1194]
+  2x Hilda [1225]
+  1x Cornerstone Mask Ogerpon ex [117]
+  1x Switch [1123]
+  1x Tool Scrapper [1137]
+  1x Hero’s Cape [1159]
+  1x Xerosic’s Machinations [1197]
+  1x Team Rocket's Factory [1257]
+  1x Battle Cage [1264]
+
+--- Basic {G} Energy / Crispin (this exact list seen 135x) ---
+  9x Basic {G} Energy [1]
+  4x Energy Switch [1116]
+  4x Ultra Ball [1121]
+  4x Crispin [1198]
+  4x Area Zero Underdepths [1250]
+  3x Teal Mask Ogerpon ex [96]
+  3x Mega Kangaskhan ex [756]
+  3x Meowth ex [1071]
+  2x Basic {W} Energy [3]
+  2x Basic {L} Energy [4]
+  2x Basic {F} Energy [6]
+  2x Raging Bolt ex [63]
+  2x Latias ex [184]
+  2x Night Stretcher [1097]
+  2x Glass Trumpet [1098]
+  2x Boss’s Orders [1182]
+  2x Xerosic’s Machinations [1197]
+  2x Cyrano [1205]
+  1x Basic {P} Energy [5]
+  1x Wellspring Mask Ogerpon ex [108]
+  1x Fezandipiti ex [140]
+  1x Lillie’s Clefairy ex [272]
+  1x Passimian [978]
+  1x Prime Catcher [1088]
+
+--- Basic {G} Energy / Team Rocket's Energy (this exact list seen 28x) ---
+  7x Basic {G} Energy [1]
+  4x Team Rocket's Energy [15]
+  4x Team Rocket's Tarountula [400]
+  4x Team Rocket's Spidops [401]
+  4x Team Rocket's Transceiver [1134]
+  4x Poké Pad [1152]
+  4x Team Rocket's Ariana [1216]
+  4x Team Rocket's Proton [1220]
+  3x Team Rocket's Mimikyu [434]
+  3x Bug Catching Set [1094]
+  3x Team Rocket's Giovanni [1218]
+  3x Lillie's Determination [1227]
+  3x Team Rocket's Factory [1257]
+  2x Team Rocket's Articuno [414]
+  2x Team Rocket's Mewtwo ex [431]
+  2x Buddy-Buddy Poffin [1086]
+  1x Ultra Ball [1121]
+  1x Hero’s Cape [1159]
+  1x Brave Bangle [1175]
+  1x Team Rocket's Archer [1217]
+
+--- Abra / Alakazam (this exact list seen 26x) ---
+  4x Telepath Psychic Energy [19]
+  4x Abra [741]
+  4x Kadabra [742]
+  4x Alakazam [743]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Hilda [1225]
+  4x Dawn [1231]
+  4x Battle Cage [1264]
+  3x Dudunsparce [66]
+  3x Dunsparce [305]
+  3x Rare Candy [1079]
+  3x Boss’s Orders [1182]
+  2x Basic {P} Energy [5]
+  2x Enhanced Hammer [1081]
+  1x Enriching Energy [13]
+  1x Fezandipiti ex [140]
+  1x Shaymin [343]
+  1x Night Stretcher [1097]
+  1x Sacred Ash [1129]
+  1x Wondrous Patch [1146]
+  1x Lana’s Aid [1184]
+  1x Xerosic’s Machinations [1197]
+
+--- Abra / Telepath Psychic Energy (this exact list seen 10x) ---
+  4x Telepath Psychic Energy [19]
+  4x Abra [741]
+  4x Kadabra [742]
+  4x Alakazam [743]
+  4x Enhanced Hammer [1081]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Hilda [1225]
+  4x Dawn [1231]
+  3x Dunsparce [305]
+  3x Rare Candy [1079]
+  3x Boss’s Orders [1182]
+  3x Xerosic’s Machinations [1197]
+  2x Basic {P} Energy [5]
+  2x Dudunsparce [66]
+  2x Nighttime Mine [1266]
+  1x Enriching Energy [13]
+  1x Fezandipiti ex [140]
+  1x Shaymin [343]
+  1x Night Stretcher [1097]
+  1x Sacred Ash [1129]
+  1x Lana’s Aid [1184]

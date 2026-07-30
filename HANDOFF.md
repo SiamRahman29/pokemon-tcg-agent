@@ -78,29 +78,45 @@ Consequences, all of which bind on the rest of the project:
   agree are necessary but not sufficient — the effect also has to be **larger
   than the instrument's precision** before an LB reading can speak to it.
 
-### ⚠ The meta has shifted (user-reported 2026-07-29)
+### ⚠ The meta shift is now MEASURED (2026-07-30), and it is worse than reported
 
-The field has moved and the top of the board reshuffled. **This matters more
-than any single rule**, because every routine measurement in this repo is taken
-against **one** opponent — `rule:v10,noS` piloting `lucario_v10` (rule 12). If
-the field no longer looks like that, our local bar is measuring a ghost, and
-that is a candidate explanation for §3.0 that does not require `counter_source`
-to be a bad rule at all. **Re-anchoring the arena is the highest-value
-infrastructure work in the project (§3.1).**
+Mined with `mine_meta.py`: **pre-shift** = 07-22 + 07-24, 800 games / 1,600 seats
+(`out/meta/pre_shift_0722_0724.txt`); **post-shift** = 07-29, 400 games / 800
+seats (`out/meta/post_shift_0729.txt`).
 
-Pre-shift baseline, mined 2026-07-30 from 07-22 + 07-24 (800 games,
-`out/meta/pre_shift_0722_0724.txt`) — this is the "before" half of the shift
-figure the report needs:
+| archetype | pre-shift share | post share | pre WR | post WR |
+|---|---|---|---|---|
+| **`{D}`/Munkidori — OUR deck** | 829 (51.8%) | 417 (**52.1%**) | 52.2% | **47.5%** ⚠ |
+| **Crustle** (`Mist`/`Spiky`) | **1 (0.06%)** | **145 (18.1%)** | — | **56.6%** |
+| **Crispin toolbox** (`{G}`/Crispin) | 2 (0.1%) | **135 (16.9%)** | — | **58.5%** |
+| Abra/Alakazam + Abra/Telepath | 214 (13.4%) | 37 (4.6%) | 45.8% | 38–45% |
+| **`{F}`/Rock Fighting = `lucario_v10`** | 159 (9.9%) | **0 (0.0%)** | 54.1% | — |
 
-- **Our archetype (`Basic {D} Energy / Munkidori` = the grimmsnarl deck) was the
-  dominant deck of the field: 829 of 1,600 seats, 52.2% win rate, 22 teams** —
-  and the top three teams by rating (`__Taichicchi__` 1226.4, `Luca` 1212.9,
-  `Rmy` 1207.5) all played it. **This is direct Deck Score evidence: we did not
-  netdeck a fringe list, we netdecked the consensus best deck of the top of the
-  board.**
-- **Crustle appeared in 1 game out of 800.** So Crustle is a *new* entrant, which
-  independently corroborates the user's shift report and raises the value of
-  §3.2.
+**Three findings, each of which changes the plan:**
+
+1. **🔴 `lucario_v10` — the single opponent every routine number in this repo is
+   measured against — is 0 of 400 games.** Our arena bar has been measuring a
+   deck that has left the meta entirely. This is rule 12's worst case, realised.
+2. **🔴 Crustle went from 1 seat in 1,600 to 18.1% of the field at a 56.6% win
+   rate, and the LB's top two players are both on it** (`flg` 1205.7,
+   `Majkel1337` 1186.4 in this sample). **Our own deck's win rate fell 52.2% →
+   47.5% across the same window** while staying half the field. §3.2 is not a
+   side quest — **it is the meta**, and the pilot we don't have is the instrument
+   we most need.
+3. **🟢 Our decklist is still exactly the field's consensus.** The most common
+   exact 60 on 07-29 was seen **353×** and `decks/grimmsnarl.py` is **identical
+   to it** (verified card-for-card). We are not playing a stale or fringe list —
+   direct Deck Score evidence, and it also means no decklist change is needed for
+   *consensus* reasons, only for matchup reasons (Track C).
+
+Also mined: the **Crispin toolbox** at 16.9% / 58.5% — the highest win rate in the
+sample, though **all 135 games are one team**, so read it as one strong pilot, not
+a field average. It contests the stadium slot (Area Zero Underdepths ×4 vs our
+Spikemuth Gym), which no current rule of ours reasons about.
+
+**New anchor decks committed:** `decks/crustle.py` (rebuilt — the previous
+reconstruction was **12 card slots stale**, including 4× Crushing Hammer the
+current list does not run) and `decks/crispin_toolbox.py`. Both resolve to 60.
 
 ### What the top of the board does
 
@@ -258,26 +274,43 @@ Preserved builds, so nothing ever needs rebuilding under time pressure:
 `dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz` (P4b) and
 `...-152103.tar.gz` (P6a).
 
-### 3.1 Re-anchor the arena on the CURRENT meta — highest-value work
+### 3.1 Re-anchor the arena on the CURRENT meta — steps 1–4 DONE, 5 is the work
 
-Every number in §3, §6 and `EVIDENCE.md` was earned against a single anchor, and
-the field has moved. Rule 12 says one opponent deck is not the field; a shifted
-meta makes it worse, because that deck may no longer even be *representative*.
+Every number in §3, §6 and `EVIDENCE.md` was earned against `lucario_v10`, which
+**is now 0% of the meta** (§1). So the bar itself has to be rebuilt.
 
-1. Fetch the newest top episodes and mine what is actually being played.
-   **Last fetched day is 2026-07-27** — get 07-28, 07-29, 07-30
-   (`fetch_top_episodes.py`, then `mine_meta.py`).
-2. Rank decks by frequency **among high-rated players**, not overall.
-   `mine_meta.py` prints exactly that (`top teams by best avg_score seen`).
-3. **Diff against the pre-shift baseline** (`out/meta/pre_shift_0722_0724.txt`,
-   summarized in §1) — the delta *is* the report's meta-shift figure, and it also
-   tells us whether our own deck is still the field's consensus best.
-4. Import or reconstruct the top 2–3 as arena opponents. `decks/crustle.py` is
-   the worked example of reconstructing a decklist straight from replays.
-5. **Then re-run the A/Bs that decide what ships** — at minimum `bc` vs
-   `bc:x,noSrc`, `bc:x,noChip`, `bc:x,noSpread` against **each** new anchor. A
-   rule that wins against all of them is real; one that wins only against
-   `rule:v10` was never measured properly.
+- ✅ **1. Fetch + mine.** 07-28 and 07-29 fetched (400 each); **07-30 is not
+  publishable yet — its dataset 403s, episodes appear the following day**, so the
+  newest available day is always yesterday. Both meta snapshots are archived in
+  `out/meta/`.
+- ✅ **2–3. Rank and diff.** Table in §1. The delta is the report's meta-shift
+  figure.
+- ✅ **4. Reconstruct the new opponents.** `decks/crustle.py` (rebuilt from the
+  current 77×-seen list) and `decks/crispin_toolbox.py` (135×-seen). Both resolve
+  to 60 cards.
+- ⏭ **5. THE WORK: re-run every shipping A/B against the new anchors.** At minimum
+  `bc` vs `bc:x,noSrc` / `bc:x,noChip` / `bc:x,noSpread`, n≥2000, against **each**
+  anchor. A rule that wins against all of them is real; one that wins only
+  against `rule:v10` was never measured properly. **This is also what settles
+  §3.0.**
+
+🔴 **Blocker on step 5, and it is now the project's critical path: the new anchors
+have no pilots.** `rule:v10` is Lucario-specific scoring and `bc` would play them
+off-distribution. Options, cheapest first:
+
+1. **`bc` piloting the new deck as a *fixed* opponent.** Crude, but for A/B
+   *deltas* the opponent only has to be identical on both sides (rule 5), not
+   strong. **Do this first — it unblocks step 5 today** — while being explicit in
+   the write-up that a weak pilot under-reads the matchup (§3.2).
+2. **A minimal rule pilot for Crustle** (the real instrument; Track C step 1).
+   Look for the public bot first: `dashimaki360/beating-the-day-1-1-crustle-bot`.
+3. Check `import_rule_agents.py` / new public notebooks for anything piloting
+   these archetypes (the LB top two play Crustle, so a notebook may exist).
+
+⚠ **Do not treat a cross-deck score as skill** (rule 5) — use each new anchor the
+way `rule:v10` was used: a fixed opponent for A/B *deltas*, both sides facing the
+identical opponent. And **archive the per-anchor tables**; they are the rubric's
+consistency/robustness exhibit and go into the report verbatim.
 
 ⚠ **Do not treat a cross-deck score as skill** (rule 5) — use each new anchor the
 way `rule:v10` is used: a fixed opponent for A/B *deltas*, both sides facing the
@@ -286,13 +319,18 @@ identical opponent.
 Also: **archive the per-anchor A/B tables.** They are the rubric's
 consistency/robustness exhibit and go into the report verbatim.
 
-### 3.2 Crustle — deck in the repo, unpiloted
+### 3.2 Crustle — **this is the meta now**, and it is still unpiloted
 
-`decks/crustle.py` exists (user-supplied, reconstructed as the most common exact
-60 across replays containing card 345) and resolves:
-`arena.resolve_deck('crustle')` → 60 cards. Notable: Dwebble ×4 / Crustle ×3,
-Cornerstone Mask Ogerpon ex, Mega Kangaskhan ex ×2, Crushing Hammer ×4, Boss's
-Orders ×4. **Only 1 of 800 pre-shift games played it, so it is a new entrant.**
+**Measured (§1): 1 seat in 1,600 pre-shift → 18.1% of the field at 56.6% WR on
+07-29, with the LB's top two players on it, while our win rate fell 52.2% →
+47.5%.** Crustle is no longer a curiosity to probe eventually; it is the most
+likely single explanation for our ceiling.
+
+`decks/crustle.py` has been **rebuilt to the current 77×-seen list** — the old
+reconstruction was 12 slots stale (it ran 4× Crushing Hammer, which the current
+list drops for Colress's Tenacity / Tool Scrapper / Battle Cage / {G} Energy).
+Notable contents: Dwebble ×4 / Crustle ×3, Cornerstone Mask Ogerpon ex, Mega
+Kangaskhan ex ×2, Jumbo Ice Cream ×4, Boss's Orders ×4.
 
 **⚠ VERIFY THE PREMISE FIRST — one probe, before anything else.** The whole line
 rests on *"Adrena-Brain and Freezing Shroud move/place damage counters, which is
@@ -339,8 +377,8 @@ actually goes through" is near-dominated rather than a tradeoff. It lands on
 | | item | state |
 |---|---|---|
 | **§3.0** | is `55077709` (P6a) actually good? | **closed as an LB question** (unresolvable — 12 Elo vs a ±75 instrument); re-opened as §3.1 step 5 |
-| **§3.1** | re-anchor the arena on the current meta | **OPEN — now the top priority outright; pre-shift baseline archived** |
-| **§3.2** | Crustle | deck in repo, **no pilot**, premise unverified |
+| **§3.1** | re-anchor the arena on the current meta | **steps 1–4 DONE 07-30** (meta measured, `lucario_v10` is 0% of it, two new anchor decks committed); **step 5 = re-run every shipping A/B, blocked only on a pilot** |
+| **§3.2** | Crustle | **now known to BE the meta (18.1%, 56.6% WR, top-2 LB)**; deck rebuilt to the current list; **no pilot**, premise unverified — the critical path |
 | **P2** | MAIN-decision rules, via the **lethal audit** | **lethal is CLOSED (2026-07-30): this deck has one attack, so the choice doesn't exist.** MAIN's arithmetic half is empty; what remains is tradeoffs |
 | P1 | re-rank decks | **superseded by §3.1** |
 | P6b/P6c, P5a/b/c, P4a/b/c | — | **all closed** — see `report/EVIDENCE.md` |

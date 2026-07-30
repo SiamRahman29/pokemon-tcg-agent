@@ -428,6 +428,59 @@ side of the `opps` column has never been run (`--corpus artifacts/pds_v2`).
 
 ---
 
+## 8b. The meta shift, measured (2026-07-30) — the report's headline figure
+
+**Hypothesis (user-reported 2026-07-29):** the field has moved and the top of the
+board has reshuffled.
+
+**Method:** `scripts/mine_meta.py` over top-episode replays, archetype = the
+deck's Pokemon/energy signature, win rate excluding draws. **Pre-shift** = 07-22 +
+07-24 (800 games / 1,600 seats, `out/meta/pre_shift_0722_0724.txt`);
+**post-shift** = 07-29 (400 games / 800 seats, `out/meta/post_shift_0729.txt`).
+Both are top-episode samples ranked by `avg_score`, so this is the *high-rated*
+field, which is the population we actually play.
+
+| archetype | pre share | post share | pre WR | post WR |
+|---|---|---|---|---|
+| `{D}`/Munkidori — **ours** | 829 (51.8%) | 417 (52.1%) | 52.2% | **47.5%** |
+| **Crustle** (`Mist`/`Spiky`) | **1 (0.06%)** | **145 (18.1%)** | — | **56.6%** |
+| **Crispin toolbox** (`{G}`/Crispin) | 2 (0.1%) | **135 (16.9%)** | — | **58.5%** |
+| Abra/Alakazam + Abra/Telepath | 214 (13.4%) | 37 (4.6%) | 45.8% | 38–45% |
+| `{F}`/Rock Fighting = **`lucario_v10`** | 159 (9.9%) | **0 (0.0%)** | 54.1% | — |
+
+**Verdict: the shift is real, larger than reported, and it invalidates our
+measuring instrument rather than our agent.**
+
+1. **`lucario_v10`, the single opponent behind every routine number in this
+   project, is 0 of 400 games.** Rule 12 warned that one opponent deck is not the
+   field; the deck has now left the field altogether. **Every positive result in
+   this file is therefore provisional until re-measured** (§10) — and this, not
+   any property of the rule, is the leading explanation for the `counter_source`
+   puzzle in §7.
+2. **Crustle went from 1 seat in 1,600 to 18.1% of the field at 56.6%**, and the
+   LB's top two players are both on it. **Our win rate fell 52.2% → 47.5% over
+   the same window while our share held at ~52%** — i.e. the field did not
+   abandon our deck, it learned to beat it. That is a counter-meta, and it is the
+   most likely single explanation for our ceiling.
+3. **Our decklist is still exactly the field's consensus:** the most common exact
+   60 on 07-29 was seen **353 times**, and `decks/grimmsnarl.py` is **identical to
+   it, card for card**. So the deck is not stale; only the *matchup* is.
+
+**Interpretation.** This is the cleanest robustness result in the project and it
+cuts both ways, which is what makes it worth reporting: our *agent* work is
+vindicated (we netdecked and kept the consensus best list, verified twice, months
+apart in meta-time), and our *methodology* takes a direct hit (we validated seven
+rules against a deck that no longer exists). The honest framing for the report:
+**a single-anchor arena is a latent bug that a meta shift converts into a real
+one, and the only defence is multi-anchor A/Bs — which is why every number from
+here on carries an anchor label.**
+
+⚠ **Operational note:** the current day's episode dataset **403s** — episodes are
+published the following day, so the newest minable day is always yesterday. Plan
+the pre-deadline re-mine accordingly.
+
+---
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
