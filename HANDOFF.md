@@ -71,15 +71,15 @@ ordinary work again.
    | anchor | share | `bc:p4b,noSrc` | `bc:v3off,…` |
    |---|---|---|---|
    | `rule:v10` / `lucario_v10` | 12.8% | **0.576 [0.554, 0.598]** | **0.505 [0.483, 0.527]** |
-   | `rule:alakazam5` / `alakazam5` | **22.0%** | ⏳ running | ⏳ running |
-   | `rule:archaludon` / `archaludon_ex` | 10.1% | ⏳ TODO | ⏳ TODO |
+   | **`rule:alakazam5`** / `alakazam5` | **22.0%** | **0.727 [0.707, 0.746]** | **0.731 [0.711, 0.750]** |
+   | `rule:archaludon` / `archaludon_ex` | 10.1% | ⏳ running | ⏳ TODO |
    | `rule:crustle` / `crustle_v1` | 12.8% | 0.663 (§8c) | 0.770 (§8f) |
-   | mirror (`grimmsnarl` v `grimmsnarl`) | 13.8% | ref | 0.661 (§8f) |
+   | mirror (`grimmsnarl` v `grimmsnarl`) | 13.8% | — head-to-head — | ⏳ **running** |
+
+   **v3 − P4b so far: Alakazam +0.004 (dead heat, CIs overlap), Crustle +0.107,
+   Lucario −0.071.**
 
    ```powershell
-   python -X utf8 scripts/arena.py play "bc:p4b,noSrc" rule:archaludon `
-       --deck-a grimmsnarl --deck-b archaludon_ex --matches 1000 `
-       --archive out/arena/p9_p4b_vs_archaludon.jsonl
    python -X utf8 scripts/arena.py play "bc:v3off,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc" `
        rule:archaludon --deck-a grimmsnarl --deck-b archaludon_ex --matches 1000 `
        --archive out/arena/p9_v3off_vs_archaludon.jsonl
@@ -89,6 +89,17 @@ ordinary work again.
    wins 22% of the field and loses 12.8% is not "2 anchors to 1" — it is +9.2 pp
    of the field. That arithmetic is the whole point of the census, and it is the
    thing rule 12 was missing.
+
+   🔴 **AND CHECK BOTH ARMS ARE THE SAME COMPARISON — this nearly went wrong.**
+   §8f's mirror number (**0.661**) is v3 vs `out/policy_b1_ctrl.npz`, a
+   **v2-feature net trained on the same `pds_v3` corpus**. That is *not* P4b
+   (`lw2` net, `pds_v2` corpus, chip + spread rules **ON**). Dropping 0.661 into
+   the column above as "v3 is +0.161 in the mirror" mixes a **feature ablation**
+   with an **agent comparison**, and it flips the weighted verdict: done naively
+   it totals ≈ +0.045 for v3, while the ladder says v3 is **132 points worse**.
+   **The honest cell is `bc:v3off` vs `bc:p4b,noSrc` head to head — which had
+   never been run in this project.** It is running now. **Do not compute a
+   weighted total until it lands.**
 
    **Then, and only then, decide v3.** The live options are (a) ship v3 as-is,
    (b) ship v3 with the rules back on (the 0.427 that justified rules-off was
