@@ -58,6 +58,7 @@ primary record; this report cites it rather than restating it.
 | class | experiments | outcome |
 |---|---|---|
 | training scale/objective | 5 | all negative (§1) |
+| demonstrator selection | 2 (B7) | both negative, −55 and −92 Elo (§7b.3) |
 | search / RL | 3 | all negative (§2) |
 | targeting rules | 7 A/B'd at n≥2000 | 3 win, 4 null (§3) |
 | feature representation | 1 (B1) | large win (§8f) |
@@ -118,7 +119,7 @@ supplied, the hand rules became *harmful*. `EVIDENCE` §8f.
 
 ## 5. Measurement discipline, and two failures of our own process
 
-The full codex is 16 rules, each paid for by invalidated work (`HANDOFF.md` §2).
+The full codex is 17 rules, each paid for by invalidated work (`HANDOFF.md` §2).
 The load-bearing ones:
 
 1. **n=24 is noise.** ~2 pp effects need n≈2000.
@@ -288,6 +289,155 @@ a premise nobody had checked, not by adding rules. **That is the paper's practic
 recommendation: when a behavior clone underperforms its demonstrators, audit what
 the option encoding can and cannot bind before you write a single rule.**
 
+### 7b.1 The sharper version of the same claim: identical decklists, +310 rating
+
+The archetype-share argument above is population-level. On 2026-07-31 we obtained
+**every recent game of the players ranked #2 and #3** — 330 games from
+`李秉叡（ntumlnoob）` (1162.8) and 227 from `Sixth Sense` (1152.4) — and
+reconstructed their lists from play and discard. **Both are card-for-card
+identical to ours**, down to the 1-ofs. *Same 60 cards, +310 rating.* The deck
+question is closed as tightly as this competition permits.
+
+Scoring our live policy net against their actual choices then produced the result
+this section did not expect (`EVIDENCE` §8q):
+
+| demonstrator | rating | rows | top-1 disagreement |
+|---|---|---|---|
+| 48 other pilots of the same deck | ~1110 | 10,088 | **27.2%** |
+| Sixth Sense (#3) | 1152 | 18,296 | **34.4%** |
+| ntumlnoob (#2) | 1163 | 25,775 | **40.1%** |
+
+Read on its own, that table says **agreement falls as the demonstrator gets
+better**. But its three rows come from three different sources, so rating is
+confounded with dump, date, opponent pool and collection process — and the
+obvious rival explanation is that our net has simply *seen* the mid-rated
+players and not these two. So we tagged every one of the 248,985 corpus rows
+with the leaderboard score of the demonstrator who made that choice, and
+re-asked the question inside a single collection process (`EVIDENCE` §8r).
+
+**The effect survived, and it changed shape.** Against 87 teams playing our
+identical deck, in the same two dumps, in the same week, **none of whom the net
+has ever trained on a single row of** (n = 22,768 scoreable decisions):
+
+| demonstrator rating | rows | top-1 agreement |
+|---|---|---|
+| below 900 | 1,288 | 66.7% |
+| 900–1000 | 1,879 | 75.0% |
+| 1000–1050 | 2,740 | 75.1% |
+| **1050–1100** | **8,915** | **76.1%** ← peak |
+| 1100–1150 | 7,946 | 70.9% |
+| Sixth Sense (1152) | 18,296 | 65.6% |
+| ntumlnoob (1163) | 25,775 | 59.9% |
+
+> **Our clone does not agree less with better players. It agrees less with
+> everyone who is not in the 1050–1100 band — and it falls off just as steeply
+> downward (66.7% below 900) as upward.**
+
+That is a much more useful statement than the monotone one, and it is the
+paper's central claim about behavior cloning here: **the objective reproduces
+the modal policy of a mixture, so agreement measures distance from that mode,
+not skill.** Two rival explanations were eliminated on the way, both of which we
+had previously accepted on thin evidence:
+
+- **Familiarity is not it**, and this time with a real control group: 87
+  demonstrators the net trained on *zero* rows of are predicted at 73.6%, while
+  the six it trained on more than 8,000 rows of each sit at 69.3%. Exposure buys
+  nothing. (Our earlier refutation of this rested on a single player at n=61.)
+- **Identity is not rating.** Inside the training corpus the curve is flat —
+  **−0.03 pp per +100 rating** across 12 demonstrators — and two players 3 points
+  apart in rating (1166.1 and 1162.8) sit **9 pp** apart in agreement.
+
+One incidental finding is worth recording because it dates every claim of this
+kind: **a demonstrator is a submission, not a person.** Sixth Sense's two agents
+in the same dump are predicted at 67.0% and 62.2% with disjoint confidence
+intervals, and their games from two days earlier score 74.8%. An imitation
+target has a shelf life of days.
+
+### 7b.2 The objection that had to be answered first: covariate shift
+
+Agreement is always measured on the demonstrator's *own* trajectory
+distribution. A stronger pilot reaches board states our clone rarely occupies,
+so some of that 40% could be behavior cloning's classic compounding-error
+problem rather than a policy anyone could copy. Every number above would then be
+measuring where we go, not how we play.
+
+We tested it by taking the two policies off the human labels entirely and
+comparing **them to each other, on both state distributions** (`EVIDENCE` §8s).
+Policy A is our live net; policy B is A fine-tuned on the #2 player's 330 games.
+
+| states | rows | **A disagrees with B** | A vs the human who played | B vs the human who played |
+|---|---|---|---|---|
+| **our own** 54 ladder games | 4,476 | **26.7%** | **1.7%** | 27.2% |
+| **ntumlnoob's** games | 25,775 | **31.9%** | 40.1% | 19.4%* |
+
+**Disagreement does not collapse on our own board states — 26.7% against 31.9%.
+It is near-symmetric, so the two nets are genuinely different policies and not
+one policy measured off its support.** Covariate shift is not the explanation,
+and "is the expert's policy better?" becomes a question the arena is entitled to
+answer.
+
+The 1.7% cell is the positive control this line of work previously lacked: those
+replays *are* the submission that *is* policy A, so a sound pipeline has to
+reproduce them almost exactly, and it does. (*The 19.4% is in-sample for B; its
+honest held-out figure is 32.8%.)
+
+**Where the two policies differ is where the misses always were:** MAIN (38.7%
+of our states, 45.8% of theirs), damage-counter placement, and fetch. Where the
+engine forces the move — `REMOVE_DAMAGE_COUNTER_COUNT`, `ACTIVATE` — they agree
+100.0%, which is the instrument checking itself.
+
+### 7b.3 So we tried to fix it — and the way it failed is the result
+
+Two interventions, both aimed at the mode-averaging diagnosis, both with the
+same bar fixed in writing before either was trained: **+50 Elo weighted across
+our five field anchors, or it is a chapter and not a submission.**
+
+1. **Rating-weighted cloning.** Weight every one of the 248,985 rows by
+   `exp((rating − max)/T)`. T was chosen by a stated rule — the most aggressive
+   reweighting keeping effective sample size above 100,000 rows — giving
+   **41.0%** ESS. Everything else is the control's recipe, on rows that are
+   byte-for-byte the control's rows.
+2. **Single-expert cloning.** Fine-tune the same net on the #2 player's 330
+   games. It worked *as imitation*: held-out agreement with them rose
+   **59.9% → 67.2%**.
+
+| net | what it clones | disagreement with **the field** | disagreement with **the expert** | head-to-head vs the live net, n=2,000 |
+|---|---|---|---|---|
+| live | the ~50-pilot mixture | **30.2%** | 40.1% | — (control) |
+| rating-weighted | mixture, tilted to the top | 32.0% | **40.2%** | **0.421** [0.400, 0.443] ≈ **−55 Elo** |
+| single-expert | one 1163-rated player | **36.2%** | 19.4%* | **0.370** [0.349, 0.391] ≈ **−92 Elo** |
+
+> **Read the third and fifth columns together. Disagreement with the field goes
+> 30.2 → 32.0 → 36.2; strength goes 0 → −55 → −92. Every step away from the
+> field's modal policy cost strength, in order — and the net that best imitates
+> the second-best player on the leaderboard is the weakest agent we have built.**
+
+Two details make this more than a null:
+
+- **The rating-weighted net moved agreement with the expert by 0.1 pp — from
+  40.1% to 40.2%, which is to say not at all — while paying the full price of
+  discarding 59% of its effective sample.** §7b.1 predicted exactly that, in
+  advance: our corpus's median demonstrator is already rated 1125, past the
+  agreement peak, so there was very little mode left to un-average.
+- **The single-expert net genuinely learned the expert** — §7b.2 shows the
+  difference is a real, symmetric policy difference and not covariate shift —
+  **and got worse anyway.** Imitating one strong player at the cost of six points
+  of field agreement was a losing trade at every point we measured.
+
+⚠ **The honest limit.** Our arena's anchors are field-like by construction, so
+"closer to the field wins here" is partly what the instrument rewards. The
+defence is calibration — the arena ranked four of four real matchups correctly
+and predicted 0.770 against a deck we then beat in 76.9% of 13 real ladder games
+— but it is a defence, not a proof. Settling it would need a ladder submission
+of a net measured 92 Elo down, on a board that resolves ±50–100, at the cost of
+evicting a live agent. **We judged that a bad trade and we are reporting the
+negative result on the arena instead.** (*In-sample; 32.8% held out.)
+
+**What we take from B7 as a general claim:** *behavior cloning gives you the
+mode of your demonstrator mixture, and moving the target off that mode costs
+more than the better target gains — even when the better target is measurably,
+symmetrically better and you successfully imitate it.*
+
 ## 8. Negative results
 
 Honest nulls at n≥2000 are the section we are most confident in.
@@ -295,9 +445,40 @@ Honest nulls at n≥2000 are the section we are most confident in.
 - **Search** (ours 0.323; the public baseline's MCTS never executes).
 - **Self-play RL** — dropped on the above plus the compute budget.
 - **Data scaling** — three axes, all negative.
+- **Demonstrator weighting** — a fourth axis, and the one we most expected to
+  work. Weighting every training row by its demonstrator's leaderboard rating
+  (effective sample size held at 41% of the corpus, everything else identical)
+  scored **0.421 [0.400, 0.443]** against the net it was built to improve. It
+  did not merely miss the pre-registered +50 Elo bar; it lost by more than the
+  bar's width. The measurement in §7b.1 predicted this before the run — there
+  was little mode left to un-average, because our corpus's median demonstrator
+  is already rated 1125 and the net fits its strongest demonstrators as well as
+  its weakest.
 - **Boss's Orders — four separate interventions, all null** (0.489, 0.490, 0.493,
   0.493). Every one moved its audit rate exactly as designed first. **Moving an
   audit rate is not winning games.**
+- **Model capacity** — the cleanest null in the report, and the one that
+  redirected the remaining work. Identical corpus, identical recipe, only the
+  width changed: **594k → 1.56M parameters moved held-out agreement by two
+  decisions out of 12,939** (3,902 misses → 3,900), and **4.87M made it worse**
+  (3,945). Both larger nets drove training loss far below the small one's while
+  validation peaked early and declined — they already had more capacity than the
+  features could use. Combined with the demonstrator result above, this leaves
+  the option *encoding* as the only surviving explanation for the residual, and
+  the encoding is precisely where our one large win came from (§4).
+- **Turn-level sequencing** — three builds, and the one that is worth reporting
+  is the last. The prototype scored **0.075** (n=40) by maximising the value of
+  the board at the end of *our* turn, which structurally cannot see the
+  opponent's reply. We diagnosed that, simulated the opponent's whole turn
+  before scoring, and the result moved to **0.375 [0.311, 0.444]** at n=200 —
+  the largest movement any change to it produced, and still ≈89 Elo behind a
+  clone that costs 1 ms per move. We then checked that the recovery was the
+  *diagnosis* and not the extra compute the fix required: at matched budget, the
+  same searcher **without** the reply scores **0.165 [0.120, 0.223]** against the
+  reply arm's **0.375 [0.311, 0.444]**, disjoint intervals at n=200 each. **The
+  design fix is worth ≈ +0.21 on its own.** So the explanation was confirmed by
+  controlled experiment — and the agent died anyway. **A correct explanation of a
+  failure does not entitle you to a fix.**
 - **Decklist variants** — 0.490.
 - **Six candidates closed by sizing before an A/B was spent.**
 
