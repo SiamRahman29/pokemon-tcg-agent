@@ -1,0 +1,27 @@
+
+=== evalfn signal: 200 games, 121 won (60.5%) vs rule:v10,noS ===
+
+--- AUC by turn number (0.50 = no signal; >0.5 = eval predicts the win) ---
+   turn  n(win)  n(loss)   mean win  mean loss     AUC
+      0     121       79       0.95       0.74   0.472
+      1      68       32       0.68       0.77   0.405
+      2      65       59      -0.23      -0.41   0.577
+      3     102       63      -0.28      -1.55   0.691
+      4      93       71      -0.78      -2.36   0.741
+      5      96       64      -0.05      -2.85   0.783
+      6      83       71      -0.54      -3.43   0.801
+      7      92       67       0.52      -4.16   0.867
+      8      87       66       0.48      -3.99   0.831
+      9      93       61       1.49      -5.08   0.906
+     10      76       61       1.62      -4.64   0.900
+     11      65       46       2.16      -4.91   0.921
+     12      42       38       1.47      -4.44   0.868
+     13      18       20       1.25      -4.48   0.908
+
+--- the number that decides B4 ---
+  EARLY turns (<=8):  mean AUC 0.685  over 9 turn-numbers
+  late  turns  (>8):  mean AUC 0.901  over 5 turn-numbers
+
+  ⚠ Late-game AUC is nearly free -- a winning board IS a high eval.
+     A sequencer needs EARLY discrimination, where the turn it is choosing
+     still changes the outcome. Judge B4 on the early row.

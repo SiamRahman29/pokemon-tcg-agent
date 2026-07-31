@@ -1387,6 +1387,86 @@ is P4b 952.0 > P6a 845.0 > v3 819.8 and the arena order is the reverse — but
 against an unconverged opponent. **Both instruments are saying "these are close";
 only the frozen number makes it look otherwise.**
 
+## 8l. B4's cheap probe — it SURVIVES all three kill criteria, and the decisive question is still unmeasured (2026-07-31)
+
+**B4 (ROADMAP §2.5): spend the unused pool enumerating our own turn's action
+sequences and score end-of-turn states with `evalfn` — no rollouts, no opponent
+determinization, so §2's terminal-0/1 variance does not arise.** It is the last
+unstarted breakthrough candidate and, after §8k, **the only lever left that could
+clear the 36-Elo band the leaderboard cannot resolve.** Probe run before any
+build, per rule 14.
+
+### 1. Is there a decision at all? ✅ passes (`p12_b4_probe.py`, 992 of our turns)
+
+| | turns | share |
+|---|---|---|
+| every option forced | 40 | 4.0% |
+| exactly ONE real select | 337 | 34.0% (greedy is optimal by definition) |
+| **≥2 real selects** | **615** | **62.0%** ← the honest denominator |
+
+Median **6** real selects per turn, **4** of them MAIN. **Unlike the Morgrem out
+(§8e), this candidate has a real denominator** — rule 13 does not kill it.
+
+### 2. Is the space tractable? ⚠ exhaustive NO, beam YES
+
+Naive sequence count (product of option counts, an upper bound):
+**median 98,122,752**, and **64.7% of turns exceed 1M**. Exhaustive enumeration
+is dead.
+
+But throughput, measured rather than assumed (`p12b_step_bench.py`, 36 begins /
+432 steps on real mid-game observations):
+
+| | median | note |
+|---|---|---|
+| `fastsearch.step` | **0.130 ms** (**7,698/s**) | one per action per candidate |
+| `fastsearch.begin` | 0.78 ms | one per turn — negligible |
+
+**600 s pool ÷ 9.9 of our turns per game ≈ 60 s/turn ⇒ ~78,000 candidate
+sequences per turn.** That is 0.08% of the median space — and a perfectly
+ordinary beam width. **Throughput is NOT the binding constraint**, which is the
+opposite of what we expected going in.
+
+### 3. Can `evalfn` tell good states from bad? ✅ real signal (`p12c_evalfn_signal.py`, 200 games)
+
+AUC of end-of-our-turn `evaluate()` against the eventual game result:
+
+| turn | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| AUC | 0.47 | 0.41 | 0.58 | 0.69 | 0.74 | 0.78 | 0.80 | **0.87** | 0.83 | 0.91 | 0.90 | 0.92 |
+
+**Early (≤8) mean AUC 0.685; late (>8) 0.901.** Turns 0–1 are noise, as they
+should be — nothing has happened yet. From turn 3 the eval is genuinely
+discriminative. **`evalfn` is not the broken component**, and the value net's
+failure (§1) does not transfer to it.
+
+### 🔴 The verdict, and the caveat that matters more than the three passes
+
+**B4 survives its cheap probe on all three criteria.** That is a real result: it
+is now the best-supported unstarted candidate in the project.
+
+⚠ **But the quantity that decides B4 is NOT the one measured above, and it is
+strictly harder.** AUC-vs-result asks *"can `evalfn` tell a winning board from a
+losing board, across different games?"* A sequencer asks *"can `evalfn` rank
+twenty end-of-turn states reachable from the SAME position this turn?"* Those
+states share almost all their structure — same deck, same prizes, same opponent
+board — so the eval differences are tiny compared with the between-game spread
+this AUC is built on. **A high across-game AUC is compatible with zero
+within-turn discrimination.**
+
+**This is the same error class as §8i**: measuring on a convenient population
+rather than the one the decision will be taken over. We are not going to make it
+twice in one day.
+
+**Next probe before any build (cheap, ~1 h):** from real turns, enumerate k≈20
+legal sequences via `fastsearch.step`, score each end-of-turn state, and report
+**the within-turn eval spread against the eval's own noise**, plus how often the
+`argmax` differs from the clone's choice. **If candidates within a turn score
+nearly identically, B4 dies there** — and no beam width or pool budget can save
+it.
+
+⚠ And rule 3 stands: five times a metric that looked good failed to predict
+playing strength. **Nothing above licenses a build; it licenses the next probe.**
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
