@@ -860,6 +860,155 @@ binding is worth ~115 Elo more and makes the rules a liability. **The report's
 thesis should be stated as: hand-written arithmetic is a proxy for a missing
 representation, and it is dominated by fixing the representation.**
 
+## 8g. B1 on the LEADERBOARD — the arena was wrong, and it is now SYSTEMATIC (2026-07-31)
+
+**This is the most important entry in this file.** §8f recorded B1 winning every
+local A/B. It was submitted (`55116557`, 2026-07-30 18:14 UTC) and **lost badly.**
+
+| submission | config | LB | age when read |
+|---|---|---|---|
+| `55072063` **P4b** | lw2 + `chip_target` + `energy_spread` | **952.0** (958 within ~4 h) | 27 h, converged, now **frozen** |
+| `55077709` P6a | P4b + `counter_source` | **837.5** | ~2 days, converged |
+| `55116557` **v3** | **optfeat v3, rules OFF** | **819.8 → 824.6** | **9.6 h, rising ~5/h** |
+
+**The comparison that matters is at equal age: P4b was at 958 by 4 h; v3 is at 825
+at 10 h.** It is not an unconverged reading — it is a different trajectory. The
+arena predicted **+115 Elo**; the LB delivered roughly **−130**.
+
+### This is the SECOND time the arena said "better" and the LB said "much worse"
+
+| intervention | arena verdict | LB verdict |
+|---|---|---|
+| `counter_source` (P6a) | +0.052 vs `rule:crustle`, 0.534 mirror | **837.5 vs P4b's 952.0 — a 114-point gap that has NOT closed in 2 days** |
+| **optfeat v3** (B1) | **0.661 vs shipped, 0.770 vs `rule:crustle`** | **825 vs 952** |
+
+⚠ **Day 8 called the `counter_source` gap "two agents converging toward each
+other" and closed the question. That was wrong.** The gap was 224 → 123 → and it
+has now sat at **114.5 for two more days with both agents converged.** The
+"convergence" was P6a finishing its climb, not the two ratings meeting.
+
+**So the arena is not merely noisy — it is BIASED, in a consistent direction, on
+the interventions that matter.** Two independent cases, both large enough to
+exceed the instrument. That is a property of our measurement, not bad luck.
+
+**The leading hypothesis, and the thing to test next: our anchors are not the
+field.** We A/B against the grimmsnarl mirror and `rule:crustle`. In 54 real
+ladder games the opponent was:
+
+| archetype | games | our win rate |
+|---|---|---|
+| **"other"** (nothing we model) | **34 (63%)** | 58.8% |
+| Crustle | 13 (24%) | **76.9%** |
+| Grimmsnarl mirror | 5 (9%) | 60.0% |
+| Crispin toolbox | 1 | — |
+
+**63% of our real games are against decks we have never once A/B'd against, and
+the mirror — which every rule was tuned on — is 9%.** An agent optimised on two
+anchors that jointly cover a third of the field can win both and lose the ladder.
+
+⚠ **Do NOT read the 0.639 overall replay win rate as vindication.** Win rate is
+against rating-matched opponents, so it is ~0.5-seeking by construction and says
+nothing about level. Split by episode order it is 0.639 / 0.500 / 0.778 (n=18
+each) — no trend, just noise.
+
+### The bundle was NOT broken — checked first, because it would explain everything
+
+A net rejected by the dim guard makes the agent play `list(range(minCount))`
+silently (§7). Ruled out from the replays: over **4,682 multi-option selects the
+agent picked index 0 only 40.7% of the time** (a fallback agent is 100%). The
+shipped net was live. **The regression is play strength.**
+
+### Two concrete defects, found by the user watching games and then quantified
+
+Both audited by `scripts/p8_optv3_replays.py` over the 54 games
+(`out/logs/p8_optv3_replays.txt`). ⚠ Both are **decided by the net alone** in this
+agent, because v3 ships with every rule off.
+
+**1. Boss's Orders drags away a Pokemon we could have KO'd — 9 of 31 real
+choices (29%).** Denominator is honest: 22 of 31 drags happened when their Active
+was *not* KO-able, where dragging is free and is excluded.
+
+| | n |
+|---|---|
+| their Active not KO-able — drag is free | 22 |
+| **MISS: could KO the Active *and* snipe a ≤30 HP bench (a DOUBLE KO) — dragged instead** | **5** |
+| **MISS: dragged something we cannot KO, abandoning a KO-able Active** | **2** |
+| drag traded up or equal — defensible | 2 |
+
+The double-KO miss is the expensive one: **Shadow Bullet does 180 to the Active
+*and* 30 to a benched Pokemon**, so with a ≤30 HP sitter on their bench, attacking
+takes two prizes and dragging takes one. Real examples:
+
+```
+89013303 t11: could KO Archaludon ex hp=170 (2p) + snipe Duraludon hp=10; dragged Duraludon
+89015107 t14: could KO Crustle hp=70 (1p); dragged Mega Kangaskhan ex hp=220 which survives
+89021174 t9 : could KO Alakazam hp=80 (1p) + snipe Abra hp=20; dragged Abra
+```
+
+⚠ **This does NOT license writing a fifth Boss's Orders rule.** §6 closed the card
+after four null interventions — but **all four were measured against the lw2 net
+with the other rules on**, and this agent is a different net with no rules at all.
+The card is re-opened *as a question*, not as a licence.
+
+**2. Freezing Shroud is symmetric and we are usually its bigger victim — but the
+clearly-bad case is 11%, not the majority.** Froslass: *"put 1 damage counter on
+each Pokémon that has an Ability (both yours and your opponent's), except any
+Froslass."* **Our ability Pokemon are Munkidori (×4) and Marnie's Grimmsnarl ex
+(Punk Up, ×3)** — our own main attacker is on the clock.
+
+At the 63 moments we chose to evolve into Froslass:
+
+| board at that moment | n | |
+|---|---|---|
+| they have more ability Pokemon — clock favours us | 26 (41.3%) | good |
+| equal | 11 (17.5%) | neutral |
+| **we have more, but an armed Munkidori is out** | 19 (30.2%) | **this is the intended engine** — Shroud loads counters onto our Pokemon and Adrena-Brain ships them across |
+| **we have more AND no armed Munkidori** | **7 (11.1%)** | **pure self-damage** |
+
+⚠ **The user's instinct is directionally right, but the honest number is 7/63, not
+"most".** The 19 "armed Munkidori" rows are the deck working as designed, and
+calling them misplays would repeat rule 10 (moving an audit rate is not winning
+games). Worst observed: `89012406 t19: ours=4 theirs=0`.
+
+### The good, and it is real
+
+- **Crustle: 10 wins of 13 real games (76.9%)** — and the arena predicted 0.770
+  against `rule:crustle`. **The one matchup we actually engineered transferred to
+  the field almost exactly.** That is a genuine validation of the day-8 wall work
+  *and* of the anchor when the anchor matches the opponent.
+- **Morgrem attacked 5 times, 4 of them into a Crustle** — the non-ex out the user
+  saw. §8e closed it as too small to build a *rule* for; it happens anyway.
+
+### Interpretation — what this costs and what it buys
+
+**Costs:** a submission slot, the rank (below), and the day-8 conclusion about
+`counter_source`. **Buys:** the single most valuable negative result of the
+project — *our local arena does not measure ladder strength*, established at
+n=2 independent large interventions. Everything downstream of the arena is now
+suspect, and **§3.1's re-anchoring was necessary but nowhere near sufficient: two
+anchors covering 33% of the field is still a single-anchor error in disguise.**
+
+## 8h. The endgame question is ANSWERED: only ACTIVE agents count (2026-07-31)
+
+`HANDOFF.md`'s submission box flagged this as *"the open question that decides the
+endgame"*. It is now settled by observation:
+
+- best-ever submission: **`55072063` at 952.0** — but **inactive**;
+- best **active** submission: `55077709` at **837.5**;
+- **the leaderboard shows us at 837.5, rank 605 of 5,000.**
+
+**The displayed score tracks the best ACTIVE submission, not the best ever.** We
+were rank **224** at 950.2 before the eviction and **605** after it, with no change
+in play strength — the drop is purely the frozen agent no longer counting.
+
+**Consequences, and they bind on the whole endgame:**
+1. **A frozen high score is worth NOTHING at the close.** The best agent must be
+   in the active pair on 2026-08-17 and through the 08-31 continued-play window.
+2. **Every submission is now a genuine risk**, not a free option — it evicts, and
+   the evicted score stops counting immediately.
+3. The day-8 note *"freezing is cheaper than it sounds"* was **wrong** and is
+   corrected in `HANDOFF.md`.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is

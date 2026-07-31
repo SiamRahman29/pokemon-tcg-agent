@@ -4,48 +4,101 @@
 then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
 
-**Standing (read 2026-07-30 ~12:30 UTC, full LB — now 4,000 rows):** we are
-**`Scio`, rank 224 of 4,000, 950.2**. Top is **`James Cox & Henry Chao` at
-1187.4** — the **Crispin toolbox** pilot from our own 07-29 meta mine (§1). `flg`
-(Crustle) is **3rd at 1174.0**, and `Majkel1337` is 10th at 1147.6. The board
-grew by 1,000 entrants in ~4 h and the top reshuffles constantly — treat any
-recorded ranking as a snapshot, and **paginate: `competition_leaderboard_view`
-returns 20 rows and a `Next Page Token`; pass it back via `page_token` to walk
-all 4,000** (§5).
+**Standing (read 2026-07-31 ~03:50 UTC, full LB — now 5,000 rows):** we are
+**`Scio`, rank 605 of 5,000, 837.5** — down from **rank 224 at 950.2**, and
+**none of that drop is play strength.** It is the eviction: see the box below.
+Top is now `Brahim` 1162.4, then `James Cox & Henry Chao` 1155.3, `Raja Biswas`
+1146.7. The board grew from 3,000 → 5,000 entrants in ~2 days and the top
+reshuffles constantly — treat any ranking as a snapshot, and **paginate:
+`competition_leaderboard_view` returns 20 rows and a `Next Page Token`; pass it
+back via `page_token` to walk all 5,000** (§5).
 
-⚠ **Our displayed score drifts up slowly on its own** (948.1 → 950.2 in ~4 h with
-no submission). Do not read small movements as anything.
+> # 🔴 READ THIS FIRST — B1 SHIPPED AND LOST, AND THE ARENA IS THE PROBLEM
+>
+> **`55116557` (optfeat v3, rules off) is at 824.6 after 10 h. P4b was at 958
+> after 4 h.** The arena predicted **+115 Elo**; the ladder delivered **≈ −130**.
+> The bundle was fine (verified: the net was live in the replays, §1). **This is
+> a real regression, and it is the SECOND time the arena and the LB have
+> disagreed by more than the instrument's precision, in the same direction.**
+> `report/EVIDENCE.md` §8g.
+>
+> **The diagnosis: our anchors are not the field.** Over 54 real ladder games,
+> **63% of opponents were decks we have never A/B'd against**, and the grimmsnarl
+> mirror — which every rule was tuned on — was **9%**. Two anchors covering a
+> third of the field is a single-anchor error wearing a disguise (rule 12).
+>
+> **Do not trust any arena-only result in this repo without re-reading §2 rule 16.**
 
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
-### ▶ START HERE — the next actions, in order (updated 2026-07-30 ~12:30 UTC, a
-### second session on day 8)
+### ▶ START HERE — the next actions, in order (set 2026-07-31 ~04:00 UTC, day 9)
 
 Nothing is mid-flight; the tree is clean and every result below is archived.
+**The situation changed materially overnight: B1 shipped and lost (§8g), and the
+eviction rule turned out to be punishing (§8h).**
 
-> # 🟢 B1 LANDED — THE BREAKTHROUGH, AND IT REVERSES THE METHOD
->
-> **`optfeat` v3 (per-option target features) beats the shipped agent 0.661
-> [0.640, 0.681] n=2000 in the mirror (≈ +115 Elo) and 0.770 vs `rule:crustle`
-> where the shipped agent reads 0.663.** Two anchors, one adversarial, both agree.
-> **This is the first effect in the project LARGER than the LB's ±50–100
-> resolution** (§1) — the first thing we could actually submit and measure.
->
-> **And it inverts the method: with v3 features the hand rules are HARMFUL, not
-> redundant — `v3+rules` vs `v3 alone` = 0.427 [0.405, 0.449].** The rules and the
-> features are **alternatives, not complements.** Ship v3 with **rules OFF**, or
-> ship `lw2` with rules ON. Never the combination.
->
-> Full numbers, the pre-committed verdict framing, the corpus confound and the
-> pool check: **`report/EVIDENCE.md` §8f.** Nets: `out/policy_b1_v3.npz`
-> (treatment) and `out/policy_b1_ctrl.npz` (control). Corpus: `artifacts/pds_v3`.
->
-> **▶ THE NEXT ACTION IS ITEM 0 BELOW — package and submit it.**
+1. **⚡ RESTORE P4b — resubmit the preserved 952 bundle. Do this first; it is
+   nearly free and it is currently costing us ~115 displayed points every hour.**
 
-0. ✅ **PACKAGED AND SMOKE-TESTED (2026-07-31) — awaiting only the decision to
-   spend the slot.** The bundle is built and verified; **nothing has been
-   submitted.**
+   ```powershell
+   python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz','P4b restore: lw2 + chip_target + energy_spread (the 952 agent)','pokemon-tcg-ai-battle')"
+   ```
+
+   - That tarball is **verified** to be `55072063`'s exact code (flags: chip +
+     spread, `counter_source` absent from the signature) and **smoke-tested**
+     (`scripts/restore_smoke.py`). §3.0's table.
+   - **Eviction arithmetic: it evicts `55077709` (837.5), our WORST active**, and
+     leaves {P4b-restored, `55116557` v3 at 824.6}. Nothing valuable is lost.
+   - ⚠ It restarts at **μ=600** and needs ~4 h to reach ~950; displayed dips to
+     824.6 meanwhile. That is the cost, and it is unavoidable — a rating cannot be
+     restored, only re-earned (§8h).
+   - ⚠ **Read the LB before and after** (§5) and confirm with **two readings ≥1 h
+     apart** (rule 2).
+
+2. **Then decide what v3 is worth.** It is not a failure to discard blindly: it is
+   the only agent whose *Crustle* number transferred to the field (**76.9% over 13
+   real games**, arena predicted 0.770). Options, cheapest first:
+   - **Re-A/B v3 against the decks we actually face.** 63% of real opponents are
+     "other" — build anchors for them from `replays/submission_optv3` before
+     trusting any further arena number. **This is the real blocker on everything.**
+   - Try **v3 net WITH `chip_target` + `energy_spread` restored** (i.e. P4b's rule
+     set on the new net). The 0.427 that justified rules-off was measured in the
+     **mirror**, which is 9% of the field.
+3. **Fix the two measured defects — but as questions, not licences** (§6 closed
+   Boss's Orders after four null rules; all four were on the **lw2** net with the
+   other rules on, so they do not settle this net):
+   - **Boss's Orders: 9 of 31 real drags were misplays (29%)**, 5 of them throwing
+     away a **double KO** (Shadow Bullet is 180 to the Active **plus 30 to a
+     bench** — a ≤30 HP bench sitter means attacking takes two prizes).
+   - **Froslass: 7 of 63 (11.1%)** evolves happened with more ability Pokemon on
+     our side **and no armed Munkidori** — pure self-damage. ⚠ The other 19
+     "we have more" rows are the intended engine (Shroud loads, Adrena-Brain
+     ships); do not "fix" those.
+4. **Re-mine the meta — now genuinely overdue.** 07-30's episodes are publishable
+   as of today. And the field mix from real games (63% "other") says our whole
+   picture of the meta, mined from *top* episodes, does not describe the band we
+   actually play in.
+
+### The B1 arena result — kept because the CONTRAST with the ladder is the finding
+
+> ⚠ **All of the following is TRUE of the arena and FALSE of the ladder. Read it
+> as the specimen, not as a plan.** `optfeat` v3 beat the shipped agent **0.661
+> [0.640, 0.681] n=2000** in the mirror (≈ +115 Elo) and **0.770 vs `rule:crustle`**
+> (shipped: 0.663) — two anchors, one adversarial, both agreeing, the first effect
+> in the project larger than the LB's own resolution. With v3 features the hand
+> rules measured **harmful** (`v3+rules` vs `v3 alone` = **0.427**), which is why
+> it shipped with rules off.
+>
+> **It then read 825 against P4b's 952** (§8g). Nothing above was miscomputed —
+> the numbers are all reproducible from `out/arena/b1_*.jsonl`. **The arena simply
+> does not measure what the ladder measures**, and that gap is now the project's
+> central problem. Nets: `out/policy_b1_v3.npz` (treatment),
+> `out/policy_b1_ctrl.npz` (control). Corpus: `artifacts/pds_v3`.
+
+<details><summary>The v3 bundle as built and shipped (kept for reproducibility)</summary>
+
+**Built, smoke-tested, and SUBMITTED as `55116557` on 2026-07-30 18:14 UTC.**
 
    ```
    dist/submission_bc-grimmsnarl-netspolicy_20260731-000752.tar.gz  (4.0 MiB)
@@ -77,15 +130,15 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
      197.7 MiB cap; smoke `exec`s the source with **no `__file__`** (the §7 gotcha
      that killed `55028078`).
 
-   **To actually submit** (⚠ **this evicts `55072063`, 950.2, our best, from the
-   active pair** — read the submission box below first):
+   ⚠ **The packaging was all correct — and it did not save the result.** Every
+   check above passed and the agent still lost ~130 points. **Build hygiene
+   protects against shipping a broken bundle; it cannot protect against shipping
+   a worse agent.** The thing that failed was the *decision*, and the decision
+   came from the arena.
 
-   ```powershell
-   python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission.tar.gz','optfeat v3 + rules off','pokemon-tcg-ai-battle')"
-   ```
+</details>
 
-   Then expect a **4+ h climb from μ=600** before any reading means anything
-   (rule 2), and read both scores in one call (§5).
+### Closed earlier on day 8 (kept for the record)
 
 1. ~~**Size, then build, the Morgrem out**~~ ✅ **SIZED AND CLOSED 2026-07-30 —
    do not build it** (`EVIDENCE` §8e, `out/logs/p7_morgrem_200.txt`). The veto
@@ -164,26 +217,27 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
 **End of every session: update HANDOFF (plan), ROADMAP (calendar), and
 EVIDENCE (any experiment that concluded) together.**
 
-> **Submission state (corrected 2026-07-30 — an earlier draft of this box
-> conflated two different limits):**
+> **Submission state (2026-07-31). ⚠ The previous version of this box was WRONG
+> on the one point that mattered — see the ✅ below.**
 >
-> - **Daily quota: 5/day, and today's is UNUSED.** There is no quota problem.
-> - **Only the latest 2 submissions play episodes.** Active pair: `55077709`
->   (824.9) + `55072063` (948.1). A submission today makes it {new, `55077709`}
->   and `55072063` stops playing.
-> - **Freezing is cheaper than it sounds.** A frozen submission keeps its score
->   and still displays (`55054446` shows 905.2 while inactive), and our team's
->   displayed score is **948.1 = our best submission**. `55072063` is converged
->   (27 h; peaked 970, drifted to 948), so further episodes on it are worth ~zero.
-> - ⚠ **Open question that decides the endgame:** does the *final* standing use the
->   displayed best-ever score, or only agents active at the close? Unknown.
->   Until it is known, keep the best agent active through the 08-17 close and the
->   08-31 continued-play window (ROADMAP calendar).
+> - **Daily quota: 5/day.** Never the binding constraint.
+> - **Only the latest 2 submissions play episodes.** Active pair right now:
+>   **`55116557` (v3, 824.6) + `55077709` (P6a, 837.5)**. `55072063` (**952.0**)
+>   was **evicted** by the v3 submission and is frozen.
+> - ✅ **ANSWERED (was "the open question that decides the endgame"): the
+>   displayed score is the best ACTIVE submission, NOT the best ever.** Proof:
+>   best-ever is `55072063` at 952.0, best-active is 837.5, and **the board shows
+>   us at 837.5 / rank 605.** We fell 224 → 605 on the eviction alone.
+> - 🔴 **So "freezing is cheaper than it sounds" was FALSE and is retracted.** A
+>   frozen score counts for nothing. **The best agent MUST be in the active pair
+>   at the 08-17 close and through the 08-31 continued-play window.**
+> - 🔴 **Every submission is therefore a real risk, not a free option.** It
+>   evicts, and the evicted score stops counting the moment it does.
 >
-> **So the bar on submitting is not "is a slot free" — it is "do we expect this to
-> beat 948".** A ~12-Elo rule does not qualify (§1 resolution limit); it is
-> unmeasurable up there. A rollback especially does not qualify: it is
-> `55072063`'s own code, restarting from μ=600.
+> **The bar on submitting is "do we expect this to beat the best agent we would
+> be evicting" — and a rollback now DOES qualify**, because the thing it restores
+> (952) is more than the thing it evicts (837.5). That is the reverse of what this
+> box said yesterday, and the reason is §8h, not a change of heart.
 
 ---
 
@@ -410,6 +464,30 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     from the outside — the agent gets it wrong at chance — and they have opposite
     cures. Four hand rules cured the symptom; 12 features cured the cause and
     dominated them.
+16. **🔴 THE ARENA DOES NOT MEASURE LADDER STRENGTH, AND THE ERROR IS
+    SYSTEMATIC — n=2, same direction, both larger than the instrument.**
+    `counter_source` measured +0.052 and reads **837.5 against P4b's 952.0**, a
+    114-point gap that has **not closed in two days of converged play**. `optfeat
+    v3` measured **0.661 vs the shipped agent (≈ +115 Elo)** on two anchors and
+    reads **825 against 952**. Both times the arena said better; both times the
+    ladder said much worse. **This is a bias, not variance.** `EVIDENCE` §8g.
+
+    **The measured cause: our anchors are not the field.** Over 54 real ladder
+    games, **63% of opponents were archetypes we have never A/B'd against** and
+    the grimmsnarl mirror — where every rule and the whole B1 verdict was
+    decided — was **9%**. Rule 12 said "≥2 anchors, one adversarial"; we complied
+    and it was still not enough, because **two anchors covering a third of the
+    field is a single-anchor error in disguise.**
+
+    ⚠ **The one number that DID transfer is the one whose anchor matched the
+    opponent:** the arena predicted 0.770 vs `rule:crustle` and we won **76.9%
+    of 13 real Crustle games**. So the arena is not broken — **it is accurate
+    exactly where the anchor resembles the opponent, and silent everywhere else.**
+
+    **Therefore, until an anchor set covering the real field exists: no arena
+    result is a reason to submit.** Build anchors from
+    `replays/submission_optv3` first. And **never again let a mirror A/B decide
+    whether to turn a rule off** — the mirror is 9% of reality.
 
 ---
 
@@ -932,6 +1010,14 @@ python -X utf8 scripts/context_accuracy.py                       # per-context t
 python -X utf8 scripts/p6_recon.py --matches 120   # EVERY select, bucketed -- the menu
 python -X utf8 scripts/p5_audit.py --matches 200   # sizes the three P5 findings
 python -X utf8 scripts/p5a_replays.py              # the same counters on 55 REAL games
+
+# What the SHIPPED v3 agent did against the real field (the arena's reality check).
+# Reports the archetype mix, the Boss's Orders drag audit and the Froslass timing
+# audit, all with honest denominators. EVIDENCE 8g.
+python -X utf8 scripts/p8_optv3_replays.py --dir replays/submission_optv3
+
+# Can a preserved bundle still be restored? (run from inside an extracted tarball)
+python -X utf8 scripts/restore_smoke.py
 python -X utf8 scripts/p5b_check.py --matches 150  # does a rule actually fire? (rule 9)
 
 # §3.1 re-anchor: what is the field ACTUALLY playing now?
@@ -1009,6 +1095,15 @@ python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=Kaggl
   ⚠ **Despite the date these are `55054446`'s games — the chip-only agent, before
   `energy_spread`.** Anything depending on *two armed* Munkidori is understated
   there. **Always check which agent produced a replay dump.**
+- **`replays/submission_optv3/`** — 56 files, **54 usable** (2 are bare
+  step-arrays, not replays — skip anything where the JSON root is a list).
+  **These are `55116557`'s games: the optfeat-v3 agent with every rule OFF.**
+  The single most valuable diagnostic asset in the repo right now, because it is
+  the only record of what our agent does against the **real field** rather than
+  against our two anchors. Analysed by `scripts/p8_optv3_replays.py`
+  (`out/logs/p8_optv3_replays.txt`); findings in `EVIDENCE` §8g.
+  **Archetype mix — the number that invalidates the arena: 63% "other", Crustle
+  24%, mirror 9%.**
 - **`artifacts/**` is gitignored.** `artifacts/pds/` = 4,010 games (the *rejected*
   lw3 corpus); **`artifacts/pds_v2/` = 2,810 (the shipped corpus)** and exists
   only on this disk — `pds` minus the three days that made lw3 worse:

@@ -1,0 +1,45 @@
+
+=== replays/submission_optv3: 54 games ===
+  {'loss': 19, 'win': 34, 'draw': 1}  win rate = 0.639
+
+=== opponent archetype (and our win rate vs each) ===
+  other                      34  won  20  (58.8%)
+  Crustle                    13  won  10  (76.9%)
+  Grimmsnarl (mirror)         5  won   3  (60.0%)
+  Crispin toolbox             1  won   1  (100.0%)
+  Ogerpon                     1  won   0  (0.0%)
+
+=== BOSS'S ORDERS -- the drag, only where attacking was a real option (n=31) ===
+  rows below the first are MISPLAYS: the Active was KO-able and we dragged anyway
+  their Active was NOT KO-able -- drag is free                     22  71.0%
+  MISS: could KO Active + SNIPE a <=30hp bench (double KO) -- dragged instead    5  16.1%
+  MISS: dragged something we CANNOT KO, abandoning a KO-able Active    2   6.5%
+  drag traded up or equal -- defensible                             2   6.5%
+    eg 89011961 t11: could KO Crustle hp=80 (1p) + snipe Dwebble hp=10; dragged Dwebble
+    eg 89013303 t11: could KO Archaludon ex hp=170 (2p) + snipe Duraludon hp=10; dragged Duraludon
+    eg 89015107 t14: could KO Crustle hp=70 (1p); dragged Mega Kangaskhan ex hp=220 which survives
+    eg 89017845 t12: could KO Crustle hp=50 (1p); dragged Mega Kangaskhan ex hp=270 which survives
+    eg 89021080 t17: could KO Crustle hp=70 (1p) + snipe Crustle hp=30; dragged Crustle
+    eg 89021174 t9: could KO Alakazam hp=80 (1p) + snipe Abra hp=20; dragged Abra
+    eg 89033680 t12: could KO Alakazam hp=100 (1p) + snipe Alakazam hp=30; dragged Alakazam
+
+=== FROSLASS -- the board when we chose to evolve into her (n=63) ===
+  GOOD: they have more ability Pokemon than us                     26  41.3%
+  BAD: WE have more ability Pokemon -- the clock hurts us more (armed Munkidori)   19  30.2%
+  neutral: equal ability Pokemon                                   11  17.5%
+  BAD: WE have more ability Pokemon -- the clock hurts us more (and NO armed Munkidori)    7  11.1%
+    eg 89011059 t10: ours=2 theirs=1 armedMunkidori=2
+    eg 89011961 t3: ours=2 theirs=1 armedMunkidori=1
+    eg 89011961 t13: ours=3 theirs=2 armedMunkidori=2
+    eg 89012406 t19: ours=4 theirs=0 armedMunkidori=3
+    eg 89013752 t10: ours=3 theirs=1 armedMunkidori=3
+    eg 89014655 t4: ours=3 theirs=1 armedMunkidori=1
+    eg 89016470 t8: ours=1 theirs=0 armedMunkidori=1
+    eg 89022464 t13: ours=4 theirs=1 armedMunkidori=3
+
+=== THE GOOD (n=9) ===
+  Morgrem attacked                                                  5  55.6%
+    ... into a Crustle (the non-ex out)                             4  44.4%
+
+errors/skips:
+     2  file is a bare step-array, not a replay
