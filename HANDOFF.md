@@ -13,41 +13,93 @@ reshuffles constantly — treat any ranking as a snapshot, and **paginate:
 `competition_leaderboard_view` returns 20 rows and a `Next Page Token`; pass it
 back via `page_token` to walk all 5,000** (§5).
 
-> # 🔴 READ THIS FIRST — B1 SHIPPED AND LOST, AND THE ARENA IS THE PROBLEM
+> # ✅ READ THIS FIRST — THE ARENA/LADDER GAP IS SOLVED (day 9, 2026-07-31)
 >
-> **`55116557` (optfeat v3, rules off) is at 824.6 after 10 h. P4b was at 958
-> after 4 h.** The arena predicted **+115 Elo**; the ladder delivered **≈ −130**.
-> The bundle was fine (verified: the net was live in the replays, §1). **This is
-> a real regression, and it is the SECOND time the arena and the LB have
-> disagreed by more than the instrument's precision, in the same direction.**
-> `report/EVIDENCE.md` §8g.
+> **The arena was never broken. We retired the one anchor that would have caught
+> B1, two days before B1 was decided.** `report/EVIDENCE.md` §8i.
 >
-> **The diagnosis: our anchors are not the field.** Over 54 real ladder games,
-> **63% of opponents were decks we have never A/B'd against**, and the grimmsnarl
-> mirror — which every rule was tuned on — was **9%**. Two anchors covering a
-> third of the field is a single-anchor error wearing a disguise (rule 12).
+> Both agents vs a fixed `rule:v10,noS` on `lucario_v10`, n=2000 each:
 >
-> **Do not trust any arena-only result in this repo without re-reading §2 rule 16.**
+> | agent | vs `rule:v10` | mirror | vs Crustle | LB |
+> |---|---|---|---|---|
+> | **P4b** (lw2 + chip + spread) | **0.576 [0.554, 0.598]** | ref | 0.663 | **952.0** |
+> | **v3 rules-off** (`55116557`) | **0.505 [0.483, 0.527]** | 0.661 | 0.770 | **824.6** |
 >
-> ⚠ **This is NOT an emergency and the P4b restore is NOT urgent** — Kaggle's copy
-> of `55072063` is permanent and P4b is rebuildable from git. The cost of the
-> current state is displayed rank only, and it does not compound. **What binds is
-> having the best agent ACTIVE at the 08-17 close** (§8h). The genuinely blocking
-> problem is the arena, not the slot.
+> **Non-overlapping CIs.** v3 is **−0.071 against Mega Lucario** while being
+> **+0.161 in the mirror**. That is the whole ~130-point regression, reproduced
+> locally, for 15 min of CPU and no submission.
+>
+> **🔴 The root cause is STRUCTURAL and it invalidates a week of meta work.**
+> `fetch_top_episodes.py` mines the **top** episodes by `avg_score`, and Kaggle's
+> daily datasets **bottom out at 1055** — buckets 800–900 and 900–1000 contain
+> **zero** episodes. We play at **825–952**. **No amount of episode mining can
+> ever describe the field we face.** §8b's "Lucario is 0% of the meta" was true
+> at 1150+; in our own 109 real games it is **12.8%** — tied for the largest deck
+> we play against.
+>
+> **Our own submission replays are the only evidence about our own opponents.**
+>
+> ✅ **Fixed the same day:** `scripts/p9_field_census.py` names the real field,
+> and `scripts/import_field_agents.py` imported the two missing anchors
+> (`rule:alakazam5`, `rule:archaludon`). Anchor coverage **39.4% → 71.6%**.
+>
+> ⚠ **v3 is NOT refuted as a net.** It wins big on 26.6% of the field and loses
+> on 12.8%; the other 60.6% is unmeasured. **Do not discard it and do not reship
+> it** until the 5-anchor sweep finishes (▶ item 2).
 
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
-### ▶ START HERE — the next actions, in order (set 2026-07-31 ~04:00 UTC, day 9)
+⚠ **Day 9 note on reading this file:** several load-bearing claims dated
+2026-07-30 were **narrowed, not deleted** — the meta-shift table (§1), rule 12's
+"`lucario_v10` is 0% of the meta", and rule 16's "the arena does not measure
+ladder strength". Each is now prefixed with what it is actually true *of*. If a
+statement in here about "the meta" does not say **which score band** it describes,
+distrust it: mined episodes are the top-1150 band, and
+`scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-Nothing is mid-flight; the tree is clean and every result below is archived.
-**The situation changed materially overnight: B1 shipped and lost (§8g), and the
-eviction rule turned out to be punishing (§8h).**
+### ▶ START HERE — the next actions, in order (set 2026-07-31, day 9 pm)
 
-1. **RESTORE P4b when convenient — NOT urgent, and an earlier draft of this item
-   wrongly said "do this first".** ⚠ **Nothing is at risk of being lost**, so the
-   only cost of waiting is the displayed rank in the meantime, which does not
-   compound:
+**Day 9 answered the question day 8 ended on.** The blocking problem — "no arena
+number in this repo predicts ladder strength" — is **closed** (§8i): the arena
+predicts fine, the anchor set was wrong, and it is now fixed. Everything below is
+ordinary work again.
+
+0. **⚡ FINISH THE 5-ANCHOR SWEEP. Nothing should be submitted before it.** Two of
+   the four runs are done; `p9_field_census.py`'s top 5 covers 71.6% of the field:
+
+   | anchor | share | `bc:p4b,noSrc` | `bc:v3off,…` |
+   |---|---|---|---|
+   | `rule:v10` / `lucario_v10` | 12.8% | **0.576 [0.554, 0.598]** | **0.505 [0.483, 0.527]** |
+   | `rule:alakazam5` / `alakazam5` | **22.0%** | ⏳ running | ⏳ running |
+   | `rule:archaludon` / `archaludon_ex` | 10.1% | ⏳ TODO | ⏳ TODO |
+   | `rule:crustle` / `crustle_v1` | 12.8% | 0.663 (§8c) | 0.770 (§8f) |
+   | mirror (`grimmsnarl` v `grimmsnarl`) | 13.8% | ref | 0.661 (§8f) |
+
+   ```powershell
+   python -X utf8 scripts/arena.py play "bc:p4b,noSrc" rule:archaludon `
+       --deck-a grimmsnarl --deck-b archaludon_ex --matches 1000 `
+       --archive out/arena/p9_p4b_vs_archaludon.jsonl
+   python -X utf8 scripts/arena.py play "bc:v3off,net=out/policy_b1_v3.npz,noChip,noSpread,noSrc" `
+       rule:archaludon --deck-a grimmsnarl --deck-b archaludon_ex --matches 1000 `
+       --archive out/arena/p9_v3off_vs_archaludon.jsonl
+   ```
+
+   ⚠ **Weight each anchor by its share before concluding anything.** A rule that
+   wins 22% of the field and loses 12.8% is not "2 anchors to 1" — it is +9.2 pp
+   of the field. That arithmetic is the whole point of the census, and it is the
+   thing rule 12 was missing.
+
+   **Then, and only then, decide v3.** The live options are (a) ship v3 as-is,
+   (b) ship v3 with the rules back on (the 0.427 that justified rules-off was
+   measured in the **mirror**, 13.8% of the field), (c) keep P4b. ⚠ Also re-run
+   the three rule flags against the two NEW anchors — `chip_target`'s wall branch
+   hardcodes `WALL_POKEMON = {345}` and **Archaludon's Full Metal Lab is a second
+   damage-reduction effect it does not know about** (§8i).
+
+1. **RESTORE P4b when convenient — NOT urgent.** ⚠ **Nothing is at risk of being
+   lost**, so the only cost of waiting is the displayed rank in the meantime,
+   which does not compound:
    - **Kaggle's copy of `55072063` is permanent** and keeps showing 952.0.
    - **P4b is rebuildable from git even without `dist/`** — `dist/**` is
      gitignored, but `agents/sa/policy_net.npz` **is tracked** and is the same
@@ -82,22 +134,28 @@ eviction rule turned out to be punishing (§8h).**
    - ⚠ **Read the LB before and after** (§5) and confirm with **two readings ≥1 h
      apart** (rule 2).
 
-2. **⚡ THE ACTUAL FIRST ACTION: build anchors for the REAL field.** Everything
-   else is blocked behind it (rule 16). 63% of our real opponents are archetypes
-   we have never A/B'd against, so **no arena number in this repo currently
-   predicts ladder strength** — including any number a new rule would produce.
-   Source material is on disk: `replays/submission_optv3` (54 games) plus the
-   mined meta. Until this exists, do not spend a submission on an arena result.
+2. ~~**Build anchors for the REAL field.**~~ ✅ **DONE 2026-07-31 — this was the
+   blocker on everything and it is gone** (§8i). `scripts/p9_field_census.py`
+   names the field from our own 109 ladder games; `scripts/import_field_agents.py`
+   imported the two anchors we lacked. Coverage **39.4% → 71.6%**. The remaining
+   work is item 0's sweep, not more infrastructure.
 
-3. **Then decide what v3 is worth.** It is not a failure to discard blindly: it is
-   the only agent whose *Crustle* number transferred to the field (**76.9% over 13
-   real games**, arena predicted 0.770). Options, cheapest first:
-   - **Re-A/B v3 against the decks we actually face.** 63% of real opponents are
-     "other" — build anchors for them from `replays/submission_optv3` before
-     trusting any further arena number. **This is the real blocker on everything.**
-   - Try **v3 net WITH `chip_target` + `energy_spread` restored** (i.e. P4b's rule
-     set on the new net). The 0.427 that justified rules-off was measured in the
-     **mirror**, which is 9% of the field.
+   ⚠ **The one thing to internalise from it:** the 63% "other" was **not** an
+   exotic tail. It was four ordinary archetypes plus a classifier with four
+   hardcoded card ids. **Before believing a bucket called "other", check whether
+   the classifier or the field is the thing that is small.**
+
+3. **Re-mine the meta?** ⛔ **NO — and this is now a permanent rule, not a
+   scheduling note.** Kaggle's daily episode datasets bottom out at `avg_score`
+   **1055**; we play at 825–952; the 800–1000 buckets are **empty**. Mining
+   produces an accurate picture of a band we never meet, and acting on it is what
+   retired `rule:v10` and cost ~130 LB points (§8i). Mining is still useful for
+   **decklist consensus** (§1's "our 60 is the field's 60" is real Deck Score
+   evidence) and for **Track B report figures about the top of the ladder** — but
+   **never again as the input to an anchor decision.** Use
+   `p9_field_census.py` on our own replays for that, and re-run it after every
+   submission dump.
+
 4. **Fix the two measured defects — but as questions, not licences** (§6 closed
    Boss's Orders after four null rules; all four were on the **lw2** net with the
    other rules on, so they do not settle this net):
@@ -108,26 +166,34 @@ eviction rule turned out to be punishing (§8h).**
      our side **and no armed Munkidori** — pure self-damage. ⚠ The other 19
      "we have more" rows are the intended engine (Shroud loads, Adrena-Brain
      ships); do not "fix" those.
-5. **Re-mine the meta — now genuinely overdue.** 07-30's episodes are publishable
-   as of today. And the field mix from real games (63% "other") says our whole
-   picture of the meta, mined from *top* episodes, does not describe the band we
-   actually play in.
+5. **The Alakazam matchup is a strategy question nobody has asked.** It is 22% of
+   the field — the biggest single thing we play against — and its attack is
+   **Powerful Hand: 20 damage per card in the attacker's hand.** Nothing in
+   `targeting.py` or the feature set reasons about the opponent's hand size, and
+   the whole deck is a draw engine (Kadabra/Alakazam Psychic Draw, Dudunsparce
+   Run Away Draw, Fezandipiti ex Flip the Script). **Size it before building it**
+   (rule 14): how often is their hand large enough to matter, and is there any
+   action of ours that shrinks it? ⚠ We already win this matchup 66.7%, so the
+   headroom is small — check that first.
 
 ### The B1 arena result — kept because the CONTRAST with the ladder is the finding
 
-> ⚠ **All of the following is TRUE of the arena and FALSE of the ladder. Read it
-> as the specimen, not as a plan.** `optfeat` v3 beat the shipped agent **0.661
-> [0.640, 0.681] n=2000** in the mirror (≈ +115 Elo) and **0.770 vs `rule:crustle`**
+> ⚠ **Read this as the specimen, not as a plan — and note that §8i has since
+> explained it.** `optfeat` v3 beat the shipped agent **0.661 [0.640, 0.681]
+> n=2000** in the mirror (≈ +115 Elo) and **0.770 vs `rule:crustle`**
 > (shipped: 0.663) — two anchors, one adversarial, both agreeing, the first effect
 > in the project larger than the LB's own resolution. With v3 features the hand
 > rules measured **harmful** (`v3+rules` vs `v3 alone` = **0.427**), which is why
 > it shipped with rules off.
 >
-> **It then read 825 against P4b's 952** (§8g). Nothing above was miscomputed —
-> the numbers are all reproducible from `out/arena/b1_*.jsonl`. **The arena simply
-> does not measure what the ladder measures**, and that gap is now the project's
-> central problem. Nets: `out/policy_b1_v3.npz` (treatment),
-> `out/policy_b1_ctrl.npz` (control). Corpus: `artifacts/pds_v3`.
+> **It then read 825 against P4b's 952** (§8g). Nothing above was miscomputed and
+> nothing above is retracted — every number reproduces from `out/arena/b1_*.jsonl`.
+> **What was wrong was the coverage, not the measurement**: those two anchors are
+> 26.6% of the field, and against the third-largest deck (`rule:v10`, 12.8%) the
+> same v3 agent scores **0.505 vs P4b's 0.576** (§8i). The mirror's +0.161 and
+> Lucario's −0.071 are both real; only one of them was in the anchor set.
+> Nets: `out/policy_b1_v3.npz` (treatment), `out/policy_b1_ctrl.npz` (control).
+> Corpus: `artifacts/pds_v3`.
 
 <details><summary>The v3 bundle as built and shipped (kept for reproducibility)</summary>
 
@@ -323,7 +389,21 @@ Consequences, all of which bind on the rest of the project:
   agree are necessary but not sufficient — the effect also has to be **larger
   than the instrument's precision** before an LB reading can speak to it.
 
-### ⚠ The meta shift is now MEASURED (2026-07-30), and it is worse than reported
+### ⚠ The meta shift (2026-07-30) — TRUE, but about a band we never play in
+
+> 🔴 **READ THIS BEFORE THE TABLE (added 2026-07-31, `EVIDENCE` §8i).** Every row
+> below was mined from the **top 400 episodes by `avg_score`**, and Kaggle's daily
+> datasets **contain nothing below `avg_score` 1055**. We play at **825–952**;
+> the 800–900 and 900–1000 buckets are **empty**. So this table is an accurate
+> description of the **top of the ladder** and says nothing about our opponents.
+>
+> **Acting on it cost ~130 LB points.** Row 1 below retired `rule:v10` as "0% of
+> the meta"; in our own 109 real games Mega Lucario is **12.8% of the field**, and
+> it is the anchor that would have caught B1. **For what we actually face, use
+> `scripts/p9_field_census.py` on our own replay dumps — never this table.**
+>
+> What it IS still good for: the decklist-consensus finding (item 3 below, real
+> Deck Score evidence) and Track B report figures about the top of the board.
 
 Mined with `mine_meta.py`: **pre-shift** = 07-22 + 07-24, 800 games / 1,600 seats
 (`out/meta/pre_shift_0722_0724.txt`); **post-shift** = 07-29, 400 games / 800
@@ -497,34 +577,52 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     from the outside — the agent gets it wrong at chance — and they have opposite
     cures. Four hand rules cured the symptom; 12 features cured the cause and
     dominated them.
-16. **🔴 THE ARENA DOES NOT MEASURE LADDER STRENGTH, AND THE ERROR IS
-    SYSTEMATIC — n=2, same direction, both larger than the instrument.**
-    `counter_source` measured +0.052 and reads **837.5 against P4b's 952.0**, a
-    114-point gap that has **not closed in two days of converged play**. `optfeat
-    v3` measured **0.661 vs the shipped agent (≈ +115 Elo)** on two anchors and
-    reads **825 against 952**. Both times the arena said better; both times the
-    ladder said much worse. **This is a bias, not variance.** `EVIDENCE` §8g.
+16. **AN ARENA RESULT IS A WEIGHTED AVERAGE OVER YOUR ANCHOR SET, AND NOTHING
+    ELSE. State the weights before you read the score.** ✅ **Resolved
+    2026-07-31** (`EVIDENCE` §8i) — the earlier version of this rule said the
+    arena does not measure ladder strength and treated that as the project's
+    central problem. **That was wrong, and believing it would have cost far more
+    than the original mistake.** The arena predicts fine. Both LB "contradictions"
+    were the same error: the anchor set did not span the field.
 
-    **The measured cause: our anchors are not the field.** Over 54 real ladder
-    games, **63% of opponents were archetypes we have never A/B'd against** and
-    the grimmsnarl mirror — where every rule and the whole B1 verdict was
-    decided — was **9%**. Rule 12 said "≥2 anchors, one adversarial"; we complied
-    and it was still not enough, because **two anchors covering a third of the
-    field is a single-anchor error in disguise.**
+    - v3 measured **0.661 in the mirror** and **0.505 vs `rule:v10`** (P4b:
+      0.576). Both are true. Only the first was in the anchor set, and the
+      ladder averaged over both.
+    - **Weight every anchor by its measured share before concluding anything.**
+      "Wins 2 anchors, loses 1" is not a verdict; "+0.16 on 13.8% and −0.07 on
+      12.8%" is the start of one. `p9_field_census.py` supplies the shares.
 
-    ⚠ **The one number that DID transfer is the one whose anchor matched the
-    opponent:** the arena predicted 0.770 vs `rule:crustle` and we won **76.9%
-    of 13 real Crustle games**. So the arena is not broken — **it is accurate
-    exactly where the anchor resembles the opponent, and silent everywhere else.**
+    ⚠ **And the deeper trap, which is the one to actually carry forward:**
+    **CHECK WHERE YOUR POPULATION DATA COMES FROM BEFORE YOU LET IT RETIRE AN
+    ANCHOR.** `fetch_top_episodes.py` mines the **top** episodes by `avg_score`,
+    and Kaggle's daily datasets are **censored below `avg_score` 1055** — the
+    800–1000 buckets are literally empty. We play at 825–952. So the mined meta
+    was a perfectly accurate description of a population we never meet, and it
+    said `lucario_v10` was **0% of the field** when in our own games it is
+    **12.8%**. Retiring that anchor on that evidence is what let B1 ship.
 
-    **Therefore, until an anchor set covering the real field exists: no arena
-    result is a reason to submit.** Build anchors from
-    `replays/submission_optv3` first. And **never again let a mirror A/B decide
-    whether to turn a rule off** — the mirror is 9% of reality.
+    **The general form: a sampling frame you did not choose is a hypothesis, not
+    a fact.** Ask what the data-generating process excludes — not whether the
+    numbers are right.
+
+    ✅ **The positive control still holds, and it is why the arena is trusted
+    again:** the arena predicted 0.770 vs `rule:crustle` and we won **76.9% of 13
+    real Crustle games**. The arena is accurate exactly where the anchor
+    resembles the opponent — which is now most of the field (71.6%), and was
+    26.6% when B1 was decided.
+
+    **Standing requirement: measure against the top-5 anchors, weighted, and
+    never again let a mirror A/B alone decide whether to turn a rule off** — the
+    mirror is 13.8% of reality.
 
 ---
 
-## 3. THE PLAN (day 8 → day 9)
+## 3. THE PLAN (day 9 → day 10)
+
+**Day 9 closed the one question the whole project was blocked on** (§3.4): the
+arena/ladder gap is an anchor-coverage problem, not an instrument problem, and
+the anchor set is now rebuilt to 71.6% of the field. **The arena is trustworthy
+again, with the weighting discipline in rule 16.**
 
 **Day 8 closed all three of day 7's open questions** (§3.0 `counter_source` is
 good and stays; §3.1 we were *not* measuring against the right opponents, and the
@@ -840,12 +938,37 @@ where Grimmsnarl ex attacks a wall for zero *with a Morgrem benched*. 10× the
 denominator, but Grimmsnarl ex's retreat cost is **2** (the whole attack
 investment), so it is a worse trade than it looks. Filed, not recommended.
 
+### 3.4 ✅ RESOLVED (2026-07-31): the arena/ladder gap was anchor coverage
+
+**The finding, in one line: the arena is accurate, and we retired the anchor that
+would have caught B1 two days before B1 was decided.** Full write-up
+`EVIDENCE` §8i; the numbers are in the top box of this file.
+
+Three things came out of it, in decreasing order of how much they change:
+
+1. **🔴 The public episode data cannot describe our opponents, ever.** Kaggle's
+   daily datasets stop at `avg_score` **1055**; we play at **825–952**. This is
+   censorship in the data-generating process, not a sampling choice we can tune.
+   **`replays/submission_*` is the only evidence about our own field**, which
+   makes those dumps the repo's most valuable asset and makes pulling replays
+   after every submission a standing task.
+2. **The anchor set is rebuilt to 71.6%** (§4's table) — `rule:alakazam5` and
+   `rule:archaludon` imported, `rule:v10` reinstated.
+3. **Rule 16 is rewritten** from "the arena does not measure ladder strength" to
+   "an arena result is a weighted average over your anchor set" — with the
+   sampling-frame warning as the general lesson.
+
+**What is NOT resolved and is now item 0:** whether v3 is better than P4b once
+all five anchors are weighted. Two of four runs are in; v3 loses Lucario and
+wins the mirror and Crustle.
+
 ### The board
 
 | | item | state |
 |---|---|---|
 | **§3.0** | is `55077709` (P6a) actually good? | ✅ **RESOLVED — yes, keep it.** +0.052 vs the new anchor |
-| **§3.1** | re-anchor the arena on the current meta | ✅ **DONE for Crustle** (meta measured, pilot imported, all 3 rules re-A/B'd at n=2000). ⛔ **A `crispin_toolbox` pilot is UNOBTAINABLE from public code** — 272 notebooks enumerated, no toolbox pilot, no public author outranks us (3 high-Elo titles pulled and refuted). Rule 12's bar is met by mirror + `rule:crustle` |
+| **§3.1** | re-anchor the arena on the current meta | ✅ **SUPERSEDED BY §3.4.** Day 8 re-anchored on the *mined* meta and that is what broke it: the mined meta is the top-1150 band, not ours. Day 9 re-anchored on **our own replays** — 5 anchors, 71.6% coverage. ⛔ `crispin_toolbox` stays pilot-less and is now **low priority: 0 appearances in 109 real games** |
+| **§3.4** | why did the arena disagree with the LB? | ✅ **RESOLVED — anchor coverage, not the instrument.** v3 reads 0.505 vs `rule:v10` against P4b's 0.576, CIs disjoint (`EVIDENCE` §8i) |
 | **§3.2** | Crustle premise probe | ✅ **VERIFIED — counters bypass the wall, AND a non-ex attacker gets through.** Track C steps 3–4 unblocked |
 | **§3.3** | `chip_target` is HARMFUL vs Crustle (−0.126) | ✅ **FIXED AND SHIPPED** — the `wall_defer` branch recovers +0.104 |
 | **§3.3b** | the Morgrem out (the non-ex attacker) | ❌ **CLOSED BY SIZING 2026-07-30 — do not build.** ~0.2 firings/game, the free route is already 95.4% right, and it is a tradeoff (`EVIDENCE` §8e) |
@@ -972,7 +1095,36 @@ listwise, 2,810-game corpus, val top-1 0.6755) + `agents/sa/targeting.py`.
   don't delete pieces of it piecemeal.
 - Both agents never raise: fallback = `list(range(minCount))`.
 
-### The arena's real opponent: `rule:v10`
+### The anchor set — five decks, 71.6% of the field (rebuilt 2026-07-31)
+
+Shares and our win rates are from **our own 109 ladder games**
+(`scripts/p9_field_census.py`, `out/logs/p9_field_census_pooled.txt`), which is
+the only source that describes the band we play in (`EVIDENCE` §8i).
+
+| anchor | deck | share | our WR | pilot |
+|---|---|---|---|---|
+| `rule:alakazam5` | `alakazam5` | **22.0%** | 66.7% | author reports **5th place**, pure rules |
+| mirror: `bc` v `bc` | `grimmsnarl` | 13.8% | 60.0% | ourselves |
+| `rule:crustle` | `crustle_v1` | 12.8% | 57.1% | `pixiux/ptcg-crustle-v1-submit` |
+| `rule:v10,noS` | `lucario_v10` | 12.8% | **50.0%** | the LB-950 notebook |
+| `rule:archaludon` | `archaludon_ex` | 10.1% | **45.5%** ⚠ | `a-sample-archaludon-75-wr…` |
+
+⚠ **Weight by share, always.** Every A/B in this repo before day 9 is a number
+against *one* of these — usually `rule:v10` (pre-07-30) or the mirror + Crustle
+(07-30/31). **A pre-day-9 number is not wrong, it is partial**; check which
+anchor produced it before reusing it.
+
+⚠ **Two anchors are new and their per-rule deltas are unmeasured.** In
+particular `chip_target`'s wall branch hardcodes `WALL_POKEMON = {345}`
+(Crustle), and **Archaludon's Full Metal Lab is a second damage-reduction effect
+it has never seen** (−30 into any Metal Pokemon, and Hero's Cape puts Archaludon
+ex at 400 HP). That is the most likely reason we lose that matchup.
+
+⚠ **`crispin_toolbox` remains pilot-less and is now also low priority** — it did
+not appear once in 109 real games, which is consistent with §1's box: it was
+16.9% *of the top-1150 band*.
+
+#### `rule:v10` — retired on 07-30, reinstated on 07-31
 
 `scripts/import_v10_agent.py` lifts the LB-950 notebook into
 `agents/agentkit/rulebased/sources/v10.py` plus `decks/lucario_v10.py` (its own
@@ -1047,15 +1199,36 @@ python -X utf8 scripts/p5a_replays.py              # the same counters on 55 REA
 # What the SHIPPED v3 agent did against the real field (the arena's reality check).
 # Reports the archetype mix, the Boss's Orders drag audit and the Froslass timing
 # audit, all with honest denominators. EVIDENCE 8g.
+# NOTE its archetype table uses a 4-card hardcoded classifier and buckets 63% as
+# "other" -- use p9 below for the field, and p8 only for the two audits.
 python -X utf8 scripts/p8_optv3_replays.py --dir replays/submission_optv3
+
+# ⚡ WHAT THE FIELD ACTUALLY IS. The ONLY honest source -- our own games. Mining
+# public episodes CANNOT answer this (they stop at avg_score 1055; we play at
+# 825-952). Names every archetype by evolution LINE, ignores 1-of techs, and
+# reconstructs each deck's card list. Pass both dumps to pool them. EVIDENCE 8i.
+# ⚠ RE-RUN THIS AFTER EVERY SUBMISSION REPLAY DUMP -- the mix moves.
+python -X utf8 scripts/p9_field_census.py `
+    --dir replays/submission_optv3 replays/submission_replay_2026-07-29
+
+# The two anchors the census said we were missing (idempotent; from notebooks/).
+# rule:alakazam5 = the field's #1 deck (22.0%), a 5th-place pure-rules pilot.
+# rule:archaludon = our worst matchup (45.5% WR over 11 real games).
+python -X utf8 scripts/import_field_agents.py
+python -X utf8 scripts/arena.py play bc rule:alakazam5 `
+    --deck-a grimmsnarl --deck-b alakazam5 --matches 1000
+python -X utf8 scripts/arena.py play bc rule:archaludon `
+    --deck-a grimmsnarl --deck-b archaludon_ex --matches 1000
 
 # Can a preserved bundle still be restored? (run from inside an extracted tarball)
 python -X utf8 scripts/restore_smoke.py
 python -X utf8 scripts/p5b_check.py --matches 150  # does a rule actually fire? (rule 9)
 
-# §3.1 re-anchor: what is the field ACTUALLY playing now?
-# On disk: 07-26, 07-27 (pre-shift), 07-28, 07-29 (post-shift).
+# Mine the TOP of the ladder. On disk: 07-26..07-30.
 # ⚠ The CURRENT day 403s -- episodes publish the following day, so mine yesterday.
+# 🔴 THIS IS NOT OUR FIELD. These datasets contain nothing below avg_score 1055
+# and we play at 825-952. Use it for decklist consensus and report figures about
+# the top of the board -- NEVER to decide which anchors to keep (EVIDENCE 8i).
 python -X utf8 scripts/fetch_top_episodes.py --date 2026-07-30 --max 400
 python -X utf8 scripts/mine_meta.py replays/2026-07-29    # takes dirs as arguments
 powershell -File scripts/fetch_days.ps1        # several days; edit $Dates default (§7)
@@ -1128,6 +1301,15 @@ python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=Kaggl
   ⚠ **Despite the date these are `55054446`'s games — the chip-only agent, before
   `energy_spread`.** Anything depending on *two armed* Munkidori is understated
   there. **Always check which agent produced a replay dump.**
+
+  🔴 **These two dumps are the ONLY data in existence about the field we play.**
+  Kaggle's public episode datasets are censored below `avg_score` 1055 and we sit
+  at 825–952, so `replays/2026-07-*` cannot substitute (`EVIDENCE` §8i).
+  **`replays/submission_*` must never be pruned**, and every future submission
+  should have its replays pulled and fed to `p9_field_census.py`. ⚠ Each dump is
+  ~50 games from **one agent at one rating**, so the mix moves between them
+  (Lucario 20% vs 5%, Alakazam 13% vs 31%) — pool them, and treat any single
+  archetype share as ±8 pp.
 - **`replays/submission_optv3/`** — 56 files, **54 usable** (2 are bare
   step-arrays, not replays — skip anything where the JSON root is a list).
   **These are `55116557`'s games: the optfeat-v3 agent with every rule OFF.**
@@ -1185,9 +1367,17 @@ one-line verdicts:
   and every strength claim dated before 2026-07-27 pm; "3× compute made it
   worse". `EVIDENCE` §10.
 
-⚠ **Everything above was measured against ONE opponent in the pre-shift meta.**
-The negatives are probably safe; the **positives** are what §3.1 must re-check,
-and `counter_source` is already under suspicion for exactly this reason (§3.0).
+⚠ **Everything above was measured against ONE opponent** — `rule:v10` on
+`lucario_v10`. **That is far better news than day 8 thought.** Day 8 read it as
+"measured against a dead deck" and discounted it; day 9 measured the actual field
+and `lucario_v10` is **12.8% of it**, tied for the largest deck we face
+(`EVIDENCE` §8i). So these results are *narrow*, not *stale* — they are one
+genuine slice of the field, and the missing slices are the other four anchors,
+not a replacement for this one.
+
+The negatives are probably safe (a rule that does nothing against a real opponent
+rarely becomes a winner against another). The **positives** still need the other
+four anchors before they are treated as general.
 
 ⚠ **Open loose end:** the P2b "already at demonstrator parity" verdicts were only
 re-derived for `munkidori_adrena_brain` after the P4c multiplicity fix; the

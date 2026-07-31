@@ -1009,6 +1009,114 @@ in play strength — the drop is purely the frozen agent no longer counting.
 3. The day-8 note *"freezing is cheaper than it sounds"* was **wrong** and is
    corrected in `HANDOFF.md`.
 
+## 8i. The arena/ladder gap is SOLVED — we retired the one anchor that saw it (2026-07-31)
+
+**§8g left the project's central problem open: the arena said v3 was ~+115 Elo
+better and the ladder said ~−130. Day 9 closed it, and the answer is not "the
+arena is broken".** The arena is fine. **We had the right opponent, measured
+against it for a week, and deleted it from the anchor set two days before B1 was
+decided — on the strength of a meta mined from a population 200–320 Elo above the
+one we actually play in.**
+
+### The decisive A/B: v3 loses to the anchor we retired
+
+Both agents vs a fixed `rule:v10,noS` piloting `lucario_v10`, n=2000 each
+(`out/arena/p9_{p4b,v3off}_vs_v10.jsonl`):
+
+| agent | vs `rule:v10` | mirror (§8f) | vs `rule:crustle` (§8f) | LB |
+|---|---|---|---|---|
+| **P4b** = lw2 + chip + spread (`55072063`) | **0.576 [0.554, 0.598]** | — (reference) | 0.663 | **952.0** |
+| **v3 rules-off** (`55116557`) | **0.505 [0.483, 0.527]** | **0.661** vs P4b-era net | 0.770 | **824.6** |
+
+**The confidence intervals do not overlap.** v3 is **−0.071 against Mega
+Lucario** while being **+0.161 in the mirror** and **+0.107 vs Crustle**. That is
+the whole regression, reproduced locally, for 15 minutes of CPU and no
+submission. **Every number in §8f was correct; the anchor set was not.**
+
+### Why the anchor was retired: the mined meta describes a band we never play in
+
+`scripts/fetch_top_episodes.py` sorts each day's manifest by `avg_score` and
+keeps the top `--max`. Every meta snapshot in this repo (§8b) is therefore the
+**top of the ladder**. Worse, and this is structural rather than a tuning
+mistake — **Kaggle's daily episode datasets do not contain our band at all**:
+
+| day | episodes | min `avg_score` | top-400 cutoff |
+|---|---|---|---|
+| 2026-07-26 | 4,554 | — | 1156 |
+| 2026-07-29 | 4,386 | **1055** | 1144 |
+
+**The lowest-rated published episode on 07-29 is 1055. We play at 825–952.**
+Buckets 600–800, 800–900 and 900–1000 contain **zero** episodes. So:
+
+> **No amount of episode mining can ever describe the field we face.** The public
+> data is censored below ~1055 by construction. Our own submission replays are
+> the only evidence that exists about our own opponents.
+
+That is why §8b read "`{F}`/Rock Fighting = `lucario_v10` is **0 of 400 games**"
+and concluded the anchor was dead. It was 0% *at 1150+*. In our own games it is
+**12.8% of the field** — tied for the largest deck we face.
+
+### The real field, from 109 real ladder games (`scripts/p9_field_census.py`)
+
+Pooled over `replays/submission_optv3` (54 games, the v3 agent) and
+`replays/submission_replay_2026-07-29` (55 games, the chip-only agent).
+Full table: `out/logs/p9_field_census_pooled.txt`.
+
+| archetype | share | our WR | anchor status |
+|---|---|---|---|
+| **Alakazam** (Abra/Kadabra, Telepath Psychic) | **22.0%** | 66.7% | ❌ → ✅ imported day 9 |
+| Marnie's Grimmsnarl ex (mirror) | 13.8% | 60.0% | ✅ had it |
+| Crustle | 12.8% | 57.1% | ✅ `rule:crustle` |
+| **Mega Lucario ex** | 12.8% | **50.0%** | ✅ had it, **wrongly retired** |
+| **Archaludon ex** | 10.1% | **45.5%** ⚠ worst | ❌ → ✅ imported day 9 |
+| *(14 more archetypes)* | 28.4% | — | — |
+| **top 5** | **71.6%** | | |
+
+**Before day 9 our anchor set covered 39.4% of the field and excluded both the
+largest archetype and our worst matchup.** The B1 decision was taken on the
+mirror (13.8%) and Crustle (12.8%) — **26.6%**.
+
+⚠ **Two methodology traps the census hit, both worth carrying forward.**
+1. **Naming a deck by its highest-prize Pokemon is wrong.** A single
+   Fezandipiti ex run as a draw tech made 18 Alakazam games read as a
+   "Fezandipiti ex" archetype. **A card the deck runs one copy of is a tech, not
+   an identity** — score archetypes on multiples only.
+2. **Naming a deck by the card you happened to see fragments one deck into
+   three.** A short game may only ever reveal the Kadabra. The census resolves
+   every Pokemon to its evolution line via `evolvesFrom` before counting; without
+   that, Abra/Kadabra/Alakazam read as three separate 11% archetypes and the
+   field looks far flatter than it is. Both fixes together moved the #1
+   archetype's share from 16.5% to 22.0% and cut 28 "archetypes" to 19.
+
+### What this does and does not overturn
+
+- ✅ **Rule 16's diagnosis stands and is now quantified** — the arena is accurate
+  where the anchor resembles the opponent, silent elsewhere. §8g already had the
+  positive control (arena predicted 0.770 vs Crustle; we won 76.9% of 13 real
+  Crustle games). This adds the negative one.
+- 🔴 **§8b's "the meta shifted" is retracted as a claim about OUR meta.** What
+  shifted was the top-1150 band. Our band's mix over two dumps is different
+  again (Lucario 20%/5%, Alakazam 13%/31% between the two), so **treat even this
+  census as a snapshot with n≈50 per dump.**
+- 🔴 **"`chip_target` is harmful" was measured vs Crustle only** (§8c). It is
+  still a matchup branch, but the branch was chosen from a 2-anchor set.
+- ⚠ **v3 is not refuted as a net.** It wins big on 26.6% of the field and loses
+  on 12.8%. Nothing yet measures it on the other 60.6%. **Do not discard it and
+  do not reship it** until the 5-anchor sweep is complete.
+
+### The anchors added (`scripts/import_field_agents.py`)
+
+Both pilots were sitting checked into `notebooks/` unused for the whole project:
+
+| anchor | source | why it is a good anchor |
+|---|---|---|
+| `rule:alakazam5` + `decks/alakazam5.py` | `rule-based-not-psychic-alakazam-best-5th` | author reports **5th place**, pure rules, no ML, no search — the strongest pilot in the repo, on the field's biggest deck. Its own 60 matches our 24-game reconstruction card for card |
+| `rule:archaludon` + `decks/archaludon_ex.py` | `a-sample-archaludon-75-wr-vs-my-1300-starmie` | our worst matchup. Also a **second damage-reduction deck** (Full Metal Lab: −30 into any Metal Pokemon), which `targeting.WALL_POKEMON = {345}` does not model |
+
+⚠ Rule 12's competitiveness clause was checked, not assumed: at n=30 smoke we
+score 0.633 vs `rule:alakazam5` and 0.733 vs `rule:archaludon` — real opponents,
+not the 0.911 ceiling that made a `bc`-piloted Crispin anchor useless.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
