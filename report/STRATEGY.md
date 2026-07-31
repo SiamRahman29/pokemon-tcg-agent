@@ -257,6 +257,37 @@ cannot be validated on the instrument available.** It is logged as a bundle
 candidate. **Reporting an effect we cannot measure as though we had measured it
 is the failure mode this whole report is organised against.**
 
+## 7b. The ceiling is the clone, not the deck — and we can prove it
+
+**The strongest structural claim in this report, because it is measured on the
+band we are trying to reach rather than the one we play in.**
+
+Of 800 seats in the top 400 episodes of 2026-07-29 (`avg_score` ≥ 1144 — roughly
+320 points above us), **417, or 52.1%, are playing our exact archetype**, and our
+60 is card-for-card the consensus list (that exact list seen 353×).
+
+> **So the gap between our 846.6 and the leader's 1169.2 is a piloting gap, not a
+> deck gap.** No decklist change can be worth 320 points when the players at 1169
+> are on our list.
+
+Two things follow, and they are the reason this project spent its last days where
+it did:
+
+1. **Deck experimentation is not a rank lever here.** We still report it (§9)
+   because "we measured a change and kept the list" is deck analysis — but we
+   stopped describing it as the fix for our ceiling once it was measured.
+2. **The bottleneck is imitation quality, and it is quantified.** Our corpus is
+   2,810 games scraped from *these same* 1144+ players. We clone them and play
+   ~320 points below them. `context_accuracy.py` puts the disagreement at
+   **33.9% of decisions — 3,930 of 6,424 misses in the MAIN context alone.**
+
+**And exactly one intervention has ever closed any of that gap: fixing a
+*representational* defect** (§4 — options that referred to different board slots
+were bitwise-identical inputs). It was found by reading the feature code against
+a premise nobody had checked, not by adding rules. **That is the paper's practical
+recommendation: when a behavior clone underperforms its demonstrators, audit what
+the option encoding can and cannot bind before you write a single rule.**
+
 ## 8. Negative results
 
 Honest nulls at n≥2000 are the section we are most confident in.

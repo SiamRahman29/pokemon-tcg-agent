@@ -79,12 +79,78 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — the next actions, in order (set 2026-07-31, day 9 pm)
+### ▶ START HERE — DAY 10 PLAN (set 2026-07-31 end of day 9; the goal is to WIN)
+
+> ## 📍 THE SITUATION IN FIVE LINES
+>
+> - **Rank 575 / 6,012 (top 9.6%), score 846.6.** Top is **1169.2**. Gap ≈ **320**.
+> - **Active pair: P6a 846.6 (best, still climbing) + v3 813.5.** P4b's 952.0 is
+>   **frozen and not comparable** (earned on a 4,000-entrant board; it is now 6,012).
+> - 🔴 **All three of our agents are within 36 Elo, and the LB resolves ±50–100.**
+>   **No rule-sized change can move our rank.** (§8k)
+> - ✅ **The deck is NOT the bottleneck: 52.1% of the ≥1144 band plays our exact
+>   archetype** and our 60 is the consensus list. **The 320 points are a PILOTING
+>   gap.** (§8o)
+> - ⚡ **So there is exactly one rank lever left: make the clone imitate better.**
+>   We clone 1144+ players and play at 846; the clone disagrees with its own
+>   demonstrators on **33.9% of decisions** (3,930 of 6,424 misses in MAIN).
+>
+> **Deadlines: sim closes 2026-08-17 (17 days). Report due 2026-09-14 (45 days).**
+> **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
+> **Winning is not the same as ranking.** Read §0 of `ROADMAP.md` before deciding
+> that a rank point is worth more than a report chapter — the competition
+> description says outright that a mid-tier LB with deep analysis can win.
+
+#### The day-10 order of work
+
+**A. ⚡ HUNT THE NEXT REPRESENTATIONAL DEFECT — the only proven rank lever.**
+   B1 is the single largest effect this project has produced, and it was found by
+   **reading the feature code against a premise nobody had checked** (§8f), not
+   by guessing. Do that again, deliberately:
+   - `python -X utf8 scripts/context_accuracy.py` — the per-context miss table.
+     **MAIN holds 3,930 of 6,424 misses.** That is the target.
+   - Read `agents/sa/optfeat.py` and `features.py` **against** the top miss
+     contexts and ask the §8f question for each: is the input **absent**
+     (informational) or **present but unbindable** (representational)? Only the
+     second kind has ever paid.
+   - ⚠ **Known unencoded candidates to check first** (cheap, each is one line to
+     verify): the opponent's **hand size** (Alakazam's Powerful Hand is 20 damage
+     per card in hand and is **22% of the field**); stadium in play; the
+     opponent's discard contents; turn number; prizes remaining on each side.
+   - **Bar: any candidate must clear +50 Elo weighted across the five anchors
+     before it is worth a submission** (§8k). Below that it is a report chapter.
+
+**B. 📝 `report/STRATEGY.md` — the highest EV per hour in the project, and it is
+   NOT a consolation prize.** Deck 20% + writing 10% + the soundness /
+   consistency / robustness bullets inside Model's 70% dwarf the LB's one bullet,
+   **and the LB is stuck inside its own noise band while the report is not.**
+   Day 9 alone produced three strong chapters — the censored sampling frame
+   (§8i), matchup-conditional rules at **+47 / −51 Elo** (§8j), and the
+   everything-is-within-36-Elo result (§8k). ⚠ **One edit per session, minimum.**
+
+**C. 🔬 B4 — DECIDE, do not drift.** The prototype exists and **loses 0.075
+   [0.026, 0.199] n=40** (§8n). Two bugs eliminated; the live hypothesis is a
+   *design* flaw — maximising end-of-OUR-turn value cannot see the opponent's
+   reply. **Either** test the one-ply-reply fix (small change to `_rollout`'s
+   terminal evaluation) **or kill it and write it up.** It is already a good
+   negative-result chapter either way. Do not let it consume day 10.
+
+**D. 🃏 Track C deck work — reframe it, then do it FOR DECK SCORE.** §8o proved
+   it is not a rank lever, so stop selling it as the counter-meta fix. It is 20%
+   of the rubric on its own and **only ONE decklist variant has ever been A/B'd**
+   (0.490, null). Also **re-aim it**: Track C is written against Crustle, but our
+   worst matchups are **Archaludon (45.5% over 11 real games)** and **Mega
+   Lucario (50%)**, and anchors for both now exist.
+
+**E. ⛔ DO NOT SUBMIT** unless something clears **+50 Elo weighted over the five
+   anchors**. Every submission evicts, and the pair {P6a, v3} is already the
+   arena's top two (§8k). The restore of P4b is **closed — do not reopen it.**
+
+<details><summary>Day 9's completed items (kept for the record)</summary>
 
 **Day 9 answered the question day 8 ended on.** The blocking problem — "no arena
 number in this repo predicts ladder strength" — is **closed** (§8i): the arena
-predicts fine, the anchor set was wrong, and it is now fixed. Everything below is
-ordinary work again.
+predicts fine, the anchor set was wrong, and it is now fixed.
 
 0. ✅ **THE 5-ANCHOR SWEEP IS COMPLETE** (n=2000 per cell, 71.5% of the field).
    **Weighted by field share, v3 is +36 Elo over P4b** — it wins four anchors and
@@ -281,9 +347,10 @@ ordinary work again.
      wherever Δ>0 scores +12 Elo, of which **+4 is noise** from three overlapping
      cells.
 
-3b. **⚡ THE LIVE LEAD IS NOW B4 (turn-level sequencing).** It is the **only
-   candidate that has cleared every cheap gate**, and after §8k the only lever
-   that could clear the 36-Elo band the LB cannot resolve (`EVIDENCE` §8l, §8m):
+3b. **B4 (turn-level sequencing) — probed GREEN, prototyped RED.** ⚠ **Superseded
+   by §8n: the prototype LOSES 0.075 [0.026, 0.199] n=40.** Kept because the
+   probe numbers are sound and are report material; see item C above for the
+   decision. The probe said (`EVIDENCE` §8l, §8m):
    - **62% of our turns** have ≥2 real selects (rule 13 passed).
    - Space is median **98M** — exhaustive dead — but `fs.step` runs at
      **7,698/s**, so **~78,000 candidate sequences per turn** are affordable.
@@ -347,6 +414,8 @@ ordinary work again.
    (rule 14): how often is their hand large enough to matter, and is there any
    action of ours that shrinks it? ⚠ We already win this matchup 66.7%, so the
    headroom is small — check that first.
+
+</details>
 
 ### The B1 arena result — kept because the CONTRAST with the ladder is the finding
 
