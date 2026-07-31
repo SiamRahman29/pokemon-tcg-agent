@@ -124,6 +124,48 @@ concludes** — hypothesis, command, n, CI, verdict, one sentence of
 interpretation. End-of-session checklist: HANDOFF plan ✓, EVIDENCE entries ✓,
 this file's calendar ✓.
 
+> ⚠ **AMENDED 2026-07-31 — "the session it concludes" means CONCLUDES, not
+> "looks decided".** §8i was written into `EVIDENCE.md` after **2 of 5 anchors**
+> reported and had to be retracted the same session; the full sweep reversed its
+> sign. **If runs are still in flight, log the numbers and leave the verdict
+> blank.** A verdict written early gets copied into HANDOFF, then ROADMAP, and by
+> then three files assert it (rule 15).
+
+### 🔴 The doc-discipline audit (2026-07-31) — what is actually going wrong
+
+**Maintenance is not the problem; two other things are.**
+
+| file | commits | days touched | verdict |
+|---|---|---|---|
+| `HANDOFF.md` | 62 | 5 of 5 | ✅ updated every session |
+| `ROADMAP.md` | 10 | 2 of 2 since it existed | ✅ |
+| `report/EVIDENCE.md` | 14 | 2 of 2 since it existed | ✅ |
+| `report/STRATEGY.md` | — | — | ❌ **promised 07-30, created 07-31 after slipping ~4 sessions** |
+
+**Failure 1 — the deliverable with a real deadline was the one that slipped.**
+Everything with a same-day feedback loop got updated religiously; the thing due
+**09-14** got deferred every session because nothing forced it. It is now started.
+**Standing rule: `STRATEGY.md` gets one edit per session, however small.** It is
+30%+ of the rubric (Deck 20% + writing 10%, plus the soundness/consistency/
+robustness bullets inside Model Score's 70%), against LB's **one bullet of five**.
+
+**Failure 2 — updates are ADDITIVE, and that has cost real points.** `HANDOFF.md`
+went **135 → 1,579 lines in 5 days** and now carries **27 lines** of
+retraction/superseded markers. Claims get appended and annotated rather than
+revised, so a wrong claim survives in the files that copied it. This is not
+cosmetic:
+
+> "`lucario_v10` is 0% of the meta" was written once on 07-30 and propagated to
+> HANDOFF §1, rule 12, §3.1 **and** ROADMAP's calendar. Acting on it retired the
+> anchor that would have caught B1 — the deck that turned out to be **12.8% of
+> our field and our worst matchup.**
+
+**HANDOFF rule 15 already warns about exactly this** ("a premise repeated in three
+files is not thereby verified — it is just load-bearing") and the project did it
+anyway, twice. **Standing rule: when a claim is retracted, grep for it across all
+four files in the same commit.** `grep -rn "<the claim>" *.md report/` — cheap,
+and it is the step that was skipped.
+
 ### Track C — Deck Score (20%)
 
 **Documentation half — the core argument is now measured, not asserted.**

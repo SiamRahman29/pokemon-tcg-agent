@@ -408,20 +408,32 @@ ordinary work again.
    resolve. **B1 measures ≈ +115 Elo on two anchors — above the instrument's
    precision** — so the reasoning that said "wait and bundle" now says "submit
    this one". The bundle it was waiting for exists.
-6. **`report/STRATEGY.md` does not exist yet** — the only Track B deliverable not
-   started. `report/EVIDENCE.md` is backfilled and ready to draft from.
+6. ~~**`report/STRATEGY.md` does not exist yet**~~ ✅ **CREATED 2026-07-31** after
+   slipping ~4 sessions. §1–5 and §8 are written from concluded experiments;
+   §6–7 are outlined against work in flight. **Standing rule: one edit per
+   session, however small** — it is 30%+ of the rubric against the LB's one
+   bullet of five, and it was the only deliverable with no same-day feedback
+   loop to force it. See ROADMAP's doc-discipline audit.
 
-### The four files, and what each owns
+### The five files, and what each owns
 
 | file | owns |
 |---|---|
 | **`HANDOFF.md`** (this) | live state, the live engineering plan, the anti-self-deception rules, commands, gotchas |
 | **`ROADMAP.md`** | the strategy-competition plan — what the engineering is *for*, the breakthrough hunt, the calendar |
 | **`report/EVIDENCE.md`** | the hypothesis log: every concluded experiment with n, CI, verdict. **All closed-experiment detail lives there, not here.** |
+| **`report/STRATEGY.md`** | **the report itself** — the deliverable due 09-14. ⚠ **One edit per session, however small.** It slipped ~4 sessions because it is the only file with no same-day feedback loop |
 | **`competition_details_and_rubric.md`** | the rubric, verbatim |
 
-**End of every session: update HANDOFF (plan), ROADMAP (calendar), and
-EVIDENCE (any experiment that concluded) together.**
+**End of every session: update HANDOFF (plan), ROADMAP (calendar), EVIDENCE
+(any experiment that CONCLUDED) and STRATEGY (one edit, however small) together.**
+
+⚠ **And when you retract a claim, `grep` it across all five files in the same
+commit.** Updates here have been additive — HANDOFF went 135 → 1,579 lines in
+5 days and carries 27 retraction markers — so a wrong claim survives in whatever
+copied it. "`lucario_v10` is 0% of the meta" propagated to four places and cost
+us the anchor that would have caught B1. Rule 15 warns about this; we did it
+anyway. ROADMAP's doc-discipline audit has the numbers.
 
 > **Submission state (2026-07-31). ⚠ The previous version of this box was WRONG
 > on the one point that mattered — see the ✅ below.**
