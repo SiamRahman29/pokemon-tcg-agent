@@ -1009,29 +1009,96 @@ in play strength — the drop is purely the frozen agent no longer counting.
 3. The day-8 note *"freezing is cheaper than it sounds"* was **wrong** and is
    corrected in `HANDOFF.md`.
 
-## 8i. The arena/ladder gap is SOLVED — we retired the one anchor that saw it (2026-07-31)
+## 8i. The anchor set was wrong — but it does NOT explain the ladder gap, and the gap was never as big as reported (2026-07-31)
 
-**§8g left the project's central problem open: the arena said v3 was ~+115 Elo
-better and the ladder said ~−130. Day 9 closed it, and the answer is not "the
-arena is broken".** The arena is fine. **We had the right opponent, measured
-against it for a week, and deleted it from the anchor set two days before B1 was
-decided — on the strength of a meta mined from a population 200–320 Elo above the
-one we actually play in.**
+> ⚠ **This section was rewritten mid-session after the full sweep landed. An
+> earlier draft was headed "the arena/ladder gap is SOLVED" and claimed the
+> −130 was reproduced locally. That was wrong on the arithmetic, and it was wrong
+> because it was written after 2 of 5 anchors instead of 5 of 5.** The retraction
+> is in "What this does NOT show" below. The anchor-coverage finding survives; the
+> conclusion drawn from it did not.
 
-### The decisive A/B: v3 loses to the anchor we retired
+**Two separate results, and they must not be merged.**
+
+### Result 1 (solid): v3 has a real weakness the old anchor set could not see
 
 Both agents vs a fixed `rule:v10,noS` piloting `lucario_v10`, n=2000 each
 (`out/arena/p9_{p4b,v3off}_vs_v10.jsonl`):
 
-| agent | vs `rule:v10` | mirror (§8f) | vs `rule:crustle` (§8f) | LB |
-|---|---|---|---|---|
-| **P4b** = lw2 + chip + spread (`55072063`) | **0.576 [0.554, 0.598]** | — (reference) | 0.663 | **952.0** |
-| **v3 rules-off** (`55116557`) | **0.505 [0.483, 0.527]** | **0.661** vs P4b-era net | 0.770 | **824.6** |
+| agent | vs `rule:v10` |
+|---|---|
+| **P4b** = lw2 + chip + spread (`55072063`) | **0.576 [0.554, 0.598]** |
+| **v3 rules-off** (`55116557`) | **0.505 [0.483, 0.527]** |
 
-**The confidence intervals do not overlap.** v3 is **−0.071 against Mega
-Lucario** while being **+0.161 in the mirror** and **+0.107 vs Crustle**. That is
-the whole regression, reproduced locally, for 15 minutes of CPU and no
-submission. **Every number in §8f was correct; the anchor set was not.**
+**Confidence intervals disjoint. v3 is −0.071 (≈ −50 Elo) against Mega Lucario**,
+which is **12.8% of the field we actually play**, while being **+0.157 in the
+mirror**. B1 could not have seen this: the anchor had been retired two days
+earlier on the strength of a meta mined from a population 200–320 Elo above ours.
+
+### The full 5-anchor sweep (n=2000 per cell, day 9)
+
+| anchor | share | P4b | v3 | Δ Elo (v3 − P4b) | weighted |
+|---|---|---|---|---|---|
+| `rule:alakazam5` | **22.0%** | 0.727 [0.707, 0.746] | 0.731 [0.711, 0.750] | **+4** (dead heat) | +0.8 |
+| mirror, **head-to-head** | 13.8% | (0.343) | **0.657 [0.636, 0.677]** | **+113** | +15.6 |
+| `rule:crustle` | 12.8% | 0.663 | 0.770 | **+92** | +11.8 |
+| `rule:v10` | 12.8% | 0.576 [0.554, 0.598] | 0.505 [0.483, 0.527] | **−50** 🔴 | −6.4 |
+| `rule:archaludon` | 10.1% | 0.621 [0.599, 0.642] | 0.669 [0.648, 0.690] | **+36** | +3.7 |
+| | **71.5%** | | | | **+36 Elo** |
+
+⚠ **Δ Elo is `elo(v3 vs anchor) − elo(P4b vs anchor)` for the fixed-anchor rows.
+The mirror row is a head-to-head, so its Δ is `elo(0.657) = +113` directly** —
+computing it as `elo(v) − elo(1−v)` doubles it to +226 and inflates the weighted
+total from +36 to +57 Elo. Different row types, different arithmetic.
+
+⚠ **A methodology check that nearly went wrong, and then didn't.** §8f's mirror
+number (0.661) is v3 vs `policy_b1_ctrl` — a **v2-feature net on the same
+`pds_v3` corpus** — not vs P4b (`lw2`, `pds_v2`, rules on). Those are a *feature
+ablation* and an *agent comparison*, and mixing them into one weighted table is
+invalid. The honest head-to-head had never been run in this project; it was run,
+and it reads **0.657** against the 0.661 that was being reused. **The reuse was
+in fact harmless — but it was harmless by luck, and the check cost 12 minutes.**
+
+### What this does NOT show — the retraction
+
+**Weighted by field share over the 71.5% we can now measure, the arena says v3 is
+≈ +36 Elo BETTER than P4b.** It does not reproduce the regression at all. The
+Lucario weakness is real and worth −50 Elo on 12.8% of the field — about **−6 Elo
+overall** — and it is swamped by the mirror (+15.6) and Crustle (+11.8) gains.
+
+**And the "−130" itself was an artifact of a comparison this repo's own rule 2
+forbids.** `55072063`'s **952.0 is frozen**: it was earned on 07-29 against a
+~4,000-entrant board, and the board is now **6,000**. The only same-time,
+both-active comparison available is:
+
+| submission | agent | read 2026-07-31 |
+|---|---|---|
+| `55116557` | **v3, rules off** | **819.8** |
+| `55077709` | P6a = lw2 + chip + spread + `counter_source` | **845.0** ⚠ still climbing (824.9 → 837.5 → 845.0) |
+
+**−25 points, against an opponent that has not converged.** §1's own resolution
+limit says the LB swings ±50–100 while converging. **So the residual
+arena/ladder disagreement is smaller than the instrument can resolve** — the
+dramatic contradiction was manufactured by comparing a live score against a
+frozen one from a smaller field.
+
+🔴 **Therefore §8g's headline — "the arena is systematically wrong, n=2, both
+larger than the instrument" — is WEAKENED, and so is the version of rule 16 that
+was written from it.** Both of its instances compared against numbers that were
+not comparable: `counter_source` against a converging score (already conceded in
+§7), and B1 against a frozen one. **There may be no systematic arena bias to
+explain.**
+
+### What to actually conclude
+
+1. ✅ **Keep the rebuilt anchor set.** It found a genuine −50 Elo hole in v3 that
+   26.6% coverage could not. That is worth the day regardless of the above.
+2. ✅ **Keep the sampling-frame lesson** (below). It is independent of the gap.
+3. 🔴 **Stop trying to explain a 130-point regression. Measure a 25-point one
+   properly instead** — and note the LB cannot resolve 25 points, so the honest
+   answer may be "v3 and P6a are indistinguishable on the ladder".
+4. ⚠ **Never compare against a frozen score again.** Rule 2 says it; §8g did it
+   anyway; this section nearly did it twice.
 
 ### Why the anchor was retired: the mined meta describes a band we never play in
 
@@ -1116,6 +1183,40 @@ Both pilots were sitting checked into `notebooks/` unused for the whole project:
 ⚠ Rule 12's competitiveness clause was checked, not assumed: at n=30 smoke we
 score 0.633 vs `rule:alakazam5` and 0.733 vs `rule:archaludon` — real opponents,
 not the 0.911 ceiling that made a `bc`-piloted Crispin anchor useless.
+
+### Calibration: the arena ranks matchups right and reads ~15 pp optimistic
+
+The only external check available — v3's arena score per anchor against **the
+same agent's real win rate** on the same archetype (`replays/submission_optv3`):
+
+| archetype | arena (v3) | real WR | n | mean opponent rating |
+|---|---|---|---|---|
+| Crustle | 0.770 | 70.0% | 10 | 713 |
+| Alakazam | 0.731 | 57.1% | 7 | 779 |
+| Archaludon | 0.669 | 40.0% | 5 | 787 |
+| Mega Lucario | 0.505 | 36.4% | 11 | 735 |
+
+**The rank order is exactly right, 4 for 4, and the level is ~13–27 pp
+optimistic.** So: **trust the arena for A/B deltas and for ordering matchups;
+do NOT read an arena score as a predicted win rate.** The optimism is expected —
+these pilots are public notebooks, not the players we meet.
+
+### ⚠ The census describes the pool we were MATCHED against, not our own band
+
+`p9_field_census.py --lb` joins each opponent to a leaderboard snapshot. Over the
+54 v3 games, opponents average **759** while that agent sat at **819.8** — we
+were matched *down*, and only 17% of opponents outrated us. **Every share and win
+rate in this section is a property of that pool.** Per archetype it makes two
+matchups look far worse than the raw WR suggests:
+
+- **Mega Lucario: 36.4% against opponents averaging 735 — 85 points BELOW us.**
+  That is not "a hard matchup", it is losing to weaker players, and it is the
+  same deck the arena independently flags at −50 Elo. **Two independent
+  instruments, same conclusion: this is the matchup to fix.**
+- **Archaludon: 40.0% vs 787.**
+- Crustle's healthy-looking 70.0% is against the **weakest** pool we faced (713).
+- The mirror is the bright spot: **60.0% against opponents averaging 871**, the
+  only pool that outrated us.
 
 **How closely does the Alakazam pilot's 60 match the field's?** Checked against
 the 24-game reconstruction rather than asserted — **16 of 23 observed cards match

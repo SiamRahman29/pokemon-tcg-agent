@@ -13,23 +13,44 @@ reshuffles constantly — treat any ranking as a snapshot, and **paginate:
 `competition_leaderboard_view` returns 20 rows and a `Next Page Token`; pass it
 back via `page_token` to walk all 5,000** (§5).
 
-> # ✅ READ THIS FIRST — THE ARENA/LADDER GAP IS SOLVED (day 9, 2026-07-31)
+> # 🔴 READ THIS FIRST — THE "−130 REGRESSION" WAS LARGELY AN ARTIFACT (day 9, 2026-07-31)
 >
-> **The arena was never broken. We retired the one anchor that would have caught
-> B1, two days before B1 was decided.** `report/EVIDENCE.md` §8i.
+> **⚠ An earlier version of this box, written mid-session, said the gap was
+> SOLVED and that v3's loss was reproduced locally. That was written after 2 of 5
+> anchors and it was wrong. Corrected here after the full sweep.**
+> `report/EVIDENCE.md` §8i.
 >
-> Both agents vs a fixed `rule:v10,noS` on `lucario_v10`, n=2000 each:
+> **1. There is a real v3 weakness, and the retired anchor is what found it.**
+> Both agents vs a fixed `rule:v10,noS` on `lucario_v10`, n=2000, CIs disjoint:
+> **P4b 0.576 [0.554, 0.598] vs v3 0.505 [0.483, 0.527]** — v3 is ≈ **−50 Elo**
+> against **12.8%** of the field. B1 could not have seen this; the anchor had been
+> retired two days before.
 >
-> | agent | vs `rule:v10` | mirror | vs Crustle | LB |
-> |---|---|---|---|---|
-> | **P4b** (lw2 + chip + spread) | **0.576 [0.554, 0.598]** | ref | 0.663 | **952.0** |
-> | **v3 rules-off** (`55116557`) | **0.505 [0.483, 0.527]** | 0.661 | 0.770 | **824.6** |
+> **2. But it does NOT explain the regression — it points the other way.**
+> Weighted by field share over the 61.4% now measured, **the arena says v3 is
+> ≈ +35 Elo BETTER** than P4b (mirror head-to-head **0.657**, Crustle **+91 Elo**,
+> Alakazam a dead heat, Lucario **−50**).
 >
-> **Non-overlapping CIs.** v3 is **−0.071 against Mega Lucario** while being
-> **+0.161 in the mirror**. That is the whole ~130-point regression, reproduced
-> locally, for 15 min of CPU and no submission.
+> **3. 🔴 And the −130 was a comparison rule 2 forbids.** `55072063`'s **952.0 is
+> FROZEN** — earned 07-29 against a ~4,000-entrant board; the board is now
+> **6,000**. The only same-time, both-active comparison is:
 >
-> **🔴 The root cause is STRUCTURAL and it invalidates a week of meta work.**
+> | submission | agent | read 2026-07-31 |
+> |---|---|---|
+> | `55116557` | **v3, rules off** | **819.8** |
+> | `55077709` | P6a (lw2 + chip + spread + `counter_source`) | **845.0** ⚠ *still climbing*: 824.9 → 837.5 → 845.0 |
+>
+> **−25 points, against an agent that has not converged — well inside the LB's
+> own ±50–100 swing.** So the honest status is **"v3 and P6a are indistinguishable
+> on the ladder"**, not "v3 lost 130 points".
+>
+> **⇒ §8g's "the arena is systematically wrong, n=2" is WEAKENED.** Both its
+> instances compared against non-comparable numbers — `counter_source` against a
+> converging score, B1 against a frozen one. **There may be no systematic arena
+> bias to explain.** Do not spend more days explaining one.
+>
+> **🔴 The genuinely load-bearing finding of day 9 is the sampling frame, and it
+> is independent of all of the above.**
 > `fetch_top_episodes.py` mines the **top** episodes by `avg_score`, and Kaggle's
 > daily datasets **bottom out at 1055** — buckets 800–900 and 900–1000 contain
 > **zero** episodes. We play at **825–952**. **No amount of episode mining can
@@ -65,7 +86,33 @@ number in this repo predicts ladder strength" — is **closed** (§8i): the aren
 predicts fine, the anchor set was wrong, and it is now fixed. Everything below is
 ordinary work again.
 
-0. **⚡ FINISH THE 5-ANCHOR SWEEP. Nothing should be submitted before it.** Two of
+0. ✅ **THE 5-ANCHOR SWEEP IS COMPLETE** (n=2000 per cell, 71.5% of the field).
+   **Weighted by field share, v3 is +36 Elo over P4b** — it wins four anchors and
+   loses only Mega Lucario. Δ Elo is `elo(v3 vs anchor) − elo(P4b vs anchor)`;
+   the mirror row is a head-to-head, so its Δ is `elo(0.657)` directly — **do not
+   compute that one as `elo(v) − elo(1−v)`, which doubles it.**
+
+   | anchor | share | P4b | v3 | Δ Elo | weighted |
+   |---|---|---|---|---|---|
+   | `rule:alakazam5` | **22.0%** | 0.727 [0.707, 0.746] | 0.731 [0.711, 0.750] | **+4** dead heat | +0.8 |
+   | mirror, head-to-head | 13.8% | (0.343) | **0.657 [0.636, 0.677]** | **+113** | +15.6 |
+   | `rule:crustle` | 12.8% | 0.663 | 0.770 | **+92** | +11.8 |
+   | `rule:v10` | 12.8% | 0.576 [0.554, 0.598] | 0.505 [0.483, 0.527] | **−50** 🔴 | −6.4 |
+   | `rule:archaludon` | 10.1% | 0.621 [0.599, 0.642] | 0.669 [0.648, 0.690] | **+36** | +3.7 |
+   | | **71.5%** | | | | **+36 Elo** |
+
+   **And the ladder agrees, once compared honestly:** v3 819.8 vs P6a 845.0
+   (both active, same time) = **−25**, against an agent still climbing, inside
+   the LB's ±50–100. **Arena +36, ladder −25, instrument ±75: these are not in
+   conflict.** The apparent 130-point contradiction came from comparing against
+   a frozen 07-29 score (§8i).
+
+   ⚠ **The one place v3 is genuinely worse is `rule:v10` (−50 Elo on 12.8%).**
+   That is the live engineering lead — see item 3.
+
+<details><summary>The sweep as it was being run (superseded, kept for the reasoning)</summary>
+
+   **⚡ FINISH THE 5-ANCHOR SWEEP. Nothing should be submitted before it.** Two of
    the four runs are done; `p9_field_census.py`'s top 5 covers 71.6% of the field:
 
    | anchor | share | `bc:p4b,noSrc` | `bc:v3off,…` |
@@ -98,19 +145,33 @@ ordinary work again.
    with an **agent comparison**, and it flips the weighted verdict: done naively
    it totals ≈ +0.045 for v3, while the ladder says v3 is **132 points worse**.
    **The honest cell is `bc:v3off` vs `bc:p4b,noSrc` head to head — which had
-   never been run in this project.** It is running now. **Do not compute a
-   weighted total until it lands.**
+   never been run in this project.**
 
-   **Then, and only then, decide v3.** The live options are (a) ship v3 as-is,
-   (b) ship v3 with the rules back on (the 0.427 that justified rules-off was
-   measured in the **mirror**, 13.8% of the field), (c) keep P4b. ⚠ Also re-run
-   the three rule flags against the two NEW anchors — `chip_target`'s wall branch
-   hardcodes `WALL_POKEMON = {345}` and **Archaludon's Full Metal Lab is a second
-   damage-reduction effect it does not know about** (§8i).
+   ✅ **It landed at 0.657 against the 0.661 that was being reused, so the reuse
+   was harmless — but it was harmless by luck.** Run the cell you are actually
+   weighting; it cost 12 minutes.
 
-1. **RESTORE P4b when convenient — NOT urgent.** ⚠ **Nothing is at risk of being
-   lost**, so the only cost of waiting is the displayed rank in the meantime,
-   which does not compound:
+</details>
+
+1. **⚠ THE P4b RESTORE IS NOW A GENUINELY OPEN QUESTION — DO NOT DO IT ON
+   AUTOPILOT.** Every earlier version of this item assumed "952 > 837.5, so
+   restoring is free value". **That premise is a frozen-vs-live comparison,
+   which is exactly what §8i retracted.** The evidence now points both ways:
+
+   | for restoring P4b | against restoring P4b |
+   |---|---|
+   | It *did* read **952.0**, the highest number this project has produced | That 952.0 was earned 07-29 on a **~4,000**-entrant board; the board is now **6,000**, and a frozen rating is not comparable to a live one (rule 2) |
+   | The LB is the real referee and it liked P4b best | The **arena now covers 71.5% of the field** and says **v3 is +36 Elo over P4b** — and the arena's credibility was the only reason to doubt it |
+   | | A restore **costs a submission and evicts** (`55077709`, 845.0). It restarts at μ=600 and needs ~4 h |
+   | | We would be evicting the agent the arena ranks **highest** to install the one it ranks lower |
+
+   **My read: this is now finely balanced and it is the user's call, not a
+   default.** ⚠ **Do not treat "restore P4b" as settled just because three
+   earlier versions of this file said so** — all three were written before the
+   anchor set covered the field.
+
+   **The decision that actually binds is item 2 (what is ACTIVE on 08-17), and
+   there is time.** Nothing is at risk of being lost:
    - **Kaggle's copy of `55072063` is permanent** and keeps showing 952.0.
    - **P4b is rebuildable from git even without `dist/`** — `dist/**` is
      gitignored, but `agents/sa/policy_net.npz` **is tracked** and is the same
@@ -122,13 +183,24 @@ ordinary work again.
    **What actually binds: the best agent must be ACTIVE at the 08-17 close and
    through the 08-31 continued-play window** (§8h). Two mild arguments against
    leaving it to the deadline: the climb takes ~4 h, and the field is growing fast
-   (3,000 → 5,000 entrants in 2 days), so a late restore may not land on 952.
+   (3,000 → 5,000 → **6,000** entrants in 3 days), so a late restore may not land
+   on 952. ⚠ **And note that same growth is the reason 952 is not comparable to
+   819.8** — it cuts both ways.
 
    ⚠ **Real gap worth closing cheaply: `out/policy_b1_v3.npz` and
    `artifacts/pds_v3/` are gitignored and exist ONLY on this disk.** Losing them
    means re-running the 4-day shard rebuild plus a 12-epoch train to get v3 back.
+   **This is the one part of item 1 that is unambiguously worth doing now.**
 
-   When you do restore:
+   **The cheapest way to settle the restore question without spending a
+   submission:** the arena already ranks P4b vs v3 (+36 Elo to v3, 71.5%
+   coverage). The missing arm is **P6a** — the agent a restore would evict, and
+   the only one whose live score (845.0) is comparable to v3's. Run
+   `bc` (= P6a's exact config) against all five anchors and weight it. **If P6a
+   ≈ v3, the restore evicts nothing and the only question is whether P4b beats
+   both — which the arena says it does not.**
+
+   If you do restore anyway:
 
    ```powershell
    python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz','P4b restore: lw2 + chip_target + energy_spread (the 952 agent)','pokemon-tcg-ai-battle')"
@@ -137,10 +209,12 @@ ordinary work again.
    - That tarball is **verified** to be `55072063`'s exact code (flags: chip +
      spread, `counter_source` absent from the signature) and **smoke-tested**
      (`scripts/restore_smoke.py`). §3.0's table.
-   - **Eviction arithmetic: it evicts `55077709` (837.5), our WORST active**, and
-     leaves {P4b-restored, `55116557` v3 at 824.6}. Nothing valuable is lost.
+   - **Eviction arithmetic (updated 2026-07-31): it evicts `55077709` at
+     845.0 — which is now our BEST ACTIVE**, not our worst, and it is still
+     climbing. Active becomes {P4b-restored, v3 819.8}. ⚠ **This is the reverse
+     of what earlier drafts said** and it is the main new argument against.
    - ⚠ It restarts at **μ=600** and needs ~4 h to reach ~950; displayed dips to
-     824.6 meanwhile. That is the cost, and it is unavoidable — a rating cannot be
+     819.8 meanwhile. That is the cost, and it is unavoidable — a rating cannot be
      restored, only re-earned (§8h).
    - ⚠ **Read the LB before and after** (§5) and confirm with **two readings ≥1 h
      apart** (rule 2).
@@ -156,18 +230,40 @@ ordinary work again.
    hardcoded card ids. **Before believing a bucket called "other", check whether
    the classifier or the field is the thing that is small.**
 
-3. **Re-mine the meta?** ⛔ **NO — and this is now a permanent rule, not a
+3. **⚡ THE LIVE ENGINEERING LEAD: the Mega Lucario matchup.** Two independent
+   instruments agree, which nothing else in this project has managed:
+   - **Arena:** v3 is **−50 Elo** vs `rule:v10` — the only anchor of five it
+     loses, and the only negative term in the weighted table.
+   - **Ladder:** we won **36.4% of 11 real games** against Mega Lucario
+     opponents averaging **735**, i.e. **85 points below us** (§8i's calibration
+     table). Losing to weaker players is not a matchup tax, it is a defect.
+
+   It is **12.8% of the field**, we have a **real LB-950 pilot** for it already
+   (`rule:v10,noS`), and `replays/submission_optv3` holds 11 real games to read.
+   **Start with the audit, not a rule** (rule 14): what does Mega Lucario ex
+   actually do to us — 340 HP, and `decks/lucario_v10.py` runs Gravity Mountain
+   (bench HP?) plus Premium Power Pro ×4. Size the effect before writing
+   anything, and check whether `chip_target`/`energy_spread` are net-negative
+   here the way `chip_target` was against Crustle (§8c is the template).
+
+   ⚠ **And run the same 5-anchor sweep for the three rule flags.** We know the
+   rules are harmful to v3 *in the mirror* (0.427); we do not know their sign
+   against Lucario or Archaludon. **Option (b) — v3 with the rules back on —
+   is still untested and is the cheapest thing on this list.**
+
+4. **Re-mine the meta?** ⛔ **NO — and this is now a permanent rule, not a
    scheduling note.** Kaggle's daily episode datasets bottom out at `avg_score`
    **1055**; we play at 825–952; the 800–1000 buckets are **empty**. Mining
    produces an accurate picture of a band we never meet, and acting on it is what
-   retired `rule:v10` and cost ~130 LB points (§8i). Mining is still useful for
+   retired `rule:v10` — the anchor that turned out to be our worst matchup
+   (§8i). Mining is still useful for
    **decklist consensus** (§1's "our 60 is the field's 60" is real Deck Score
    evidence) and for **Track B report figures about the top of the ladder** — but
    **never again as the input to an anchor decision.** Use
    `p9_field_census.py` on our own replays for that, and re-run it after every
    submission dump.
 
-4. **Fix the two measured defects — but as questions, not licences** (§6 closed
+5. **Fix the two measured defects — but as questions, not licences** (§6 closed
    Boss's Orders after four null rules; all four were on the **lw2** net with the
    other rules on, so they do not settle this net):
    - **Boss's Orders: 9 of 31 real drags were misplays (29%)**, 5 of them throwing
@@ -177,7 +273,7 @@ ordinary work again.
      our side **and no armed Munkidori** — pure self-damage. ⚠ The other 19
      "we have more" rows are the intended engine (Shroud loads, Adrena-Brain
      ships); do not "fix" those.
-5. **The Alakazam matchup is a strategy question nobody has asked.** It is 22% of
+6. **The Alakazam matchup is a strategy question nobody has asked.** It is 22% of
    the field — the biggest single thing we play against — and its attack is
    **Powerful Hand: 20 damage per card in the attacker's hand.** Nothing in
    `targeting.py` or the feature set reasons about the opponent's hand size, and
@@ -430,9 +526,16 @@ seats (`out/meta/post_shift_0729.txt`).
 
 **Three findings, each of which changes the plan:**
 
-1. **🔴 `lucario_v10` — the single opponent every routine number in this repo is
+1. ❌ ~~**`lucario_v10` — the single opponent every routine number in this repo is
    measured against — is 0 of 400 games.** Our arena bar has been measuring a
-   deck that has left the meta entirely. This is rule 12's worst case, realised.
+   deck that has left the meta entirely. This is rule 12's worst case,
+   realised.~~ 🔴 **RETRACTED 2026-07-31 — this is the most expensive wrong
+   sentence in the project.** It is 0 of 400 games **at avg_score ≥ 1144**. In
+   our own 109 real games Mega Lucario is **12.8% of the field**, and it is the
+   matchup we lose worst (36.4% over 11 games, against opponents rated **85
+   points below us**). Retiring that anchor is what let B1 ship unseen. **The
+   error was not the measurement — it was reading a top-band sample as "the
+   meta".** §8i.
 2. **🔴 Crustle went from 1 seat in 1,600 to 18.1% of the field at a 56.6% win
    rate, and the LB's top two players are both on it** (`flg` 1205.7,
    `Majkel1337` 1186.4 in this sample). **Our own deck's win rate fell 52.2% →
@@ -533,7 +636,9 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     judgment puts it in the tradeoff column no matter how good the other looks.**
 12. **A single-anchor arena will eventually lie to you, and on 2026-07-30 it
     did.** Everything routine was measured against `rule:v10,noS` on
-    `lucario_v10` — a deck that is now **0% of the meta**. Re-anchored on
+    `lucario_v10` — ⚠ **which we then wrongly wrote off as "0% of the meta"; it
+    is 12.8% of the field we actually play (§8i), and this rule's own example
+    below is the good part of the story, not that clause.** Re-anchored on
     `rule:crustle`, **`chip_target` — the rule that bought ~150 LB points and
     defined the project's whole method — measures −0.126, i.e. actively
     harmful**, while it is worth +0.077 in the mirror (`EVIDENCE` §8c).
@@ -725,10 +830,16 @@ restarts it at **μ=600** and it must climb 4+ h; the 950.2 rating itself cannot
 restored, only re-earned. So the insurance is against *losing the code*, which we
 have not, and never against a bad submission decision.
 
-### 3.1 ✅ Re-anchored (2026-07-30) — done for Crustle; Crispin still needs a pilot
+### 3.1 ⚠ Re-anchored (2026-07-30) — and re-anchored AGAIN on 07-31, see §3.4
+
+> 🔴 **The premise below is retracted.** Day 8 rebuilt the anchor set because
+> `lucario_v10` was "0% of the meta" — true only of the top-1150 band. **Adding
+> `rule:crustle` was right; dropping `rule:v10` was the mistake**, and §3.4 put
+> it back. The current anchor set is §4's five-deck table. Kept because the
+> Crustle work in it is sound and the reasoning is report material.
 
 Every number in §3, §6 and `EVIDENCE.md` was earned against `lucario_v10`, which
-**is now 0% of the meta** (§1). So the bar itself has to be rebuilt.
+was believed to be **0% of the meta** (§1). So the bar itself has to be rebuilt.
 
 - ✅ **1. Fetch + mine.** 07-28 and 07-29 fetched (400 each); **07-30 is not
   publishable yet — its dataset 403s, episodes appear the following day**, so the
