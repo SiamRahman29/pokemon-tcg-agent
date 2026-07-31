@@ -1,0 +1,26 @@
+
+=== within-turn eval signal: 93 turns, K=16 sequences, M=8 determinizations ===
+
+  BETWEEN candidates (determinization-averaged merit)  median sd   0.111
+  RESIDUAL cand x det (does NOT transfer)              median sd   0.055  <- noise
+
+  ** SNR = sqrt(between / resid):  median 1.05 **
+     p25 0.70   p75 1.50   share of turns with SNR > 1: 52.7%
+
+  split-half top-1 agreement (chance = 6.2% at K=16, n=150):
+    argmax AGREED across halves                     93   62.0%
+    argmax CHANGED                                  57   38.0%
+
+  best-minus-median candidate, in eval units: median 0.099
+     (what a perfect chooser would gain per turn IF the eval were
+      exact. ⚠ UPWARD BIASED: it is a max over K noisy estimates,
+      the same selection bias that flattered the dead search.)
+
+  at M=8: between-sd 0.111 vs SE of a candidate mean 0.020  => 5.7x
+     (noise averages down with M; TRUE merit spread does not)
+
+--- verdict against the pre-registered kill criterion ---
+  🟢 SURVIVES: the argmax reproduces at 62.0% against 6.2% chance,
+     i.e. the eval is ranking real merit, not determinization
+     luck. ⚠ This licenses a PROTOTYPE + A/B, nothing more:
+     rule 3 -- five metrics have looked good and not paid.

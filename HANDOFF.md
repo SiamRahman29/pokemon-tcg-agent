@@ -281,8 +281,25 @@ ordinary work again.
      wherever Δ>0 scores +12 Elo, of which **+4 is noise** from three overlapping
      cells.
 
-3b. **The original framing, kept because the two-instrument agreement still
-   holds and still points at this matchup:**
+3b. **⚡ THE LIVE LEAD IS NOW B4 (turn-level sequencing).** It is the **only
+   candidate that has cleared every cheap gate**, and after §8k the only lever
+   that could clear the 36-Elo band the LB cannot resolve (`EVIDENCE` §8l, §8m):
+   - **62% of our turns** have ≥2 real selects (rule 13 passed).
+   - Space is median **98M** — exhaustive dead — but `fs.step` runs at
+     **7,698/s**, so **~78,000 candidate sequences per turn** are affordable.
+   - `evalfn` ranks **within** a turn: split-half top-1 agreement **62.0% vs
+     6.2% chance** over 93 turns. Not determinization luck.
+   - ⚠ **A pre-registered kill criterion was corrected mid-probe** (SNR at M=1
+     answers a question B4 never asks). §8m documents it in full — **read that
+     before trusting the verdict.**
+
+   **Next: prototype + arena A/B at n≥1000 vs all five anchors, with pool-usage
+   logging.** ⚠ Estimated gain is small and upward-biased (0.099 eval units per
+   turn, a max over 16), and the 600 s pool is a real risk (§7). By rule 3 this
+   is licensed as an experiment, not as an expected win.
+
+3c. **The original Mega Lucario framing, kept because the two-instrument
+   agreement still holds and still points at this matchup:**
    - **Arena:** v3 is **−50 Elo** vs `rule:v10` — the only anchor of five it
      loses, and the only negative term in the weighted table.
    - **Ladder:** we won **36.4% of 11 real games** against Mega Lucario

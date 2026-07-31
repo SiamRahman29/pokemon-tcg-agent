@@ -1467,6 +1467,72 @@ it.
 ⚠ And rule 3 stands: five times a metric that looked good failed to predict
 playing strength. **Nothing above licenses a build; it licenses the next probe.**
 
+## 8m. B4's decisive probe: the eval DOES rank within a turn — and a pre-registered criterion had to be corrected (2026-07-31)
+
+§8l named the missing measurement: not "can `evalfn` tell a winning board from a
+losing one across games" (AUC 0.685/0.901) but **"can it rank end-of-turn states
+reachable from the SAME position"**. `scripts/p12d_within_turn_signal.py`,
+**93 turns, K=16 candidate sequences, M=8 determinizations, full K×M matrix**:
+
+| quantity | value |
+|---|---|
+| between-candidate sd (determinization-averaged merit) | **0.111** |
+| residual candidate×determinization sd (does NOT transfer) | 0.055 |
+| SNR at **M=1**, `sqrt(between/resid)` | **1.05** |
+| between-sd vs **SE of a candidate mean at M=8** | **5.7×** |
+| **split-half top-1 agreement** (chance 6.2%) | **62.0%** (n=150) |
+| best − median candidate, per turn | 0.099 eval units ⚠ upward biased |
+
+**Verdict: the eval ranks real, transferable merit within a turn.** The argmax
+chosen on one half of the determinizations wins on the *other, independent* half
+**62% of the time against 6.2% chance** — ten times chance. That is not
+determinization luck, which is what killed the rollout search (§2).
+
+### 🔴 A pre-registered criterion was changed after seeing data. Read this before trusting the verdict.
+
+**The criterion written into the script before running it was: "SNR ≤ ~1.5 or
+top-1 agreement near chance ⇒ kill". SNR came out at 1.05, which would have
+killed B4. It was not killed, and the criterion was changed to agreement-only.**
+That is exactly the move that should attract suspicion, so the reasoning is here
+in full and the reader is invited to disagree:
+
+1. **The FIRST baseline was wrong by construction.** It compared spread across
+   candidates (one determinization) against spread of one candidate across
+   determinizations. A new determinization changes what everybody draws, moving
+   **all candidates together** — a common-mode shift that inflates "noise" while
+   leaving the *ordering* untouched. It reported SNR 1.05 **and** agreement 66.7%
+   vs 6.2% chance in the same run: a contradiction that only resolves if the
+   baseline measured level noise, not rank noise. **Fixed** by scoring the full
+   K×M matrix and doing a two-way decomposition, which removes common mode.
+2. **The corrected SNR is still ~1.05, and that is NOT a repeat of the same
+   error — it is a different one.** `sqrt(between/resid)` compares merit against
+   **single-observation** noise, i.e. the M=1 operating point. **A sequencer does
+   not run at M=1.** `p12b` measured ~78,000 affordable rollouts per turn, so it
+   averages, and averaging shrinks noise as `1/sqrt(M)` while leaving true merit
+   alone. At M=8 the ratio is already **5.7×**.
+3. **So the metric was mis-specified, not the result inconvenient.** SNR-at-M=1
+   answers "could a single-sample chooser rank these?" — a question B4 never
+   asks.
+
+⚠ **Judge it on the agreement number, which was co-pre-registered and never
+moved: 62.0% against 6.2%.** If that had come out near chance, B4 would be dead
+regardless of any of the above.
+
+### What this does and does not license
+
+- ✅ **B4 is the first breakthrough candidate to clear every cheap gate**
+  (denominator 62% of turns, ~78k candidates/turn affordable, eval ranks within
+  turn) and, after §8k, the only lever left that could clear the **36-Elo band
+  the leaderboard cannot resolve**.
+- ⚠ **The gain estimate is upward biased and small.** 0.099 eval units per turn
+  is a **max over 16 noisy estimates** — the same selection bias that flattered
+  the dead search. The true per-turn gain is smaller, and it is in "rough
+  prize-card units" against games decided by 6 prizes.
+- 🔴 **Rule 3 stands: five metrics have looked good here and not paid.** Nothing
+  above is evidence of playing strength. **The next step is a prototype plus an
+  arena A/B at n≥1000 against the five anchors, with pool-usage logging** — and
+  the pool is a real risk (exhausting 600 s is a loss, §7).
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
