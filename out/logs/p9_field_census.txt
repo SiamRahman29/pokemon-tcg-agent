@@ -1,0 +1,222 @@
+
+=== replays/submission_optv3: 54 games, 20 distinct opponent archetypes ===
+  overall win rate 34/54 = 63.0%
+
+=== THE REAL FIELD (signature Pokemon = highest-prize / evolved) ===
+  archetype                        games   share   won      WR
+  Mega Lucario ex                     10  18.5%     4   40.0%
+  Crustle                              9  16.7%     6   66.7%
+  Archaludon ex                        5   9.3%     2   40.0%
+  Marnie's Grimmsnarl ex               5   9.3%     3   60.0%
+  Fezandipiti ex                       4   7.4%     3   75.0%
+  Alakazam                             3   5.6%     1   33.3%
+  Dragapult ex                         2   3.7%     2  100.0%
+  Dudunsparce                          2   3.7%     2  100.0%
+  Mega Kangaskhan ex                   2   3.7%     2  100.0%
+  Mega Starmie ex                      2   3.7%     1   50.0%
+  Cornerstone Mask Ogerpon ex          1   1.9%     0    0.0%
+  Cubchoo                              1   1.9%     1  100.0%
+  Cynthia's Garchomp ex                1   1.9%     1  100.0%
+  Cynthia's Roserade                   1   1.9%     1  100.0%
+  Great Tusk                           1   1.9%     1  100.0%
+  Iono’s Bellibolt ex                  1   1.9%     0    0.0%
+  Mega Froslass ex                     1   1.9%     1  100.0%
+  Meowth ex                            1   1.9%     1  100.0%
+  Solrock                              1   1.9%     1  100.0%
+  Teal Mask Ogerpon ex                 1   1.9%     1  100.0%
+
+=== COVERAGE: how many anchors buy how much of the field? ===
+  top  1 anchors (Mega Lucario ex             ) ->  18.5% of the field
+  top  2 anchors (Crustle                     ) ->  35.2% of the field
+  top  3 anchors (Archaludon ex               ) ->  44.4% of the field
+  top  4 anchors (Marnie's Grimmsnarl ex      ) ->  53.7% of the field
+  top  5 anchors (Fezandipiti ex              ) ->  61.1% of the field
+  top  6 anchors (Alakazam                    ) ->  66.7% of the field
+  top  7 anchors (Dragapult ex                ) ->  70.4% of the field
+  top  8 anchors (Dudunsparce                 ) ->  74.1% of the field
+  top  9 anchors (Mega Kangaskhan ex          ) ->  77.8% of the field
+  top 10 anchors (Mega Starmie ex             ) ->  81.5% of the field
+  top 11 anchors (Cornerstone Mask Ogerpon ex ) ->  83.3% of the field
+  top 12 anchors (Cubchoo                     ) ->  85.2% of the field
+
+=== DISTINCT OPPONENT TEAMS (a repeat opponent is not a repeat deck) ===
+  54 distinct teams over 54 games; most frequent: Anna Wood x1, lingexiong x1, So Mukaichi x1, baudo828 x1
+
+=== RECONSTRUCTION: Mega Lucario ex  (10 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     4x  Mega Lucario ex                    #678   seen in 10/10 games
+     3x  Riolu                              #677   seen in 10/10 games
+     2x  Lunatone                           #675   seen in 10/10 games
+     3x  Solrock                            #676   seen in 9/10 games
+     2x  Makuhita                           #673   seen in 9/10 games
+     2x  Hariyama                           #674   seen in 8/10 games
+     1x  Binacle                            #1051  seen in 1/10 games
+     1x  Barbaracle                         #1052  seen in 1/10 games
+  -- TRAINERS / ENERGY --
+     8x  Basic {F} Energy                   #6     seen in 10/10 games
+     4x  Lillie's Determination             #1227  seen in 10/10 games
+     4x  Dusk Ball                          #1102  seen in 10/10 games
+     3x  Poké Pad                           #1152  seen in 10/10 games
+     4x  Premium Power Pro                  #1141  seen in 9/10 games
+     4x  Fighting Gong                      #1142  seen in 9/10 games
+     3x  Boss’s Orders                      #1182  seen in 8/10 games
+     3x  Carmine                            #1192  seen in 8/10 games
+     2x  Switch                             #1123  seen in 8/10 games
+     2x  Gravity Mountain                   #1252  seen in 5/10 games
+     1x  Hero’s Cape                        #1159  seen in 3/10 games
+     3x  Rock Fighting Energy               #20    seen in 1/10 games
+     1x  Battle Cage                        #1264  seen in 1/10 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x646
+     Gravity Mountain #1252  x92
+     Battle Cage #1264  x9
+
+=== RECONSTRUCTION: Crustle  (9 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     4x  Dwebble                            #344   seen in 9/9 games
+     4x  Crustle                            #345   seen in 9/9 games
+     4x  Great Tusk                         #58    seen in 3/9 games
+     1x  Tatsugiri                          #122   seen in 1/9 games
+     1x  Terrakion                          #607   seen in 1/9 games
+  -- TRAINERS / ENERGY --
+     3x  Buddy-Buddy Poffin                 #1086  seen in 9/9 games
+     2x  Mist Energy                        #11    seen in 6/9 games
+     2x  Cook                               #1212  seen in 5/9 games
+     1x  Spiky Energy                       #14    seen in 5/9 games
+     6x  Basic {G} Energy                   #1     seen in 4/9 games
+     3x  Pokégear 3.0                       #1122  seen in 4/9 games
+     4x  Lillie's Determination             #1227  seen in 3/9 games
+     4x  Fighting Gong                      #1142  seen in 3/9 games
+     4x  Rock Fighting Energy               #20    seen in 3/9 games
+     3x  Boss’s Orders                      #1182  seen in 3/9 games
+     2x  Grow Grass Energy                  #18    seen in 3/9 games
+     2x  Poké Pad                           #1152  seen in 3/9 games
+     2x  Explorer’s Guidance                #1185  seen in 3/9 games
+     1x  Jumbo Ice Cream                    #1147  seen in 3/9 games
+     1x  Lisia’s Appeal                     #1204  seen in 3/9 games
+     3x  Cheren                             #1224  seen in 2/9 games
+     2x  Switch                             #1123  seen in 2/9 games
+     2x  Xerosic’s Machinations             #1197  seen in 2/9 games
+     1x  Hero’s Cape                        #1159  seen in 2/9 games
+     1x  Battle Cage                        #1264  seen in 2/9 games
+     1x  Colress’s Tenacity                 #1194  seen in 2/9 games
+     1x  Neutralization Zone                #1247  seen in 2/9 games
+     2x  Hilda                              #1225  seen in 1/9 games
+     1x  Team Rocket's Watchtower           #1256  seen in 1/9 games
+     1x  Waitress                           #1235  seen in 1/9 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x700
+     Team Rocket's Watchtower #1256  x78
+     Neutralization Zone #1247  x48
+     Battle Cage #1264  x8
+
+=== RECONSTRUCTION: Archaludon ex  (5 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     3x  Duraludon                          #169   seen in 5/5 games
+     3x  Archaludon ex                      #190   seen in 5/5 games
+     3x  Cinderace                          #666   seen in 4/5 games
+     1x  Relicanth                          #57    seen in 4/5 games
+  -- TRAINERS / ENERGY --
+     8x  Basic {M} Energy                   #8     seen in 5/5 games
+     4x  Lillie's Determination             #1227  seen in 5/5 games
+     4x  Explorer’s Guidance                #1185  seen in 5/5 games
+     4x  Full Metal Lab                     #1244  seen in 5/5 games
+     3x  Pokégear 3.0                       #1122  seen in 5/5 games
+     3x  Ultra Ball                         #1121  seen in 5/5 games
+     3x  Poké Pad                           #1152  seen in 5/5 games
+     3x  Jumbo Ice Cream                    #1147  seen in 4/5 games
+     2x  Boss’s Orders                      #1182  seen in 4/5 games
+     2x  Night Stretcher                    #1097  seen in 4/5 games
+     1x  Hero’s Cape                        #1159  seen in 3/5 games
+     1x  Hand Trimmer                       #1087  seen in 1/5 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x285
+     Full Metal Lab #1244  x107
+
+=== RECONSTRUCTION: Marnie's Grimmsnarl ex  (5 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     4x  Munkidori                          #112   seen in 5/5 games
+     3x  Marnie's Impidimp                  #646   seen in 5/5 games
+     3x  Marnie's Morgrem                   #647   seen in 5/5 games
+     3x  Marnie's Grimmsnarl ex             #648   seen in 5/5 games
+     2x  Snorunt                            #860   seen in 3/5 games
+     1x  Froslass                           #104   seen in 2/5 games
+  -- TRAINERS / ENERGY --
+     6x  Basic {D} Energy                   #7     seen in 5/5 games
+     3x  Poké Pad                           #1152  seen in 5/5 games
+     3x  Night Stretcher                    #1097  seen in 5/5 games
+     2x  Lillie's Determination             #1227  seen in 5/5 games
+     2x  Buddy-Buddy Poffin                 #1086  seen in 5/5 games
+     3x  Team Rocket's Petrel               #1219  seen in 4/5 games
+     1x  Unfair Stamp                       #1080  seen in 4/5 games
+     1x  Dawn                               #1231  seen in 3/5 games
+     1x  Rare Candy                         #1079  seen in 3/5 games
+     1x  Boss’s Orders                      #1182  seen in 1/5 games
+     1x  Pokégear 3.0                       #1122  seen in 1/5 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x441
+
+=== RECONSTRUCTION: Fezandipiti ex  (4 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     4x  Abra                               #741   seen in 4/4 games
+     3x  Dunsparce                          #305   seen in 4/4 games
+     3x  Kadabra                            #742   seen in 4/4 games
+     3x  Alakazam                           #743   seen in 4/4 games
+     1x  Fezandipiti ex                     #140   seen in 4/4 games
+     1x  Shaymin                            #343   seen in 2/4 games
+     1x  Dudunsparce                        #66    seen in 1/4 games
+  -- TRAINERS / ENERGY --
+     2x  Telepath Psychic Energy            #19    seen in 4/4 games
+     2x  Basic {P} Energy                   #5     seen in 4/4 games
+     1x  Xerosic’s Machinations             #1197  seen in 4/4 games
+     4x  Buddy-Buddy Poffin                 #1086  seen in 3/4 games
+     4x  Poké Pad                           #1152  seen in 3/4 games
+     3x  Dawn                               #1231  seen in 3/4 games
+     2x  Rare Candy                         #1079  seen in 3/4 games
+     1x  Nighttime Mine                     #1266  seen in 3/4 games
+     1x  Night Stretcher                    #1097  seen in 3/4 games
+     3x  Hilda                              #1225  seen in 2/4 games
+     1x  Sacred Ash                         #1129  seen in 2/4 games
+     1x  Lana’s Aid                         #1184  seen in 1/4 games
+     1x  Battle Cage                        #1264  seen in 1/4 games
+     1x  Boss’s Orders                      #1182  seen in 1/4 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x363
+     Battle Cage #1264  x29
+     Nighttime Mine #1266  x23
+
+=== RECONSTRUCTION: Alakazam  (3 games) ===
+   'at least N' = max copies observed in any single game (hand + deck are invisible)
+  -- POKEMON --
+     4x  Abra                               #741   seen in 3/3 games
+     3x  Alakazam                           #743   seen in 3/3 games
+     2x  Dunsparce                          #305   seen in 3/3 games
+     2x  Dunsparce                          #65    seen in 2/3 games
+     2x  Kadabra                            #742   seen in 2/3 games
+     2x  Dudunsparce                        #66    seen in 2/3 games
+  -- TRAINERS / ENERGY --
+     4x  Dawn                               #1231  seen in 3/3 games
+     4x  Rare Candy                         #1079  seen in 3/3 games
+     4x  Poké Pad                           #1152  seen in 3/3 games
+     4x  Buddy-Buddy Poffin                 #1086  seen in 3/3 games
+     3x  Night Stretcher                    #1097  seen in 3/3 games
+     2x  Telepath Psychic Energy            #19    seen in 3/3 games
+     2x  Basic {P} Energy                   #5     seen in 3/3 games
+     1x  Hilda                              #1225  seen in 2/3 games
+     1x  Lana’s Aid                         #1184  seen in 2/3 games
+     1x  Neutralization Zone                #1247  seen in 2/3 games
+     1x  Boss’s Orders                      #1182  seen in 1/3 games
+     1x  Lillie's Determination             #1227  seen in 1/3 games
+     1x  Sacred Ash                         #1129  seen in 1/3 games
+     1x  Xerosic’s Machinations             #1197  seen in 1/3 games
+  -- STADIUM (observations) --
+     Spikemuth Gym #1259  x144
+     Neutralization Zone #1247  x73
+
+errors/skips:
+     2  file is a bare step-array, not a replay
