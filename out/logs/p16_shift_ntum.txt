@@ -1,0 +1,21 @@
+A = out/policy_b1_v3.npz
+B = out/policy_b7_ntum.npz
+
+state distribution              rows     A!=B  A!=human  B!=human
+artifacts/pds_ours              4476    26.7%      1.7%     27.2%
+artifacts/pds_ntum_r           25775    31.9%     40.1%     19.4%
+
+where the two policies differ, by context (>= 200 rows):
+context                         pds_ours      pds_ntum_r
+MAIN                         38.7%(2213)     45.8%(12891)
+TO_HAND                      19.7%( 649)     23.6%(3299)
+DAMAGE_COUNTER               20.5%( 308)     30.5%(1786)
+REMOVE_DAMAGE_COUNTER_COUNT      0.0%( 315)      0.0%(1707)
+REMOVE_DAMAGE_COUNTER        27.6%( 239)     28.5%(1258)
+ATTACH_FROM                   8.2%( 219)      7.6%(1258)
+DAMAGE                       22.2%( 144)     23.5%(1057)
+TO_ACTIVE                     4.4%( 114)      7.5%( 671)
+ACTIVATE                      0.0%( 103)      0.6%( 653)
+SWITCH                       15.6%(  64)     27.6%( 449)
+
+symmetric => a real policy difference; collapsing on our own states => it was covariate shift

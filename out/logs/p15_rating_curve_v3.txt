@@ -1,0 +1,37 @@
+
+net out/policy_b1_v3.npz vs artifacts/pds_v3r on the held-out gid%20 split
+12939 single-choice rows, 12689 with a rated demonstrator (98.1%), 85 games
+
+demonstrator rating       rows  games    top1          95% CI  random    miss
+900-1000                   392      6   74.0%  [0.694, 0.781]   25.1%   26.0%
+1000-1050                  643      9   69.7%  [0.660, 0.731]   24.8%   30.3%
+1050-1100                 1851     23   72.3%  [0.703, 0.743]   24.3%   27.7%
+1100-1150                 7935     71   69.1%  [0.681, 0.701]   23.9%   30.9%
+1150+                     1868     28   70.0%  [0.678, 0.720]   18.3%   30.0%
+(unrated)                  250      4   68.4%                   22.8%   31.6%
+
+agreement vs how much of that demonstrator the net TRAINED on:
+train rows seen           rows  teams  rating    top1
+1-500                      229      3  1026.2   70.3%
+500-2000                   904      8  1043.1   72.6%
+2000-8000                 4164     13  1092.0   70.3%
+8000-1000000000           7392      6  1127.5   69.3%
+
+per demonstrator (>= 300 rows):
+  rating    rows  games    seen    top1  demonstrator
+  1037.0     460      6    4392   76.7%  wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+  1065.0     426      7    5982   69.5%  Yushin Ito
+  1101.9    2110     23   40171   70.4%  Dries @ Tufa Labs
+  1107.6     491      9    7653   65.8%  Majkel1337
+  1116.4     566      4    5818   68.6%  JZ
+  1125.1    1651     25   39133   68.4%  flg
+  1127.6     799     10   16908   74.7%  LiamK
+  1134.0     671      9   10900   64.1%  Luca
+  1135.7     992     11   19732   67.9%  Dominic Peel
+  1152.4     313      3    2714   74.8%  Sixth Sense
+  1166.1    1169     19   24619   68.8%  James Cox & Henry Chao
+  1166.1     386      6    3482   69.7%  zoroark190
+(12 demonstrators, 10034 of 12689 rated rows = 79%)
+
+12 demonstrators, row-weighted fit: top1 = 1.085 -0.00035 x rating  (r = -0.356)
+  => -0.03 pp of agreement per +100 rating
