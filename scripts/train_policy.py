@@ -42,6 +42,40 @@ from sa.optfeat import OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS  # noqa: E402
 EMB = 16
 SEL_DENSE = 14
 BAGS = ("my_hand", "my_discard", "opp_discard")
+# The band the LB's top ~40 teams sit in; `val_top1@1120+` says how well the
+# net fits STRONG demonstrators as opposed to the mixture (ROADMAP B7).
+VAL_HI_RATING = 1120.0
+
+
+def load_init(model: PolicyNet, path: Path) -> None:
+    """Warm-start from an exported .npz (the fine-tuning arm of B7). Refuses on
+    any shape mismatch rather than partially loading -- a silently half-loaded
+    net trains fine and measures like a fresh one."""
+    z = np.load(path)
+    with torch.no_grad():
+        for name, emb in (("slot_emb", model.slot_emb), ("bag_emb",
+                          model.bag_emb), ("card_emb", model.card_emb),
+                         ("atk_emb", model.atk_emb)):
+            w = z[name]
+            if w.shape != tuple(emb.weight.shape):
+                raise SystemExit(f"--init {path.name}: {name} is {w.shape}, "
+                                 f"model wants {tuple(emb.weight.shape)}")
+            emb.weight.copy_(torch.from_numpy(w))
+        for prefix, seq in (("sfc", model.state_fc), ("head", model.head)):
+            lins = [m for m in seq if isinstance(m, nn.Linear)]
+            n = int(z[f"n_{prefix}"][0])
+            if n != len(lins):
+                raise SystemExit(f"--init {path.name}: {n} {prefix} layers, "
+                                 f"model has {len(lins)}")
+            for i, lin in enumerate(lins):
+                w, b = z[f"{prefix}{i}_w"], z[f"{prefix}{i}_b"]
+                if w.shape != tuple(lin.weight.shape):
+                    raise SystemExit(
+                        f"--init {path.name}: {prefix}{i}_w is {w.shape}, "
+                        f"model wants {tuple(lin.weight.shape)}")
+                lin.weight.copy_(torch.from_numpy(w))
+                lin.bias.copy_(torch.from_numpy(b))
+    print(f"warm-started from {path}")
 
 
 def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential:
@@ -90,10 +124,16 @@ class PolicyNet(nn.Module):
 
 
 def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
-                  opt_row: torch.Tensor, n_rows: int) -> torch.Tensor:
+                  opt_row: torch.Tensor, n_rows: int,
+                  w: torch.Tensor | None = None) -> torch.Tensor:
     """Softmax cross-entropy within each select's option set, averaged over
     the chosen options of that select. This is the objective that matches
-    inference: the agent ranks the options and takes the top k."""
+    inference: the agent ranks the options and takes the top k.
+
+    `w` is an optional per-ROW weight (ROADMAP B7): the loss becomes a weighted
+    mean, so a strong demonstrator's selects pull the mode further than a weak
+    one's. Weights are normalised to mean 1 by the caller, which keeps the
+    effective step size comparable to the unweighted control."""
     # log-softmax per row, computed with a segmented max for stability
     big = torch.full((n_rows,), -1e30, device=out.device)
     mx = big.scatter_reduce(0, opt_row, out, reduce="amax", include_self=True)
@@ -104,15 +144,25 @@ def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
         0, opt_row, logp * chosen)
     cnt = torch.zeros(n_rows, device=out.device).index_add_(0, opt_row, chosen)
     valid = cnt > 0
-    return -(picked[valid] / cnt[valid]).mean()
+    per_row = -(picked[valid] / cnt[valid])
+    if w is None:
+        return per_row.mean()
+    wv = w[valid]
+    return (per_row * wv).sum() / wv.sum().clamp_min(1e-8)
 
 
 class Data:
     def __init__(self, paths: list[Path]):
-        sd, slots, seld, gid, won = [], [], [], [], []
+        sd, slots, seld, gid, won, rating = [], [], [], [], [], []
         od, oc, oa, ot, om = [], [], [], [], []
         self.opt_rows: list[tuple[int, int]] = []  # (start,end) per row
-        bag_rows: dict[str, list] = {n: [] for n in BAGS}
+        # ⚠ Bags are kept FLAT (one array + one offset array per bag), exactly
+        # as the shards store them. The previous version materialised one small
+        # numpy array per row per bag -- 249k rows x 3 bags = ~750k objects --
+        # and that allocation, not the model, is what OOM'd this 7.3 GB machine
+        # on any net above ~1.5M params. Same semantics, ~1 GB less resident.
+        bag_flats: dict[str, list] = {n: [] for n in BAGS}
+        bag_lens: dict[str, list] = {n: [] for n in BAGS}
         base = 0
         for p in paths:
             z = np.load(p)
@@ -122,6 +172,9 @@ class Data:
             seld.append(z["seld"])
             gid.append(z["gid"])
             won.append(z["won"])
+            # Corpora built before `--ratings` have no per-row demonstrator.
+            rating.append(z["rating"] if "rating" in z
+                          else np.full(n, np.nan, dtype=np.float32))
             od.append(z["opt_dense"])
             oc.append(z["opt_card"])
             oa.append(z["opt_attack"])
@@ -135,19 +188,31 @@ class Data:
             for nm in BAGS:
                 flat = z[f"bag_{nm}_flat"]
                 boff = z[f"bag_{nm}_off"]
-                bag_rows[nm].extend(flat[boff[i]:boff[i + 1]].astype(np.int64)
-                                    for i in range(n))
+                bag_flats[nm].append(flat.astype(np.int64, copy=False))
+                bag_lens[nm].append(np.diff(boff).astype(np.int64))
         self.dense = np.concatenate(sd)
         self.slots = np.concatenate(slots).astype(np.int64)
         self.seld = np.concatenate(seld)
         self.gid = np.concatenate(gid)
         self.won = np.concatenate(won)
+        self.rating = np.concatenate(rating)
+        self.w = np.ones(len(self.gid), dtype=np.float32)
         self.opt_dense = np.concatenate(od)
         self.opt_card = np.concatenate(oc).astype(np.int64)
         self.opt_atk = np.concatenate(oa).astype(np.int64)
         self.opt_tgt = np.concatenate(ot).astype(np.int64)
         self.opt_chosen = np.concatenate(om)
-        self.bags = bag_rows
+        # Flats concatenate in row order, so a cumsum over the per-row lengths
+        # gives GLOBAL offsets across shards.
+        self.bag_flat: dict[str, np.ndarray] = {}
+        self.bag_off: dict[str, np.ndarray] = {}
+        for nm in BAGS:
+            lens = np.concatenate(bag_lens[nm])
+            off = np.zeros(len(lens) + 1, dtype=np.int64)
+            np.cumsum(lens, out=off[1:])
+            self.bag_off[nm] = off
+            self.bag_flat[nm] = (np.concatenate(bag_flats[nm]) if off[-1]
+                                 else np.zeros(0, dtype=np.int64))
         self.n = len(self.gid)
 
     def batches(self, idx: np.ndarray, bs: int,
@@ -157,12 +222,17 @@ class Data:
             sel = order[i:i + bs]
             bag_flat, bag_off = {}, {}
             for nm in BAGS:
-                rows = [self.bags[nm][k] for k in sel]
-                off = np.zeros(len(rows) + 1, dtype=np.int64)
-                np.cumsum([len(r) for r in rows], out=off[1:])
-                bag_flat[nm] = torch.from_numpy(
-                    np.concatenate(rows) if off[-1]
-                    else np.zeros(0, dtype=np.int64))
+                go = self.bag_off[nm]
+                lens = go[sel + 1] - go[sel]
+                off = np.zeros(len(sel) + 1, dtype=np.int64)
+                np.cumsum(lens, out=off[1:])
+                if off[-1]:
+                    idx = np.concatenate([np.arange(go[k], go[k + 1])
+                                          for k in sel if go[k + 1] > go[k]])
+                    gathered = self.bag_flat[nm][idx]
+                else:
+                    gathered = np.zeros(0, dtype=np.int64)
+                bag_flat[nm] = torch.from_numpy(gathered)
                 bag_off[nm] = torch.from_numpy(off)
             spans = [self.opt_rows[k] for k in sel]
             opt_idx = np.concatenate([np.arange(a, b) for a, b in spans])
@@ -178,7 +248,9 @@ class Data:
                    torch.from_numpy(self.opt_tgt[opt_idx]),
                    torch.from_numpy(opt_row),
                    torch.from_numpy(self.opt_chosen[opt_idx]),
-                   spans)
+                   spans,
+                   torch.from_numpy(self.w[sel]),
+                   sel)
 
 
 def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
@@ -241,6 +313,17 @@ def main() -> int:
                     help="comma-separated hidden widths for the scoring MLP")
     ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--out", default="agents/sa/policy_net.npz")
+    ap.add_argument("--rating-temp", type=float, default=0.0,
+                    help="ROADMAP B7: weight each row by "
+                         "exp((rating - max) / T), normalised to mean 1. Small "
+                         "T = clone the best demonstrators only; 0 (default) = "
+                         "uniform, the standing control. Needs a corpus built "
+                         "with `--ratings`.")
+    ap.add_argument("--rating-min", type=float, default=0.0,
+                    help="drop rows whose demonstrator is below this LB score")
+    ap.add_argument("--init",
+                    help="warm-start from an exported .npz (fine-tuning). "
+                         "Shapes must match the arch flags.")
     ap.add_argument("--opt-cols", type=int, default=OPT_DENSE,
                     help="per-option feature columns to use. Default = all "
                          f"({OPT_DENSE}). Pass {OPT_DENSE_V2} to train the "
@@ -261,6 +344,30 @@ def main() -> int:
     keep = np.ones(data.n, dtype=bool)
     if args.winners_only:
         keep &= data.won > 0.5
+    rated = ~np.isnan(data.rating)
+    if args.rating_min > 0:
+        keep &= rated & (data.rating >= args.rating_min)
+        print(f"--rating-min {args.rating_min}: {int(keep.sum())} of {data.n} "
+              f"rows kept")
+    if args.rating_temp > 0:
+        if not rated.any():
+            raise SystemExit("--rating-temp needs a corpus built with "
+                             "`--ratings`; every row's rating is NaN")
+        # An unrated demonstrator gets the MEDIAN rating's weight rather than
+        # 0 or 1: dropping them silently changes the corpus, and weighting them
+        # 1.0 would make the unknown teams the most-cloned ones once the
+        # exponential pushes everyone else down.
+        r = np.where(rated, data.rating, np.nanmedian(data.rating))
+        w = np.exp((r - np.nanmax(data.rating)) / args.rating_temp)
+        w = (w / w[keep].mean()).astype(np.float32)
+        data.w = w
+        ess = w[keep].sum() ** 2 / np.square(w[keep]).sum()
+        print(f"--rating-temp {args.rating_temp}: weights "
+              f"[{w[keep].min():.4f}, {w[keep].max():.3f}], "
+              f"effective sample size {ess:,.0f} of {int(keep.sum()):,} rows "
+              f"({ess / max(int(keep.sum()), 1):.1%})")
+        print(f"  {int((~rated & keep).sum())} unrated rows held at the median "
+              f"rating ({np.nanmedian(data.rating):.1f})")
     val_mask = (data.gid % 20) == 0
     train_idx = np.where(keep & ~val_mask)[0]
     val_idx = np.where(keep & val_mask)[0]
@@ -273,12 +380,15 @@ def main() -> int:
     head_h = tuple(int(x) for x in args.head_h.split(","))
     model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
                       opt_cols=args.opt_cols)
+    if args.init:
+        load_init(model, ROOT / args.init)
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
           f"params={sum(p.numel() for p in model.parameters())}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                             weight_decay=args.wd)
     bcef = nn.BCEWithLogitsLoss()
+    bce_none = nn.BCEWithLogitsLoss(reduction="none")
     rng = np.random.default_rng(0)
     best = -1.0
 
@@ -288,14 +398,19 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             spans) = batch
+             spans, rw, _sel) = batch
             opt.zero_grad()
             out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow)
             loss = torch.zeros((), dtype=out.dtype)
+            wrow = rw if args.rating_temp > 0 else None
             if args.loss in ("bce", "both"):
-                loss = loss + bcef(out, om)
+                if wrow is None:
+                    loss = loss + bcef(out, om)
+                else:   # the row's weight applies to each of its options
+                    per = bce_none(out, om) * wrow[orow]
+                    loss = loss + per.sum() / wrow[orow].sum().clamp_min(1e-8)
             if args.loss in ("listwise", "both"):
-                loss = loss + listwise_loss(out, om, orow, len(spans))
+                loss = loss + listwise_loss(out, om, orow, len(spans), wrow)
             loss.backward()
             opt.step()
             tot += loss.item() * len(om)
@@ -303,24 +418,34 @@ def main() -> int:
         # val: top-1 accuracy on single-choice rows
         model.eval()
         hit = tries = 0
+        hit_hi = tries_hi = 0
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
                 (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-                 spans) = batch
+                 spans, _rw, vsel) = batch
                 out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
                             orow).numpy()
                 om = om.numpy()
                 pos = 0
-                for a, b in spans:
+                for j, (a, b) in enumerate(spans):
                     k = b - a
                     sc = out[pos:pos + k]
                     ch = om[pos:pos + k]
                     pos += k
                     if ch.sum() == 1:
-                        hit += ch[np.argmax(sc)] == 1
+                        ok = ch[np.argmax(sc)] == 1
+                        hit += ok
                         tries += 1
+                        # Same rows, restricted to strong demonstrators. Rule 3
+                        # still holds -- neither number predicts strength; this
+                        # one just says WHOSE policy is being fit.
+                        if data.rating[vsel[j]] >= VAL_HI_RATING:
+                            hit_hi += ok
+                            tries_hi += 1
         acc = hit / max(tries, 1)
+        hi = hit_hi / max(tries_hi, 1)
         print(f"epoch {epoch}: train={tot / seen:.4f} val_top1={acc:.4f} "
+              f"val_top1@{VAL_HI_RATING:.0f}+={hi:.4f} (n={tries_hi}) "
               f"({time.time() - t0:.0f}s)")
         if acc > best:
             best = acc
