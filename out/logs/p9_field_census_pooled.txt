@@ -38,6 +38,25 @@
 === DISTINCT OPPONENT TEAMS (a repeat opponent is not a repeat deck) ===
   108 distinct teams over 109 games; most frequent: Akira Imae x2, Anna Wood x1, lingexiong x1, So Mukaichi x1
 
+=== OPPONENT STRENGTH (108/109 matched to lb_snapshot.json) ===
+  rating: mean 819  median 811  min 478  max 1147
+  ⚠ compare this to OUR score at the time. If the pool sits below us, the
+     shares below describe a weaker field than our own band, and a win rate
+     near 50% there is worse than it looks.
+  archetype                        games  mean opp rating   our WR
+  Alakazam                            24              878    66.7%
+  Marnie's Grimmsnarl ex              15              924    60.0%
+  Crustle                             14              770    57.1%
+  Mega Lucario ex                     14              746    50.0%
+  Archaludon ex                       11              792    45.5%
+  Cynthia's Garchomp ex                6              888    83.3%
+  Dragapult ex                         5              750   100.0%
+  Mega Starmie ex                      4              785    50.0%
+  Mega Kangaskhan ex                   3              760    66.7%
+  Dudunsparce                          2              711   100.0%
+  Iono’s Bellibolt ex                  2              762     0.0%
+  Abra                                 2              628   100.0%
+
 === RECONSTRUCTION: Alakazam  (24 games) ===
    'at least N' = max copies observed in any single game (hand + deck are invisible)
   -- POKEMON --
