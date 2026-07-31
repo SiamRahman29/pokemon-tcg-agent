@@ -1259,10 +1259,10 @@ src + wall all on, i.e. the defaults; n=2000 each):
 
 | anchor | share | v3 rules OFF | **v3 rules ON** | Δ | P4b (reference) |
 |---|---|---|---|---|---|
+| `rule:alakazam5` | 22.0% | 0.731 [0.711, 0.750] | **0.739 [0.719, 0.758]** | +0.008 (overlaps) | 0.727 |
 | `rule:v10` | 12.8% | 0.505 [0.483, 0.527] | **0.572 [0.550, 0.594]** | **+0.067** 🟢 | 0.576 |
-| `rule:alakazam5` | 22.0% | 0.731 [0.711, 0.750] | ⏳ | | 0.727 |
-| `rule:crustle` | 12.8% | 0.770 | ⏳ | | 0.663 |
-| `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | ⏳ TODO | | 0.621 |
+| `rule:crustle` | 12.8% | 0.770 | ⏳ running | | 0.663 |
+| `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | ⏳ running | | 0.621 |
 | mirror (h2h vs `v3 alone`) | 13.8% | — | 0.427 (§8f) | **−0.073** 🔴 | — |
 
 **What the first cell shows, stated narrowly:** *the rules are what close the
