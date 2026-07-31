@@ -212,6 +212,44 @@ def analyse(path: Path, errs: Counter) -> Game | None:
     return g
 
 
+def _rating_report(games, lb_path: Path, by_arch) -> None:
+    """How strong were these opponents, really? Joins team names to an LB dump.
+
+    ⚠ This is the check that stops the census being over-claimed. The census
+    describes **the opponents our agent was matched against**, which is NOT the
+    same as "our rating band" -- on the v3 dump the opponents average ~60-85
+    points BELOW us. Read every share and win rate in this file as a property of
+    that pool.
+    """
+    import statistics
+    try:
+        lb = json.loads(lb_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        print(f"\n  (no LB snapshot: {exc})")
+        return
+    scored = [(g, float(lb[g.opp][1])) for g in games if g.opp in lb]
+    print(f"\n=== OPPONENT STRENGTH ({len(scored)}/{len(games)} matched to "
+          f"{lb_path.name}) ===")
+    if not scored:
+        print("  no team names matched -- is the snapshot current?")
+        return
+    sc = [s for _, s in scored]
+    print(f"  rating: mean {statistics.mean(sc):.0f}  "
+          f"median {statistics.median(sc):.0f}  "
+          f"min {min(sc):.0f}  max {max(sc):.0f}")
+    print("  ⚠ compare this to OUR score at the time. If the pool sits below "
+          "us, the\n     shares below describe a weaker field than our own "
+          "band, and a win rate\n     near 50% there is worse than it looks.")
+    print(f"  {'archetype':<32}{'games':>6}{'mean opp rating':>17}{'our WR':>9}")
+    for arch, gs in sorted(by_arch.items(), key=lambda kv: -len(kv[1])):
+        rs = [float(lb[g.opp][1]) for g in gs if g.opp in lb]
+        if len(rs) < 2:
+            continue
+        w = sum(1 for g in gs if g.result > 0)
+        print(f"  {arch:<32}{len(gs):>6}{statistics.mean(rs):>17.0f}"
+              f"{w/len(gs):>9.1%}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", nargs="+", default=["replays/submission_optv3"],
@@ -221,6 +259,10 @@ def main() -> int:
                          "to show which archetypes survive both")
     ap.add_argument("--detail-min", type=int, default=3,
                     help="reconstruct decklists for archetypes seen >= N times")
+    ap.add_argument("--lb", default=None,
+                    help="JSON dump of the leaderboard ({team: [rank, score]}) "
+                         "to report how strong these opponents actually were. "
+                         "Build it with the full-LB command in HANDOFF section 5.")
     args = ap.parse_args()
 
     errs: Counter = Counter()
@@ -282,6 +324,9 @@ def main() -> int:
     opps = Counter(g.opp for g in games)
     print(f"  {len(opps)} distinct teams over {tot} games; "
           f"most frequent: {', '.join(f'{k} x{v}' for k, v in opps.most_common(4))}")
+
+    if args.lb:
+        _rating_report(games, Path(args.lb), by_arch)
 
     for arch, gs in rows:
         if len(gs) < args.detail_min:
