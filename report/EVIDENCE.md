@@ -1261,7 +1261,7 @@ src + wall all on, i.e. the defaults; n=2000 each):
 |---|---|---|---|---|---|
 | `rule:alakazam5` | 22.0% | 0.731 [0.711, 0.750] | **0.739 [0.719, 0.758]** | +0.008 (overlaps) | 0.727 |
 | `rule:v10` | 12.8% | 0.505 [0.483, 0.527] | **0.572 [0.550, 0.594]** | **+0.067** 🟢 | 0.576 |
-| `rule:crustle` | 12.8% | 0.770 | ⏳ running | | 0.663 |
+| `rule:crustle` | 12.8% | 0.770 | **0.761 [0.742, 0.779]** | −0.009 (overlaps) | 0.663 |
 | `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | ⏳ running | | 0.621 |
 | mirror (h2h vs `v3 alone`) | 13.8% | — | 0.427 (§8f) | **−0.073** 🔴 | — |
 
@@ -1272,11 +1272,18 @@ is **not a property of the v3 net** — it is a property of having turned the ru
 off, and it was invisible because the decision to turn them off was made in the
 mirror.
 
-⚠ **And the two measured cells point opposite ways** — rules ON wins Lucario
-(+0.067) and loses the mirror (−0.073). **That is the signature of a matchup
-branch (B3), not of a global on/off setting**, which is exactly the shape that
-paid +0.104 against Crustle (§8c). Whether a branch is worth building depends on
-the two unmeasured cells, which carry **32.9%** of the field between them.
+⚠ **The cells point opposite ways** — rules ON wins Lucario (+0.067) and loses
+the mirror (−0.073), while Alakazam and Crustle are **dead heats**. **That is the
+signature of a matchup branch (B3), not of a global on/off setting**, which is
+exactly the shape that paid +0.104 against Crustle (§8c).
+
+⚠ **A prediction of ours failed here and it is worth recording.** We expected
+rules-on to lose *badly* to Crustle, because `chip_target` measured **−0.126**
+there (§8c). It did not — 0.761 vs 0.770, overlapping. **The reason is that the
+`wall_defer` branch is already ON by default in `bc:v3on`**, so the harmful
+behaviour it was predicted to reproduce has been branched away since 07-30. The
+lesson is narrow but real: **"rule X was harmful vs anchor Y" expires the moment
+X is modified.** Re-read the flag defaults before predicting a cell.
 
 **Reproducer:**
 
