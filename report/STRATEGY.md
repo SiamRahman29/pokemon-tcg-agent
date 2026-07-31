@@ -218,12 +218,44 @@ deltas and matchup ranking, and must not be read as a predicted win rate.
 
 *To add: the completed rules-on sweep; the P6a sweep; seat-balance tables.*
 
-## 7. Opponent modelling and metagame adaptation *(in progress)*
+## 7. Opponent modelling: arithmetic rules are matchup-conditional
 
-*To write: the matchup-branch result (a damage-prevention wall makes our founding
-rule actively harmful, −0.126, recovered +0.104 by a classifier-free branch read
-straight off the board); the Mega Lucario investigation; whether a second
-damage-reduction archetype needs the same treatment.*
+**The finding, and it is the cleanest single result in the project:**
+
+> **The same three hand-written rules are worth +47 Elo in one matchup and −51 Elo
+> in another.** Measured against five anchor decks at n=2000 each.
+
+| anchor | share of field | Δ Elo, rules on vs off | CIs |
+|---|---|---|---|
+| Mega Lucario ex | 12.8% | **+47** | **disjoint** |
+| Grimmsnarl mirror | 13.8% | **−51** | **disjoint** |
+| Alakazam | 22.0% | +7 | overlap |
+| Crustle | 12.8% | −9 | overlap |
+| Archaludon ex | 10.1% | +12 | overlap |
+| **global** | 71.5% | **+1 Elo** | — |
+
+**Globally the setting is worth nothing** — the two large effects cancel. A
+single global on/off switch is therefore the *wrong control surface*, and any
+experiment that measured it in one matchup would have concluded confidently and
+wrongly in whichever direction that matchup happened to point. **Ours did: the
+agent shipped with rules off on the strength of a mirror-only number.**
+
+**The generalisation we propose:** an arithmetic rule encodes an *objective*
+("remove the killable target", "spread energy"), and an objective is only correct
+while the strategic context holds. Against a damage-prevention wall, "remove the
+killable target" farms a 1-prize basic while the immune attacker sits untouched —
+we measured our founding rule at **−0.126** there. **The repair is not to delete
+the rule but to branch it**, and the branch condition is readable straight off the
+board (*"would our attack deal 0 to this target?"*) with no archetype classifier:
+that recovered **+0.104** of the −0.126.
+
+⚠ **We are not shipping the second branch, and the reason is discipline, not
+laziness.** The Mega Lucario branch sizes at **~+8 Elo** once the three
+statistically-indistinguishable anchors are excluded from the sum. Our
+leaderboard readings swing **±50–100 while converging**, so **an 8-Elo change
+cannot be validated on the instrument available.** It is logged as a bundle
+candidate. **Reporting an effect we cannot measure as though we had measured it
+is the failure mode this whole report is organised against.**
 
 ## 8. Negative results
 

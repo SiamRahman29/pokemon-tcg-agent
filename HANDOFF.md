@@ -230,8 +230,28 @@ ordinary work again.
    hardcoded card ids. **Before believing a bucket called "other", check whether
    the classifier or the field is the thing that is small.**
 
-3. **⚡ THE LIVE ENGINEERING LEAD: the Mega Lucario matchup.** Two independent
-   instruments agree, which nothing else in this project has managed:
+3. ✅ **THE MEGA LUCARIO LEAD IS SIZED AND THE ANSWER IS "NOT WORTH SHIPPING
+   ALONE"** (§8j, 2026-07-31). **The cause is not the v3 net — it is the rules
+   being off.** v3+rules reads **0.572** vs `rule:v10` against rules-off's
+   **0.505** (disjoint), i.e. level with P4b's 0.576.
+
+   **But turning them on globally is worth +1 Elo** — the mirror loses exactly
+   what Lucario gains (−7.1 vs +6.0 weighted), and Alakazam/Crustle/Archaludon
+   are dead heats. **A Lucario-only branch sizes at ~+8 Elo, below the LB's
+   ±50–100 resolution** (rule 2), so by rule 14 it is a **bundle candidate, not a
+   solo submission, and not urgent.** The branch machinery already exists
+   (`wall_defer` is the template) if it is ever bundled.
+
+   ⚠ **Two traps this closed, both worth carrying:**
+   - **"Rule X is harmful vs anchor Y" expires when X is modified.** We predicted
+     rules-on would lose badly to Crustle (`chip_target` measured −0.126 there);
+     it was a dead heat, because `wall_defer` has been ON by default since 07-30.
+   - **Do not sum dead heats.** Only 2 of 5 cells have disjoint CIs. Branching
+     wherever Δ>0 scores +12 Elo, of which **+4 is noise** from three overlapping
+     cells.
+
+3b. **The original framing, kept because the two-instrument agreement still
+   holds and still points at this matchup:**
    - **Arena:** v3 is **−50 Elo** vs `rule:v10` — the only anchor of five it
      loses, and the only negative term in the weighted table.
    - **Ladder:** we won **36.4% of 11 real games** against Mega Lucario
@@ -246,10 +266,7 @@ ordinary work again.
    anything, and check whether `chip_target`/`energy_spread` are net-negative
    here the way `chip_target` was against Crustle (§8c is the template).
 
-   ⚠ **And run the same 5-anchor sweep for the three rule flags.** We know the
-   rules are harmful to v3 *in the mirror* (0.427); we do not know their sign
-   against Lucario or Archaludon. **Option (b) — v3 with the rules back on —
-   is still untested and is the cheapest thing on this list.**
+   ✅ **The 5-anchor rule sweep is DONE — that is what item 3 above reports.**
 
 4. **Re-mine the meta?** ⛔ **NO — and this is now a permanent rule, not a
    scheduling note.** Kaggle's daily episode datasets bottom out at `avg_score`
