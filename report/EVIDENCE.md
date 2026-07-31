@@ -192,7 +192,60 @@ the veto's fallback is verified safe — of 50 vetoed plays that fell through to
 END, **50/50 had no attack available**, so it never threw a turn away.
 
 **Verdict: four interventions, four nulls, on a card we play 38% of legal
-turns. The card is closed. Do not write a fifth.** (The pair at 0.452 is only
+turns. The card is closed. Do not write a fifth.**
+
+> ### ⚠ A FIFTH WAS WRITTEN (2026-07-31), AND IT IS ALSO NULL — but the reason is new and it is the useful part
+>
+> The user watched real games and said: *"if we just knew how to play Boss's
+> Orders correctly we should have converted a few wins."* **The observation was
+> correct and the four rules above genuinely did not cover it.** They answered
+> *which* Pokemon to drag and *whether the drag itself converts*; none compared
+> the drag against **the attack we already had**.
+>
+> `targeting.boss_prize_veto` does: it suppresses the play when attacking now
+> takes **strictly more prizes** than any drag, pricing both branches honestly
+> (a drag can double-KO too, so the dragged Pokemon is excluded from its own
+> snipe) and firing only on strictly greater. **It is in the DOMINATED column** —
+> both branches are prize counts and damage-vs-HP, no judgment — which is rule
+> 11's 3-for-3 side. It should have won.
+>
+> **Corroboration was strong before any A/B was spent:** 29% of 31 real ladder
+> drags were misplays (`p8_optv3_replays.py`), the rule fires on **28.6%** of
+> Boss's Orders plays in the arena, and `p14_prize_audit.py` re-found the same
+> defect by a third, independent route.
+>
+> | anchor | share | plain `bc` | `bossPrize` | Δ Elo |
+> |---|---|---|---|---|
+> | `rule:alakazam5` | 22.0% | 0.728 | 0.736 [0.716, 0.755] | +7 |
+> | mirror (head-to-head) | 13.8% | — | **0.505 [0.483, 0.527]** | +3 |
+> | `rule:v10` | 12.8% | 0.583 | 0.590 [0.569, 0.612] | +5 |
+> | | 48.6% | | | **+6 Elo** |
+>
+> **All three CIs overlap. Weighted: +6 Elo — indistinguishable from zero and
+> far below the LB's ±50–100.**
+>
+> **🔴 THE REASON, AND IT IS THE THING TO CARRY FORWARD: the play is too RARE to
+> matter, and this was computable before writing any code.** From the same 54
+> ladder games:
+>
+> - drags where attacking was a genuine alternative: **0.57 per game**
+> - misplays among them: **0.17 per game**
+> - prizes actually thrown away: **~0.09 per game = 1.5% of a 6-prize game**
+>
+> An n=2000 A/B resolves ±0.021. **A 1.5% effect is below the instrument** — the
+> identical arithmetic that closed the Morgrem out at ~2.6% (§8e).
+>
+> ⚠ **Process failure, recorded because it is the point of rule 14.** Rule 14
+> says *size before you build*. This was built first and sized afterwards. The
+> sizing takes two minutes and would have predicted the null exactly. **Being
+> right about the defect is not the same as the defect being worth fixing**, and
+> a vivid per-instance error is exactly the shape that fools you into skipping
+> the frequency check.
+>
+> **So the card really is closed, and now we know WHY rather than just that it
+> is: five interventions, five nulls, because Boss's Orders decides ~0.09 prizes
+> a game.** The rule stays in `targeting.py` behind `bc:<label>,bossPrize`,
+> default off, as the record. (The pair at 0.452 is only
 marginally outside the intervals — read it as "no evidence of benefit, some
 evidence of harm", not a precise interaction estimate.)
 
