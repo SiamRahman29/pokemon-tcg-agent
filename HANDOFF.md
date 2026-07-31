@@ -153,7 +153,36 @@ ordinary work again.
 
 </details>
 
-1. **⚠ THE P4b RESTORE IS NOW A GENUINELY OPEN QUESTION — DO NOT DO IT ON
+1. ⛔ **DO NOT RESTORE P4b — ANSWERED 2026-07-31 IN THE ARENA, FOR ZERO
+   SUBMISSIONS** (§8k). All three agents swept across all five anchors, n=2000
+   per cell, Elo relative to P4b:
+
+   | agent | weighted | note |
+   |---|---|---|
+   | **v3** (rules off, `55116557`) | **+36** | active |
+   | **P6a** (`55077709`) | **+7** | active, and our best LIVE score (845.0) |
+   | **P4b** (`55072063`) | **0** | frozen 952.0 — **the arena ranks it LAST** |
+
+   **The entire spread is 36 Elo and the LB resolves ±50–100** (§1). So restoring
+   P4b would cost a submission, **evict `55077709` (845.0, our best active and
+   still climbing)**, and restart at μ=600 for ~4 h — to install the agent the
+   arena ranks last, on the strength of a **frozen** score earned on a board
+   2,000 entrants smaller. **The active pair {v3, P6a} is already the arena's
+   top two. No action needed.**
+
+   ✅ Also settled: **`counter_source` is vindicated a second time** — P6a beats
+   P4b by +24 Elo in the mirror and +7 weighted, independent of §8c's +0.052.
+
+   🔴 **The strategic consequence, and it should steer the remaining 17 days:**
+   if our best and worst agents differ by 36 Elo and the LB cannot see 36 Elo,
+   **no further rule-sized improvement can move the rank.** The only levers big
+   enough to clear the band are a materially better net or **ROADMAP B4**
+   (turn-level sequencing — we use 0.1 s of the 600 s pool). **Another targeting
+   rule is a report chapter, not a rank.**
+
+<details><summary>The open-question framing this replaced (kept — the reasoning is report material)</summary>
+
+   **⚠ THE P4b RESTORE IS NOW A GENUINELY OPEN QUESTION — DO NOT DO IT ON
    AUTOPILOT.** Every earlier version of this item assumed "952 > 837.5, so
    restoring is free value". **That premise is a frozen-vs-live comparison,
    which is exactly what §8i retracted.** The evidence now points both ways:
@@ -169,6 +198,8 @@ ordinary work again.
    default.** ⚠ **Do not treat "restore P4b" as settled just because three
    earlier versions of this file said so** — all three were written before the
    anchor set covered the field.
+
+</details>
 
    **The decision that actually binds is item 2 (what is ACTIVE on 08-17), and
    there is time.** Nothing is at risk of being lost:
@@ -470,9 +501,13 @@ anyway. ROADMAP's doc-discipline audit has the numbers.
 >   evicts, and the evicted score stops counting the moment it does.
 >
 > **The bar on submitting is "do we expect this to beat the best agent we would
-> be evicting" — and a rollback now DOES qualify**, because the thing it restores
-> (952) is more than the thing it evicts (837.5). That is the reverse of what this
-> box said yesterday, and the reason is §8h, not a change of heart.
+> be evicting" — and 🔴 as of 2026-07-31 NOTHING WE HAVE CLEARS IT.** All three
+> agents are within **36 Elo** and the LB resolves **±50–100** (§8k), so no
+> current candidate is distinguishable from what it would evict. **The active
+> pair {v3 819.8, P6a 845.0} is the arena's top two; leave it alone.**
+>
+> ⚠ The rollback argument ("952 > 837.5") is **retracted**: 952.0 is frozen, was
+> earned on a ~4,000-entrant board, and the arena ranks P4b **last** of the three.
 
 ---
 

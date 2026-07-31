@@ -1331,6 +1331,62 @@ python -X utf8 scripts/arena.py play "bc:v3on,net=out/policy_b1_v3.npz" `
     --archive out/arena/p10_v3on_vs_v10.jsonl
 ```
 
+## 8k. ✅ The three-way sweep: every agent we have is within 36 Elo, i.e. below the instrument (2026-07-31)
+
+**The question:** should we spend a submission restoring P4b (`55072063`, the
+frozen 952.0)? Answered in the arena instead of on the ladder, so it cost no
+submission and no eviction.
+
+**All three agents, all five anchors, n=2000 per cell. Elo relative to P4b.**
+The mirror column is a head-to-head against P4b, so P4b is 0 there by definition;
+every other column is `elo(agent vs anchor) − elo(P4b vs anchor)`.
+
+| agent | Alakazam 22.0% | mirror 13.8% | Crustle 12.8% | Lucario 12.8% | Archaludon 10.1% | **weighted** |
+|---|---|---|---|---|---|---|
+| **v3** (rules off, `55116557`) | +4 | **+113** | **+92** | **−50** | +36 | **+36** |
+| **P6a** (lw2 + 3 rules, `55077709`) | +1 | **+24** | +0 | +5 | +6 | **+7** |
+| **P4b** (lw2 + chip + spread, `55072063`) | 0 | 0 | 0 | 0 | 0 | **0** |
+
+Raw scores for the P6a row (the new ones): Alakazam **0.728 [0.708, 0.747]**,
+Lucario **0.583 [0.561, 0.604]**, Archaludon **0.629 [0.608, 0.650]**. Crustle
+(**0.663**) and the mirror (**0.534**) were already at n=2000 and were re-verified
+from `out/arena/anchor_rulecrustle_wall.jsonl` and `out/arena/ab_src.jsonl`
+rather than copied from the docs.
+
+### The verdict, and it is a strategic one
+
+**1. The whole spread is 36 Elo, and the leaderboard resolves ±50–100.**
+So **the instrument that decides the competition cannot tell these three agents
+apart.** Everything the project has shipped since `chip_target` sits inside one
+noise band.
+
+**2. Therefore: do NOT restore P4b.** It is the *weakest* of the three by the
+arena, and a restore would cost a submission, **evict `55077709` (845.0, our best
+active and still climbing)**, and restart at μ=600 for ~4 h — to install an agent
+the arena ranks last, on the strength of a **frozen** 952.0 earned on a board
+2,000 entrants smaller (§8i). **The premise of every earlier version of that plan
+was a frozen-vs-live comparison.**
+
+**3. The active pair {v3, P6a} is already the arena's top two.** No action needed.
+
+**4. `counter_source` is independently vindicated a second time.** P6a beats P4b
+by **+24 Elo in the mirror** (0.534) and **+7 weighted**, which is the same
+direction as §8c's +0.052 vs Crustle, measured a different way. Day 8's decision
+to keep the rule was right.
+
+**5. ⚠ The uncomfortable implication, and it should steer the remaining 17 days:**
+if our best and worst current agents differ by 36 Elo and the LB cannot see 36
+Elo, then **no further rule-sized improvement can move the leaderboard.** The
+remaining levers are the ones big enough to clear the band — a materially better
+net, or ROADMAP **B4** (turn-level sequencing with the 599.9 s we never use).
+**Another targeting rule is a report chapter, not a rank.**
+
+⚠ **Do not read this as "the arena disagrees with the LB" again.** The LB order
+is P4b 952.0 > P6a 845.0 > v3 819.8 and the arena order is the reverse — but
+952.0 is frozen and not comparable, and the two live agents differ by 25 points
+against an unconverged opponent. **Both instruments are saying "these are close";
+only the frozen number makes it look otherwise.**
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
