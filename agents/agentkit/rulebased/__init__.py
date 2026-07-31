@@ -24,12 +24,31 @@ DECK_MODULE = {
     # `v10x` is the same agent with its unreachable MCTS made reachable.
     "v10": "lucario_v10",
     "v10x": "lucario_v10",
-    # The counter-meta pilot (scripts/import_crustle_agent.py). Crustle went
-    # from 1 seat in 1,600 to 18.1% of the field at 56.6% WR between 07-24 and
-    # 07-29 while `lucario_v10` fell to 0%, so this -- not `v10` -- is the
-    # opponent that matters now. Its own list is `crustle_v1`; the field's
-    # consensus list is `crustle` (see both decks' docstrings).
+    # The counter-meta pilot (scripts/import_crustle_agent.py). Crustle is
+    # 12.8% of the field we actually play (`p9_field_census.py`, 109 real
+    # ladder games). Its own list is `crustle_v1`; the field's consensus list
+    # is `crustle` (see both decks' docstrings).
+    #
+    # ⚠ The comment that used to sit here said `lucario_v10` had "fallen to
+    # 0%" and that Crustle -- "not v10" -- was the opponent that mattered now.
+    # That was mined from the daily TOP-episode datasets, which bottom out at
+    # avg_score 1055 while we play at 825-950. In our own 109 real games
+    # Mega Lucario is **12.8% of the field**, tied with Crustle. `rule:v10` was
+    # never stale; it was measured against the wrong population.
     "crustle": "crustle_v1",
+    # The two anchors the census said we were missing
+    # (scripts/import_field_agents.py). Between them they close the gap from
+    # 39.4% to 71.6% of the real field.
+    #
+    #   `alakazam5` -- the LARGEST archetype, 22.0%. Author reports 5th place,
+    #   pure rules, no ML, no search. Powerful Hand does 20 per card in hand,
+    #   so its damage scales with hand size; nothing in targeting.py sees that.
+    #
+    #   `archaludon` -- 10.1%, and our WORST matchup at 45.5%. A second
+    #   damage-reduction deck (Full Metal Lab: -30 into any Metal Pokemon),
+    #   which `targeting.WALL_POKEMON = {345}` does not know about.
+    "alakazam5": "alakazam5",
+    "archaludon": "archaludon_ex",
 }
 
 
