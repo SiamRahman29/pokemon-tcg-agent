@@ -1242,6 +1242,50 @@ almost certainly one opponent's tech, not a slot this pilot is missing. **Do not
 and `rule:crustle`'s ~20 fallback-scored cards on the consensus list is the
 standing warning about what that costs (§8c).
 
+## 8j. Does v3 want the hand rules back on? — IN FLIGHT, verdict deliberately blank
+
+> ⚠ **This entry is open on purpose.** §8i was written after 2 of 5 anchors and
+> had to be retracted the same session. The amended process rule (ROADMAP Track B)
+> is: **if runs are in flight, log the numbers and leave the verdict blank.**
+> 2 of 4 cells are in. **Do not act on this section yet.**
+
+**The question.** v3 shipped with all three hand rules **off**, justified by
+`v3+rules` vs `v3 alone` = **0.427** (§8f). That measurement was taken **in the
+mirror — 13.8% of the field.** §8i's whole lesson is that a mirror-only result
+does not generalise, so the rules-off decision was never actually tested.
+
+**Cells so far** (`bc:v3on,net=out/policy_b1_v3.npz` = v3 with chip + spread +
+src + wall all on, i.e. the defaults; n=2000 each):
+
+| anchor | share | v3 rules OFF | **v3 rules ON** | Δ | P4b (reference) |
+|---|---|---|---|---|---|
+| `rule:v10` | 12.8% | 0.505 [0.483, 0.527] | **0.572 [0.550, 0.594]** | **+0.067** 🟢 | 0.576 |
+| `rule:alakazam5` | 22.0% | 0.731 [0.711, 0.750] | ⏳ | | 0.727 |
+| `rule:crustle` | 12.8% | 0.770 | ⏳ | | 0.663 |
+| `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | ⏳ TODO | | 0.621 |
+| mirror (h2h vs `v3 alone`) | 13.8% | — | 0.427 (§8f) | **−0.073** 🔴 | — |
+
+**What the first cell shows, stated narrowly:** *the rules are what close the
+Mega Lucario hole.* Rules-off v3 reads **0.505** there; rules-on reads **0.572**,
+disjoint CIs, and that is **level with P4b's 0.576**. So §8i's "−50 Elo weakness"
+is **not a property of the v3 net** — it is a property of having turned the rules
+off, and it was invisible because the decision to turn them off was made in the
+mirror.
+
+⚠ **And the two measured cells point opposite ways** — rules ON wins Lucario
+(+0.067) and loses the mirror (−0.073). **That is the signature of a matchup
+branch (B3), not of a global on/off setting**, which is exactly the shape that
+paid +0.104 against Crustle (§8c). Whether a branch is worth building depends on
+the two unmeasured cells, which carry **32.9%** of the field between them.
+
+**Reproducer:**
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v3on,net=out/policy_b1_v3.npz" `
+    "rule:v10,noS" --deck-a grimmsnarl --deck-b lucario_v10 --matches 1000 `
+    --archive out/arena/p10_v3on_vs_v10.jsonl
+```
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
