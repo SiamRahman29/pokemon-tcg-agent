@@ -160,16 +160,17 @@ class Game:
         self.stadium: Counter = Counter()
 
 
-def analyse(path: Path, errs: Counter) -> Game | None:
+def analyse(path: Path, errs: Counter, us: set[str] = frozenset()) -> Game | None:
     d = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(d, dict):
         errs["file is a bare step-array, not a replay"] += 1
         return None
     names = (d.get("info") or {}).get("TeamNames") or []
-    if US not in names:
-        errs["no Scio seat"] += 1
+    us = set(us) or {US}
+    if not (us & set(names)):
+        errs[f"no {'/'.join(sorted(us))} seat"] += 1
         return None
-    ours = {i for i, n in enumerate(names) if n == US}
+    ours = {i for i, n in enumerate(names) if n in us}
     opp_name = next((n for i, n in enumerate(names) if i not in ours), "?")
     g = Game(path, opp_name)
     g.result = d["rewards"][min(ours)]
@@ -263,6 +264,17 @@ def main() -> int:
                     help="JSON dump of the leaderboard ({team: [rank, score]}) "
                          "to report how strong these opponents actually were. "
                          "Build it with the full-LB command in HANDOFF section 5.")
+    ap.add_argument("--us", action="append", default=[],
+                    help=f"the seat to census FROM (default {US!r}). Repeat for "
+                         "a team that renamed. Point it at a third-party dump's "
+                         "owner to census THEIR opponents.")
+    ap.add_argument("--emit-players",
+                    help="write the opponent team names of one archetype to "
+                         "this file, one per line -- a reproducible "
+                         "`--players-file` for build_policy_dataset.py")
+    ap.add_argument("--emit-archetype", default="grimmsnarl",
+                    help="substring of the archetype label --emit-players "
+                         "selects (default: our own deck)")
     args = ap.parse_args()
 
     errs: Counter = Counter()
@@ -273,7 +285,7 @@ def main() -> int:
             if path.name == "manifest.json":
                 continue
             try:
-                g = analyse(path, errs)
+                g = analyse(path, errs, set(args.us))
             except Exception as exc:  # noqa: BLE001
                 errs[f"{type(exc).__name__}: {exc}"] += 1
                 continue
@@ -327,6 +339,18 @@ def main() -> int:
 
     if args.lb:
         _rating_report(games, Path(args.lb), by_arch)
+
+    if args.emit_players:
+        want = [a for a in by_arch if args.emit_archetype.lower() in a.lower()]
+        names = sorted({g.opp for a in want for g in by_arch[a]})
+        Path(args.emit_players).write_text(
+            "\n".join(names) + "\n", encoding="utf-8")
+        print(f"\n=== EMITTED {len(names)} team names playing "
+              f"{args.emit_archetype!r} -> {args.emit_players} ===")
+        print(f"  matched archetypes: {want}")
+        print("  ⚠ these are the SEATS OPPOSITE the census subject, so the "
+              "file is a\n     same-deck, same-window control population -- "
+              "feed it to build_policy_dataset.py --players-file")
 
     for arch, gs in rows:
         if len(gs) < args.detail_min:

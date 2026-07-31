@@ -87,6 +87,10 @@ def main() -> int:
     ap.add_argument("--ds", default="artifacts/pds_v2")
     ap.add_argument("--min-rows", type=int, default=200,
                     help="hide contexts rarer than this")
+    ap.add_argument("--all-rows", action="store_true",
+                    help="score EVERY row, not just the trainer's gid%%20 val "
+                         "split. Correct -- and required -- for a corpus the "
+                         "net never trained on (e.g. artifacts/pds_expert).")
     args = ap.parse_args()
 
     net = Net(ROOT / args.net)
@@ -101,7 +105,8 @@ def main() -> int:
         z = np.load(path)
         gid, off = z["gid"], z["opt_off"]
         n = len(gid)
-        val = np.flatnonzero((gid % 20) == 0)   # the trainer's split
+        val = (np.arange(len(gid)) if args.all_rows
+               else np.flatnonzero((gid % 20) == 0))   # the trainer's split
         if not len(val):
             continue
         width = net.bag_emb.shape[1]
