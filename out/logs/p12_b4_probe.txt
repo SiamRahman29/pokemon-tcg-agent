@@ -1,0 +1,34 @@
+
+=== B4 probe: 992 of OUR turns over 100 games vs rule:v10,noS ===
+
+--- 1. THE HONEST DENOMINATOR: turns where SEQUENCING could matter
+  every option forced (0 real selects)          40    4.0%
+  exactly ONE real select                      337   34.0%  <- greedy is optimal by definition
+  TWO OR MORE real selects                     615   62.0%  <- B4's actual denominator
+
+--- 2. NAIVE SEQUENCE-SPACE SIZE (product of option counts, UPPER bound)
+  over the 615 multi-decision turns: median 98,122,752   p90 1,000,000,000,000   p99 1,000,000,000,000   max 1,000,000,000,000
+    <= 10         40    6.5%
+    11-100        27    4.4%
+    101-10k       60    9.8%
+    10k-1M        90   14.6%
+    > 1M         398   64.7%
+
+  real selects per turn: median 6  p90 19  max 29
+  of which MAIN:         median 4  p90 9  max 14
+
+--- 3. WOULD ORDER MATTER? (the premise, not the branching)
+  multi-decision turns ending in an attack     318   51.7%
+  ⚠ Most pre-attack actions (draw supporters, attach, evolve, bench) are
+     largely COMMUTATIVE -- if so, only the SET matters and enumerating
+     orderings buys nothing. Sizing the space is NOT evidence that order pays.
+
+--- select contexts inside multi-decision turns ---
+  MAIN                           3878
+  TO_HAND                        1352
+  ATTACH_FROM                     513
+  REMOVE_DAMAGE_COUNTER           438
+  DAMAGE_COUNTER                  438
+  REMOVE_DAMAGE_COUNTER_COUNT     411
+  DAMAGE                          290
+  ACTIVATE                        172
