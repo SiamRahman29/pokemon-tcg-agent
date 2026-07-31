@@ -4,17 +4,146 @@
 then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
 
-**Standing (read 2026-07-31 ~03:50 UTC, full LB — now 5,000 rows):** we are
-**`Scio`, rank 605 of 5,000, 837.5** — down from **rank 224 at 950.2**, and
-**none of that drop is play strength.** It is the eviction: see the box below.
-Top is now `Brahim` 1162.4, then `James Cox & Henry Chao` 1155.3, `Raja Biswas`
-1146.7. The board grew from 3,000 → 5,000 entrants in ~2 days and the top
-reshuffles constantly — treat any ranking as a snapshot, and **paginate:
-`competition_leaderboard_view` returns 20 rows and a `Next Page Token`; pass it
-back via `page_token` to walk all 5,000** (§5).
+**Standing (read 2026-07-31 10:46 UTC, full LB — now 6,024 rows):** we are
+**`Scio`, rank 632 of 6,024, 833.9**. Top is `James Cox & Henry Chao` 1166.1,
+then `李秉叡（ntumlnoob）` 1162.8, `Sixth Sense` 1152.4, `Brahim` 1144.3.
+The board grew 3,000 → 5,000 → **6,024** in ~3 days and the top reshuffles
+constantly — treat any ranking as a snapshot.
 
-> # 🔴 READ THIS FIRST — THE "−130 REGRESSION" WAS LARGELY AN ARTIFACT (day 9, 2026-07-31)
+✅ **Getting the LB no longer needs 300 paginated calls:**
+`competition_leaderboard_download('pokemon-tcg-ai-battle', path='out/lb')`
+returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
+`TeamId`, `TeamName`, `Score`, `SubmissionCount`, …). The `page_token` walk in §5
+still works but is obsolete. **This is what made the day-10 analysis possible** —
+it lets any team name in a replay be joined to its rating.
+
+> # 🔴 READ THIS FIRST — B7 RAN ON DAY 11 AND IS CLOSED (2026-07-31 night)
 >
+> **Day 10 measured; day 11 trained, and both arms lost.** The pre-registered
+> bar was **+50 Elo weighted over the five anchors**. Neither arm was close, and
+> neither was a null — both are losses against the net they were built to beat:
+>
+> | net | what it clones | miss vs **the field** | miss vs **ntumlnoob** | mirror vs v3, n=2,000 |
+> |---|---|---|---|---|
+> | **v3** (live) | the ~50-pilot mixture | **30.2%** | 40.1% | — control |
+> | `rw25` | mixture, weighted to LB rating | 32.0% | **40.2%** | **0.421** [0.400, 0.443] ≈ **−55 Elo** |
+> | `b7_ntum` | one 1163-rated expert | **36.2%** | 19.4% *(32.8% held out)* | **0.370** [0.349, 0.391] ≈ **−92 Elo** |
+>
+> 🔴 **Read the first and last columns together — the ordering is exact.** Field
+> disagreement 30.2 → 32.0 → 36.2; Elo 0 → −55 → −92. **Every step away from the
+> field's modal policy costs strength, and the net that best imitates the #2
+> player is the weakest agent this project has built.** `EVIDENCE` §8t, §8u.
+>
+> ⚡ **And §8q's headline was NARROWED by a much harder test — this is the part
+> to carry forward.** Over **87 same-deck, same-week demonstrators the net has
+> never trained on a single row of**, agreement **peaks at 1050–1100 (76.1%) and
+> falls in BOTH directions** — 66.7% below 900, 70.9% at 1100–1150, 65.6% at
+> 1152, 59.9% at 1163. **Agreement measures distance from the fitted mode, not
+> skill.** A 780-rated player is 33% unpredictable to us too, and nobody wants to
+> clone them. §8r.
+>
+> ✅ **Covariate shift is RULED OUT** (it was §8q's one unanswered objection):
+> policy-vs-policy disagreement is **26.7% on our own states vs 31.9% on theirs**
+> — near-symmetric, so the expert clone is a genuinely different policy, not one
+> policy measured off-support. The test carries a **1.7% positive control** (the
+> v3 net reproducing its own submission's replays). §8s.
+>
+> ⛔ **Do not build a third demonstrator-selection variant.** Five axes of
+> more/better training have now measured null or negative; **exactly one
+> intervention ever worked and it was representational** (§8f). Spend the
+> remaining days accordingly.
+>
+> # ⚡ AND TWO MORE CLOSED THE SAME NIGHT — read these before planning anything
+>
+> **1. ✅ THE CLONE IS NOT CAPACITY-BOUND. The ~30% residual is the ENCODING.**
+> Identical corpus, identical recipe, only the width changed:
+>
+> | net | params | vs v3 | misses of 12,939 | agreement |
+> |---|---|---|---|---|
+> | **v3** (live) | 594,369 | 1.0× | **3,902** | 69.8% |
+> | `cap_big` | 1,559,489 | **2.6×** | **3,900** | 69.9% |
+> | `cap_xl` | 4,865,985 | **8.2×** | **3,945** | 69.5% |
+>
+> **2.6× buys two decisions out of 12,939; 8.2× loses 43.** Both big nets drive
+> train loss far below v3's while validation peaks early and declines — they
+> already have more capacity than the features can use. §8w.
+>
+> 🔴 **This is the gate result for RL and it cuts against it.** A policy gradient
+> reads the **same** feature vectors. Where two options are bitwise-identical
+> inputs with different right answers (§8f's exact finding), their **gradients
+> are identical too** — exploration cannot break a tie the representation cannot
+> express. **RL inherits this ceiling rather than escaping it.** ⇒ **The feature
+> audit is a PREREQUISITE for the RL program, not a competing priority.**
+>
+> **2. 🔴 B4 IS DEAD, and the manner of death is the lesson.** The §8n design
+> diagnosis was **right** — end-of-our-turn myopia was most of the rout — and
+> simulating the opponent's reply moved it **0.075 → 0.375 [0.311, 0.444] n=200**,
+> the largest movement any B4 change produced. **Still ≈ −89 Elo** against a
+> clone costing 1 ms, and below the 0.40 line set before the run. **A correct
+> explanation of a failure does not entitle you to a fix.** §8v.
+> ✅ **The time-budget confound is RESOLVED, not caveated.** At matched budget,
+> `seq,sb1.0` **without** reply scores **0.165 [0.120, 0.223]** against the reply
+> arm's **0.375 [0.311, 0.444]**, n=200 each — **disjoint CIs**. So the design fix
+> is worth **≈ +0.21 on its own** (≈ +193 Elo) and the extra time ≈ +154 Elo.
+> **The diagnosis was confirmed by a controlled experiment and B4 died anyway.**
+> 🔴 **Consequence for NNUE: B4 was its only consumer that is not the dead
+> game-tree search (§2), so an incremental evaluator buys nothing here until some
+> consumer exists.** Do not build one on spec.
+
+<details><summary>Day 10's headline box — the restore and the expert dumps (superseded in part by §8r–§8u, kept for the reasoning)</summary>
+
+> # 🔴 TWO THINGS CLOSED ON DAY 10 (2026-07-31 pm)
+>
+> **1. ✅ THE P4b RESTORE IS ANSWERED BY THE LADDER: the 952 was a BOARD-SIZE
+> ARTIFACT, not a better agent.** The identical tarball was resubmitted as
+> `55129730` and read **833.9 at 4.0 h of play**, where the original read
+> **958.2 at ~4 h** — same code, same age, **−124 points**, board ~4,000 →
+> **6,024**. Our three agents now read **833.9 / 818.1 / 841.5** live.
+> **§8k ("everything we own is within 36 Elo") is confirmed on the LB itself.**
+> ⛔ **Do not reopen the restore. Do not chase 952.** `EVIDENCE` §8p.
+> ⚠ One reading only — re-read ≥1 h later before quoting 833.9 (rule 2). The
+> matched-age comparison does not depend on convergence.
+>
+> **2. ⚡ WE NOW HAVE EXPERT DEMONSTRATIONS OF OUR EXACT DECK, AND THEY SAY
+> SOMETHING UNCOMFORTABLE.** 227 games from **Sixth Sense (#3, 1152.4)** and 330
+> from **李秉叡（ntumlnoob）(#2, 1162.8)** — both playing `decks/grimmsnarl.py`
+> **card-for-card**. Scoring the live v3 net against their actual choices:
+>
+> | demonstrator | rating | rows | miss rate |
+> |---|---|---|---|
+> | 48 other grimmsnarl pilots (mostly 1090–1140) | ~1110 | 10,088 | **27.2%** |
+> | Sixth Sense (#3) | 1152 | 18,296 | **34.4%** |
+> | ntumlnoob (#2) | 1163 | 25,775 | **40.1%** |
+>
+> **Agreement falls monotonically as the demonstrator gets better.** And the two
+> top players diverge from us in *different* contexts (Sixth Sense almost entirely
+> in `TO_HAND`, −31.5 pp; ntumlnoob broadly in MAIN/damage/switch) — **so there is
+> no single "expert move" to copy.**
+>
+> 🔴 **The structural fact behind it: our corpus is ALREADY elite and already
+> concentrated.** flg (1125) **527 seats**, Dries @ Tufa Labs (1102) **490**,
+> James Cox (1166) **414**, Dominic Peel (1136) 238, LiamK (1128) 216. **We clone
+> 1100–1166 play and score 833.9.** More/better demonstrators is therefore NOT
+> the obvious lever; **what has never been tried is cloning ONE policy instead of
+> a ~50-pilot mixture.** `EVIDENCE` §8q.
+>
+> ⚠ **The alternative explanation is NOT ruled out and must be stated first in
+> any write-up: COVARIATE SHIFT.** Agreement is measured on the demonstrator's own
+> trajectory distribution, so part of that 40% is BC's compounding-error problem,
+> not a policy we can copy. **Low agreement does not prove they play better. Only
+> an arena A/B can.**
+>
+> ✅ **ANSWERED day 11 — covariate shift is ruled out (§8s), the monotone trend
+> is narrowed to a PEAK at 1050–1100 (§8r), and both interventions this box
+> motivated LOST (§8t, §8u).** The box is kept because its reasoning was sound
+> and its bar was set honestly; the arena is what changed the answer.
+
+</details>
+
+<details><summary>Day 9's headline box — the "−130 regression" artifact (superseded by §8p, kept for the reasoning)</summary>
+
+>
+
 > **⚠ An earlier version of this box, written mid-session, said the gap was
 > SOLVED and that v3's loss was reproduced locally. That was written after 2 of 5
 > anchors and it was wrong. Corrected here after the full sweep.**
@@ -68,6 +197,8 @@ back via `page_token` to walk all 5,000** (§5).
 > on 12.8%; the other 60.6% is unmeasured. **Do not discard it and do not reship
 > it** until the 5-anchor sweep finishes (▶ item 2).
 
+</details>
+
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
 
@@ -79,21 +210,25 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 10 PLAN (set 2026-07-31 end of day 9; the goal is to WIN)
+### ▶ START HERE — DAY 12 PLAN (set 2026-07-31 end of day 11; the goal is to WIN)
 
-> ## 📍 THE SITUATION IN FIVE LINES
+> ## 📍 THE SITUATION IN SIX LINES
 >
-> - **Rank 575 / 6,012 (top 9.6%), score 846.6.** Top is **1169.2**. Gap ≈ **320**.
-> - **Active pair: P6a 846.6 (best, still climbing) + v3 813.5.** P4b's 952.0 is
->   **frozen and not comparable** (earned on a 4,000-entrant board; it is now 6,012).
-> - 🔴 **All three of our agents are within 36 Elo, and the LB resolves ±50–100.**
->   **No rule-sized change can move our rank.** (§8k)
-> - ✅ **The deck is NOT the bottleneck: 52.1% of the ≥1144 band plays our exact
->   archetype** and our 60 is the consensus list. **The 320 points are a PILOTING
->   gap.** (§8o)
-> - ⚡ **So there is exactly one rank lever left: make the clone imitate better.**
->   We clone 1144+ players and play at 846; the clone disagrees with its own
->   demonstrators on **33.9% of decisions** (3,930 of 6,424 misses in MAIN).
+> - **Rank 632 / 6,024, score 833.9** (read 07-31 10:46 UTC; ⚠ one reading, and
+>   it is now hours old — **re-read before quoting it**, rule 2). Top **1166.1**.
+> - **Active pair: P4b-restored 833.9 + v3 818.1.** P6a evicted, frozen 841.5.
+>   ⛔ The restore is **CLOSED** (§8p). All three agents read 818–842 live, so
+>   **no rule-sized change can move our rank** (§8k).
+> - ✅ **The deck is NOT the bottleneck** (§8o), twice confirmed: **#2 and #3 on
+>   the LB play our exact 60, card for card** (§8q).
+> - 🔴 **AND AS OF DAY 11, "clone better demonstrators" is not the lever either.**
+>   Both B7 arms lost — **−55 Elo** (rating-weighted) and **−92 Elo**
+>   (single-expert) — and they lost *in order of how far they moved from the
+>   field* (§8u). **Five training axes are now dead; one representational fix is
+>   the only thing that ever worked** (§8f).
+> - ⚡ **So the honest state is: the LB is a plateau we can explain, and the
+>   report is the thing that is still moving.** Day 11 produced three chapters
+>   (§8r peak-not-slope, §8s covariate shift ruled out, §8u the ordering).
 >
 > **Deadlines: sim closes 2026-08-17 (17 days). Report due 2026-09-14 (45 days).**
 > **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
@@ -101,11 +236,153 @@ distrust it: mined episodes are the top-1150 band, and
 > that a rank point is worth more than a report chapter — the competition
 > description says outright that a mid-tier LB with deep analysis can win.
 
+#### ✅ Done on day 11 (read before planning day 12)
+
+- **Item A shipped: every corpus row carries its demonstrator's LB rating.**
+  `build_policy_dataset.py --ratings` (+ `--exclude`, `--aliases`), 94–98% seat
+  coverage. ⚠ **The first build silently lost 24.6% of d26 seats and 182 of the
+  198 misses were ONE team — the LB's #1, appearing as `James Cox`, as
+  `zoroark190` (a member username) and as the merged `James Cox & Henry Chao`.**
+  Fixed by exact member-username matching plus a hand-verified
+  `replays/team_aliases.tsv`. **A census keyed on a display name splits your
+  most valuable demonstrator into three.**
+- **`p15_rating_curve.py`** (agreement vs rating, with a `--seen-from` exposure
+  control) and **`p16_policy_disagree.py`** (the covariate-shift discriminator).
+- **`p9_field_census.py --us / --emit-players`** — censuses any named seat's
+  opponents and writes the same-deck ones to a `--players-file`. **This makes
+  the day-10 control population reproducible**; the original 48-name list was
+  never on disk.
+- **`train_policy.py --rating-temp / --rating-min / --init`** — per-row weighted
+  listwise loss (ESS reported before training) and warm-start fine-tuning.
+- **Three concluded experiments: §8r, §8s, §8t/§8u.** Both B7 arms killed
+  against a bar set before the first run.
+
+#### The day-12 order of work
+
+**A. 📝 `report/STRATEGY.md` IS NOW THE HIGHEST-VALUE WORK IN THE PROJECT, and
+   that is a measured claim rather than a consolation.** The LB is inside its
+   own noise band (§8k, confirmed on the ladder by §8p), five training axes are
+   dead, and the report is 30%+ of the rubric before counting the soundness /
+   consistency / robustness bullets inside Model's 70%. **Day 11 alone handed it
+   a genuinely publishable result**: *agreement with a demonstrator measures
+   distance from the fitted mode, not skill* — with a peak, a zero-exposure
+   control group, a symmetry test against covariate shift, a positive control at
+   1.7%, and two pre-registered interventions that failed in the predicted
+   direction. **Write §7b.1/§7b.2 up properly and start §6 (opponent modelling)
+   from §8r.** One edit per session remains the floor, not the target.
+
+**B. 🔬 THE FEATURE AUDIT IS NOW THE WHOLE ENGINEERING TRACK, and §8w promoted
+   it from "the only axis that ever paid" to "the only axis with a live
+   mechanism".** Capacity is ruled out (8.2× params, no gain), demonstrator
+   selection is ruled out (§8u), data volume was already dead (§1) — **by
+   elimination the residual is what the option encoding cannot bind.**
+   The day-10 list is still unworked and is still the best candidate set:
+   read `agents/sa/optfeat.py` and `features.py` against
+   `context_accuracy.py`'s **MAIN misses (3,930 of 6,424)** and ask §8f's
+   question — is the input **absent** (informational) or **present but
+   unbindable** (representational)? Only the second has ever paid. Cheap
+   candidates: opponent **hand size** (Alakazam is 22% of the field and attacks
+   for 20 per card in hand), stadium in play, prizes remaining, turn number.
+   ⚡ **§8s gives this a new instrument**: `p16_policy_disagree.py` names the
+   contexts where a stronger policy actually diverges from ours — **MAIN 45.8%,
+   DAMAGE_COUNTER 30.5%, SWITCH 27.6%** — so the feature audit now has a
+   ranked target list derived from a 1163-rated policy rather than from guessing.
+
+**C. 🃏 Track C deck work FOR DECK SCORE (20% of the rubric, and untouched).**
+   §8o closed it as a rank lever, which is exactly why it should now be done
+   honestly as deck analysis: only **one** decklist variant has ever been A/B'd
+   (0.490, null). Re-aim it at our real worst matchups — **Archaludon (45.5% of
+   11 real games)** and **Mega Lucario (50%)** — both of which now have anchors.
+
+**D. ⛔ DO NOT SUBMIT.** Nothing clears **+50 Elo weighted over the five
+   anchors**; the two newest nets are **−55** and **−92**. Every submission
+   evicts a live agent (§8h). ⚠ **And do not submit `b7_ntum` "to see what the
+   ladder says"** — that trade spends a slot and evicts a live agent to test a
+   net the arena puts 92 Elo down, against an instrument that resolves ±50–100.
+
+<details><summary>Day 10's order of work (superseded — item B ran and is closed by §8u)</summary>
+
+#### ✅ Done on day 10
+
+- **`55129730` P4b restore: 833.9 at 4.0 h vs the original's 958.2 at ~4 h.**
+  Question closed by experiment, for the price of one submission. §8p.
+- **Two expert dumps ingested and verified** (`replays/sixth_sense_31-07-2026`
+  227 games, `replays/ntumlnoob_31-07-2026` 330 games). Both teams play our exact
+  60. `selected` is present for third-party seats, so **the BC pipeline works on
+  them unchanged**.
+- **`build_policy_dataset.py --player / --players-file`** — builds a corpus from
+  named seats only. Corpora on disk: `artifacts/pds_expert` (Sixth Sense, 19,107
+  rows), `artifacts/pds_ntum` (ntumlnoob, 27,318), `artifacts/pds_grimm_ctrl`
+  (48 other grimmsnarl pilots, 10,498 — **the same-deck control**).
+- **`context_accuracy.py --all-rows`** — scores every row, not the trainer's
+  `gid % 20` split. **Required for a corpus the net never trained on**; without it
+  you silently score 5% of the data.
+- **The agreement-vs-rating result** (§8q), plus two explanations killed:
+  familiarity (`haggle`: 0 corpus seats, 75% agreement) and one-team idiosyncrasy
+  (the ntumlnoob dump was fetched to break exactly that tie).
+
+#### The day-11 order of work
+
+**A. ⚡ TAG EVERY CORPUS ROW WITH ITS DEMONSTRATOR'S LB RATING — do this first,
+   it gates B and C.** Team names are in every replay's `info.TeamNames`; the
+   full leaderboard is one `competition_leaderboard_download` call. Store a
+   per-row `rating` (and `submissionId` where the dump has `episodes_meta.json`).
+   Immediate payoff: turn day 10's three points into a **proper agreement-vs-
+   rating curve over all 1,603 corpus games** — a report figure either way.
+
+**B. 🔬 THE TWO TRAINING EXPERIMENTS, in this order.** Bar for both, pre-
+   registered: **+50 Elo weighted across the five anchors or it is a chapter, not
+   a submission** (§8k).
+   1. **Rating-weighted clone** on the full corpus — keeps all 248,985 rows while
+      fixing mode-averaging. **Most likely of the two to work**, and original
+      enough to be its own report chapter.
+   2. **Single-expert clone** — fine-tune v3 on `artifacts/pds_ntum`, then on
+      ntum + Sixth Sense. ⚠ 27k rows against a 249k corpus: **underfitting is the
+      expected failure mode** — fine-tune, do not train from scratch, and early-
+      stop on a held-out expert split.
+   ⚠ **Carry the standing prior in**: three axes of more/better training measured
+   null or negative (§1), and the only thing that ever moved the clone was
+   representational (§8f). This is a different axis — demonstrator *selection* —
+   but the prior is not friendly.
+
+**C. 🔍 THE ALTERNATIVE EXPLANATION, which a good report must address first:
+   covariate shift.** Some of the 40% miss is BC's compounding-error problem, not
+   a copyable policy. **Cheapest discriminator: score the expert net on OUR
+   agent's trajectories and ours on theirs** — if disagreement is symmetric it is
+   policy difference; if it collapses when the states are ours, it was shift.
+
+**D. 📝 `report/STRATEGY.md` — one edit per session, minimum.** §7b already
+   argues "the ceiling is the clone, not the deck"; day 10 gave it a much better
+   instrument (identical 60 at +310 rating) and a new figure (the curve). Also
+   worth a methods line: **`--all-rows` and the `--player` filter are the kind of
+   detail the soundness bullet rewards.**
+
+**E. ⛔ DO NOT SUBMIT** unless something clears **+50 Elo weighted over the five
+   anchors**. Every submission evicts. The restore is closed; do not spend
+   another slot re-testing a settled question.
+
+> ✅ **ALL FIVE ITEMS RAN ON DAY 11.** A shipped; **B killed both arms** (−55 and
+> −92 Elo, §8t/§8u); **C answered — covariate shift ruled out** (§8s); D done
+> (§7b.1 rewritten, §7b.2 added); E honoured — **nothing was submitted.**
+> ⚠ Note item B's prediction was **wrong in an instructive way**: it called the
+> rating-weighted arm "most likely to work" and expected underfitting to sink the
+> expert arm. The rating-weighted arm moved expert agreement by **0.1 pp** — it
+> did nothing at all — and the expert arm imitated *successfully* (+7.3 pp held
+> out) and lost anyway. **The standing prior in the same item was the part that
+> held.**
+
+</details>
+
+<details><summary>Day 9's close and the day-10 order of work (kept for the record; A and C below are still live and were re-stated in the day-11 list)</summary>
+
 #### ✅ Done at the end of day 9 (read before planning day 10)
 
-- **`55129730` — THE P4b RESTORE IS LIVE AND CLIMBING** (600 → 715.9 → …).
-  ⚠ **Read it with rule 2**: a young submission swings, and it needs ~4 h. Active
-  pair is `{55129730, 55116557 v3 813.5}`; **P6a is evicted, frozen at 841.5**.
+- ~~**`55129730` — THE P4b RESTORE IS LIVE AND CLIMBING** (600 → 715.9 → …).~~
+  ✅ **SETTLED day 10: it converged to 833.9 at 4.0 h against the original's
+  958.2 at ~4 h — the same code, 124 points lower, on a board 2,000 entrants
+  bigger** (§8p). The reasoning below was sound and the experiment was worth its
+  submission: it converted a three-day argument into a measurement.
+  Active pair is `{55129730, 55116557 v3 818.1}`; **P6a is evicted, frozen 841.5**.
   **The reasoning reversed an earlier recommendation of mine and the user was
   right to push:** the LB said P4b 952 vs P6a 846 for three days — a 105-point
   gap at/above the resolution limit — and "the board grew so it is not
@@ -169,6 +446,8 @@ distrust it: mined episodes are the top-1150 band, and
 **E. ⛔ DO NOT SUBMIT** unless something clears **+50 Elo weighted over the five
    anchors**. Every submission evicts, and the pair {P6a, v3} is already the
    arena's top two (§8k). The restore of P4b is **closed — do not reopen it.**
+
+</details>
 
 <details><summary>Day 9's completed items (kept for the record)</summary>
 
@@ -320,6 +599,11 @@ predicts fine, the anchor set was wrong, and it is now fixed.
    `bc` (= P6a's exact config) against all five anchors and weight it. **If P6a
    ≈ v3, the restore evicts nothing and the only question is whether P4b beats
    both — which the arena says it does not.**
+
+   ⛔ **SETTLED 2026-07-31 (day 10): the restore was DONE, and it read 833.9 at
+   4.0 h against the original's 958.2 at ~4 h** (`EVIDENCE` §8p). Everything below
+   is kept only as the record of how the decision was made. **Do not run it
+   again.**
 
    If you do restore anyway:
 
@@ -597,9 +881,13 @@ anyway. ROADMAP's doc-discipline audit has the numbers.
 > on the one point that mattered — see the ✅ below.**
 >
 > - **Daily quota: 5/day.** Never the binding constraint.
-> - **Only the latest 2 submissions play episodes.** Active pair right now:
->   **`55116557` (v3, 824.6) + `55077709` (P6a, 837.5)**. `55072063` (**952.0**)
->   was **evicted** by the v3 submission and is frozen.
+> - **Only the latest 2 submissions play episodes.** Active pair right now
+>   (2026-07-31 10:46 UTC): **`55129730` (P4b restored, 833.9) + `55116557`
+>   (v3, 818.1)**. `55077709` (P6a) is **evicted, frozen at 841.5**; `55072063`
+>   (**952.0**) has been frozen since 07-30.
+> - 🔴 **The 952.0 is not a target and never was one.** Re-running that exact
+>   agent on today's board produced **833.9** (§8p). **Every one of our agents
+>   reads 818–842 when played concurrently.**
 > - ✅ **ANSWERED (was "the open question that decides the endgame"): the
 >   displayed score is the best ACTIVE submission, NOT the best ever.** Proof:
 >   best-ever is `55072063` at 952.0, best-active is 837.5, and **the board shows
@@ -904,6 +1192,34 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     **Standing requirement: measure against the top-5 anchors, weighted, and
     never again let a mirror A/B alone decide whether to turn a rule off** — the
     mirror is 13.8% of reality.
+17. **HELD OUT BY GAME IS NOT HELD OUT BY PLAYER — and the identity you are
+    holding out is not stable.** Day 11 tried to explain §8q's rating trend and
+    found that the obvious confound could not even be *tested* with the corpus as
+    built: the trainer splits on `gid % 20`, so **every demonstrator in the
+    held-out split also appears in the training split**, and the "0 exposure"
+    bucket was empty. A same-week, same-deck dump of **87 players the net had
+    never seen a row of** was needed to answer it (the answer: exposure buys
+    nothing, 73.6% unseen vs 69.3% for the most-trained-on). **Before believing
+    "the net generalises to player X", check whether X is in the training set —
+    the split does not do it for you.**
+
+    ⚠ **And the key is a display name, which means it is not a key.** Naive
+    matching left 24.6% of one day's seats unrated; **182 of those 198 misses
+    were the LEADERBOARD'S #1 TEAM**, appearing as `James Cox`, as `zoroark190`
+    (a member username) and as the post-merge `James Cox & Henry Chao`. §8q hit
+    the same bug on `Sixth Sense` / `Raja Biswas`. **Teams rename and merge
+    mid-competition, so any per-player statistic silently splits your most
+    valuable demonstrator into three and reports it as sparse data.** Resolve on
+    `teamId` from the episode sidecar where you have one; match member usernames
+    exactly; keep verified renames in `replays/team_aliases.tsv`; and **print the
+    match rate and the biggest unmatched names every time** (rule 9).
+
+    ⚠ **A third form, same session: a control population built from "the
+    opponents of X" contained US.** `Scio` is on that list because we played
+    them, and our own agent's selects are exactly what the net was fitted to —
+    left in, it scores ~98% against itself and inflates the control.
+    **`--exclude` yourself from any population you intend to treat as
+    independent.**
 
 ---
 
@@ -1440,10 +1756,17 @@ python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=Kaggl
 # The leaderboard, top 20
 python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); [print(i, r.team_name, r.score) for i, r in enumerate(a.competition_leaderboard_view('pokemon-tcg-ai-battle')[:20], 1)]"
 
-# The FULL leaderboard (3,000 rows) -- to find our own rank or check a claim.
-# The client PRINTS "Next Page Token = ..." rather than returning it, so capture
-# stdout and feed it back via page_token. This is how "1084.5 baseline" was
-# refuted (its author is rank 750 at 819.1).
+# ⚡ THE FULL LEADERBOARD, ONE CALL (found 2026-07-31) -- USE THIS, not the
+# pagination walk below. Writes out/lb/pokemon-tcg-ai-battle.zip containing one
+# CSV of ALL 6,024 rows: Rank, TeamId, TeamName, LastSubmissionDate, Score,
+# SubmissionCount, TeamMemberUserNames. Joining TeamName -> Score is what let
+# day 10 rate every demonstrator in the training corpus (EVIDENCE §8q).
+python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_leaderboard_download('pokemon-tcg-ai-battle', path='out/lb')"
+
+# ⛔ SUPERSEDED by the one-liner above; kept because it still works and the
+# reasoning is report material. The client PRINTS "Next Page Token = ..." rather
+# than returning it, so capture stdout and feed it back via page_token. This is
+# how "1084.5 baseline" was refuted (its author is rank 750 at 819.1).
 python -X utf8 -c "
 from kaggle.api.kaggle_api_extended import KaggleApi
 import io, contextlib
@@ -1563,6 +1886,43 @@ python -X utf8 scripts/arena.py play "bc:v3,net=out/policy_b1_v3.npz" `
 
 # Rebuild shards from raw replays (more data is NOT a lever -- EVIDENCE §1)
 python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds/d30 replays/2026-07-30
+
+# ── ROADMAP B7 / day 11: WHO is demonstrating, and does it matter? (§8r-§8u) ──
+# The full 6,024-row leaderboard in ONE call -- this is what makes any of it work.
+python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_leaderboard_download('pokemon-tcg-ai-battle', path='out/lb')"
+
+# Tag every row with the demonstrator's LB score. ⚠ ALWAYS read the coverage line
+# it prints: the first run silently lost 24.6% of d26, and 92% of that was ONE
+# team under three names (display name, member username, post-merge name). The
+# fix is exact member matching (automatic) + replays/team_aliases.tsv (by hand).
+python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds_v3r/d26 `
+    --ratings out/lb/pokemon-tcg-ai-battle.zip replays/2026-07-26   # ...d27-d29
+
+# Agreement vs demonstrator rating. ⚠ DEFAULTS to the trainer's held-out split
+# on purpose -- scoring all rows of a corpus the net trained on manufactures the
+# very correlation being tested. --seen-from gives a real zero-exposure bucket.
+python -X utf8 scripts/p15_rating_curve.py --net out/policy_b1_v3.npz `
+    --ds artifacts/pds_v3r
+
+# A REPRODUCIBLE control population: census any third-party dump from its
+# owner's seat and emit the opponents on our archetype. ⚠ --exclude Scio, or the
+# control contains our own agent and scores ~98% against itself.
+python -X utf8 scripts/p9_field_census.py --dir replays/sixth_sense_31-07-2026 `
+    --us "Sixth Sense" --us "Raja Biswas" --emit-players out/ctrl_players.txt
+
+# Covariate shift: compare the two POLICIES to each other, not to human labels.
+# Symmetric disagreement = a real policy difference; collapse on our own states
+# = it was shift. artifacts/pds_ours doubles as the 1.7% positive control.
+python -X utf8 scripts/p16_policy_disagree.py --a out/policy_b1_v3.npz `
+    --b out/policy_b7_ntum.npz --ds artifacts/pds_ours artifacts/pds_ntum_r
+
+# The two B7 nets, both KILLED (-55 and -92 Elo). Kept as reproducers only.
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v3r --epochs 12 `
+    --loss listwise --state-h 512,256 --head-h 256,128 `
+    --rating-temp 25 --out out/policy_b7_rw25.npz     # ESS 41% of rows
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_ntum_r --epochs 30 `
+    --lr 2e-4 --loss listwise --state-h 512,256 --head-h 256,128 `
+    --init out/policy_b1_v3.npz --out out/policy_b7_ntum.npz
 
 # Build + submit (smoke-tests the bundle the way Kaggle loads it)
 python -X utf8 scripts/build_submission.py --deck grimmsnarl --agent bc --nets policy
@@ -1684,6 +2044,25 @@ demonstrator side of the `opps` column has never been run
 
 ## 7. Gotchas (all paid for)
 
+- 🔴 **`cmd | tee log | grep ...` REPORTS THE EXIT CODE OF `grep`, NOT OF `cmd`.**
+  The day-11 capacity run **crashed with a CPU OOM at epoch 8 of 12** and the
+  harness reported **"completed (exit code 0)"**, because the last stage of the
+  pipeline succeeded. The filtered view showed eight tidy epochs and no error;
+  only reading the *unfiltered* log revealed the traceback. **A truncated run
+  looks exactly like a finished one when you only read the grep.** Redirect
+  (`> log 2>&1`) and echo `$?` when the exit status matters, and never conclude
+  from a filtered log — this is rule 9 ("a metric that never prints is not a
+  metric that passed") applied to the runner instead of the metric.
+- ⚠ **MEMORY, not CPU, is this machine's binding constraint on model size**, and
+  it bit twice in one hour. A 1.5M-param net (`--state-h 1024,512`) at
+  `--bs 1024` OOMs mid-training on the 249k-row corpus; at `--bs 512` it OOMs
+  during *data loading* — 231 MiB for one `(1633243, 37)` array — **whenever an
+  arena process is running alongside it.** The `Data` class holds every shard in
+  RAM plus per-row bag lists, so the load is a hard spike before a single epoch
+  starts. **Do not run a large train and an arena concurrently** (rule 7 said
+  2–3 jobs for CPU reasons; for the big nets it is 1), and **size this before
+  planning any RL run** — a policy+value pair plus a replay buffer has to fit in
+  what is left.
 - **`__file__` DOES NOT EXIST on Kaggle.** `kaggle_environments/agent.py` does
   `exec(code_object, env)` → `NameError` → ERROR before the agent runs. This
   killed `55028078`. The smoke test `exec`s the source with no `__file__` in
@@ -1736,6 +2115,27 @@ demonstrator side of the `opps` column has never been run
   placed/moved counters vs False for attack damage). ⚠ **A PREVENTED attack logs
   as `value: 0`**, so a filter of `value < 0` silently drops exactly the events
   that prove a prevention ability exists.
+- **Third-party replay dumps (`replays/<team>_<date>/`) are a different animal
+  from mined episodes, and three things about them bite:**
+  - ⚠ **`info.TeamNames` is the display name AT EPISODE TIME and teams rename.**
+    The Sixth Sense dump reports "Raja Biswas" on 113 games and "Sixth Sense" on
+    30 — **one team, teamId 16452116**. A census keyed on the name splits one
+    demonstrator in two. **Join on `teamId` from `episodes_meta.json`.**
+  - ⚠ **A dump spans several of that team's SUBMISSIONS**, i.e. several different
+    agents. `episodes_meta.json` carries `submissionId` per seat — use it, and
+    tag rows so the weaker agent can be ablated out.
+  - **The sidecar is not an episode.** `build_policy_dataset.py` now skips any
+    file whose stem is not all digits; before that, `episodes_meta.json` was
+    parsed as a replay and counted as `errors=1`.
+- ⚠ **A player filter that matches nothing used to build a corpus of EVERYTHING.**
+  An empty `--players-file`, or a CJK name off by one homoglyph
+  (李秉**叡** vs 李秉**睿**), silently produced an unfiltered corpus under an
+  expert corpus's name — the `bc:` label trap in a new place. **Both cases now
+  `SystemExit`.** Take exact team names from `episodes_meta.json`, never retype
+  them.
+- ⚠ **`context_accuracy.py` scores the `gid % 20` val split by default.** On a
+  corpus the net never trained on that silently measures **5% of your data**.
+  Pass **`--all-rows`** for any external/expert corpus.
 - **The first token after `bc:` is a LABEL, not a flag.** `bc:veto` silently
   builds a plain `bc` named "veto" — the flag parser starts at token 1, so the
   A/B compares the clone against itself. Write `bc:<label>,<flag>`
