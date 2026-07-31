@@ -1533,6 +1533,67 @@ regardless of any of the above.
   arena A/B at n≥1000 against the five anchors, with pool-usage logging** — and
   the pool is a real risk (exhausting 600 s is a loss, §7).
 
+## 8n. B4's prototype LOSES — 0.075 at n=40, and rule 3 claims its sixth victim (2026-07-31)
+
+`agents/sa/sequencer.py`, wired as `bc:<label>,seq` (opt-in, default off).
+Head-to-head vs plain `bc` in the mirror:
+
+| version | score vs `bc` |
+|---|---|
+| first build | **0.083** [0.015, 0.354] n=12 |
+| after the mid-turn-eval fix | **0.075** [0.026, 0.199] n=40 |
+
+**This is not a marginal loss — it is a rout, and it is the exact signature of
+the dead rollout search: the sequencer overrules the clone on 50% of MAIN
+selects** (`EVIDENCE` §2: the search overruled 52% and scored 0.323).
+
+### What has been ruled out
+
+1. **Option-index mismatch — NO.** The simulated root's option list was compared
+   field-by-field against the real select's over four positions: identical
+   (`type`, `area`, `index`, `playerIndex`, length).
+2. **Mid-turn vs end-of-turn comparison — REAL BUG, FIXED, DIDN'T HELP.** The
+   first build evaluated any candidate that hit the step cap *mid-turn*, still
+   holding its cards, against candidates that had attacked and committed.
+   `evalfn` scores the uncommitted state higher, making "stall" the winning
+   move — and the agent duly played ~50% more turns per game. Candidates that do
+   not actually end the turn are now discarded. **Score moved 0.083 → 0.075,
+   i.e. not at all.**
+
+### The live hypothesis, and it is a DESIGN flaw rather than a bug
+
+**B4 maximises the value of the board at the end of OUR turn, which structurally
+cannot see the opponent's reply.** A line that leaves our 2-prize attacker
+exposed scores well right up to the moment it is knocked out. The clone, trained
+on 2,810 human games, prices that risk implicitly; the sequencer discards it.
+`evalfn` does carry a `−0.45 × prize_value` term for being KO-able, but it is one
+term among many and the argmax over K candidates will happily pay it.
+
+⚠ **And the selection bias is the §2 failure in a new costume.** §8m measured
+that the argmax *reproduces* across determinizations (62% vs 6.2%) — that it is a
+**stable** choice. It never showed the argmax is a **good** choice. A max over K
+noisy estimates of a biased objective is stably wrong.
+
+### Verdict
+
+**Not "B4 is dead" and not "B4 needs one more fix".** The state is: the
+prototype exists, two candidate bugs are eliminated, and the remaining
+explanation is that the objective itself is wrong. Options, cheapest first:
+
+1. **Test the design flaw directly** — score candidates with a one-ply opponent
+   reply (their best attack into our board) instead of end-of-our-turn value.
+   That is a small change to `_rollout`'s terminal evaluation.
+2. **Constrain rather than replace the clone** — only overrule when the eval gap
+   exceeds a threshold, turning a 50% overrule rate into ~5%. The dead search's
+   `PRIOR_BONUS` was the same idea and it did not save that search.
+3. **Kill it.** 17 days remain; §8k says no rule-sized change can move the LB
+   anyway, and B4's own gain estimate (0.099 eval units/turn) was upward biased.
+
+🔴 **Rule 3, sixth instance: a metric that looked good did not predict playing
+strength.** §8m's 62%-vs-6.2% was real and reproducible and the thing built on
+it lost 37 of 40 games. **The rule now reads: five training metrics and one
+search metric.**
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is

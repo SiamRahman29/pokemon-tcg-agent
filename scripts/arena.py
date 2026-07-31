@@ -172,6 +172,9 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         wall = True
         # on by default, matching PolicyAgent: it cleared its own A/B
         source = True
+        # B4 turn-level lookahead: opt-in, unproven
+        sequencer = False
+        seq_k, seq_dets, seq_budget = 8, 4, 0.35
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -200,6 +203,16 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 # P5b: DON'T play Boss's Orders when nothing on their bench is
                 # KO-able (32.4% of our plays). Default off until it A/Bs.
                 veto = f == "veto"
+            elif f in ("seq", "noSeq"):
+                # B4: turn-level lookahead (sa/sequencer.py). Default OFF --
+                # an experiment until it clears an A/B (EVIDENCE 8m).
+                sequencer = f == "seq"
+            elif f.startswith("sk"):
+                seq_k = int(f[2:])          # candidates per select
+            elif f.startswith("sd"):
+                seq_dets = int(f[2:])       # determinizations per candidate
+            elif f.startswith("sb"):
+                seq_budget = float(f[2:])   # seconds per select
             elif f in ("wall", "noWall"):
                 # The matchup branch: stop applying chip_target when their
                 # Active is a damage-prevention wall (Crustle), because the rule
@@ -224,7 +237,9 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                             energy_spread=spread, drag_target=drag,
                             boss_converts=boss, drag_high_hp=drag_hi,
                             boss_veto=veto, counter_source=source,
-                            chip_wall_defer=wall))
+                            chip_wall_defer=wall, sequencer=sequencer,
+                            seq_k=seq_k, seq_dets=seq_dets,
+                            seq_budget=seq_budget))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

@@ -12,8 +12,18 @@ class PolicyAgent:
                  chip_targeting: bool = True, energy_spread: bool = True,
                  drag_target: bool = False, boss_converts: bool = False,
                  drag_high_hp: bool = False, boss_veto: bool = False,
-                 counter_source: bool = True, chip_wall_defer: bool = True):
+                 counter_source: bool = True, chip_wall_defer: bool = True,
+                 sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
+                 seq_budget: float = 0.35):
         self.decklist = list(decklist)
+        # B4: turn-level lookahead (sequencer.py). OFF by default and opt-in
+        # via `bc:<label>,seq` until it clears an arena A/B -- it is an
+        # experiment, not a shipped component (EVIDENCE 8m).
+        self.seq = None
+        if sequencer:
+            from .sequencer import Sequencer
+            self.seq = Sequencer(decklist, k=seq_k, dets=seq_dets,
+                                 budget_s=seq_budget)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
         # ~2x the games for the same resolution, and the module-level
@@ -104,7 +114,14 @@ class PolicyAgent:
             if self.energy_spread:
                 fixed = targeting.energy_spread(obs, list(picked))
                 if fixed is not None:
-                    return fixed
+                    picked = fixed
+            # B4 last: it overrules the clone AND the rules, because it is the
+            # only component that scores a whole turn rather than one option.
+            # Returns None (fall through) whenever it cannot plan safely.
+            if self.seq is not None:
+                planned = self.seq.plan(obs, list(picked))
+                if planned is not None:
+                    return planned
             return picked
         except Exception:
             traceback.print_exc(file=sys.stderr)
