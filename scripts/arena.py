@@ -177,6 +177,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         # B4 turn-level lookahead: opt-in, unproven
         sequencer = False
         seq_k, seq_dets, seq_budget = 8, 4, 0.35
+        seq_reply = False
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -213,6 +214,11 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 # B4: turn-level lookahead (sa/sequencer.py). Default OFF --
                 # an experiment until it clears an A/B (EVIDENCE 8m).
                 sequencer = f == "seq"
+            elif f in ("reply", "noReply"):
+                # B4's DESIGN fix (EVIDENCE 8n): score each candidate after the
+                # opponent's reply turn instead of at the end of ours. Implies
+                # `seq` -- on its own it does nothing.
+                seq_reply = f == "reply"
             elif f.startswith("sk"):
                 seq_k = int(f[2:])          # candidates per select
             elif f.startswith("sd"):
@@ -246,7 +252,7 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                             chip_wall_defer=wall, boss_prize_veto=bossprize,
                             sequencer=sequencer,
                             seq_k=seq_k, seq_dets=seq_dets,
-                            seq_budget=seq_budget))
+                            seq_budget=seq_budget, seq_reply=seq_reply))
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 

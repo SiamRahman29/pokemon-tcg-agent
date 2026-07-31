@@ -41,15 +41,31 @@ from .evalfn import evaluate
 
 MAIN = 0
 MAX_STEPS = 24          # a turn is ~6 real selects; a generous cap
+REPLY_STEPS = 24        # same cap for the opponent's reply turn
 TOPK = 3                # sample among the net's top-3 at each select
+# Terminal value used when the game ends inside the simulation. `evalfn` scores
+# a board, not a result, so a line that loses on the spot would otherwise be
+# scored on the corpse. Large enough to dominate any board term.
+WIN_VALUE = 1e4
 
 
 class Sequencer:
-    """Turn-level lookahead. `plan()` returns a pick, or None to fall back."""
+    """Turn-level lookahead. `plan()` returns a pick, or None to fall back.
+
+    ⚠ `reply=True` is the fix for the DESIGN flaw diagnosed in `EVIDENCE` §8n,
+    and it is the whole reason this class is still alive. The prototype scored
+    **0.075 [0.026, 0.199] n=40** -- a rout, not a marginal loss -- and two
+    candidate *bugs* were eliminated without moving it. The remaining
+    explanation is that the objective is wrong: maximising the value of the
+    board **at the end of OUR turn** structurally cannot see the opponent's
+    reply, so a line that leaves a 2-prize attacker exposed scores well right up
+    to the moment it is knocked out. With `reply=True` the simulation continues
+    through the opponent's turn and evaluates when control returns to us.
+    """
 
     def __init__(self, decklist: list[int], k: int = 8, dets: int = 4,
                  budget_s: float = 0.35, pool_floor_s: float = 120.0,
-                 seed: int = 17):
+                 seed: int = 17, reply: bool = False):
         self.decklist = list(decklist)
         self.k = k
         self.dets = dets
@@ -57,6 +73,7 @@ class Sequencer:
         # Stop planning entirely if the remaining pool gets this low: a
         # timeout is a LOSS, and the clone plays fine without us.
         self.pool_floor_s = pool_floor_s
+        self.reply = reply
         self.rng = random.Random(seed)
         self.stats = {"planned": 0, "fellback": 0, "overruled": 0,
                       "sim_s": 0.0, "aborted_budget": 0}
@@ -118,7 +135,64 @@ class Sequencer:
         if not st or not ended:
             # hit the step cap mid-turn -- NOT comparable, discard it
             return None, actions, False
+        if self.reply:
+            cur_sid, cur, ok = self._reply(cur_sid, cur, me, net, rng)
+            if not ok:
+                # The reply did not complete. Same rule as a mid-turn cap: a
+                # candidate evaluated BEFORE the reply is not comparable to one
+                # evaluated after it, and mixing the two is precisely the bug
+                # that made "stall" win the first prototype (§8n).
+                return None, actions, False
+            st = cur.get("current") or {}
+            if not st:
+                return None, actions, False
+        res = st.get("result", -1)
+        if res != -1:
+            # Terminal inside the sim: score the RESULT, not the wreckage.
+            return (WIN_VALUE if res == me else -WIN_VALUE), actions, True
         return float(evaluate(st, me)), actions, True
+
+    def _reply(self, sid, obs, me, net, rng):
+        """Play the OPPONENT's turn out. -> (sid, obs, ok).
+
+        The opponent is piloted by the same clone, which is the best model of
+        them we have (they are 46.9%% mirror and the field's modal policy is
+        what the net fits best -- `EVIDENCE` §8r). Their hidden cards come from
+        the same determinization as ours, so this adds no information we did
+        not already invent.
+        """
+        from . import fastsearch as fs
+        cur_sid, cur = sid, obs
+        for _ in range(REPLY_STEPS):
+            st = cur.get("current") or {}
+            sel = cur.get("select") or {}
+            opts = sel.get("option") or []
+            if not st:
+                return cur_sid, cur, False
+            if st.get("result", -1) != -1:
+                return cur_sid, cur, True      # game ended in their turn
+            if st.get("yourIndex") == me:
+                return cur_sid, cur, True      # control is back with us
+            if not opts:
+                return cur_sid, cur, False
+            if len(opts) == 1:
+                pick = [0]
+            else:
+                try:
+                    sc = net.scores(cur) if net is not None else None
+                except Exception:  # noqa: BLE001
+                    sc = None
+                if sc is None:
+                    pick = [rng.randrange(len(opts))]
+                else:
+                    order = sorted(range(len(opts)),
+                                   key=lambda i: -float(sc[i]))[:TOPK]
+                    pick = [rng.choice(order)]
+            try:
+                cur_sid, cur = fs.step(cur_sid, pick)
+            except Exception:  # noqa: BLE001
+                return cur_sid, cur, False
+        return cur_sid, cur, False             # cap hit: not comparable
 
     # ------------------------------------------------------------------- plan
     def plan(self, obs: dict, clone_pick: list[int]) -> list[int] | None:

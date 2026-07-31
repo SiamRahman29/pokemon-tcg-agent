@@ -15,7 +15,7 @@ class PolicyAgent:
                  counter_source: bool = True, chip_wall_defer: bool = True,
                  boss_prize_veto: bool = False,
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
-                 seq_budget: float = 0.35):
+                 seq_budget: float = 0.35, seq_reply: bool = False):
         self.decklist = list(decklist)
         # The FIFTH Boss's Orders rule: suppress the play when attacking
         # right now takes strictly more prizes than any drag can. The
@@ -30,7 +30,7 @@ class PolicyAgent:
         if sequencer:
             from .sequencer import Sequencer
             self.seq = Sequencer(decklist, k=seq_k, dets=seq_dets,
-                                 budget_s=seq_budget)
+                                 budget_s=seq_budget, reply=seq_reply)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
         # ~2x the games for the same resolution, and the module-level
