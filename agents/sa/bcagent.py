@@ -13,9 +13,16 @@ class PolicyAgent:
                  drag_target: bool = False, boss_converts: bool = False,
                  drag_high_hp: bool = False, boss_veto: bool = False,
                  counter_source: bool = True, chip_wall_defer: bool = True,
+                 boss_prize_veto: bool = False,
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
                  seq_budget: float = 0.35):
         self.decklist = list(decklist)
+        # The FIFTH Boss's Orders rule: suppress the play when attacking
+        # right now takes strictly more prizes than any drag can. The
+        # other four picked a side in a trade and all measured null; this
+        # one deletes a dominated option (EVIDENCE 6 vs 8g). Opt-in until
+        # it clears the five anchors.
+        self.boss_prize_veto = boss_prize_veto
         # B4: turn-level lookahead (sequencer.py). OFF by default and opt-in
         # via `bc:<label>,seq` until it clears an arena A/B -- it is an
         # experiment, not a shipped component (EVIDENCE 8m).
@@ -103,6 +110,11 @@ class PolicyAgent:
                 # lazy: the full ranking costs a second forward pass, and the
                 # veto fires only when the net's top pick is Boss's Orders
                 fixed = targeting.boss_veto(
+                    obs, list(picked), lambda: targeting.full_rank(net, obs))
+                if fixed is not None:
+                    return fixed
+            if self.boss_prize_veto:
+                fixed = targeting.boss_prize_veto(
                     obs, list(picked), lambda: targeting.full_rank(net, obs))
                 if fixed is not None:
                     return fixed

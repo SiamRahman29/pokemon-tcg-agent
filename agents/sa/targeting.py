@@ -478,3 +478,103 @@ def boss_converts(obs: dict) -> list[int] | None:
         if pk and best_damage(active, mypl, oppl, pk) >= pk["hp"]:
             return [boss[0]]
     return None
+
+
+def _prize_if_ko(attacker, mypl, oppl, target) -> int:
+    """Prizes we take by attacking `target`, or 0 if it survives."""
+    if target is None or target.get("hp") is None:
+        return 0
+    if best_damage(attacker, mypl, oppl, target) < target["hp"]:
+        return 0
+    return cards.prize_value(target["id"])
+
+
+def _snipe_prizes(oppl, exclude_index=None) -> int:
+    """Best prize Shadow Bullet's 30 bench snipe takes, 0 if none dies to it."""
+    best = 0
+    for i, pk in enumerate(oppl.get("bench") or []):
+        if pk is None or pk.get("hp") is None or i == exclude_index:
+            continue
+        if pk["hp"] <= CHIP_DAMAGE:
+            best = max(best, cards.prize_value(pk["id"]))
+    return best
+
+
+def boss_prize_veto(obs: dict, chosen: list[int], rank) -> list[int] | None:
+    """Don't play Boss's Orders when ATTACKING NOW takes strictly more prizes.
+
+    **The fifth Boss's Orders intervention, and `EVIDENCE` §6 said not to write
+    it. §6 is wrong, and here is the distinction it missed.** The four nulls all
+    answered *which* Pokemon to drag (`drag_target`, `prefer_high_hp`) or
+    *whether the drag itself converts* (`boss_converts`, `boss_veto`). **Not one
+    of them compares the drag against the attack we already have.**
+
+    The defect this targets was measured on 54 REAL ladder games of the shipped
+    v3 agent (`scripts/p8_optv3_replays.py`): of 31 drags where attacking was a
+    genuine alternative, **9 (29%) were misplays, and 5 of those threw away a
+    DOUBLE KO** -- Shadow Bullet is 180 to the Active *plus 30 to a bench*, so a
+    <=30 HP bench sitter means attacking takes two prizes. In every one of those
+    five we dragged the very Pokemon we could have sniped for free, converting a
+    2-prize turn into a 1-prize turn:
+
+        eg 89011961 t11: could KO Crustle hp=80 (1p) + snipe Dwebble hp=10;
+                         dragged Dwebble
+        eg 89021174 t9:  could KO Alakazam hp=80 (1p) + snipe Abra hp=20;
+                         dragged Abra
+
+    **Why this is the DOMINATED column (rule 11's 3-for-3 side) and the other
+    four were not:** both branches are pure arithmetic -- prize values and
+    damage-vs-HP, no judgment about tempo or what they might evolve into. We are
+    not choosing between two goods; we are deleting a strictly worse option.
+
+    ⚠ The comparison is honest on both sides: a drag can double-KO too (drag a
+    KO-able target, snipe a different <=30 HP bench sitter), so `drag_best`
+    excludes the dragged Pokemon from its own snipe. The veto fires only on
+    **strictly** greater, so ties go to the net.
+    """
+    sel = obs.get("select") or {}
+    if sel.get("context") != MAIN or not chosen:
+        return None
+    options = sel.get("option") or []
+    pick = chosen[0]
+    if not 0 <= pick < len(options):
+        return None
+    opt = options[pick]
+    if opt.get("type") != OPT_PLAY:
+        return None
+    state = obs.get("current") or {}
+    me = state.get("yourIndex")
+    if me is None:
+        return None
+    if _hand_card_id(state, me, opt.get("index") or 0) != BOSS_ORDERS:
+        return None
+    try:
+        mypl, oppl = state["players"][me], state["players"][1 - me]
+    except (KeyError, IndexError, TypeError):
+        return None
+    active = mypl["active"][0] if mypl.get("active") else None
+    opp_active = oppl["active"][0] if oppl.get("active") else None
+    if not active or not opp_active:
+        return None
+
+    # What attacking RIGHT NOW is worth: the Active if it dies, plus the snipe.
+    attack_now = _prize_if_ko(active, mypl, oppl, opp_active) + _snipe_prizes(oppl)
+
+    # What the best drag is worth: that target if it dies, plus a snipe onto a
+    # DIFFERENT bench sitter (the dragged one is no longer benched).
+    drag_best = 0
+    for i, pk in enumerate(oppl.get("bench") or []):
+        if pk is None:
+            continue
+        got = _prize_if_ko(active, mypl, oppl, pk)
+        if got:
+            drag_best = max(drag_best, got + _snipe_prizes(oppl, exclude_index=i))
+
+    if attack_now <= drag_best:
+        return None  # dragging is at least as good -- leave it to the net
+
+    vetoed = {i for i, o in enumerate(options)
+              if o.get("type") == OPT_PLAY
+              and _hand_card_id(state, me, o.get("index") or 0) == BOSS_ORDERS}
+    rest = [i for i in rank() if i not in vetoed]
+    return rest[:len(chosen)] or None

@@ -172,6 +172,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         wall = True
         # on by default, matching PolicyAgent: it cleared its own A/B
         source = True
+        # the 5th Boss's Orders rule: opt-in, unproven
+        bossprize = False
         # B4 turn-level lookahead: opt-in, unproven
         sequencer = False
         seq_k, seq_dets, seq_budget = 8, 4, 0.35
@@ -203,6 +205,10 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                 # P5b: DON'T play Boss's Orders when nothing on their bench is
                 # KO-able (32.4% of our plays). Default off until it A/Bs.
                 veto = f == "veto"
+            elif f in ("bossPrize", "noBossPrize"):
+                # "attacking beats dragging" veto (sa/targeting.py). Default
+                # off until it clears an A/B.
+                bossprize = f == "bossPrize"
             elif f in ("seq", "noSeq"):
                 # B4: turn-level lookahead (sa/sequencer.py). Default OFF --
                 # an experiment until it clears an A/B (EVIDENCE 8m).
@@ -237,7 +243,8 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                             energy_spread=spread, drag_target=drag,
                             boss_converts=boss, drag_high_hp=drag_hi,
                             boss_veto=veto, counter_source=source,
-                            chip_wall_defer=wall, sequencer=sequencer,
+                            chip_wall_defer=wall, boss_prize_veto=bossprize,
+                            sequencer=sequencer,
                             seq_k=seq_k, seq_dets=seq_dets,
                             seq_budget=seq_budget))
     raise SystemExit(f"unknown agent spec: {spec!r}")
