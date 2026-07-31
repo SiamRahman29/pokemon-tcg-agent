@@ -15,8 +15,11 @@ The two we could not A/B against were the **largest** archetype and the one we
 **lose to most**. Both pilots were sitting checked into `notebooks/` unused:
 
   * `rule-based-not-psychic-alakazam-best-5th.ipynb` -- the author reports 5th
-    place, pure rules, no ML, no search. Its own `deck.csv` matches our
-    24-game reconstruction of the field's Alakazam list card for card.
+    place, pure rules, no ML, no search. Its `deck.csv` matches the field's
+    ENGINE exactly (Abra x4 / Kadabra x3-4 / Alakazam x3 / Dunsparce x3 /
+    Dudunsparce x2 / Fezandipiti ex x1 / Telepath Psychic x4 / Poke Pad x4 /
+    Buddy-Buddy Poffin x4 / Dawn x4); 7 of 23 observed cards differ and all 7
+    are tech slots. Detail and the caveats: `EVIDENCE` 8i.
   * `a-sample-archaludon-75-wr-vs-my-1300-starmie.ipynb` -- a scored-option
     Archaludon/Cinderace pilot.
 
@@ -110,12 +113,18 @@ in `targeting.py` reasons about that.
         deck_module="alakazam5",
         deck_title="The 5th-place Alakazam pilot's own 60.",
         deck_why=(
-            "**This is the deck `rule:alakazam5` was tuned for.** It also\n"
-            "matches the field: `p9_field_census.py` reconstructed the Alakazam\n"
-            "list from 24 real ladder games and every card it could see is in\n"
-            "here at the same count (Abra x4, Kadabra x3-4, Alakazam x3,\n"
-            "Dunsparce x3, Dudunsparce x2, Fezandipiti ex x1, Telepath Psychic\n"
-            "Energy x4, Rare Candy x3-4, Poke Pad x4, Buddy-Buddy Poffin x4).\n"
+            "**This is the deck `rule:alakazam5` was tuned for**, and it is the\n"
+            "field's deck where it counts. `p9_field_census.py` reconstructed\n"
+            "the Alakazam list from 24 real ladder games: the ENGINE matches\n"
+            "exactly (Abra x4, Kadabra x3-4, Alakazam x3, Dunsparce x3,\n"
+            "Dudunsparce x2, Fezandipiti ex x1, Telepath Psychic Energy x4,\n"
+            "Poke Pad x4, Buddy-Buddy Poffin x4, Dawn x4, Hilda x3-4), while 7\n"
+            "of 23 observed cards differ and all 7 are tech slots -- notably\n"
+            "the field plays Nighttime Mine as a stadium and this pilot does\n"
+            "not, so stadium contests read weak through this anchor.\n"
+            "⚠ Do NOT retune it toward the reconstruction: the reconstruction\n"
+            "pools 24 different players, and a pilot scoring cards it was not\n"
+            "written for plays them badly (see `crustle_v1` vs `crustle`).\n"
             "`decks/alakazam.py` is the older reconstruction -- prefer this one."),
     ),
     Job(

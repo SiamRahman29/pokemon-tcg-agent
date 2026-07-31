@@ -1110,12 +1110,36 @@ Both pilots were sitting checked into `notebooks/` unused for the whole project:
 
 | anchor | source | why it is a good anchor |
 |---|---|---|
-| `rule:alakazam5` + `decks/alakazam5.py` | `rule-based-not-psychic-alakazam-best-5th` | author reports **5th place**, pure rules, no ML, no search — the strongest pilot in the repo, on the field's biggest deck. Its own 60 matches our 24-game reconstruction card for card |
+| `rule:alakazam5` + `decks/alakazam5.py` | `rule-based-not-psychic-alakazam-best-5th` | author reports **5th place**, pure rules, no ML, no search — the strongest pilot in the repo, on the field's biggest deck. Its 60 matches the field's **engine** exactly (checked below) |
 | `rule:archaludon` + `decks/archaludon_ex.py` | `a-sample-archaludon-75-wr-vs-my-1300-starmie` | our worst matchup. Also a **second damage-reduction deck** (Full Metal Lab: −30 into any Metal Pokemon), which `targeting.WALL_POKEMON = {345}` does not model |
 
 ⚠ Rule 12's competitiveness clause was checked, not assumed: at n=30 smoke we
 score 0.633 vs `rule:alakazam5` and 0.733 vs `rule:archaludon` — real opponents,
 not the 0.911 ceiling that made a `bc`-piloted Crispin anchor useless.
+
+**How closely does the Alakazam pilot's 60 match the field's?** Checked against
+the 24-game reconstruction rather than asserted — **16 of 23 observed cards match
+or exceed, and the mismatches are all tech slots, never the engine**:
+
+- ✅ **exact on everything that defines the deck**: Abra ×4, Alakazam ×3,
+  Kadabra ×3→4, Dunsparce ×3, Dudunsparce ×2, Fezandipiti ex ×1, Shaymin ×1,
+  Telepath Psychic Energy ×4, Poké Pad ×4, Buddy-Buddy Poffin ×4, Dawn ×4,
+  Hilda ×3→4, Basic {P} ×2, Sacred Ash ×1, Enriching Energy ×1.
+- ⚠ **pilot runs fewer**: Rare Candy 4→3, Night Stretcher 3→1, Boss's Orders 3→2.
+- ⚠ **absent from the pilot**: Xerosic's Machinations ×2, Nighttime Mine ×2,
+  Lana's Aid ×1, Neutralization Zone ×1 — note **`Nighttime Mine` is a stadium
+  the field plays and this pilot does not**, so a stadium-contest effect will be
+  under-read through this anchor.
+- The pilot additionally runs Enhanced Hammer ×3, Lucky Helmet ×3, Genesect,
+  Psyduck, which we never saw (invisible cards are expected — reconstruction is
+  a lower bound).
+
+⚠ **And the reconstruction pools 24 games from 24 different players**, so it is
+the *union* of several variants, not one canonical list. Some "absent" cards are
+almost certainly one opponent's tech, not a slot this pilot is missing. **Do not
+"fix" the pilot's deck toward the reconstruction** — it was tuned for its own 60,
+and `rule:crustle`'s ~20 fallback-scored cards on the consensus list is the
+standing warning about what that costs (§8c).
 
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
