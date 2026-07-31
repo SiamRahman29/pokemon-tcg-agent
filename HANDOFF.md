@@ -101,6 +101,30 @@ distrust it: mined episodes are the top-1150 band, and
 > that a rank point is worth more than a report chapter — the competition
 > description says outright that a mid-tier LB with deep analysis can win.
 
+#### ✅ Done at the end of day 9 (read before planning day 10)
+
+- **`55129730` — THE P4b RESTORE IS LIVE AND CLIMBING** (600 → 715.9 → …).
+  ⚠ **Read it with rule 2**: a young submission swings, and it needs ~4 h. Active
+  pair is `{55129730, 55116557 v3 813.5}`; **P6a is evicted, frozen at 841.5**.
+  **The reasoning reversed an earlier recommendation of mine and the user was
+  right to push:** the LB said P4b 952 vs P6a 846 for three days — a 105-point
+  gap at/above the resolution limit — and "the board grew so it is not
+  comparable" was a weaker argument than I presented. Risked 33 points (P6a →
+  v3's floor) to chase ~100.
+- ❌ **Boss's Orders rule #5 (`bossPrize`) — NULL, and the card is now properly
+  closed.** All three anchors overlap; weighted **+6 Elo**. The user's
+  observation was correct and the rule fixes exactly the defect they described
+  (fires on 28.6% of plays vs a 29% measured misplay rate, corroborated three
+  independent ways) — **it just decides ~0.09 prizes per game, 1.5% of a 6-prize
+  game, against an A/B that resolves 0.021.** ⚠ **Rule 14 was violated: built
+  first, sized after. The sizing takes two minutes and predicts the null
+  exactly.** `EVIDENCE` §6.
+- 🔧 **`scripts/p14_prize_audit.py`** — automates the misplay hunting that used
+  to require the user watching games. It re-found the Boss's Orders defect
+  independently. ⚠ **Its "did not attack" bucket is NOT trustworthy** (14.9–27.7%
+  against P5c's established 3,683/3,683); `_available()` prices 180 damage
+  without checking our Active can legally attack. **Fix that before using it.**
+
 #### The day-10 order of work
 
 **A. ⚡ HUNT THE NEXT REPRESENTATIONAL DEFECT — the only proven rank lever.**
