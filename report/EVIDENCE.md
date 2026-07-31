@@ -1242,12 +1242,14 @@ almost certainly one opponent's tech, not a slot this pilot is missing. **Do not
 and `rule:crustle`'s ~20 fallback-scored cards on the consensus list is the
 standing warning about what that costs (§8c).
 
-## 8j. Does v3 want the hand rules back on? — IN FLIGHT, verdict deliberately blank
+## 8j. Does v3 want the hand rules back on? — ✅ CONCLUDED: globally NO (+1 Elo), and the value is in a BRANCH
 
-> ⚠ **This entry is open on purpose.** §8i was written after 2 of 5 anchors and
-> had to be retracted the same session. The amended process rule (ROADMAP Track B)
-> is: **if runs are in flight, log the numbers and leave the verdict blank.**
-> 2 of 4 cells are in. **Do not act on this section yet.**
+> ✅ **5 of 5 cells reported before this verdict was written.** The entry was held
+> open with the numbers logged and the verdict blank for three intermediate
+> reports, per the process rule amended earlier the same day after §8i was
+> published at 40% of its data. **The discipline changed the answer twice** — at
+> 2 cells the story was "the rules fix everything", at 4 cells it was "a matchup
+> split", and only at 5 is the global figure (**+1 Elo**) visible.
 
 **The question.** v3 shipped with all three hand rules **off**, justified by
 `v3+rules` vs `v3 alone` = **0.427** (§8f). That measurement was taken **in the
@@ -1262,15 +1264,51 @@ src + wall all on, i.e. the defaults; n=2000 each):
 | `rule:alakazam5` | 22.0% | 0.731 [0.711, 0.750] | **0.739 [0.719, 0.758]** | +0.008 (overlaps) | 0.727 |
 | `rule:v10` | 12.8% | 0.505 [0.483, 0.527] | **0.572 [0.550, 0.594]** | **+0.067** 🟢 | 0.576 |
 | `rule:crustle` | 12.8% | 0.770 | **0.761 [0.742, 0.779]** | −0.009 (overlaps) | 0.663 |
-| `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | ⏳ running | | 0.621 |
+| `rule:archaludon` | 10.1% | 0.669 [0.648, 0.690] | **0.684 [0.663, 0.704]** | +0.015 (overlaps) | 0.621 |
 | mirror (h2h vs `v3 alone`) | 13.8% | — | 0.427 (§8f) | **−0.073** 🔴 | — |
 
-**What the first cell shows, stated narrowly:** *the rules are what close the
+### The verdict, weighted
+
+| anchor | share | Δ Elo (on − off) | weighted | CIs |
+|---|---|---|---|---|
+| `rule:alakazam5` | 22.0% | +7 | +1.6 | overlap |
+| mirror (h2h) | 13.8% | **−51** | **−7.1** | **disjoint** |
+| `rule:crustle` | 12.8% | −9 | −1.1 | overlap |
+| `rule:v10` | 12.8% | **+47** | **+6.0** | **disjoint** |
+| `rule:archaludon` | 10.1% | +12 | +1.2 | overlap |
+| **global rules-on** | **71.5%** | | **+0.6 → +1 Elo** | |
+
+**1. Turning the rules on globally is worth NOTHING (+1 Elo).** The mirror loss
+(−7.1) almost exactly cancels the Mega Lucario gain (+6.0), and the other three
+anchors are dead heats. **So shipping v3 with rules off was not a mistake — it
+was arbitrary.** The 0.427 that justified it was a mirror-only number and
+therefore bad evidence, but it happened to land on a defensible config.
+
+**2. Only two of five cells have disjoint CIs**, and they are the two that point
+opposite ways. **The three "dead heat" rows must not be summed as if they were
+signal** — done naively, a branch that switches the rules on wherever Δ is
+positive scores +12 Elo, but +4 of that is noise from three overlapping cells.
+**The honest branch value is the Lucario cell alone: +6.0 weighted ≈ +8 Elo.**
+
+**3. ⚠ And ~8 Elo is below what we can validate.** §1's resolution limit: the LB
+swings ±50–100 while converging, so **this can never be confirmed on the
+leaderboard**. By rule 14 the sizing is now done and the honest read is: *a
+Lucario rules-branch is a legitimate BUNDLE candidate, not a solo submission,
+and not urgent.*
+
+**4. What it does buy is a report chapter** — B3's third instance, after the
+Crustle wall branch (+0.104) and the Lucario finding itself. The pattern
+"arithmetic rules are matchup-conditional, and the condition is readable off the
+board" is the opponent-modelling argument, and this is its cleanest example: the
+same three rules are **+47 Elo** in one matchup and **−51** in another.
+
+**The one robust positive, stated narrowly:** *the rules are what close the
 Mega Lucario hole.* Rules-off v3 reads **0.505** there; rules-on reads **0.572**,
 disjoint CIs, and that is **level with P4b's 0.576**. So §8i's "−50 Elo weakness"
 is **not a property of the v3 net** — it is a property of having turned the rules
 off, and it was invisible because the decision to turn them off was made in the
-mirror.
+mirror. ⚠ **This does NOT mean the rules should go back on** — see the weighted
+verdict below; globally they are worth +1 Elo.
 
 ⚠ **The cells point opposite ways** — rules ON wins Lucario (+0.067) and loses
 the mirror (−0.073), while Alakazam and Crustle are **dead heats**. **That is the
