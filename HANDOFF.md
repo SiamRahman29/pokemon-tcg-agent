@@ -28,6 +28,12 @@ back via `page_token` to walk all 5,000** (§5).
 > third of the field is a single-anchor error wearing a disguise (rule 12).
 >
 > **Do not trust any arena-only result in this repo without re-reading §2 rule 16.**
+>
+> ⚠ **This is NOT an emergency and the P4b restore is NOT urgent** — Kaggle's copy
+> of `55072063` is permanent and P4b is rebuildable from git. The cost of the
+> current state is displayed rank only, and it does not compound. **What binds is
+> having the best agent ACTIVE at the 08-17 close** (§8h). The genuinely blocking
+> problem is the arena, not the slot.
 
 **Read §2 before trusting any number. §3 is the live plan. This file must always
 end with a live plan, never a summary.**
@@ -38,8 +44,28 @@ Nothing is mid-flight; the tree is clean and every result below is archived.
 **The situation changed materially overnight: B1 shipped and lost (§8g), and the
 eviction rule turned out to be punishing (§8h).**
 
-1. **⚡ RESTORE P4b — resubmit the preserved 952 bundle. Do this first; it is
-   nearly free and it is currently costing us ~115 displayed points every hour.**
+1. **RESTORE P4b when convenient — NOT urgent, and an earlier draft of this item
+   wrongly said "do this first".** ⚠ **Nothing is at risk of being lost**, so the
+   only cost of waiting is the displayed rank in the meantime, which does not
+   compound:
+   - **Kaggle's copy of `55072063` is permanent** and keeps showing 952.0.
+   - **P4b is rebuildable from git even without `dist/`** — `dist/**` is
+     gitignored, but `agents/sa/policy_net.npz` **is tracked** and is the same
+     lw2 net (`sha256 bba02a42…`), and the code is in history.
+   - **You CANNOT re-activate an old submission.** The API has `competition_submit`
+     and nothing like select/activate — "latest 2" is recency, not a choice. So a
+     restore is always a *new* submission climbing from μ=600, whenever it happens.
+
+   **What actually binds: the best agent must be ACTIVE at the 08-17 close and
+   through the 08-31 continued-play window** (§8h). Two mild arguments against
+   leaving it to the deadline: the climb takes ~4 h, and the field is growing fast
+   (3,000 → 5,000 entrants in 2 days), so a late restore may not land on 952.
+
+   ⚠ **Real gap worth closing cheaply: `out/policy_b1_v3.npz` and
+   `artifacts/pds_v3/` are gitignored and exist ONLY on this disk.** Losing them
+   means re-running the 4-day shard rebuild plus a 12-epoch train to get v3 back.
+
+   When you do restore:
 
    ```powershell
    python -X utf8 -c "from kaggle.api.kaggle_api_extended import KaggleApi; a=KaggleApi(); a.authenticate(); a.competition_submit('dist/submission_bc-grimmsnarl-netspolicy_20260729-103819.tar.gz','P4b restore: lw2 + chip_target + energy_spread (the 952 agent)','pokemon-tcg-ai-battle')"
@@ -56,7 +82,14 @@ eviction rule turned out to be punishing (§8h).**
    - ⚠ **Read the LB before and after** (§5) and confirm with **two readings ≥1 h
      apart** (rule 2).
 
-2. **Then decide what v3 is worth.** It is not a failure to discard blindly: it is
+2. **⚡ THE ACTUAL FIRST ACTION: build anchors for the REAL field.** Everything
+   else is blocked behind it (rule 16). 63% of our real opponents are archetypes
+   we have never A/B'd against, so **no arena number in this repo currently
+   predicts ladder strength** — including any number a new rule would produce.
+   Source material is on disk: `replays/submission_optv3` (54 games) plus the
+   mined meta. Until this exists, do not spend a submission on an arena result.
+
+3. **Then decide what v3 is worth.** It is not a failure to discard blindly: it is
    the only agent whose *Crustle* number transferred to the field (**76.9% over 13
    real games**, arena predicted 0.770). Options, cheapest first:
    - **Re-A/B v3 against the decks we actually face.** 63% of real opponents are
@@ -65,7 +98,7 @@ eviction rule turned out to be punishing (§8h).**
    - Try **v3 net WITH `chip_target` + `energy_spread` restored** (i.e. P4b's rule
      set on the new net). The 0.427 that justified rules-off was measured in the
      **mirror**, which is 9% of the field.
-3. **Fix the two measured defects — but as questions, not licences** (§6 closed
+4. **Fix the two measured defects — but as questions, not licences** (§6 closed
    Boss's Orders after four null rules; all four were on the **lw2** net with the
    other rules on, so they do not settle this net):
    - **Boss's Orders: 9 of 31 real drags were misplays (29%)**, 5 of them throwing
@@ -75,7 +108,7 @@ eviction rule turned out to be punishing (§8h).**
      our side **and no armed Munkidori** — pure self-damage. ⚠ The other 19
      "we have more" rows are the intended engine (Shroud loads, Adrena-Brain
      ships); do not "fix" those.
-4. **Re-mine the meta — now genuinely overdue.** 07-30's episodes are publishable
+5. **Re-mine the meta — now genuinely overdue.** 07-30's episodes are publishable
    as of today. And the field mix from real games (63% "other") says our whole
    picture of the meta, mined from *top* episodes, does not describe the band we
    actually play in.
