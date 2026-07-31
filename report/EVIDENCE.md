@@ -1594,6 +1594,52 @@ strength.** §8m's 62%-vs-6.2% was real and reproducible and the thing built on
 it lost 37 of 40 games. **The rule now reads: five training metrics and one
 search metric.**
 
+## 8o. ✅ THE DECK IS NOT THE BOTTLENECK — 52.1% of the 1144+ band plays our exact archetype (2026-07-31)
+
+**The question ("is our deck as good as it could possibly be?") is answerable
+from data we already hold, and mining is the RIGHT tool here** — §8i's warning is
+that mined episodes describe the ≥1055 band, and *that is precisely the band this
+question is about.*
+
+Re-classified the 400 top episodes of 07-29 (800 seats, `avg_score` ≥ 1144) with
+the line-aware census classifier:
+
+| archetype at ≥1144 | seats | share |
+|---|---|---|
+| **Marnie's Grimmsnarl ex — OUR DECK** | **417** | **52.1%** |
+| Crustle | 96 | 12.0% |
+| Mega Kangaskhan ex | 68 | 8.5% |
+| Meowth ex | 56 | 7.0% |
+| Teal Mask Ogerpon ex | 38 | 4.8% |
+| Team Rocket's Mewtwo ex | 37 | 4.6% |
+| Alakazam | 32 | 4.0% |
+
+**Over half of every seat in the band ~320 points above us is playing the deck we
+play**, and `decks/grimmsnarl.py` is card-for-card the consensus 60 (seen 353×).
+
+**Therefore the ~320-point gap between our 846.6 and the top's 1169 is a PILOTING
+gap, not a deck gap.** No decklist change can be worth 320 points when the people
+at 1169 are on our list. This closes the question the ROADMAP has carried since
+07-30 as an open risk.
+
+**Consequences, and they reorder the whole plan:**
+
+1. 🔴 **Track C's deck experimentation is NOT a rank lever.** It remains worth
+   doing for **Deck Score (20% of the rubric)** and the stewardship narrative —
+   "we measured a change and kept the list" is deck analysis — but it should stop
+   being described as the counter-meta fix for our ceiling.
+2. ✅ **It also retires a standing worry cheaply**: we are not playing a stale or
+   fringe list, and the field did not abandon it. The 52.2% → 47.5% win-rate
+   fall (§8b) is the field learning to beat the *archetype*, and everyone at the
+   top absorbed that and kept playing it.
+3. ⚡ **The lever is imitation quality.** Our corpus is 2,810 games mined from
+   *these* top episodes — we are cloning 1144+ players and playing at 846.
+   `context_accuracy.py` says the clone disagrees with its demonstrators on
+   **33.9%** of decisions, **3,930 of 6,424 misses in MAIN alone**. **B1 is the
+   only intervention that ever moved that** (a representational fix, +36 Elo
+   weighted, §8k) — and it was found by reading the feature code, not by
+   guessing.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
