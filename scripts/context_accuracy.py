@@ -49,13 +49,20 @@ class Net:
         self.card_emb, self.atk_emb = z["card_emb"], z["atk_emb"]
         self.state = [(z[f"sfc{i}_w"], z[f"sfc{i}_b"])
                       for i in range(int(z["n_sfc"][0]))]
+        self.state_in = self.state[0][0].shape[1]
         self.head = [(z[f"head{i}_w"], z[f"head{i}_b"])
                      for i in range(int(z["n_head"][0]))]
 
-    def state_repr(self, dense, slots, bag_means, seld):
-        x = np.concatenate(
-            [dense, self.slot_emb[slots].reshape(len(slots), -1),
-             *bag_means, seld], axis=1)
+    def state_repr(self, dense, slots, bag_means, seld, xdense=None,
+                   xslots=None):
+        parts = [dense, self.slot_emb[slots].reshape(len(slots), -1),
+                 *bag_means, seld]
+        # The v4 block is APPENDED (features.py), so slicing to this net's own
+        # input width feeds a v3 net byte-identical input. Same trick as the
+        # agent's policynet.scores -- keep the two in sync.
+        if xdense is not None:
+            parts += [xdense, self.slot_emb[xslots].reshape(len(xslots), -1)]
+        x = np.concatenate(parts, axis=1)[:, :self.state_in]
         for w, b in self.state:
             x = np.maximum(x @ w.T + b, 0.0)
         return x
@@ -121,8 +128,10 @@ def main() -> int:
             continue
         width = net.bag_emb.shape[1]
         means = [bag_means(z, nm, n, width, net.bag_emb) for nm in BAGS]
+        xd = z["xdense"][val] if "xdense" in z else None
+        xs = (z["xslots"][val].astype(np.int64) if "xslots" in z else None)
         srepr = net.state_repr(z["dense"][val], z["slots"][val].astype(np.int64),
-                               [m[val] for m in means], z["seld"][val])
+                               [m[val] for m in means], z["seld"][val], xd, xs)
         ctx = np.rint(z["seld"][:, 13] * 50.0).astype(int)
         opt_dense, chosen = z["opt_dense"], z["opt_chosen"]
         card = z["opt_card"].astype(np.int64)

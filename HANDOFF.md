@@ -210,25 +210,33 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 12 PLAN (set 2026-07-31 end of day 11; the goal is to WIN)
+### ▶ START HERE — DAY 13 PLAN (set 2026-08-01 end of day 12; the goal is to WIN)
 
-> ## 📍 THE SITUATION IN SIX LINES
+> ## 📍 THE SITUATION
 >
-> - **Rank 632 / 6,024, score 833.9** (read 07-31 10:46 UTC; ⚠ one reading, and
->   it is now hours old — **re-read before quoting it**, rule 2). Top **1166.1**.
-> - **Active pair: P4b-restored 833.9 + v3 818.1.** P6a evicted, frozen 841.5.
->   ⛔ The restore is **CLOSED** (§8p). All three agents read 818–842 live, so
->   **no rule-sized change can move our rank** (§8k).
-> - ✅ **The deck is NOT the bottleneck** (§8o), twice confirmed: **#2 and #3 on
->   the LB play our exact 60, card for card** (§8q).
-> - 🔴 **AND AS OF DAY 11, "clone better demonstrators" is not the lever either.**
->   Both B7 arms lost — **−55 Elo** (rating-weighted) and **−92 Elo**
->   (single-expert) — and they lost *in order of how far they moved from the
->   field* (§8u). **Five training axes are now dead; one representational fix is
->   the only thing that ever worked** (§8f).
-> - ⚡ **So the honest state is: the LB is a plateau we can explain, and the
->   report is the thing that is still moving.** Day 11 produced three chapters
->   (§8r peak-not-slope, §8s covariate shift ruled out, §8u the ordering).
+> - **Rank 465 / 6,075, score 864.1** (two readings 12:02 and 13:03 BST: 869.7
+>   then 864.1 — agreeing, rule 2 satisfied). Top is **Majkel1337 at 1300.6**,
+>   which is 135 points clear of the old top and is new.
+> - 🔴 **THE ACTIVE-PAIR FACTS IN THE OLD BOX WERE STALE AND BACKWARDS.** Live
+>   per-submission scores read 08-01: **`55116557` v3 = 864.1** (our best, and
+>   still climbing) and **`55129730` P4b-restore = 824.3**. ✅ **That is §8i's
+>   arena prediction confirmed on the ladder** — the sweep said v3 +36 Elo over
+>   P4b, the ladder says +40, both active, both converged. **The day-9 "B1 lost
+>   130 points" story is now fully inverted.**
+> - ⚡ **A NET WAS SUBMITTED ON DAY 12 — the first since 07-31.** `v4`, the new
+>   state block. It **evicts `55116557` (v3, 864.1)**; the active pair becomes
+>   {v4 climbing from μ=600, P4b 824.3}, so **the displayed score will DROP to
+>   ~824 for ~4 h** — that is expected, not a regression. §8z.
+> - ✅ **DAY 12 BROKE THE PLATEAU, and it did it on the one axis that has ever
+>   worked.** The v4 state block beats its own byte-identical control
+>   **0.567 [0.545, 0.588] n=2000**, replicates at a second seed
+>   (**0.539 [0.518, 0.561]**), against a **measured seed-only null
+>   (0.482 [0.460, 0.504])**. Pooled **≈ +37 Elo**. Better on **5 anchors of 5**.
+> - 🔴 **AND IT MOVED HELD-OUT AGREEMENT BY EIGHT DECISIONS OUT OF 12,939.**
+>   Rule 3's converse, measured for the first time: **the agreement metric the
+>   whole B7 programme rested on is blind to a 37-Elo intervention** (§8z).
+> - ✅ **The deck is NOT the bottleneck** (§8o); "clone better demonstrators" is
+>   not the lever (§8u); capacity is not the lever (§8w). **State features are.**
 >
 > **Deadlines: sim closes 2026-08-17 (17 days). Report due 2026-09-14 (45 days).**
 > **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
@@ -236,7 +244,74 @@ distrust it: mined episodes are the top-1150 band, and
 > that a rank point is worth more than a report chapter — the competition
 > description says outright that a mid-tier LB with deep analysis can win.
 
-#### ✅ Done on day 11 (read before planning day 12)
+#### ✅ Done on day 12 (read before planning day 13)
+
+- **§8x — the encoding ceiling, computed rather than argued.** Bitwise-identical
+  options get identical logits from any net, so `Σ(1/g)/N` bounds top-1 for this
+  layout: **95.6%, against the clone's 69.8%.** So §8w's "the residual is the
+  encoding" **cannot** mean the answer is inexpressible — un-expressibility is at
+  most 4.4 of the 30.2 points. ✅ And every tie is **two copies of one card in one
+  role**, so `context_accuracy.py --equiv` now counts those as hits: honest
+  agreement is **71.0%**, TO_HAND **67.1%** not 61.2%.
+- **§8y — the feature audit BY ENUMERATION** (`p18_missing_state_audit.py`), and
+  it **retracted the candidate list three files had carried since day 10**: turn
+  number, prizes and both hand counts are all encoded already (`features.py`
+  88–99). **Rule 15, second instance — caught before anything was built.** Two
+  more died on sizing (`remainDamageCounter` constant at 100% of decisions,
+  `remainEnergyCost` at 99.1%).
+- **§8z — the v4 state block: BUILT, MEASURED, REPLICATED, SUBMITTED.**
+  `turnActionCount` + the select's **effect card** + the **stadium** + `retreated`
+  / `stadiumPlayed` + tool counts + bench cap + pool size. Corpus `pds_v4` is
+  **byte-identical to `pds_v3r`** on every pre-existing array, and `--no-extra` is
+  the control on those identical rows.
+- **A noise floor exists now.** `train_policy.py --seed`; two identical-recipe
+  controls at different seeds measure **0.482 [0.460, 0.504]** — a null. **Every
+  net-vs-net number in this repo previously had an unmeasured confound.**
+- **Report:** `STRATEGY.md` §4b (the ceiling, new), §8's capacity bullet narrowed.
+
+#### The day-13 order of work
+
+**A. 📈 READ THE LADDER FIRST, TWICE, ≥1 h APART.** `v4` needs ~4 h to converge.
+   ⚠ **The expected path is DOWN then UP**: displayed drops to ~824 (P4b) while
+   v4 climbs from 600. **Do not react to the dip.** The question that matters is
+   where v4 settles against **864.1**, the number v3 reached.
+   🔴 **And whatever it reads, it does not adjudicate §8z** — +16.5 Elo weighted
+   is far below the ladder's ±50–100 (rule 2). It was submitted because it is
+   better on 5/5 anchors and slots are not scarce, not because the LB can see it.
+
+**B. 🔬 THE FEATURE AXIS IS LIVE AGAIN — WORK IT, it is the only one that has
+   ever paid, and it has now paid TWICE (§8f, §8z).** Two concrete leads, both
+   derived rather than guessed:
+   1. ⚡ **THE NET NEVER SEES THE OPTION SET.** Every option is scored
+      independently against a shared state vector, so it cannot know whether it
+      is choosing among 3 Trainers or 40 deck cards. That is *why* the effect
+      card paid (§8y). **The direct fix is a pooled summary of the option
+      encodings (mean/max) concatenated into the state** — deep-sets, one extra
+      block, the same append-and-slice trick. **This is the declined appendix's
+      Set-Transformer plank in its cheapest possible form**, and §8z is the first
+      evidence it would pay.
+   2. **The v4 block was shipped whole; nobody knows which member did the work.**
+      An ablation (drop `turnActionCount` alone, drop the effect card alone) is
+      two trainings and two A/Bs, and it is a report table either way.
+   ⚠ **Carry the noise floor in**: ±13 Elo between seeds. **Any ablation arm must
+   clear that**, so run each at n=2000 and prefer two seeds.
+
+**C. 🃏 Track C deck work FOR DECK SCORE (20% of the rubric, still untouched).**
+   Only **one** decklist variant has ever been A/B'd (0.490, null). Re-aim at
+   **Archaludon** — it is the one anchor where v4 barely moved (+7 Elo) and our
+   worst real matchup (45.5% over 11 games). Full Metal Lab is a second
+   damage-reduction effect `WALL_POKEMON = {345}` does not model.
+
+**D. 📝 `report/STRATEGY.md` — one edit per session, minimum.** Day 12 handed it
+   two strong chapters that are **not** written yet: **§8z's decoupling** (an
+   intervention worth 37 Elo that moves agreement by 0.06 pp — this is the
+   sharpest statement of rule 3 the project has) and **§8y's method** (a feature
+   audit done by diffing the observation against the code, which retracted a list
+   three files were asserting).
+
+<details><summary>Day 11's order of work (superseded — all five items ran)</summary>
+
+#### ✅ Done on day 11
 
 - **Item A shipped: every corpus row carries its demonstrator's LB rating.**
   `build_policy_dataset.py --ratings` (+ `--exclude`, `--aliases`), 94–98% seat
@@ -302,6 +377,16 @@ distrust it: mined episodes are the top-1150 band, and
    evicts a live agent (§8h). ⚠ **And do not submit `b7_ntum` "to see what the
    ladder says"** — that trade spends a slot and evicts a live agent to test a
    net the arena puts 92 Elo down, against an instrument that resolves ±50–100.
+
+> ✅ **ALL FOUR RAN ON DAY 12.** A: two chapters written (§4b + the §8 narrowing).
+> B: the audit was done and it **retracted its own candidate list** (§8y), then
+> the derived replacement measured **+37 Elo pooled** (§8z). C: not reached —
+> re-stated as day 13's item C. D: **deliberately broken, with the reasoning
+> written down in §8z** — v4 is below the +50 bar at +16.5 weighted, and was
+> submitted anyway because it is better on 5/5 anchors and the user relaxed
+> submission scarcity. **The bar was re-priced, not the evidence.**
+
+</details>
 
 <details><summary>Day 10's order of work (superseded — item B ran and is closed by §8u)</summary>
 
@@ -1815,6 +1900,45 @@ python -X utf8 scripts/tally.py "<agent>" "out/arena/foo_*.jsonl"
 python -X utf8 scripts/opportunity_audit.py --matches 100        # our games
 python -X utf8 scripts/opportunity_audit.py --corpus artifacts/pds_v2   # demonstrators
 python -X utf8 scripts/context_accuracy.py                       # per-context top-1
+# ⚡ --equiv: count a hit when the argmax option is BITWISE IDENTICAL to the
+# chosen one. Those are two copies of ONE card in one role (two Trainers in the
+# deck, two energies in hand onto the same target) -- picking either produces the
+# same game, so plain top-1 charges the net for a coin flip. 30.2% -> 29.0%
+# corpus-wide, TO_HAND 61.2% -> 67.1%. Use it for any agreement claim. EVIDENCE 8x.
+python -X utf8 scripts/context_accuracy.py --net out/policy_b1_v3.npz `
+    --ds artifacts/pds_v3r --equiv
+
+# ── DAY 12: is the residual the ENCODING? Two probes, neither needs a net ──
+# The CEILING. Bitwise-identical options get identical logits from ANY net, so
+# sum(1/g)/N bounds top-1 for this layout. It is 95.6% and the clone gets 69.8%,
+# i.e. un-expressibility explains at most 4.4 of the 30.2 points. --opt-cols 25
+# reruns it against the v2 layout (the 8f control). EVIDENCE 8x.
+python -X utf8 scripts/p17_encoding_ceiling.py --ds artifacts/pds_v3r
+
+# THE FEATURE AUDIT, BY ENUMERATION. Diffs the observation against what
+# featurize() actually reads, then SIZES each dropped field (rule 14: an absent
+# input that is constant where the decisions happen explains nothing).
+# ⛔ Use this instead of the remembered candidate list -- 3 of the 4 items that
+# list carried for two days were already encoded. EVIDENCE 8y.
+python -X utf8 scripts/p18_missing_state_audit.py --games 300
+
+# The v4 state block: rebuild the corpus (byte-identical to pds_v3r plus
+# xdense/xslots), then treatment and control on the IDENTICAL rows.
+python -X utf8 scripts/build_policy_dataset.py --out artifacts/pds_v4/d26 `
+    --ratings out/lb/pokemon-tcg-ai-battle.zip replays/2026-07-26   # ...d27-d29
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 `
+    --loss listwise --state-h 512,256 --head-h 256,128 --out out/policy_v4.npz
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 `
+    --loss listwise --state-h 512,256 --head-h 256,128 `
+    --no-extra --out out/policy_v4ctrl.npz        # control: the v3 state vector
+
+# ⚡ THE NOISE FLOOR, and every net-vs-net number in this repo needed it.
+# Two IDENTICAL-recipe nets differing only in --seed measure 0.482 [0.460, 0.504]
+# against each other -- a null, i.e. run-to-run variance is ~±13 Elo. Any A/B
+# claiming less than that is claiming nothing. EVIDENCE 8z.
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 `
+    --loss listwise --state-h 512,256 --head-h 256,128 --seed 1 `
+    --no-extra --out out/policy_v4ctrl_s1.npz
 python -X utf8 scripts/p6_recon.py --matches 120   # EVERY select, bucketed -- the menu
 python -X utf8 scripts/p5_audit.py --matches 200   # sizes the three P5 findings
 python -X utf8 scripts/p5a_replays.py              # the same counters on 55 REAL games

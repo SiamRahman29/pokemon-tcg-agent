@@ -350,6 +350,10 @@ def main() -> int:
                     help="per-option feature columns to use. Default = all "
                          f"({OPT_DENSE}). Pass {OPT_DENSE_V2} to train the "
                          "v2-feature CONTROL on identical rows (ROADMAP B1).")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="torch/numpy seed. Vary it to SIZE run-to-run "
+                         "variance, which is the confound behind every "
+                         "net-vs-net A/B in this repo (§8z).")
     ap.add_argument("--no-extra", action="store_true",
                     help="ignore the v4 state block (features.extra_feats). "
                          "This is the day-12 CONTROL: identical rows, "
@@ -362,7 +366,7 @@ def main() -> int:
     # Seeded so that a control/treatment pair (e.g. --opt-cols 25 vs 37, ROADMAP
     # B1) differs in its FEATURES and not in dropout masks or batch order. Weight
     # init still differs where the layer widths differ, which cannot be avoided.
-    torch.manual_seed(0)
+    torch.manual_seed(args.seed)
     paths = sorted((ROOT / args.ds).rglob("shard_*.npz"))
     if not paths:
         raise SystemExit(f"no shards under {ROOT / args.ds}")
@@ -419,7 +423,7 @@ def main() -> int:
                             weight_decay=args.wd)
     bcef = nn.BCEWithLogitsLoss()
     bce_none = nn.BCEWithLogitsLoss(reduction="none")
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(args.seed)
     best = -1.0
 
     for epoch in range(args.epochs):

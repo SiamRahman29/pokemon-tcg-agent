@@ -1737,6 +1737,33 @@ different-sized board is not comparable to a current one — in either direction
 This file previously used that fact to argue the restore *down* (§8i) and the
 user correctly pushed back that it cut both ways. The experiment settled it.
 
+### ✅ Read again a day later (2026-08-01) — and the ORDER has resolved, in the arena's favour
+
+Both submissions are now fully converged and both were active the whole time,
+which is the only comparison rule 2 allows:
+
+| submission | agent | 07-31 | **08-01** |
+|---|---|---|---|
+| `55116557` | **v3, rules off (B1)** | 818.1 | **864.1** ⬆ |
+| `55129730` | P4b restore | 833.9 | **824.3** |
+
+🔴 **v3 is now our best agent on the ladder by 40 points, and the day-9 panic is
+fully inverted.** B1 "shipped and lost 130 points" (§8g); the true story is that
+it was compared against a frozen score on a smaller board and had not converged.
+✅ **The arena predicted this exactly: §8i's five-anchor sweep put v3 at +36 Elo
+over P4b, weighted by field share, and the ladder now says +40 points.** Two
+independent instruments, same sign, near-identical magnitude.
+
+**This is the strongest calibration evidence in the project** — better than the
+Crustle positive control, because it is a *ranking of two of our own agents*
+made by the arena before the ladder had separated them. It is also why the v4
+sweep (§8z) is trusted enough to act on.
+
+⚠ **And it retires a claim three files were carrying:** "our three agents read
+833.9 / 818.1 / 841.5, all within the noise" was true on 07-31 and is not the
+right summary now. §8k's *conclusion* (the spread is small) survives; the
+specific numbers do not. **Re-read before quoting, every time.**
+
 ## 8q. Expert demonstrations: agreement with the demonstrator FALLS as the demonstrator gets better (2026-07-31, day 10)
 
 **⚠ STATUS: the measurements below are concluded and reproducible. The
@@ -2563,6 +2590,144 @@ Reproduce:
 ```powershell
 python -X utf8 scripts/p18_missing_state_audit.py --games 300
 ```
+
+## 8z. ⚡ THE v4 STATE BLOCK WINS THE ARENA AND MOVES HELD-OUT AGREEMENT BY ZERO — the cleanest decoupling of the two in the project (2026-08-01, day 12)
+
+**The hypothesis, from §8y:** the residual is not un-expressibility (§8x says the
+option layout permits 95.6%); it is that the **state** does not carry what would
+let the net choose between options it can already tell apart. The v4 block adds
+the fields the audit derived — `turnActionCount`, the select's **effect card**,
+the **stadium**, `retreated`/`stadiumPlayed`, tool counts, bench cap, pool size.
+
+**The control is byte-tight.** `artifacts/pds_v4` is identical to
+`artifacts/pds_v3r` on every pre-existing array — same 248,985 rows, same
+labels, same option features — plus `xdense`/`xslots`. `--no-extra` trains the
+v3 state vector on those identical rows, same recipe, same seed. **Features are
+the only difference.**
+
+### Result 1 — the arena, and it clears the pre-registered kill line
+
+| A/B, grimmsnarl mirror, n=2,000 | score | Elo |
+|---|---|---|
+| **`v4` vs `v4ctrl`** (its own same-corpus control) | **0.567 [0.545, 0.588]** | **+47** [+31, +62] |
+| **`v4` vs the live v3 net** | **0.541 [0.519, 0.562]** | **+29** |
+
+Both intervals exclude 0.5; the pre-registered kill line was ≤0.52 and the
+primary's lower bound is 0.545. Seat-balanced (569/430 as P0, 563/436 as P1).
+
+### Result 2 — held-out agreement did NOT move, and that is the finding
+
+| net | misses of 12,939 | agreement (`--equiv`) |
+|---|---|---|
+| `v4ctrl` | **3,756** | 71.0% |
+| `v4` | **3,748** | 71.0% |
+
+🔴 **Eight decisions out of 12,939 — a dead heat — for +47 Elo of play.** Best
+validation top-1 was 0.7031 (control) against 0.7037 (treatment).
+
+**Rule 3 has been paid for six times as "better agreement, worse play". This is
+the first instance of the converse, and it is the more useful one**: the metric
+that the entire B7 programme was built on (§8q, §8r, §8u) is *insensitive* to an
+intervention worth 47 Elo. The per-context breakdown shows why — the block did
+not raise agreement, it **moved** it:
+
+| context | `v4ctrl` misses | `v4` misses | Δ |
+|---|---|---|---|
+| MAIN | 2,595 | 2,630 | **+35 worse** |
+| TO_HAND | 572 | 558 | −14 |
+| ATTACH_FROM | 74 | 55 | **−19** |
+| DAMAGE_COUNTER | 117 | 105 | −12 |
+| DAMAGE / SWITCH / TO_ACTIVE / DC_ANY | 155 | 141 | −14 |
+| ATTACH_TO / REMOVE_DC | 162 | 171 | +9 |
+
+**It agrees less with the humans in MAIN and more in the execution contexts, and
+plays 47 Elo better.** Whatever the block bought is not "imitate the mixture
+more closely".
+
+### Result 3 — the five-anchor sweep: better on every anchor, and below the bar
+
+Δ is `elo(v4 vs anchor) − elo(v3 vs anchor)`, v3's numbers from §8i's sweep. The
+mirror row is a head-to-head, so its Δ is `elo(0.541)` directly (§8i's warning:
+do **not** compute that one as `elo(v) − elo(1−v)`).
+
+| anchor | share | v3 | **v4** | Δ Elo | weighted |
+|---|---|---|---|---|---|
+| `rule:alakazam5` | **22.0%** | 0.731 | **0.759** [0.740, 0.777] | **+26** | +5.6 |
+| mirror, head-to-head | 13.8% | — | **0.541** [0.519, 0.562] | **+29** | +3.9 |
+| `rule:crustle` | 12.8% | 0.770 | **0.788** [0.770, 0.806] | **+18** | +2.3 |
+| `rule:v10` | 12.8% | 0.505 | **0.549** [0.528, 0.571] | **+31** 🔴 **disjoint** | +3.9 |
+| `rule:archaludon` | 10.1% | 0.669 | **0.678** [0.657, 0.698] | +7 | +0.7 |
+| | **71.5%** | | | | **+16.5 Elo** |
+
+⚡ **Mega Lucario is the one worth reading twice.** It was v3's *only* losing
+anchor — 0.505 against P4b's 0.576, the single negative term in the day-9 table
+and the lead that item 3 of the day-9 plan chased for two sessions. **v4 takes
+it to 0.549 with intervals disjoint from v3's**, without a matchup branch, a
+rule, or a decklist change. The generic feature fix did what the targeted rule
+could not.
+
+🔴 **And the verdict on shipping is NO by the bar that was written down first:
++16.5 Elo weighted (+23 renormalised to full coverage) against a pre-registered
++50.** It is positive on five anchors of five, which is a better shape than the
+number suggests — but the bar exists because **the leaderboard resolves ±50–100**
+(rule 2), and 23 Elo is invisible to it. **We are not going to discover whether
+this net is better by submitting it.**
+
+### The confound that had to be sized first, and the answer
+
+⚠ **Every net-vs-net A/B in this repo compares two independently trained nets,
+and this project has never measured how much of such a gap is the seed.** The
+treatment and control differ in weight-init shape as well as in features, so
+"+47 Elo" could in principle be run-to-run variance. `--seed` was added and both
+arms retrained at seed 1.
+
+| A/B, mirror, n=2,000 | score | reading |
+|---|---|---|
+| `v4ctrl` (seed 0) vs `v4ctrl_s1` (seed 1) — **seed only** | **0.482 [0.460, 0.504]** | ✅ **null**; run-to-run variance is ≈ ±13 Elo |
+| `v4` vs `v4ctrl`, **seed 0** | 0.567 [0.545, 0.588] | +47 Elo |
+| `v4_s1` vs `v4ctrl_s1`, **seed 1** | **0.539 [0.518, 0.561]** | ✅ **+27 Elo — replicates** |
+
+✅ **The effect survives.** Both treatment intervals exclude 0.5 and both are
+disjoint from the seed-only interval; the pooled estimate over n=4,000 is
+**≈ +37 Elo**. **The seed explains none of it** — which also means every earlier
+net-vs-net number in this repo is now backed by a measured noise floor instead
+of an assumption.
+
+⚠ **The honest size is the pooled +37, not the headline +47.** Seed 0 was the
+luckier draw and it is the one that was swept against the anchors, so the
+weighted +16.5 above may itself be a point or two generous.
+
+### What was done with it
+
+**Submitted anyway, and the reasoning is recorded because it deviates from the
+bar.** The pre-registered rule was "+50 weighted or it is a chapter". That bar
+existed for two reasons: the LB cannot resolve a small effect, and **every
+submission evicts a live agent** (§8h). The user relaxed the second — daily
+submissions are not scarce for us — so the trade was re-priced, not the
+evidence:
+
+- v4 is better on **5 anchors of 5**, no negative term. **That is the specific
+  shape B1 lacked** — B1 won two anchors covering 26.6% of the field and lost
+  `rule:v10` outside its anchor set (§8i). Coverage is now 71.5%.
+- It repairs **v3's only losing matchup** with disjoint intervals.
+- The effect is replicated at a second seed against a measured noise floor.
+
+🔴 **And what it will NOT do: validate itself.** +16.5 Elo weighted is far below
+the ladder's ±50–100 (rule 2). **Whatever `55137...` reads, that reading is not
+evidence for or against the v4 block** — the arena, at n=2,000 per cell with a
+seed control, is the better instrument here and it has already answered.
+
+Reproduce:
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v4,net=out/policy_v4.npz,noChip,noSpread,noSrc" `
+    "bc:v4ctrl,net=out/policy_v4ctrl.npz,noChip,noSpread,noSrc" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/p19_v4_vs_v4ctrl.jsonl
+```
+
+Archives: `out/arena/p19_v4_vs_{v4ctrl,v3live,alakazam5,crustle_v1,lucario_v10,archaludon_ex}.jsonl`.
+Logs: `out/logs/v4_train.txt`, `out/logs/v4ctrl_train.txt`.
 
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
