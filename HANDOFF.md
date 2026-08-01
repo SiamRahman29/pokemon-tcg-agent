@@ -211,7 +211,153 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 14 PLAN (set 2026-08-01 end of day 13; the goal is to WIN)
+### ▶ START HERE — DAY 15 PLAN (set 2026-08-01 late; user-directed. The goal is to WIN)
+
+> ## 📍 THE SITUATION AT THE TOP OF DAY 15
+>
+> - ⏸ **DAY 14 WAS DELIBERATELY IDLE — nothing ran, by user instruction.** Both
+>   submissions were left to play for 8–9 h so their replays could be downloaded.
+>   **Day 14's item B (the centred option encoding) and item C (Track C deck
+>   work) were NOT executed and are NOT cancelled** — they are parked below.
+> - 📥 **THE USER IS SUPPLYING THE INPUTS.** Expect at the start of the session:
+>   **(a) the replays of `55160229` (v5) and `55156480` (v4)** from their 8–9 h of
+>   play. ⚠ That is our own-opponent census data (`p9_field_census.py --us`) for
+>   two agents at once, and the **first replay set for the v4/v5 feature blocks.**
+> - 🔴 **A NEGATIVE RESULT WAS RETRACTED — READ IT BEFORE PLANNING RL.**
+>   "Self-play RL" has been struck from the settled-negative list in all four
+>   docs **and from the assistant's memory file**: it was **never run.** No code,
+>   no `n`, no CI — a **compute prior inherited from the search result**, filed
+>   beside the measured negatives for twelve days. **Rule 15, third instance, and
+>   this time the unmeasured claim was living inside `EVIDENCE.md` itself.**
+>   ✅ Verified against the old repo too (`E:\Kaggle\pokemon-tcg-simulation`):
+>   **no RL code, no training script, no reward function** outside `.venv`.
+>   ⇒ **The status is "never attempted", not "dead".** `EVIDENCE` §2's box.
+> - ⚡ **AND §8w'S GATE AGAINST RL IS SUBSTANTIALLY SATISFIED.** Its argument —
+>   a policy gradient reads the same vectors, so bitwise-identical options get
+>   identical gradients — was **narrowed by §8x the next day**: the tie ceiling is
+>   **95.6%** against a clone at **71%**, so the encoding binds **at most 4.4 pp**,
+>   and the ties that exist are two copies of one card in one role (free choices).
+>   §8w named the feature audit as RL's **prerequisite**; it has now been done
+>   **twice** (§8y/§8z, §8ab).
+> - 🔴 **SO THE LIVE OBJECTION IS NEITHER COMPUTE NOR EXPRESSIVENESS — IT IS
+>   CREDIT-ASSIGNMENT VARIANCE**, the same term that killed search (terminal 0/1
+>   ⇒ SE ≈ 0.14; the max over ~9 rivals sits 0.21–0.28 above truth by chance).
+>   One binary reward over a ~40-turn game with hundreds of selects.
+>   **Rule 14 binds: SIZE IT BEFORE BUILDING IT.** The nearest measurement is
+>   unfriendly (`--winners-only` **0.375**, §1) but is **not the same mechanism** —
+>   that filtered *other people's* games by outcome and discarded half the corpus;
+>   a gradient signed on *our own* trajectories does neither.
+> - ⚡ **THE PLUMBING FOR ITEMS 2–4 MAY ALREADY EXIST, IN THE OLD REPO.**
+>   `notebooks/how-to-output-local-battle-as-json-and-view.ipynb` +
+>   `notebooks/visualizer.html`: the engine's own **`cg.game.visualize_data()`**
+>   emits a replay the **official viewer** (`ptcgvis.heroz.jp`) renders, and the
+>   notebook captures an **obs log + action log** in the *same*
+>   `battle_start`/`battle_select` loop **our `harness.py:48-75` already runs**.
+>   ⇒ **One optional recorder on `play_game` yields BOTH the human-watchable
+>   replay AND the RL/exploration trajectories.** This is a contained change to
+>   one function, not a build.
+>
+> **Deadlines: sim closes 2026-08-17 (16 days). Report due 2026-09-14 (44 days).**
+> **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
+
+#### The day-15 order of work (user-set; items 1–4 are theirs, 5–6 are the parked engineering)
+
+**1. 📈 READ THE LADDER FIRST, TWICE, ≥1 h APART — and this time it is a real
+   question, not a ritual.** After 8–9 h **both** submissions are converged, so
+   `55160229` (v5) vs `55156480` (v4) is finally a **same-time, both-active,
+   both-settled** comparison — the only kind rule 2 permits. ⚠ **It still does
+   not adjudicate §8aa** (+7.3 weighted, far under the LB's ±50–100), but it is
+   the first honest live read on the pooled block.
+
+**2. 📥 INGEST THE SUPPLIED REPLAYS.** `p9_field_census.py --us` on each
+   submission separately. Two questions worth more than the census: **has our
+   field composition moved** (it drives every anchor weight in this repo), and
+   **does v5 face a different field than v4** (it should not — same deck; if it
+   does, the census is measuring rating band, not deck choice).
+
+**3. 🔬 SUBMISSION LOGS — instrument the agent.** Kaggle allows downloading our
+   own submissions' logs; we currently print **nothing** on the happy path, so
+   they are empty. The only existing output is `bcagent.py:139`'s
+   `traceback.print_exc()`. 🔴 **That catch-all matters more than it looks:
+   `bcagent.py:141` silently returns `range(minCount)` — the first N options in
+   index order — so a submission can run the index-order fallback on EVERY
+   decision and look completely normal from outside.** §8g had to detect this
+   indirectly ("40.7% index-0 over 4,682 selects vs 100% for a fallback"); a log
+   makes it a direct read. Ranked by value per byte:
+   1. **health** — net loaded, exception count, first traceback verbatim;
+   2. **rule firing rates in the wild** — `boss_veto` / `counter_source` /
+      `energy_spread` by select type. **These are SHIPPED rules whose firing
+      rates have only ever been measured in the arena, never against real ladder
+      opponents.**
+   3. **pool usage** — we claim 0.1 s of 600 s; confirm it on the real harness;
+   4. ⚠ **"cite a reason per action" is the expensive one** — ~1 ms/move ×
+      thousands of selects is a lot of stdout, and **the log size cap and
+      retention are UNKNOWN and must be checked before designing a format.**
+      Cheap 90%: log the net's **top-1 logit margin** + a one-byte code for who
+      decided (net / which rule / fallback), aggregated per game. That also buys
+      the **margin distribution on real ladder states vs arena states** — a
+      covariate-shift instrument for free.
+   ⚠ **Design rule: compact per-game summary + rare event lines, never
+   per-decision spam.**
+
+**4. 🎬 THE TRAJECTORY RECORDER — build this before 5 and 6; it unblocks both,
+   plus the user's own inspection.** 🔴 **`arena.py` archives ONE SUMMARY ROW PER
+   GAME** — winner/turns/selects/latency/pool (`scripts/arena.py:281-294`).
+   **No observations, no actions, no trajectories.** So today there is nothing to
+   watch and nothing to learn from. Add an optional recorder to
+   `harness.play_game` that (a) accumulates `obs` + chosen action per select and
+   (b) calls `game.visualize_data()` before `battle_finish()`. **Port the old
+   repo's `visualizer.html` so the user can watch games in the official viewer.**
+   ⚠ Keep it **opt-in** — the A/B path must stay byte-identical and fast, and per
+   §8aa's methods rule, **if this is meant to be a no-op for existing runs, prove
+   it with an equivalence test, not with the arena.**
+
+**5. 🤖 RL — SIZE THE VARIANCE FIRST, DO NOT BUILD.** The user's framing is
+   **fine-tuning an already-decent clone on its own outcomes**, which is a
+   different cost regime from the league self-play §0 declined — and §0 only ever
+   considered the from-scratch version. ⚠ **Also correct the record with the
+   user's own recollection**: RL did not fail against rule agents; **what matches
+   that description is `search`.** The pre-registered probe, before any training
+   code: **with the item-4 recorder, measure how many games the terminal-outcome
+   signal needs to separate two policies of KNOWN Elo separation** (we have
+   several — v4 vs `v4ctrl` at +37, the `no3` ablation at −36, and a **measured
+   seed-only null at ±13**). **Kill criterion: if separation needs more games
+   than ~1.4 cores can produce in the remaining days, RL dies for a few CPU-hours
+   instead of a week — and it dies with a NUMBER**, which is the thing §2 never
+   had. ⚠ **And whatever the probe says, it is a report chapter**: a retracted
+   negative, re-derived honestly, is exactly §5's material.
+
+**6. 🕵️ AUDIT THE ARENA OPPONENTS (user wants to watch first, then I analyze).**
+   The five anchors carry **71.5% of every weighted verdict in this repo** and
+   they were **imported, not written by us — nobody on this project has ever
+   watched one play.** Gated on item 4. ⚠ Relevant to item 5 too: our anchors are
+   rule pilots and our own nets, so **which opponent we generate exploration
+   against decides what the data can teach.**
+
+**PARKED FROM DAY 14 — not cancelled, and item B has a closure condition:**
+   - **B. The centred option encoding** — append `opt_enc − mean(opt_enc)` to
+     each **option** rather than pooling into the state (§8aa pooled on the
+     *state* side, where the summary must survive the state MLP before it can
+     affect a ranking; centring puts the comparison directly in the vector the
+     head scores). ~20 min of compute. **If it lands ≤ +15 Elo, DECLARE THE
+     FEATURE AXIS CLOSED** and write it up as a three-generation
+     diminishing-returns curve (+115 → +37 → +14) — a better chapter than a
+     fourth null.
+   - **C. Track C deck work — 20% of the rubric and NOW FOUR SESSIONS UNTOUCHED.**
+     Only one decklist variant has ever been A/B'd (0.490, null). Concrete lead:
+     Archaludon runs **Full Metal Lab ×4 (card 1244), a stadium**; we run
+     **Spikemuth Gym ×4 (1259)**, so playing ours removes theirs — and
+     `WALL_POKEMON = {345}` does not model Full Metal Lab's damage reduction at
+     all. **Audit before rule (rule 14):** how often do we hold Spikemuth Gym
+     while Full Metal Lab is in play? Archaludon is **10.1% of the field and our
+     worst real matchup (45.5% over 11 games)**, and both v4 (+7) and v5 (−6)
+     barely move there.
+   - **D. `report/STRATEGY.md` — one edit per session, minimum.** §6 (opponent
+     modelling) is still *in progress*; §8 needs the v5 entry. ⚡ **Day 14 already
+     handed it a chapter for free: the self-play retraction belongs in §5's
+     process-failure section**, next to the three failures already written there.
+
+<details><summary>Day 14's plan as it was set at the end of day 13 (superseded — the day was idle by instruction; B and C are parked above)</summary>
 
 > ## 📍 THE SITUATION
 >
@@ -338,6 +484,8 @@ distrust it: mined episodes are the top-1150 band, and
 **D. 📝 `report/STRATEGY.md` — one edit per session, minimum.** §6 (opponent
    modelling) is still marked *in progress* and §8's negative-results list now
    needs the v5 entry. Day 13's three chapters are written.
+
+</details>
 
 <details><summary>Day 13's plan and situation (superseded — all four items ran; A/B/D done, C not reached and re-stated above)</summary>
 
@@ -2283,7 +2431,12 @@ one-line verdicts:
   winners-only (**0.375**), and higher val accuracy all fail. `EVIDENCE` §1.
 - **Search is out, ours and the field's.** Ours scored 0.323 and was selecting
   rollout noise (SE≈0.14); **V10's MCTS has never executed** (two bugs, confirmed
-  by timing). Self-play RL dropped on the same evidence. `EVIDENCE` §2.
+  by timing). ~~Self-play RL dropped on the same evidence.~~ 🔴 **RETRACTED day
+  14 — self-play RL was NEVER RUN.** It was a compute prior inherited from the
+  search result and filed beside the measured negatives in four files for twelve
+  days; there is no RL code in this repo or the old one. **Status is "never
+  attempted", not "dead"** — the live objection is credit-assignment variance,
+  and it must be SIZED before anything is built. `EVIDENCE` §2.
 - **Boss's Orders — all four interventions null, the card is closed. Do not write
   a fifth.** `EVIDENCE` §6.
 - **The Morgrem out is closed by SIZING, not by an A/B** — ~0.2 firings/game, the

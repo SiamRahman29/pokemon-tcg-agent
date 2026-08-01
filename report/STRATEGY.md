@@ -639,7 +639,12 @@ symmetrically better and you successfully imitate it.*
 Honest nulls at n≥2000 are the section we are most confident in.
 
 - **Search** (ours 0.323; the public baseline's MCTS never executes).
-- **Self-play RL** — dropped on the above plus the compute budget.
+- **Self-play RL** — ⚠ **not a negative result, and we are correcting our own
+  filing of it.** This entry previously read "dropped on the above plus the
+  compute budget", which describes a *decision*, not an experiment: no run, no
+  `n`, no interval. We had propagated it into four documents as though it were
+  measured. It belongs in §5's failures-of-our-own-process, not here, and it is
+  the third instance of the same error the rest of §5 describes.
 - **Data scaling** — three axes, all negative.
 - **Demonstrator weighting** — a fourth axis, and the one we most expected to
   work. Weighting every training row by its demonstrator's leaderboard rating

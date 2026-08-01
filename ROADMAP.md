@@ -23,9 +23,14 @@ Why not build MCTS + GNN + belief nets + self-play:
 
 1. **Our own measurements already falsified its core planks *for this
    competition*:** search 0.323 vs the clone; V10's MCTS has never executed and
-   holds LB 950+ anyway; self-play RL, more data and more val accuracy all
+   holds LB 950+ anyway; ~~self-play RL,~~ more data and more val accuracy all
    negative; nothing at the top of the board is learned. 18 days on ~1.4 cores
    cannot change those results.
+   🔴 **AMENDED day 14: strike self-play RL from that list — it was never run.**
+   A compute prior was filed as a measurement in four files (`EVIDENCE` §2's
+   retraction box). The *decision* to decline it in the day-8 pivot still stands
+   on its own terms; what is withdrawn is the claim that we had **evidence** for
+   it. The rest of the sentence is measured and unaffected.
 2. **The rubric rewards reasoning, not architecture.** 70% Model Score = clarity
    of rationale + originality + *soundness* + consistency + robustness + LB
    performance (**one bullet of five**). A half-built GNN is neither performant
@@ -126,9 +131,11 @@ Deliverables: **`report/EVIDENCE.md`** (the log — exists, backfilled 07-30) an
 6. **Opponent modeling / meta adaptation** — the measured meta shift, archetype
    detection, the Crustle case study.
 7. **Deck concept** (feeds Deck Score — Track C).
-8. **Negative results** — search, self-play, data scaling, Boss's Orders ×4,
+8. **Negative results** — search, ~~self-play,~~ data scaling, Boss's Orders ×4,
    decklist variants. Honest nulls at n≥2000 are rare on Kaggle and scream
-   soundness.
+   soundness. ⚠ **Self-play removed day 14 — it was never measured**, and a
+   chapter that boasts of honest nulls must not pad itself with an unmeasured
+   one. The retraction itself belongs in §5 (process failures) instead.
 
 **Process rule:** every experiment gets an `EVIDENCE.md` entry **the session it
 concludes** — hypothesis, command, n, CI, verdict, one sentence of
@@ -340,7 +347,7 @@ relational), **Set Transformers** (zones are unordered).
 | plank | our evidence | disposition |
 |---|---|---|
 | neural-guided search / MCTS | ours 0.323 (n=31, rollout SE≈0.14); **V10's MCTS never executes and holds LB 950+** | **dead** — EVIDENCE §2 |
-| large-scale self-play / league | ~1.4 cores; nothing at the top of this board is learned | **dropped** — EVIDENCE §2 |
+| large-scale self-play / league | ~1.4 cores; nothing at the top of this board is learned | **declined on a compute prior — NOT measured** (day-14 correction; EVIDENCE §2's retraction box). ⚡ **And the plank being re-opened is not this one**: fine-tuning an already-decent clone on its own outcomes is a different cost regime from league self-play from scratch, which is all §0 ever considered |
 | more data / better representations via training | lw3 (4,010 games, best val acc) lost 0.491; winners-only 0.375 | **dead as stated** — EVIDENCE §1 |
 | richer state features | this is the *one* plank our own thesis predicts should work | **live as B1** (§2.5) |
 | opponent modeling / beliefs | the top notebooks do the cheap version (matchup rules on revealed cards) | **live as B3**, minus the neural machinery |

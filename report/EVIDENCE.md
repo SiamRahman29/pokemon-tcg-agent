@@ -81,6 +81,43 @@ whole project from architecture to decision-repair. Loose end if ever revisited:
 maybe reach where hand-written rules already sit, in a competition where nothing
 at the top is learned.
 
+> 🔴 **RETRACTED 2026-08-01 (day 14) — THIS IS NOT A MEASUREMENT AND IT HAS BEEN
+> FILED AS ONE FOR TWELVE DAYS.** The paragraph above has no `n`, no CI, no
+> command and no code behind it. **Self-play RL was never run.** It was dropped
+> on a *compute prior*, inherited from the **search** result — a different
+> experiment — and then propagated into `ROADMAP.md` §0/§8/appendix,
+> `STRATEGY.md` §8's negative-results list and `HANDOFF.md` §6 as though it sat
+> beside the measured negatives. **Rule 15, third instance**, and the first one
+> where the unmeasured claim was sitting inside the file whose entry rule is
+> "every number traces to an archived run with n and a CI".
+>
+> ✅ **Checked the old repo too** (`E:\Kaggle\pokemon-tcg-simulation`, which this
+> project inherited from): **no RL code, no training script, no self-play loop,
+> no reward function anywhere outside `.venv`.** Its only learned artifact is
+> `artifacts/policy.pt` (359 KB, 2026-07-05) with no script that trains it.
+> **So the claim has no experimental basis in either repository.**
+>
+> **What IS measured, and must not be laundered into an RL verdict:**
+> - **search** = 0.323, n=31 — and the diagnosis is about *rollout variance*
+>   (terminal 0/1 ⇒ SE ≈ 0.14; the max over ~9 rivals sits 0.21–0.28 above truth
+>   by chance). §2 above.
+> - **`--winners-only`** = 0.375, n=2000 — outcome-*filtering* other people's
+>   games, discarding half the corpus. §1.
+> - **§8w's gradient argument** — real, but **narrowed by §8x the next day**: the
+>   bitwise-tie ceiling is **95.6%** against a clone at 71%, so the encoding
+>   binds at most 4.4 pp, and the ties that exist are two copies of one card in
+>   one role (free choices). §8w also named the feature audit as RL's
+>   *prerequisite*; that audit has since been done twice (§8y/§8z, §8ab).
+>   **⇒ the gate §8w set is substantially satisfied.**
+>
+> ⚠ **The honest status is therefore "never attempted", not "dead".** The live
+> objection is neither compute nor expressiveness — it is **credit-assignment
+> variance**, the same term that killed search: a ~40-turn game with hundreds of
+> selects and one binary terminal reward. **That is a sizeable quantity and it
+> gets sized before anything is built** (rule 14). ⛔ **Until it is sized, do not
+> cite this section as evidence against RL, and do not cite it as evidence for
+> RL either.**
+
 ---
 
 ## 3. The discriminator — dominated vs tradeoff (3 for 3, 0 for 4)
