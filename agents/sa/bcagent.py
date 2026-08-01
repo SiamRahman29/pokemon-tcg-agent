@@ -6,6 +6,47 @@ import traceback
 
 from . import policynet, targeting
 
+# --- health counters (day 15) -------------------------------------------------
+# 🔴 WHY THIS EXISTS. `__call__`'s catch-all returns `range(minCount)` -- the
+# first N options in INDEX ORDER -- and prints a traceback to stderr. On Kaggle
+# that traceback goes nowhere anyone reads, so **a submission can run the
+# index-order fallback on EVERY decision and look completely normal from
+# outside**: it still returns legal moves, still finishes games, still gets a
+# rating. §8g had to detect exactly this indirectly, by arguing from a 40.7%
+# index-0 rate over 4,682 selects against the 100% a real fallback would show.
+#
+# These counters make it a direct read. They are free on the happy path (one
+# dict increment per select, against ~1 ms of decision time) and the summary is
+# ONE LINE per game, never per-decision spam.
+STATS = {
+    "calls": 0,          # selects seen
+    "fallbacks": 0,      # times the catch-all fired -- ANY non-zero value is a bug
+    "net_missing": 0,    # net failed to load: also index-order, also silent
+    "deck_returns": 0,   # the pre-battle deck handshake
+    "first_error": None,  # the first traceback, verbatim, for the log
+}
+
+
+def health_line() -> str:
+    """One-line health summary -- the highest value-per-byte thing to log.
+
+    Print this once per game from the agent wrapper; a submission log built
+    from it answers "was the net actually live?" without any per-move output.
+    """
+    s = STATS
+    bad = s["fallbacks"] + s["net_missing"]
+    status = "OK" if bad == 0 else "DEGRADED"
+    line = (f"[health] {status} calls={s['calls']} fallbacks={s['fallbacks']} "
+            f"net_missing={s['net_missing']} deck={s['deck_returns']}")
+    if s["first_error"]:
+        line += f" first_error={s['first_error'][:200]!r}"
+    return line
+
+
+def reset_stats() -> None:
+    STATS.update(calls=0, fallbacks=0, net_missing=0, deck_returns=0,
+                 first_error=None)
+
 
 class PolicyAgent:
     def __init__(self, decklist: list[int], net_path: str | None = None,
@@ -78,8 +119,10 @@ class PolicyAgent:
         self.chip_wall_defer = chip_wall_defer
 
     def __call__(self, obs: dict) -> list[int]:
+        STATS["calls"] += 1
         try:
             if obs.get("select") is None:
+                STATS["deck_returns"] += 1
                 return list(self.decklist)
             sel = obs["select"]
             n = len(sel.get("option") or [])
@@ -104,6 +147,9 @@ class PolicyAgent:
                     return order[:want]
             net = self.net or policynet.get()
             if net is None:
+                # index order, silently, forever -- the failure §8g had to
+                # infer. Counted so it can be read instead.
+                STATS["net_missing"] += 1
                 return list(range(mn))
             picked = net.choose(obs)
             if self.boss_veto:
@@ -136,6 +182,9 @@ class PolicyAgent:
                     return planned
             return picked
         except Exception:
+            STATS["fallbacks"] += 1
+            if STATS["first_error"] is None:
+                STATS["first_error"] = traceback.format_exc()
             traceback.print_exc(file=sys.stderr)
             try:
                 return list(range((obs.get("select") or {}).get("minCount", 0)))

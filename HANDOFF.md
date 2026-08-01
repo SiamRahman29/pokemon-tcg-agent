@@ -371,20 +371,24 @@ distrust it: mined episodes are the top-1150 band, and
    **does v5 face a different field than v4** (it should not — same deck; if it
    does, the census is measuring rating band, not deck choice).
 
-**3. 🔬 SUBMISSION LOGS — instrument the agent.** Kaggle allows downloading our
-   own submissions' logs; we currently print **nothing** on the happy path, so
-   they are empty. The only existing output is `bcagent.py:139`'s
-   `traceback.print_exc()`. 🔴 **That catch-all matters more than it looks:
-   `bcagent.py:141` silently returns `range(minCount)` — the first N options in
-   index order — so a submission can run the index-order fallback on EVERY
-   decision and look completely normal from outside.** §8g had to detect this
-   indirectly ("40.7% index-0 over 4,682 selects vs 100% for a fallback"); a log
-   makes it a direct read. Ranked by value per byte:
-   1. **health** — net loaded, exception count, first traceback verbatim;
-   2. **rule firing rates in the wild** — `boss_veto` / `counter_source` /
-      `energy_spread` by select type. **These are SHIPPED rules whose firing
-      rates have only ever been measured in the arena, never against real ladder
-      opponents.**
+**3. 🔬 SUBMISSION LOGS — instrument the agent.** ✅ **SUB-ITEM 1 IS BUILT AND
+   READS CLEAN.** `sa/bcagent.STATS` + `health_line()`: counters for calls,
+   catch-all `fallbacks`, `net_missing`, and the first traceback verbatim.
+   Free on the happy path (one dict increment against ~1 ms of decision time),
+   one line per game, never per-decision spam. **Measured locally over 733
+   selects: `OK calls=396 fallbacks=0 net_missing=0` (v5) and `calls=337`
+   (v4)** — 🔴 **the first DIRECT confirmation the net is live**, where §8g
+   could only argue it from a 40.7% index-0 rate against the 100% a real
+   fallback would show.
+   ⚠ **Still to do: nothing prints it yet on Kaggle.** `build_submission.py`
+   must emit `health_line()` once per game for the log to exist, and that costs
+   a submission slot to verify — **the user's call, not mine.**
+   🔴 **SUB-ITEM 2 IS MOOT AND SHOULD BE STRUCK:** "rule firing rates in the
+   wild" cannot be measured, because the shipped bundle pins
+   `chip_targeting/energy_spread/counter_source = False`. **There are no rules
+   firing.** §8ac's re-weighting makes that pinning look better, not worse
+   (rules are −18 Elo at the real weights), so the sub-item dies rather than
+   becoming urgent.
    3. **pool usage** — we claim 0.1 s of 600 s; confirm it on the real harness;
    4. ⚠ **"cite a reason per action" is the expensive one** — ~1 ms/move ×
       thousands of selects is a lot of stdout, and **the log size cap and
