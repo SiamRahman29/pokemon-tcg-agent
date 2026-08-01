@@ -223,10 +223,14 @@ distrust it: mined episodes are the top-1150 band, and
 >   arena prediction confirmed on the ladder** — the sweep said v3 +36 Elo over
 >   P4b, the ladder says +40, both active, both converged. **The day-9 "B1 lost
 >   130 points" story is now fully inverted.**
-> - ⚡ **A NET WAS SUBMITTED ON DAY 12 — the first since 07-31.** `v4`, the new
->   state block. It **evicts `55116557` (v3, 864.1)**; the active pair becomes
->   {v4 climbing from μ=600, P4b 824.3}, so **the displayed score will DROP to
->   ~824 for ~4 h** — that is expected, not a regression. §8z.
+> - ⚡ **A NET WAS SUBMITTED ON DAY 12 — the first since 07-31: `55156480`**,
+>   the v4 state block (`dist/submission_bc-grimmsnarl-netspolicy_20260801-131057.tar.gz`,
+>   `NET_OK opt_in=37 state_in=536`, sha verified against `out/policy_v4.npz`).
+>   It **evicts `55116557` (v3, 864.1)**; the active pair becomes {`55156480`
+>   climbing from μ=600, `55129730` P4b 824.3}, so **the displayed score will
+>   DROP to ~824 for ~4 h** — expected, not a regression. It read **489.3** at
+>   ~5 minutes old, which is **7 games of TrueSkill and means nothing** (the P4b
+>   restore went 600 → 715.9 → 833.9 over 4 h). §8z.
 > - ✅ **DAY 12 BROKE THE PLATEAU, and it did it on the one axis that has ever
 >   worked.** The v4 state block beats its own byte-identical control
 >   **0.567 [0.545, 0.588] n=2000**, replicates at a second seed
