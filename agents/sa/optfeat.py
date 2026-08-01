@@ -50,6 +50,40 @@ OPT_DENSE = OPT_DENSE_V2 + N_TARGET_FEATS
 KNOWN_OPT_DENSE = (OPT_DENSE_V2, OPT_DENSE)
 N_ATTACK_IDS = 1600  # option_features returns (dense, card_id, attack_id, target_id)
 
+# --- the v5 pooled option-set block (day 13) --------------------------------
+# Every option is scored INDEPENDENTLY against one shared state vector, so the
+# net has never been able to see the option SET -- it cannot tell whether it is
+# choosing among 3 Trainers in hand or 40 cards in the deck, nor how the option
+# in front of it compares to its alternatives. That is the same class of defect
+# as B1 (no binding between an option and its target) and §8y (no `effect` card
+# saying what kind of choice this is), and it is the last one of the class that
+# is cheap: a deep-sets encoder in its minimal form.
+#
+# phi = the per-option encoding the head already builds
+#       [opt_dense[:opt_cols], card_emb, atk_emb, tgt_emb]
+# pool = elementwise mean and max over the select's options, plus two count
+#        scalars (the count alone answers "3 Trainers or 40 deck cards")
+# rho  = the existing state MLP, which now takes the pool as input
+#
+# ⚠ APPENDED to the STATE vector, after the v4 block, never inserted. A v3/v4
+# net slices to its own `state_in` and reads byte-identical input, which is what
+# keeps two feature generations runnable in one process (HANDOFF rule 4).
+N_POOL_SCALARS = 2
+
+
+def pool_width(opt_cols: int, emb: int) -> int:
+    """Width of the v5 pooled block for a net trained at `opt_cols` and `emb`."""
+    return 2 * (opt_cols + 3 * emb) + N_POOL_SCALARS
+
+
+def pool_scalars(n: int) -> np.ndarray:
+    """The two option-count scalars. Linear saturates at 40 (deck searches run
+    to 60); the log keeps 2-vs-4 legible, which is where most selects live."""
+    v = np.zeros(N_POOL_SCALARS, dtype=np.float32)
+    v[0] = min(n, 40) / 40.0
+    v[1] = float(np.log1p(n) / np.log(41.0))
+    return v
+
 # AreaType ints
 _DECK, _HAND, _DISCARD, _ACTIVE, _BENCH, _PRIZE, _STADIUM = 1, 2, 3, 4, 5, 6, 7
 _LOOKING = 12

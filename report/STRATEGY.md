@@ -156,6 +156,161 @@ That is a small correction and we report it because it is the *kind* of thing
 that silently inflates a disagreement metric — and because every conclusion in
 §7b is built on one.
 
+### 4c. The feature audit, done by enumeration rather than by memory
+
+§4b says the residual is not un-expressibility, so it must be *absence*: state
+the encoder never reads. For two days our plan named four such candidates —
+opponent hand size, prizes remaining, turn number, the stadium — and all four
+had been copied forward from session to session without anyone opening
+`features.py`.
+
+**Three of the four were already encoded** (`features.py`, lines 88–99). We had
+made §4's mistake a second time, in the same project, with the same mechanism:
+a premise repeated in three files is not thereby verified, it is just
+load-bearing.
+
+So we stopped recalling the list and derived it. `p18_missing_state_audit.py`
+walks 300 real games, and at every decision point diffs **every key of the
+observation** against the set of keys `featurize()` actually reads. Each
+survivor is then *sized* before anything is built — how many distinct values
+does it take at a real decision, and what is its modal share? An input that is
+constant where the decisions happen cannot explain a single miss:
+
+| candidate | distinct values at a decision | modal share | verdict |
+|---|---|---|---|
+| `turnActionCount` | 20 | 17% in MAIN | **build** |
+| the select's `effect` card | 31 | 26% in TO_HAND | **build** |
+| the stadium in play | 7 | 61% | **build** |
+| `retreated` / `stadiumPlayed` | 2 | 57% in SWITCH | **build** |
+| `remainDamageCounter` | 1 | **100%** | dead on sizing |
+| `remainEnergyCost` | 2 | **99.1%** | dead on sizing |
+| hand counts, prizes, turn | — | — | **already encoded** |
+
+Two candidates died for the cost of one probe rather than one training run, and
+the retraction happened before a line of model code was written. **We regard the
+method as more transferable than the block it produced:** diff the observation
+against what the encoder reads, then size each survivor, and never trust a
+candidate list you can recite from memory.
+
+**And we can now show the method, not just the block, is what worked.** The
+three derived fields shipped alongside five cheap extras that were *not* put
+through the sizing step — `retreated`, `stadiumPlayed`, tool counts, bench cap,
+pool size. Ablating members (zeroing their columns, so architecture, parameter
+count, seed and rows are all identical) separates them:
+
+| arm, n=2,000 | vs the full block | reading |
+|---|---|---|
+| drop `turnActionCount` alone | 0.527 | within noise |
+| drop the stadium alone | 0.526 | within noise |
+| drop the effect card alone | 0.483 | within noise |
+| **drop all three derived fields** | **0.449** [0.427, 0.470] | **−36 Elo, disjoint** |
+| *the same arm vs no block at all* | *0.469* [0.447, 0.490] | *−22 Elo, disjoint* |
+
+**The three derived fields are mutually redundant and jointly necessary** — any
+one can stand in for the others, and losing all three loses the entire +37. The
+five unsized extras are **worse than nothing**: a net given only them plays 22
+Elo below a net given no block at all. Unhelpful state columns are not free;
+they are somewhere to overfit.
+
+> The sizing step killed two candidates for being constant where decisions
+> happen, and we nearly dismissed it as pedantry. The five features that skipped
+> it are precisely the ones that measure negative. **Derive, size, and do not
+> bundle.**
+
+### 4d. The result: +37 Elo of play, and eight decisions of agreement
+
+The survivors became one appended block — `turnActionCount`, the effect card,
+the stadium, `retreated`/`stadiumPlayed`, tool counts, bench cap, pool size.
+The corpus is byte-identical to its predecessor on every pre-existing array, so
+the control (`--no-extra`) trains the old state vector on **the same 248,985
+rows with the same recipe and the same seed**. Features are the only difference.
+
+| grimmsnarl mirror, n=2,000 | score | reading |
+|---|---|---|
+| **v4 vs its own control**, seed 0 | **0.567** [0.545, 0.588] | +47 Elo |
+| **v4 vs its own control**, seed 1 | **0.539** [0.518, 0.561] | +27 Elo — replicates |
+| control seed 0 vs control seed 1 — **seed only** | 0.482 [0.460, 0.504] | ✅ null |
+
+The third row is the one we would ask a reviewer to look at first. **Every
+net-vs-net comparison in this project, for twelve days, compared two
+independently trained nets and silently assumed run-to-run variance was zero.**
+It is not zero, it is about ±13 Elo, and we only know that because we measured
+it. Pooled over n=4,000 the block is worth **≈ +37 Elo**, and it is better on
+**five anchors of five** covering 71.5% of the field we actually face —
+including Mega Lucario, previously our only losing matchup, which moves 0.505 →
+**0.549** with disjoint intervals. A generic feature repair fixed the matchup
+that two sessions of targeted rule-writing could not.
+
+**And here is the part we did not expect.** Held-out top-1 agreement with the
+demonstrators — the metric the whole of §7b is built on:
+
+| net | misses of 12,939 held-out decisions |
+|---|---|
+| control | 3,756 |
+| **v4** | **3,748** |
+
+**Eight decisions out of 12,939, for 37 Elo of playing strength.** Rule 2 of our
+codex — *validation metrics do not predict strength* — had been paid for five
+times in the direction "better agreement, worse play". This is the first
+instance of the converse, and it is the more informative one: an intervention
+worth 37 Elo is **invisible** to the instrument. The per-context breakdown shows
+the block did not raise agreement, it **moved** it — 35 misses *worse* in MAIN,
+19 better in ATTACH_FROM, 14 better in TO_HAND. It agrees less with the human
+mixture and plays better.
+
+### 4e. The other direction, measured the next day
+
+The obvious objection to §4d is that one dead-heat metric proves little — maybe
+agreement is simply hard to move. So we tried to move it, on purpose.
+
+The last defect of §4's class was this: **every option is scored independently
+against one shared state vector, so the network has never seen the option
+_set_.** It cannot tell whether it is choosing among three Trainers in hand or
+forty cards in a deck search, and it cannot see how the option in front of it
+compares to its alternatives. We added the cheapest possible deep-sets encoder —
+an elementwise mean and max over the option encodings, plus two count scalars,
+appended to the state vector, with the same byte-identical control.
+
+It worked, as a *fit*. Held-out agreement went **71.0% → 72.7%**: 214 more
+correct decisions out of 12,939, the largest agreement gain any intervention in
+this project has produced, concentrated exactly where the mechanism predicted
+(MAIN misses 2,630 → 2,454).
+
+**It bought almost no playing strength.**
+
+| grimmsnarl mirror | n | score | reading |
+|---|---|---|---|
+| pooled net vs the v4 net, seed 0 | 2,000 | 0.514 [0.492, 0.536] | null on its own |
+| pooled net vs the v4 net, seed 1 | 2,000 | 0.527 [0.505, 0.549] | +19 Elo |
+| **pooled — the honest number** | **4,000** | **0.521** [0.505, 0.536] | **+14 Elo** |
+| pooled net vs the v4 *control* — *positive control* | 2,000 | 0.539 [0.517, 0.561] | +27 Elo |
+
+The last row is why the third is readable: the instrument still resolves the v4
+effect at full size on the same afternoon, so +14 is a real measurement of a
+small thing rather than a broken harness. It is also **one noise-width** — the
+seed-only null is ±13 Elo.
+
+**The two experiments together are the result:**
+
+| intervention | Δ agreement (of 12,939) | Δ Elo | Elo per decision |
+|---|---|---|---|
+| v4 state block | **+8 decisions** | **+37** | 4.6 |
+| v5 pooled option set | **+214 decisions** | **+14** | **0.07** |
+
+> **The exchange rate between fit and strength differs by a factor of 70 between
+> two interventions run a day apart, on the same corpus, with the same recipe.**
+> Taken with §7b, this closes a loop: agreement with a demonstrator measures
+> **distance from the fitted mode**, and playing strength is a different
+> quantity that the mode tracks at no reliable rate — an intervention worth 37
+> Elo the metric cannot see, and one the metric loves that is worth a
+> rounding error.
+>
+> We think this is the most portable finding in the report. Behaviour cloning is
+> usually tuned on validation accuracy because it is the only cheap signal
+> available. On this task that signal is not weakly predictive; it is
+> **uninformative at any scale we can measure**, and we would not have believed
+> that without watching it fail in both directions in one week.
+
 ---
 
 ## 5. Measurement discipline, and two failures of our own process
@@ -498,6 +653,18 @@ Honest nulls at n≥2000 are the section we are most confident in.
 - **Boss's Orders — four separate interventions, all null** (0.489, 0.490, 0.493,
   0.493). Every one moved its audit rate exactly as designed first. **Moving an
   audit rate is not winning games.**
+- **The pooled option-set encoder** (§4e) — the most instructive near-miss here.
+  It is the one intervention that did exactly what it was designed to do at the
+  level of the fit (+214 correct held-out decisions, the project's largest) and
+  returned **+14 Elo, one noise-width, negative on two anchors of five.** We
+  report it as a negative because the pre-registered bar is playing strength and
+  it did not clear it — **not** because the mechanism is refuted. The honest
+  statement is narrower and more useful: *summarising the option set into the
+  shared state vector improves imitation of the mixture and barely improves
+  play*, which is the same lesson as §7b arriving by a different road.
+- **The five unsized state features** (§4c) — worse than nothing, at −22 Elo
+  against a net with no block at all. A negative result about *our own process*:
+  they were bundled in because they were cheap, and cheap was the only argument.
 - **Model capacity** — the cleanest null in the report, and the one that
   redirected the remaining work. Identical corpus, identical recipe, only the
   width changed: **594k → 1.56M parameters moved held-out agreement by two

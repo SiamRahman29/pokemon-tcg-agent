@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from .features import extra_feats, featurize
-from .optfeat import option_features
+from .optfeat import option_features, pool_scalars, pool_width
 
 # SA_PNET_PATH lets an arena run score a candidate net without overwriting the
 # shipped one. Kaggle sets no env vars, so there it is always the bundled npz.
@@ -51,6 +51,13 @@ class Net:
             self.state_layers = [(z["ws"], z["bs"])]
             self.head_layers = [(z["w1"], z["b1"]), (z["w2"], z["b2"])]
         self.count_frac = z["count_frac"] if "count_frac" in z else None
+        # The v5 pooled option-set block, 0 for every net before day 13. Recorded
+        # rather than derived: the v4 and v5 state widths are both legal, so
+        # `state_in` alone cannot tell them apart.
+        self.n_pool = int(z["n_pool"][0]) if "n_pool" in z else 0
+        # Which members of the v4 block this net was shown (features.X_GROUPS).
+        # Absent = all of them, which is every net before day 13.
+        self.x_mask = z["x_mask"] if "x_mask" in z else None
 
     @property
     def state_in(self) -> int:
@@ -81,6 +88,25 @@ class Net:
         state = obs["current"]
         sel = obs["select"]
         me = state["yourIndex"]
+        opts = sel.get("option") or []
+        n = len(opts)
+        if n == 0:
+            return np.zeros(0, dtype=np.float32)
+        # The per-option encoding is built BEFORE the state, because the v5 pool
+        # is a summary of it. Nets without the pool ignore it and slice it off,
+        # so this costs them nothing but the loop order.
+        emb = self.card_emb.shape[1]
+        ow = self.opt_in
+        oenc = np.empty((n, ow + 3 * emb), dtype=np.float32)
+        for i, o in enumerate(opts):
+            od, cid, aid, tid = option_features(obs, o)
+            # Slice to the width this net was trained at -- the v3 target block
+            # is appended, so a v2 net simply does not see it.
+            oenc[i, :ow] = od[:ow]
+            oenc[i, ow:ow + emb] = self.card_emb[cid]
+            oenc[i, ow + emb:ow + 2 * emb] = self.atk_emb[aid]
+            oenc[i, ow + 2 * emb:] = self.card_emb[tid]
+
         dense, bags = featurize(state, me)
         parts = [dense, self.slot_emb[bags["slots"]].reshape(-1)]
         for name in _BAGS:
@@ -93,30 +119,24 @@ class Net:
         # a v3 net byte-identical input (features.py, "APPENDED, NEVER
         # INSERTED"). Same trick as `opt_in` one level up.
         xd, xids = extra_feats(state, sel, me)
+        if self.x_mask is not None:     # a drop-one ablation arm (day 13)
+            from .features import N_EXTRA
+            xd = xd * self.x_mask[:N_EXTRA]
+            xids = np.where(self.x_mask[N_EXTRA:] > 0, xids, 0)
         parts.append(xd)
         parts.append(self.slot_emb[xids].reshape(-1))
+        # ...and the v5 pool goes after v4, same rule (optfeat.pool_width).
+        if self.n_pool:
+            parts += [oenc.mean(axis=0), oenc.max(axis=0), pool_scalars(n)]
         x = np.concatenate(parts)
         srepr = x[:self.state_in]
         for w, b in self.state_layers:      # every state layer is relu'd
             srepr = np.maximum(w @ srepr + b, 0.0)
 
-        opts = sel.get("option") or []
-        n = len(opts)
-        if n == 0:
-            return np.zeros(0, dtype=np.float32)
-        feats = np.empty((n, self.head_in), dtype=np.float32)
         sw = len(srepr)
-        ow = self.opt_in
-        for i, o in enumerate(opts):
-            od, cid, aid, tid = option_features(obs, o)
-            feats[i, :sw] = srepr
-            b = sw + ow
-            # Slice to the width this net was trained at -- the v3 target block
-            # is appended, so a v2 net simply does not see it.
-            feats[i, sw:b] = od[:ow]
-            feats[i, b:b + 16] = self.card_emb[cid]
-            feats[i, b + 16:b + 32] = self.atk_emb[aid]
-            feats[i, b + 32:] = self.card_emb[tid]
+        feats = np.empty((n, self.head_in), dtype=np.float32)
+        feats[:, :sw] = srepr
+        feats[:, sw:] = oenc
         h = feats
         for j, (w, b) in enumerate(self.head_layers):
             h = h @ w.T + b
@@ -169,10 +189,16 @@ def load(path) -> Net | None:
         from .optfeat import KNOWN_OPT_DENSE
         emb = net.slot_emb.shape[1]
         base = (DENSE_DIM + 12 * emb + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-        # Two legitimate state widths, exactly as with the option block: the v3
-        # layout and the v3 layout plus the appended v4 block.
-        known_state = (base, base + N_EXTRA + N_XSLOT * emb)
-        if net.state_in in known_state and net.opt_in in KNOWN_OPT_DENSE:
+        # Three legitimate state widths, exactly as with the option block: the
+        # v3 layout, + the appended v4 block, + the appended v5 pool. `n_pool`
+        # says which of the last two a net is, and it must AGREE with the width
+        # -- a net claiming a pool it was not trained with would silently read
+        # 170 columns of garbage.
+        v4 = base + N_EXTRA + N_XSLOT * emb
+        v5 = v4 + pool_width(net.opt_in, emb)
+        want = v5 if net.n_pool else v4
+        if (net.state_in in (base, want) and net.opt_in in KNOWN_OPT_DENSE
+                and net.n_pool in (0, pool_width(net.opt_in, emb))):
             return net
     except Exception:
         pass

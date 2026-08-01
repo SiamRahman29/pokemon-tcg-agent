@@ -4,11 +4,12 @@
 then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
 
-**Standing (read 2026-07-31 10:46 UTC, full LB — now 6,024 rows):** we are
-**`Scio`, rank 632 of 6,024, 833.9**. Top is `James Cox & Henry Chao` 1166.1,
-then `李秉叡（ntumlnoob）` 1162.8, `Sixth Sense` 1152.4, `Brahim` 1144.3.
-The board grew 3,000 → 5,000 → **6,024** in ~3 days and the top reshuffles
-constantly — treat any ranking as a snapshot.
+**Standing (read 2026-08-01 10:17 UTC, full LB — now 6,088 rows):** we are
+**`Scio`, rank 268 of 6,088, 923.0** — our best live number, and ⚠ **still
+climbing, so NOT a settled reading** (rule 2). Top is `Majkel1337` 1251.3, then
+`Sixth Sense` 1181.7, `keidroid` 1174.3, `flg` 1163.1. The board grew
+3,000 → 5,000 → 6,024 → **6,088** and the top reshuffles constantly — treat any
+ranking as a snapshot.
 
 ✅ **Getting the LB no longer needs 300 paginated calls:**
 `competition_leaderboard_download('pokemon-tcg-ai-battle', path='out/lb')`
@@ -210,9 +211,123 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 13 PLAN (set 2026-08-01 end of day 12; the goal is to WIN)
+### ▶ START HERE — DAY 14 PLAN (set 2026-08-01 end of day 13; the goal is to WIN)
 
 > ## 📍 THE SITUATION
+>
+> - ⚡ **RANK 268 / 6,088 AT 923.0 — our best live number ever, and it is still
+>   climbing.** `55156480` (the v4 state block) read **489.3 → 853.4 → 822.3 →
+>   894.7 → 923.0** over its first 3 hours. **We were 465/6,075 at 864.1
+>   yesterday.** Top is Majkel1337 1251.3, then Sixth Sense 1181.7.
+>   ⚠ **923.0 IS NOT A SETTLED NUMBER** — rule 2 wants two *agreeing* readings
+>   ≥1 h apart and these disagree because the agent is still converging. The
+>   P4b restore took 4 h. **Re-read before quoting it.**
+> - Active pair: **{`55156480` v4 923.0, `55129730` P4b 836.4}**. v3 is evicted
+>   and frozen at 864.1. **v4 has now beaten every number this project has
+>   produced except the original P4b's board-inflated 952** (§8p).
+> - 🔴 **AND THE LADDER DOES NOT ADJUDICATE §8z** — v4 was +16.5 Elo weighted,
+>   far below the ±50–100 the LB resolves. **A 60-point climb is not evidence
+>   the block works**; the arena at n=4,000 with a seed control already answered
+>   that, and this is a board that moved 3,000 → 6,088 entrants in a week.
+> - ⛔ **NOTHING WAS SUBMITTED ON DAY 13, deliberately, with spare slots
+>   available.** The one candidate (v5) measured **+7.3 Elo weighted and
+>   negative on 2 anchors of 5**. §8z shipped below the bar because it was
+>   positive on **5 of 5**; v5 has the wrong shape. **The bar did not move, the
+>   evidence did** (§8aa).
+>
+> **Deadlines: sim closes 2026-08-17 (16 days). Report due 2026-09-14 (44 days).**
+> **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
+
+#### ✅ Done on day 13 — two results, and together they are the best report material the project has
+
+- **§8aa — the v5 pooled option-set block: the deep-sets fix, and it BARELY
+  PAYS.** Every option is scored independently against one shared state vector,
+  so the net has never seen the option *set*. Mean/max pool of the option
+  encodings + count scalars, appended after the v4 block (`--pool`).
+  **Agreement 71.0% → 72.7% — 214 more correct decisions of 12,939, the largest
+  agreement gain this project has ever produced — for +14 Elo pooled over two
+  seeds**, one noise-width, mixed-sign across the anchors.
+- 🔴 **THE PAIR IS THE FINDING, and it is now measured in both directions:**
+
+  | intervention | Δ agreement (of 12,939) | Δ Elo | Elo per decision |
+  |---|---|---|---|
+  | **v4 state block** (§8z) | **+8** | **+37** | 4.6 |
+  | **v5 pooled option set** (§8aa) | **+214** | **+14** | **0.07** |
+
+  **The exchange rate between fit and strength differs 70× between two
+  interventions run a day apart on the same corpus.** ⇒ **`val_top1` is not a
+  screening metric in either direction. Nothing may be promoted or killed on
+  it.** This is rule 3 with both signs paid for.
+- ⚡ **§8ab — the v4 ablation, and it validates the METHOD rather than the
+  block.** `--drop-x` zeroes a member's columns (identical arch, params, init,
+  rows, seed; `x_mask` stored in the npz so inference matches training):
+  - **Drop any ONE of `turnActionCount` / stadium / effect card → within noise**
+    (0.527, 0.526, 0.483 vs full v4).
+  - 🔴 **Drop all THREE → 0.449 [0.427, 0.470], −36 Elo, disjoint.** They are
+    **mutually redundant and jointly necessary** — and they are essentially the
+    whole +37.
+  - ⚡ **The five leftover members alone are WORSE THAN NO BLOCK AT ALL**
+    (0.469 vs `v4ctrl`, −22 Elo, disjoint). **The three that went through §8y's
+    sizing step carry everything; the five that skipped it are negative.**
+    ⇒ **Derive and size. Do not bundle.**
+- ⚠ **A caveat that touches every weighted table in this repo:** head-to-head
+  Elo among these nets **orders consistently but compresses ~23 points over two
+  hops** (v4−ctrl +37, ctrl−no3 +22, v4−no3 measured **+36** against an additive
+  +59). **Weighted five-anchor totals are ordinal, not arithmetic.**
+- 🔧 **A methods rule bought the hard way (§8aa's last section).** The refactor
+  that enabled the pool moves the option encoding ahead of the state MLP *for
+  every net*. A regression A/B read **0.503** where §8z had 0.567 — which would
+  have meant the live net was broken. **The arena cannot settle that: it is not
+  deterministic run to run.** A direct equivalence test (load the pre-edit
+  module from git, same observations, compare scores) said **max |old − new| =
+  0.000e+00 over 588 selects**. ⚡ **When a refactor is supposed to be a no-op,
+  prove it with an equivalence test, not the noisy end-to-end instrument.**
+- **Report:** `STRATEGY.md` §4c (audit-by-enumeration + the ablation), §4d
+  (§8z's decoupling), §4e (§8aa's converse). Three new chapters.
+
+#### The day-14 order of work
+
+**A. 📈 READ THE LADDER FIRST, TWICE, ≥1 h APART.** v4 is mid-climb at 923.0.
+   The question is where it settles — **against 864.1, which is what v3 reached
+   on the same board size.** ⚠ Do not quote 923.0 as converged, and do not read
+   a rank change as evidence about the v4 block (rule 2).
+
+**B. 🔬 THE FEATURE AXIS IS NARROWING — one concrete lead left, then stop.**
+   Three generations: option binding **+115 Elo** (§8f), state block **+37**
+   (§8z), option-set pool **+14 and mixed-sign** (§8aa). **The returns are
+   falling by roughly 3× a generation and the next one lands under the noise
+   floor.** The single untested variant worth one day:
+   1. ⚡ **The CENTRED option encoding** — append `opt_enc − mean(opt_enc)` to
+      each **option** rather than pooling into the state. §8aa pooled on the
+      *state* side, where the summary must survive the state MLP before it can
+      affect a ranking; centring puts the comparison directly in the vector the
+      head scores. **Different mechanism, same cheap append-and-slice, ~20 min
+      of compute.** If it also lands ≤ +15 Elo, **declare the feature axis
+      closed and write it up as a three-generation diminishing-returns curve** —
+      which is a better chapter than a fourth null.
+   ⛔ **Do NOT re-open capacity (§8w), demonstrator selection (§8u), data volume
+   (§1) or search (§2).** Six axes are dead; this is the seventh probe of the
+   one that lives, and it is nearly spent.
+
+**C. 🃏 TRACK C DECK WORK — now the largest untouched item on the board.**
+   20% of the rubric, and **only ONE decklist variant has ever been A/B'd**
+   (0.490, null). It has not been reached on days 12 or 13. **Promote it to
+   first item if B's lead does not land.** Concrete starting point found on
+   day 13: **Archaludon runs Full Metal Lab ×4 (card 1244), a stadium**, and we
+   run **Spikemuth Gym ×4 (1259)**. Playing ours removes theirs, and
+   `WALL_POKEMON = {345}` does not model Full Metal Lab's damage reduction at
+   all. **Audit before rule (rule 14):** how often do we hold Spikemuth Gym
+   while Full Metal Lab is in play? Archaludon is 10.1% of the field, our worst
+   real matchup (45.5% over 11 games), and the anchor v4 *and* v5 both barely
+   move (+7, −6).
+
+**D. 📝 `report/STRATEGY.md` — one edit per session, minimum.** §6 (opponent
+   modelling) is still marked *in progress* and §8's negative-results list now
+   needs the v5 entry. Day 13's three chapters are written.
+
+<details><summary>Day 13's plan and situation (superseded — all four items ran; A/B/D done, C not reached and re-stated above)</summary>
+
+> ## 📍 THE SITUATION (as of day 13's start)
 >
 > - **Rank 465 / 6,075, score 864.1** (two readings 12:02 and 13:03 BST: 869.7
 >   then 864.1 — agreeing, rule 2 satisfied). Top is **Majkel1337 at 1300.6**,
@@ -312,6 +427,20 @@ distrust it: mined episodes are the top-1150 band, and
    sharpest statement of rule 3 the project has) and **§8y's method** (a feature
    audit done by diffing the observation against the code, which retracted a list
    three files were asserting).
+
+> ✅ **A, B and D RAN ON DAY 13; C did not and is re-stated as day 14's item C.**
+> A: the ladder was read four times and v4 climbed to **923.0, rank 268/6,088**.
+> B: **both** leads ran — the pooled option set (§8aa, **+14 Elo for the largest
+> agreement gain in the project**) and the ablation (§8ab, **the three derived
+> members are jointly necessary and the five unsized extras are negative**).
+> D: three chapters written (§4c, §4d, §4e).
+> ⚠ **Item B's framing was right and its prediction was wrong in a useful way**:
+> it called the pooled summary "the first evidence it would pay", citing §8z.
+> It moved the *fit* more than anything ever has and bought a noise-width of
+> strength — **which is exactly the decoupling §8z had just demonstrated, applied
+> in the opposite direction and not anticipated.**
+
+</details>
 
 <details><summary>Day 11's order of work (superseded — all five items ran)</summary>
 

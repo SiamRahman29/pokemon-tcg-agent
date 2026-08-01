@@ -2729,6 +2729,246 @@ python -X utf8 scripts/arena.py play "bc:v4,net=out/policy_v4.npz,noChip,noSprea
 Archives: `out/arena/p19_v4_vs_{v4ctrl,v3live,alakazam5,crustle_v1,lucario_v10,archaludon_ex}.jsonl`.
 Logs: `out/logs/v4_train.txt`, `out/logs/v4ctrl_train.txt`.
 
+## 8aa. 🔴 THE v5 POOLED OPTION-SET BLOCK: 27× THE AGREEMENT GAIN FOR A THIRD OF THE ELO — §8z's result run backwards, 24 hours later (2026-08-01, day 13)
+
+> ⚠ **This entry was written after ONE seed and its headline was wrong.** The
+> first arm read 0.514 [0.492, 0.536] — a clean null — and this section said so.
+> The seed-1 replicate then read **0.527 [0.505, 0.549]**, which excludes 0.5,
+> and the pooled estimate is **+14 Elo**, not zero. **ROADMAP's own rule — "log
+> the numbers and leave the verdict blank while runs are in flight" — was
+> written after §8i had to be retracted for exactly this, and it was broken
+> again here.** The corrected numbers are below; the correction is left visible
+> because the failure mode is the report's §5.4 and this is its second instance.
+
+**The hypothesis, and it was the best-motivated one left.** Every option is
+scored independently against one shared state vector, so the net has never been
+able to see the option **set**: it cannot tell whether it is choosing among 3
+Trainers in hand or 40 cards in the deck, nor how the option in front of it
+compares to its alternatives. That is the same *class* of defect as §8f (no
+binding between an option and its target) and §8y (no `effect` card saying what
+kind of choice this is) — and those are the only two interventions in twelve
+days that ever paid.
+
+**The v5 block** is deep-sets in its cheapest possible form: φ is the per-option
+encoding the head already builds, the pool is an elementwise **mean and max**
+over the select's options plus two count scalars, and ρ is the existing state
+MLP. `optfeat.pool_width`, `train_policy.py --pool`. Appended after the v4
+block, never inserted, so `--pool` off reproduces the v4 state vector
+byte-for-byte — the same control discipline for the third generation running.
+
+### Result 1 — the arena says "barely anything happened"
+
+| A/B, grimmsnarl mirror | n | score | reading |
+|---|---|---|---|
+| **`v5` vs `v4`, seed 0** | 2,000 | 0.514 [0.492, 0.536] | null on its own |
+| **`v5` vs `v4`, seed 1** | 2,000 | 0.527 [0.505, 0.549] | excludes 0.5, +19 Elo |
+| **pooled — the honest number** | **4,000** | **0.521 [0.505, 0.536]** | **+14 Elo** [+4, +25] |
+| `v5` vs `v4ctrl` — the positive control | 2,000 | **0.539 [0.517, 0.561]** | ✅ +27 Elo |
+| (`v4` vs `v4ctrl`, §8z, pooled) | 4,000 | 0.553 | **+37 Elo** |
+
+**Two things make that +14 readable rather than impressive.** The seed-only null
+is 0.482 [0.460, 0.504] (§8z) — run-to-run variance is ≈ ±13 Elo, so +14 is one
+noise-width, and the pooled interval's lower bound is 0.505. And the positive
+control fires at the same size v4 does, so the instrument is working: the block
+has not broken anything, it has added **about a third of what v4 added**, at the
+edge of what n=4,000 can resolve.
+
+### Result 2 — and held-out agreement moved a LOT
+
+| net | misses of 12,939 | agreement (`--equiv`) | best val top-1 |
+|---|---|---|---|
+| `v4ctrl` | 3,756 | 71.0% | 0.7031 |
+| `v4` | 3,748 | 71.0% | 0.7037 |
+| **`v5`** | **3,534** | **72.7%** | **0.7201** |
+
+🔴 **214 decisions of 12,939 — the largest agreement gain any intervention in
+this project has produced.** And most of it lands exactly where the mechanism
+predicted: **MAIN misses fall 2,630 → 2,454**, the context the option-set
+summary was designed for. The block did what it was built to do, as a *fit*.
+
+### 🔴 The finding, and it is the pair rather than either half
+
+Read §8z and this entry as one table. Same corpus, same recipe, same held-out
+split, same arena, same measured noise floor, 24 hours apart:
+
+| intervention | Δ agreement (of 12,939) | Δ Elo | Elo per decision gained |
+|---|---|---|---|
+| **v4 state block** (§8z) | **+8 decisions** | **+37** | 4.6 |
+| **v5 pooled option set** (here) | **+214 decisions** | **+14** | **0.07** |
+
+**The exchange rate between the two quantities differs by a factor of 70
+between two interventions run a day apart on the same corpus.** Rule 3 had been
+paid for six times as "better agreement, worse play"; §8z gave the first
+converse (a large Elo gain the metric could not see); this gives the second and
+sharper one — **a large agreement gain that buys almost nothing.** Neither
+number predicts the other in either direction or at any scale.
+
+⇒ **The practical consequence for the remaining days: `val_top1` is not a
+screening metric for this project, in either direction, and no candidate may be
+promoted or killed on it.** Only the arena decides. That was already rule 3;
+what is new is that we can now show it costs a *day* to relearn.
+
+⚠ **What this does NOT show.** It does not show that the option set is
+irrelevant to strong play — it shows that *this* summary of it, fed to *this*
+state MLP, buys about a noise-width. A per-option **centred** encoding (each
+option minus the set mean, i.e. the pool on the option side rather than the
+state side) is a different experiment and is untested. But the prior is now
+unfriendly: it would be the seventh "fit the mixture better" axis, and the six
+before it produced one win.
+
+### Result 3 — the five-anchor sweep, and the SHAPE is what decides it
+
+Δ is `elo(v5 vs anchor) − elo(v4 vs anchor)`, v4's numbers from §8z. The mirror
+row is a head-to-head, so its Δ is `elo(0.521)` directly (§8i's warning: do
+**not** compute that one as `elo(v) − elo(1−v)`).
+
+| anchor | share | v4 | **v5** | Δ Elo | weighted |
+|---|---|---|---|---|---|
+| `rule:alakazam5` | **22.0%** | 0.759 | **0.789** [0.771, 0.807] | **+30** | +6.6 |
+| mirror, head-to-head | 13.8% | — | 0.521 [0.505, 0.536] | +15 | +2.0 |
+| `rule:crustle` | 12.8% | 0.788 | **0.768** [0.749, 0.786] | **−20** 🔴 | −2.6 |
+| `rule:v10` | 12.8% | 0.549 | **0.569** [0.547, 0.591] | +14 | +1.8 |
+| `rule:archaludon` | 10.1% | 0.678 | **0.671** [0.650, 0.691] | −6 | −0.6 |
+| | **71.5%** | | | | **+7.3 Elo** |
+
+### ⛔ The verdict on shipping: NO, and the reason is not the size
+
+**+7.3 Elo weighted (+10 renormalised) is below the +50 bar** — but so was §8z's
++16.5, and that one shipped. **The difference is the shape.** v4 was positive on
+**five anchors of five** with no negative term, which is what made a
+below-bar submission defensible when the slot cost was relaxed. v5 is
+**positive on three and negative on two**, and its largest single term is a
+**−20 Elo loss against Crustle**, 12.8% of the field and the deck the counter-
+meta is built on (§8b).
+
+**A mixed-sign +7 is exactly what a noise-width effect looks like when you
+measure it five times**, and the relaxed submission budget is not a reason to
+ship one. ⚠ Note this is the same reasoning §8z used to justify shipping, run
+in the other direction — **the bar did not move, the evidence did.**
+
+### A methods note that nearly cost the day
+
+The refactor that made the pool possible moves the per-option encoding **ahead**
+of the state MLP for every net, including v4. A regression A/B of `v4` vs
+`v4ctrl` at n=600 read **0.503**, against §8z's 0.567 — which would have meant
+the refactor had silently broken the live net. **The arena cannot settle that
+question: it is not deterministic run to run** (match 0 was 15 turns in one run
+and 11 in the next), so the two numbers are not comparable game for game.
+
+The question was settled instead by a direct equivalence test — load the
+pre-edit `policynet.py` from git as a second module, run both against the same
+observations from real games, compare scores exactly:
+
+```
+net policy_v4.npz: state_in=536 opt_in=37 n_pool=0
+compared 588 selects; max |old - new| = 0.000e+00
+```
+
+**Bitwise identical.** The 0.503 was a 2.4σ draw at n=600 and nothing more.
+⚡ **The general rule this buys: when a refactor is *supposed* to be a no-op,
+prove it with an equivalence test, not with the noisy end-to-end instrument.**
+n=600 could not have distinguished "unlucky" from "broken" at any p-value worth
+acting on, and three hours of A/Bs would have been spent on the wrong question.
+
+Reproduce:
+
+```powershell
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 `
+    --loss listwise --state-h 512,256 --head-h 256,128 --pool --out out/policy_v5.npz
+python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz,noChip,noSpread,noSrc" `
+    "bc:v4,net=out/policy_v4.npz,noChip,noSpread,noSrc" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/p20_v5_vs_v4.jsonl
+```
+
+Archives: `out/arena/p20_v5_vs_{v4,v4ctrl}.jsonl`,
+`out/arena/p20_regress_v4_vs_v4ctrl.jsonl`. Log: `out/logs/v5_train.txt`.
+
+## 8ab. ⚡ ABLATING THE v4 BLOCK: the three DERIVED members carry all of it, the other five are worse than nothing, and no single one is necessary (2026-08-01, day 13)
+
+**The question §8z left open:** the block shipped whole, so nothing said which of
+its eight members bought the +37 Elo. §8y *derived* three of them by enumeration
+(`turnActionCount`, the select's **effect** card, the **stadium**) and the other
+five came along as cheap extras (`retreated`, `stadiumPlayed`, tool counts,
+bench cap, pool size).
+
+**The instrument** (`train_policy.py --drop-x`, `features.X_GROUPS`): the named
+columns are **zeroed** in the corpus rather than deleted, so an arm has the
+identical architecture, parameter count, weight init, rows, recipe and seed as
+v4 — **only the content of a few columns differs.** The surviving mask is stored
+in the npz (`x_mask`) and applied by `policynet` at inference, so an arm can
+never be fed a column it was not trained on.
+
+### Drop-one: every member is individually redundant
+
+| arm, vs full v4, n=2,000 | score | Elo | reading |
+|---|---|---|---|
+| drop `turnActionCount` | 0.527 [0.505, 0.549] | +19 | removing it is *better*, barely |
+| drop the **stadium** | 0.526 [0.504, 0.548] | +18 | removing it is *better*, barely |
+| drop the **effect** card | 0.483 [0.461, 0.505] | −12 | removing it is worse — **null** |
+
+All three sit within ~1.5 noise-widths of v4 (the seed-only floor is ±13 Elo,
+§8z). **Read alone, this table says the block's three headline members do
+nothing, and two are mildly harmful.** That reading is wrong, and the next test
+is why.
+
+### Drop-all-three: they are jointly necessary, and they are the whole block
+
+| arm, n=2,000 | score | Elo | reading |
+|---|---|---|---|
+| drop all three, **vs full v4** | **0.449 [0.427, 0.470]** | **−36** | 🔴 disjoint |
+| drop all three, **vs `v4ctrl`** (no block at all) | **0.469 [0.447, 0.490]** | **−22** | 🔴 disjoint |
+
+🔴 **Removing the three derived members costs 36 Elo — essentially the entire
++37 the block was worth — while removing any one of them costs nothing.** They
+are mutually redundant and jointly necessary: each can stand in for the others,
+and losing all three loses the effect.
+
+⚡ **And the second row is the sharper one. The five leftover members, on their
+own, are WORSE than having no block at all** (−22 Elo against the control, CIs
+disjoint). Extra state columns that do not resolve a real decision are not free
+— they are somewhere to overfit. **§8y's sizing step, which killed
+`remainDamageCounter` and `remainEnergyCost` for being constant, was not
+pedantry; the five survivors that were never sized are exactly the ones that
+turn out to be negative.**
+
+⇒ **This validates the day-12 method rather than the day-12 block.** The audit
+picked three fields out of an observation by enumeration and sizing, and those
+three carry 100% of a measured 37-Elo gain while the unsized extras carry −22.
+**Derive and size; do not bundle.**
+
+### ⚠ A methods caveat this produced, and it touches every weighted table here
+
+The three pairwise results **order consistently** — v4 > `v4ctrl` > drop-three
+on every head-to-head — but their magnitudes do not add:
+
+| comparison | measured | additive prediction |
+|---|---|---|
+| v4 − `v4ctrl` | +37 | — |
+| `v4ctrl` − drop-three | +22 | — |
+| **v4 − drop-three** | **+36** | **+59** |
+
+**Head-to-head Elo among these nets compresses by ~23 points over two hops.**
+Nothing here is intransitive, so the *rankings* this project derives from
+pairwise A/Bs stand — but **summing or chaining Elo differences across nets
+overstates them**, and the five-anchor weighted totals (§8i, §8z, §8aa) are
+chained quantities. Treat them as ordinal, not as arithmetic.
+
+Reproduce:
+
+```powershell
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 `
+    --loss listwise --state-h 512,256 --head-h 256,128 `
+    --drop-x turnAction,effect,stadium --seed 0 --out out/policy_v4_no3.npz
+python -X utf8 scripts/arena.py play "bc:no3,net=out/policy_v4_no3.npz,noChip,noSpread,noSrc" `
+    "bc:v4,net=out/policy_v4.npz,noChip,noSpread,noSrc" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/p21_v4no3_vs_v4.jsonl
+```
+
+Archives: `out/arena/p21_v4no{turnAction,effect,stadium,3}_vs_v4.jsonl`,
+`out/arena/p21_v4no3_vs_v4ctrl.jsonl`. Logs: `out/logs/v4_no*_train.txt`.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is

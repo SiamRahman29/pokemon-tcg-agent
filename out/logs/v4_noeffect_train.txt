@@ -1,0 +1,25 @@
+--drop-x effect: zeroed xdense cols [] and xslot cols [1]
+8 shards, 248985 rows -> 235314 train / 13671 val (1603 games)
+arch: state[512, 256] head[256, 128] loss=listwise opt_cols=37/37 extra=True pool=False params=614849
+epoch 0: train=1.2373 val_top1=0.6354 val_top1@1120+=0.6088 (n=6130) (41s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 1: train=1.0132 val_top1=0.6735 val_top1@1120+=0.6589 (n=6130) (40s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 2: train=0.9452 val_top1=0.6832 val_top1@1120+=0.6716 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 3: train=0.9014 val_top1=0.6879 val_top1@1120+=0.6773 (n=6130) (37s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 4: train=0.8695 val_top1=0.6921 val_top1@1120+=0.6827 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 5: train=0.8414 val_top1=0.6959 val_top1@1120+=0.6847 (n=6130) (37s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 6: train=0.8198 val_top1=0.6962 val_top1@1120+=0.6852 (n=6130) (37s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 7: train=0.7982 val_top1=0.6975 val_top1@1120+=0.6869 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 8: train=0.7779 val_top1=0.6994 val_top1@1120+=0.6946 (n=6130) (39s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 9: train=0.7597 val_top1=0.7035 val_top1@1120+=0.6938 (n=6130) (42s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_noeffect.npz
+epoch 10: train=0.7441 val_top1=0.7003 val_top1@1120+=0.6917 (n=6130) (44s)
+epoch 11: train=0.7270 val_top1=0.6978 val_top1@1120+=0.6909 (n=6130) (42s)

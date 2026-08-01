@@ -36,8 +36,10 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import DENSE_DIM, N_CARD_IDS, N_EXTRA, N_XSLOT  # noqa: E402
-from sa.optfeat import OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS  # noqa: E402
+from sa.features import (DENSE_DIM, N_CARD_IDS, N_EXTRA,  # noqa: E402
+                         N_XSLOT, X_GROUPS)
+from sa.optfeat import (OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS,  # noqa: E402
+                        pool_width)
 
 EMB = 16
 SEL_DENSE = 14
@@ -91,10 +93,12 @@ def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential
 class PolicyNet(nn.Module):
     def __init__(self, state_h: tuple[int, ...] = (256,),
                  head_h: tuple[int, ...] = (128,), dropout: float = 0.1,
-                 opt_cols: int = OPT_DENSE, extra: bool = True):
+                 opt_cols: int = OPT_DENSE, extra: bool = True,
+                 pool: bool = False):
         super().__init__()
         self.opt_cols = opt_cols
         self.extra = extra
+        self.pool = pool
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
@@ -103,6 +107,8 @@ class PolicyNet(nn.Module):
         in_state = DENSE_DIM + 12 * EMB + len(BAGS) * EMB + SEL_DENSE
         if extra:                       # the v4 block, appended (features.py)
             in_state += N_EXTRA + N_XSLOT * EMB
+        if pool:                        # the v5 block, appended (optfeat.py)
+            in_state += pool_width(opt_cols, EMB)
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
         in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
@@ -110,6 +116,18 @@ class PolicyNet(nn.Module):
     def forward(self, dense, slots, bag_flat, bag_off, seld,
                 opt_dense, opt_card, opt_atk, opt_tgt, opt_row,
                 xdense=None, xslots=None):
+        # The per-option encoding is built FIRST, because the v5 pool feeds it
+        # into the state. It is the same tensor the head consumes below, so the
+        # pool costs one reduction and no extra embedding lookups.
+        # Slice to `opt_cols`. The v3 target block is APPENDED to the v2 layout,
+        # so `--opt-cols 25` trains the exact v2-feature control on the identical
+        # rows -- same games, same selects, same labels, only the features differ.
+        # That is a cleaner control than comparing against the shipped net, which
+        # also differs in corpus (2,810 games vs whatever is on disk now).
+        oenc = torch.cat([opt_dense[:, :self.opt_cols],
+                          self.card_emb(opt_card),
+                          self.atk_emb(opt_atk),
+                          self.card_emb(opt_tgt)], dim=1)     # (O, D)
         parts = [dense, self.slot_emb(slots).flatten(1)]
         for name in BAGS:
             parts.append(self.bag_emb(bag_flat[name], bag_off[name]))
@@ -120,17 +138,35 @@ class PolicyNet(nn.Module):
         if self.extra:
             parts.append(xdense)
             parts.append(self.slot_emb(xslots).flatten(1))
+        # ...and v5 goes after v4, so `pool=False` reproduces the v4 state
+        # vector byte-for-byte. Same discipline, third generation.
+        if self.pool:
+            parts.append(self._pool(oenc, opt_row, dense.shape[0]))
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
-        # Slice to `opt_cols`. The v3 target block is APPENDED to the v2 layout,
-        # so `--opt-cols 25` trains the exact v2-feature control on the identical
-        # rows -- same games, same selects, same labels, only the features differ.
-        # That is a cleaner control than comparing against the shipped net, which
-        # also differs in corpus (2,810 games vs whatever is on disk now).
-        per_opt = torch.cat([srepr[opt_row], opt_dense[:, :self.opt_cols],
-                             self.card_emb(opt_card),
-                             self.atk_emb(opt_atk),
-                             self.card_emb(opt_tgt)], dim=1)  # (O, ...)
+        per_opt = torch.cat([srepr[opt_row], oenc], dim=1)   # (O, ...)
         return self.head(per_opt).squeeze(1)                 # (O,)
+
+    def _pool(self, oenc: torch.Tensor, opt_row: torch.Tensor,
+              n_rows: int) -> torch.Tensor:
+        """Segment mean/max of the option encodings + two count scalars.
+
+        A permutation-invariant summary of the option SET, which is the one
+        thing an independently-scored option can never carry. Empty selects
+        (none exist in the corpus, but the arena can produce one) pool to zero
+        rather than to -inf."""
+        d = oenc.shape[1]
+        idx = opt_row.unsqueeze(1).expand(-1, d)
+        cnt = torch.zeros(n_rows, device=oenc.device).index_add_(
+            0, opt_row, torch.ones_like(opt_row, dtype=oenc.dtype))
+        mean = torch.zeros(n_rows, d, device=oenc.device).index_add_(
+            0, idx[:, 0], oenc) / cnt.clamp_min(1.0).unsqueeze(1)
+        mx = torch.full((n_rows, d), -1e30, device=oenc.device).scatter_reduce(
+            0, idx, oenc, reduce="amax", include_self=True)
+        nz = (cnt > 0).unsqueeze(1)
+        mx = torch.where(nz, mx, torch.zeros_like(mx))
+        scal = torch.stack([cnt.clamp_max(40.0) / 40.0,
+                            torch.log1p(cnt) / float(np.log(41.0))], dim=1)
+        return torch.cat([mean, mx, scal], dim=1)
 
 
 def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
@@ -298,7 +334,31 @@ def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
     return frac.astype(np.float32)
 
 
-def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray):
+def apply_x_drop(data: "Data", names: list[str]) -> np.ndarray:
+    """Zero the named members of the v4 state block and return the mask.
+
+    Zeroing rather than deleting keeps the layer widths, the parameter count and
+    the weight init identical to the full-block run, so a drop-one arm differs
+    from it in the CONTENT of a few columns and nothing else. An xslot set to 0
+    is the same "no card" row the embedding already uses for an absent stadium.
+    """
+    mask = np.ones(N_EXTRA + N_XSLOT, dtype=np.float32)
+    for nm in names:
+        if nm not in X_GROUPS:
+            raise SystemExit(f"--drop-x {nm}: known groups are "
+                             f"{', '.join(X_GROUPS)}")
+        for i in X_GROUPS[nm]:
+            mask[i] = 0.0
+    data.xdense = data.xdense * mask[:N_EXTRA]
+    data.xslots = np.where(mask[N_EXTRA:] > 0, data.xslots, 0)
+    print(f"--drop-x {','.join(names)}: zeroed xdense cols "
+          f"{[i for i in range(N_EXTRA) if mask[i] == 0]} and xslot cols "
+          f"{[i for i in range(N_XSLOT) if mask[N_EXTRA + i] == 0]}")
+    return mask
+
+
+def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
+               x_mask: np.ndarray | None = None):
     """Export every Linear generically, so inference mirrors any depth."""
     out: dict[str, np.ndarray] = {
         "slot_emb": model.slot_emb.weight.detach().numpy(),
@@ -306,7 +366,17 @@ def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray):
         "card_emb": model.card_emb.weight.detach().numpy(),
         "atk_emb": model.atk_emb.weight.detach().numpy(),
         "count_frac": count_frac,
+        # Width of the v5 pooled block, 0 if the net has none. Inference cannot
+        # derive this from `state_in` alone (the v4 and v5 widths are both
+        # legal), so it is recorded explicitly. Nets exported before day 13 have
+        # no such key and are read as 0.
+        "n_pool": np.array([pool_width(model.opt_cols, EMB) if model.pool
+                            else 0], dtype=np.int64),
     }
+    if x_mask is not None:
+        # Which members of the v4 block this net was actually shown. Inference
+        # applies it, so an ablation arm can never be fed a column it never saw.
+        out["x_mask"] = x_mask
     for prefix, seq in (("sfc", model.state_fc), ("head", model.head)):
         n = 0
         for mod in seq:
@@ -354,6 +424,16 @@ def main() -> int:
                     help="torch/numpy seed. Vary it to SIZE run-to-run "
                          "variance, which is the confound behind every "
                          "net-vs-net A/B in this repo (§8z).")
+    ap.add_argument("--drop-x", default="",
+                    help="comma-separated members of the v4 state block to "
+                         "ABLATE (features.X_GROUPS: "
+                         f"{','.join(X_GROUPS)}). The surviving mask is stored "
+                         "in the npz and applied at inference.")
+    ap.add_argument("--pool", action="store_true",
+                    help="the v5 block: append a mean/max pool of the option "
+                         "encodings + two count scalars to the STATE vector "
+                         "(optfeat.pool_width). Default off = the v4 state "
+                         "vector byte-for-byte, i.e. the control.")
     ap.add_argument("--no-extra", action="store_true",
                     help="ignore the v4 state block (features.extra_feats). "
                          "This is the day-12 CONTROL: identical rows, "
@@ -371,6 +451,13 @@ def main() -> int:
     if not paths:
         raise SystemExit(f"no shards under {ROOT / args.ds}")
     data = Data(paths)
+    x_mask = None
+    if args.drop_x:
+        if args.no_extra:
+            raise SystemExit("--drop-x ablates the v4 block; --no-extra "
+                             "already removes all of it")
+        x_mask = apply_x_drop(data, [s.strip() for s in args.drop_x.split(",")
+                                     if s.strip()])
     keep = np.ones(data.n, dtype=bool)
     if args.winners_only:
         keep &= data.won > 0.5
@@ -411,13 +498,17 @@ def main() -> int:
     if not args.no_extra and not data.has_extra:
         raise SystemExit(f"{args.ds} was built before the v4 state block; "
                          "rebuild it or pass --no-extra")
+    if args.pool and args.no_extra:
+        raise SystemExit("--pool is the v5 block and is defined as v4 + pool; "
+                         "inference only knows the v4 and v5 state widths")
     model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
-                      opt_cols=args.opt_cols, extra=not args.no_extra)
+                      opt_cols=args.opt_cols, extra=not args.no_extra,
+                      pool=args.pool)
     if args.init:
         load_init(model, ROOT / args.init)
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
-          f"extra={not args.no_extra} "
+          f"extra={not args.no_extra} pool={args.pool} "
           f"params={sum(p.numel() for p in model.parameters())}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                             weight_decay=args.wd)
@@ -484,7 +575,7 @@ def main() -> int:
               f"({time.time() - t0:.0f}s)")
         if acc > best:
             best = acc
-            export_npz(model, ROOT / args.out, count_frac)
+            export_npz(model, ROOT / args.out, count_frac, x_mask)
     return 0
 
 

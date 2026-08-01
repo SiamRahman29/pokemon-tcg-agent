@@ -34,6 +34,8 @@ from ptcg.env import sdk  # noqa: E402
 sdk.load()
 
 from cg.api import SelectContext  # noqa: E402
+from sa.optfeat import pool_scalars  # noqa: E402
+from sa.features import N_EXTRA  # noqa: E402
 
 CTX_NAME = {int(getattr(SelectContext, n)): n
             for n in dir(SelectContext) if n.isupper()}
@@ -52,16 +54,26 @@ class Net:
         self.state_in = self.state[0][0].shape[1]
         self.head = [(z[f"head{i}_w"], z[f"head{i}_b"])
                      for i in range(int(z["n_head"][0]))]
+        self.n_pool = int(z["n_pool"][0]) if "n_pool" in z else 0
+        self.x_mask = z["x_mask"] if "x_mask" in z else None
+
+    @property
+    def opt_in(self) -> int:
+        """Per-option dense width this net was trained at (see policynet)."""
+        return (self.head[0][0].shape[1] - self.state[-1][0].shape[0]
+                - 2 * self.card_emb.shape[1] - self.atk_emb.shape[1])
 
     def state_repr(self, dense, slots, bag_means, seld, xdense=None,
-                   xslots=None):
+                   xslots=None, pool=None):
         parts = [dense, self.slot_emb[slots].reshape(len(slots), -1),
                  *bag_means, seld]
-        # The v4 block is APPENDED (features.py), so slicing to this net's own
-        # input width feeds a v3 net byte-identical input. Same trick as the
-        # agent's policynet.scores -- keep the two in sync.
+        # The v4 block is APPENDED (features.py), and the v5 pool after it, so
+        # slicing to this net's own input width feeds a v3 net byte-identical
+        # input. Same trick as the agent's policynet.scores -- keep in sync.
         if xdense is not None:
             parts += [xdense, self.slot_emb[xslots].reshape(len(xslots), -1)]
+        if pool is not None:
+            parts.append(pool)
         x = np.concatenate(parts, axis=1)[:, :self.state_in]
         for w, b in self.state:
             x = np.maximum(x @ w.T + b, 0.0)
@@ -130,14 +142,36 @@ def main() -> int:
         means = [bag_means(z, nm, n, width, net.bag_emb) for nm in BAGS]
         xd = z["xdense"][val] if "xdense" in z else None
         xs = (z["xslots"][val].astype(np.int64) if "xslots" in z else None)
-        srepr = net.state_repr(z["dense"][val], z["slots"][val].astype(np.int64),
-                               [m[val] for m in means], z["seld"][val], xd, xs)
+        if net.x_mask is not None and xd is not None:   # an ablation arm
+            xd = xd * net.x_mask[:N_EXTRA]
+            xs = np.where(net.x_mask[N_EXTRA:] > 0, xs, 0)
         ctx = np.rint(z["seld"][:, 13] * 50.0).astype(int)
         opt_dense, chosen = z["opt_dense"], z["opt_chosen"]
         card = z["opt_card"].astype(np.int64)
         atk = z["opt_attack"].astype(np.int64)
         tgt = (z["opt_target"] if "opt_target" in z
                else np.zeros_like(card)).astype(np.int64)
+
+        # The v5 pool is a summary of the row's own option set, so it has to be
+        # built before the state (policynet.scores does the same reordering).
+        pool = None
+        if net.n_pool:
+            ow = net.opt_in
+            oenc = np.concatenate([opt_dense[:, :ow], net.card_emb[card],
+                                   net.atk_emb[atk], net.card_emb[tgt]], axis=1)
+            pool = np.zeros((len(val), net.n_pool), dtype=np.float32)
+            d = oenc.shape[1]
+            for k, row in enumerate(val):
+                a, b = off[row], off[row + 1]
+                if b <= a:
+                    continue
+                blk = oenc[a:b]
+                pool[k, :d] = blk.mean(axis=0)
+                pool[k, d:2 * d] = blk.max(axis=0)
+                pool[k, 2 * d:] = pool_scalars(b - a)
+        srepr = net.state_repr(z["dense"][val], z["slots"][val].astype(np.int64),
+                               [m[val] for m in means], z["seld"][val], xd, xs,
+                               pool)
 
         keys = None
         if args.equiv:

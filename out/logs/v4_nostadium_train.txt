@@ -1,0 +1,22 @@
+--drop-x stadium: zeroed xdense cols [3] and xslot cols [0]
+8 shards, 248985 rows -> 235314 train / 13671 val (1603 games)
+arch: state[512, 256] head[256, 128] loss=listwise opt_cols=37/37 extra=True pool=False params=614849
+epoch 0: train=1.2266 val_top1=0.6432 val_top1@1120+=0.6170 (n=6130) (39s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 1: train=0.9943 val_top1=0.6815 val_top1@1120+=0.6643 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 2: train=0.9255 val_top1=0.6937 val_top1@1120+=0.6781 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 3: train=0.8813 val_top1=0.6969 val_top1@1120+=0.6852 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 4: train=0.8506 val_top1=0.7053 val_top1@1120+=0.6938 (n=6130) (39s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 5: train=0.8217 val_top1=0.7024 val_top1@1120+=0.6881 (n=6130) (39s)
+epoch 6: train=0.7996 val_top1=0.7017 val_top1@1120+=0.6900 (n=6130) (38s)
+epoch 7: train=0.7791 val_top1=0.7031 val_top1@1120+=0.6940 (n=6130) (38s)
+epoch 8: train=0.7594 val_top1=0.7076 val_top1@1120+=0.6995 (n=6130) (38s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 9: train=0.7420 val_top1=0.7007 val_top1@1120+=0.6936 (n=6130) (37s)
+epoch 10: train=0.7272 val_top1=0.7077 val_top1@1120+=0.6967 (n=6130) (37s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v4_nostadium.npz
+epoch 11: train=0.7131 val_top1=0.7057 val_top1@1120+=0.6974 (n=6130) (37s)

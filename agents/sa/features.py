@@ -53,6 +53,25 @@ N_EXTRA = 8                # dense scalars
 N_XSLOT = 2                # card ids embedded through the existing slot table:
 #                            (stadium in play, the select's effect card)
 
+# --- ablating the v4 block (day 13) -----------------------------------------
+# The block shipped whole, so nothing said WHICH member bought the 37 Elo. Each
+# name below is a drop-one arm; the trainer zeroes those columns of the corpus
+# and records the surviving mask in the npz, so `policynet` reproduces exactly
+# the input the net was trained on WITHOUT rebuilding a corpus or changing a
+# single layer width. Same arch, same init, same rows -- only the content of a
+# few columns differs, which is a tighter control than removing the dimensions.
+# Indices are (xdense col, ...) then (N_EXTRA + xslot col, ...).
+X_GROUPS: dict[str, tuple[int, ...]] = {
+    "turnAction": (0,),
+    "retreated": (1,),
+    "stadiumPlayed": (2,),
+    "stadium": (3, N_EXTRA + 0),      # the in-play flag AND the card id
+    "benchMax": (4,),
+    "tools": (5, 6),
+    "poolSize": (7,),
+    "effect": (N_EXTRA + 1,),         # which card caused this select
+}
+
 
 def extra_feats(state: dict, sel: dict,
                 me: int) -> tuple[np.ndarray, np.ndarray]:
