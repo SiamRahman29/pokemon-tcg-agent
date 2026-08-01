@@ -2831,20 +2831,41 @@ row is a head-to-head, so its Δ is `elo(0.521)` directly (§8i's warning: do
 | `rule:archaludon` | 10.1% | 0.678 | **0.671** [0.650, 0.691] | −6 | −0.6 |
 | | **71.5%** | | | | **+7.3 Elo** |
 
-### ⛔ The verdict on shipping: NO, and the reason is not the size
+### The verdict on shipping — first NO, then corrected to YES, and the correction is the lesson
 
-**+7.3 Elo weighted (+10 renormalised) is below the +50 bar** — but so was §8z's
-+16.5, and that one shipped. **The difference is the shape.** v4 was positive on
-**five anchors of five** with no negative term, which is what made a
-below-bar submission defensible when the slot cost was relaxed. v5 is
-**positive on three and negative on two**, and its largest single term is a
-**−20 Elo loss against Crustle**, 12.8% of the field and the deck the counter-
-meta is built on (§8b).
+**The first verdict, written from the table above, was ⛔ NO.** +7.3 Elo
+weighted (+10 renormalised) is below the +50 bar; §8z shipped below the same bar
+only because it was positive on **five anchors of five** with no negative term,
+whereas v5 is **positive on three, negative on two**, its largest single term a
+**−20 Elo loss to Crustle** (12.8% of the field, the deck the counter-meta is
+built on, §8b). A mixed-sign +7 is what a noise-width effect looks like measured
+five times.
 
-**A mixed-sign +7 is exactly what a noise-width effect looks like when you
-measure it five times**, and the relaxed submission budget is not a reason to
-ship one. ⚠ Note this is the same reasoning §8z used to justify shipping, run
-in the other direction — **the bar did not move, the evidence did.**
+🔴 **That reasoning is sound and it answers the wrong question.** It asks *"is
+v5 better than v4?"* — no. **A submission does not replace our best agent; it
+replaces the one that falls out of the latest-2 window.** Eviction is by
+recency (§8h), so the trade on the table was:
+
+| | rating when submitted | arena standing |
+|---|---|---|
+| **v5**, submitted as `55160229` | climbs from μ=600 | ≈ v4 (+14 mirror, +7.3 weighted) |
+| **P4b `55129730`**, evicted | **836.4** | **last of everything we own** (§8k) |
+| **v4 `55156480`**, untouched | **908–923** | the reference |
+
+**v4 stays active and keeps its rating, and the displayed score is the best
+ACTIVE agent — so the displayed number cannot fall, and the slot costs a
+strictly dominated agent.** ⇒ **submitted.**
+
+⚠ **The failure mode is worth more than the submission.** The +50 bar was
+written when slots were scarce and *every submission evicted something
+valuable*. The user relaxed exactly that premise two days earlier, §8z recorded
+the relaxation — and the bar was still being applied with its original cost
+model attached. **A threshold outlives the assumptions that set it, and this one
+survived its own retraction by two days.**
+
+⇒ **Standing rule: before quoting the shipping bar, name the agent the
+submission would EVICT.** A candidate that loses to our best can still dominate
+our worst, and only the second comparison decides a slot.
 
 ### A methods note that nearly cost the day
 

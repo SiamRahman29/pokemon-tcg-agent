@@ -229,11 +229,25 @@ distrust it: mined episodes are the top-1150 band, and
 >   far below the ±50–100 the LB resolves. **A 60-point climb is not evidence
 >   the block works**; the arena at n=4,000 with a seed control already answered
 >   that, and this is a board that moved 3,000 → 6,088 entrants in a week.
-> - ⛔ **NOTHING WAS SUBMITTED ON DAY 13, deliberately, with spare slots
->   available.** The one candidate (v5) measured **+7.3 Elo weighted and
->   negative on 2 anchors of 5**. §8z shipped below the bar because it was
->   positive on **5 of 5**; v5 has the wrong shape. **The bar did not move, the
->   evidence did** (§8aa).
+> - ⚡ **v5 WAS SUBMITTED AS `55160229`** (`dist/submission_bc-grimmsnarl-netspolicy_20260801-163829.tar.gz`,
+>   `NET_OK opt_in=37 state_in=708` — 536 + the 172-wide pool, so the block is
+>   live in the bundle and not silently sliced off; sha verified against
+>   `out/policy_v5.npz`). Active pair becomes **{`55160229` v5 climbing from
+>   μ=600, `55156480` v4}**; **P4b is evicted.**
+> - 🔴 **AND THE REASONING WAS CORRECTED MID-SESSION — read this, it is a
+>   decision-framing error, not a new measurement.** The first verdict was "do
+>   not submit: +7.3 weighted, negative on 2 anchors of 5, wrong shape". That
+>   answers **"is v5 better than v4?"** (no) when the question a submission
+>   actually asks is **"is v5 better than what it EVICTS?"** Eviction is by
+>   recency, so v5 displaced **P4b — 836.4 against v4's 908–923, dominated on
+>   the displayed score (best ACTIVE) and last of everything we own in the
+>   arena (§8k).** v4 keeps its rating and stays active throughout, so the
+>   displayed score cannot fall. ⇒ **The +50 bar was written when slots were
+>   scarce and every submission evicted something valuable; the user relaxed
+>   exactly that premise, and the bar was still being applied to the old one.**
+>   ⚠ **Standing correction: before quoting the bar, name the agent the
+>   submission would EVICT.** A candidate that loses to our best can still
+>   dominate our worst.
 >
 > **Deadlines: sim closes 2026-08-17 (16 days). Report due 2026-09-14 (44 days).**
 > **Rubric: Model 70% (LB is ONE bullet of five) + Deck 20% + writing 10%.**
