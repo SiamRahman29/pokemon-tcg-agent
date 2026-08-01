@@ -2354,6 +2354,12 @@ DAMAGE_COUNTER 30.5%, SWITCH 27.6%**), and the known-unencoded inputs are
 opponent hand size (Alakazam is 22% of the field and attacks for 20 per card in
 hand), stadium, prizes remaining and turn number.
 
+🔴 **RETRACTED THE NEXT DAY (§8y): three of those four are already encoded** —
+`features.py` lines 88-99 have fed the net `turn`, both prize counts and both
+players' `handCount` since v1. Only the stadium was genuinely absent. The list
+was carried unchecked in three files for two days; `p18_missing_state_audit.py`
+now DERIVES it instead. Rule 15, second instance.
+
 Reproduce:
 
 ```powershell
@@ -2374,6 +2380,189 @@ rows × 3 bags of a two-shard corpus match the old per-row slicing byte-for-byte
 and so does the batch-assembly path.
 
 Logs: `out/logs/cap_big_train.txt`, `out/logs/cap_xl_train.txt`.
+
+## 8x. 🔴 "The residual is the encoding" is NARROWED: the option layout permits **95.6%** and the clone gets 69.8%, so un-expressibility is at most 4.4 pp (2026-08-01, day 12)
+
+**Why this was run.** §8w concluded *by elimination* that the ~30% residual is
+the encoding: capacity is ruled out (8.2× params, no gain), demonstrator
+selection is ruled out (§8u), data volume was already dead (§1). **An
+elimination argument is only as good as its enumeration**, and this one had
+never been checked directly. `scripts/p17_encoding_ceiling.py` measures it with
+no net involved at all.
+
+### The instrument
+
+Two options whose `(opt_dense, card_id, attack_id, target_id)` are **bitwise
+identical** get identical logits from *any* net reading those inputs — the state
+block is shared across a row's options, so it cannot break the tie. If the
+demonstrator's choice sits in a tie group of size `g`, no such net can beat
+`1/g` on that row. **Σ(1/g)/N is therefore a hard upper bound on top-1
+agreement for this feature layout**, and it is exactly the §8f defect
+(`opt["index"]` unencoded ⇒ two copies of a card bitwise identical) counted over
+the whole corpus instead of found by reading code.
+
+### The result — the bound is high, and the ties are HARMLESS
+
+| context | rows | tied rows | ceiling | v3 top-1 | misses |
+|---|---|---|---|---|---|
+| **MAIN** | 127,683 | **5.0%** | **97.4%** | 62.7% | **2,629** |
+| **TO_HAND** | 31,901 | **32.4%** | **81.0%** | 61.2% | **674** |
+| ATTACH_TO | 2,395 | 45.3% | 74.1% | 71.1% | 37 |
+| TO_BENCH | 574 | 38.2% | 79.4% | — | — |
+| EVOLVE | 952 | 22.8% | 88.2% | — | — |
+| SWITCH / DAMAGE / DAMAGE_COUNTER / ATTACH_FROM / … | 60k+ | **0.0%** | **100.0%** | — | — |
+| **all** | **235,654** | **7.8%** | **95.6%** | **69.8%** | **3,902** |
+
+🔴 **The encoding permits 95.6% and the clone delivers 69.8%. Exact
+un-expressibility can account for at most 4.4 pp of the 30.2 pp residual.**
+
+**And the ties that do exist are not defects.** A tie requires the *same*
+`card_id` (it is part of the key), so every tie group is **two copies of one
+card in one role** — two identical Trainers in the deck at indices 12 and 30
+(TO_HAND), two identical energies in hand attaching to the same Pokemon
+(ATTACH_TO). **Picking either produces the same game.** Plain top-1 charges the
+net for a coin flip between interchangeable cards.
+
+✅ **Fixed in the instrument, not just noted:** `context_accuracy.py --equiv`
+scores a hit when the argmax is bitwise identical to the chosen option. **The
+honest agreement is 29.0%, not 30.2%**, and TO_HAND moves **61.2% → 67.1%**
+(ATTACH_TO 71.1% → 78.1%). Small overall, but it is the difference between
+measuring play and measuring label arbitrariness, and it should be carried into
+any future agreement number.
+
+### What this does and does not say
+
+- ⛔ **It does not resurrect capacity or demonstrator selection.** §8w and §8u
+  are untouched.
+- 🔴 **It does narrow §8w's conclusion, which three files now assert.** "The
+  residual is the encoding" cannot mean *the right answer is not expressible* —
+  on 95.6% of rows it is. What remains available is the weaker and more specific
+  claim: **the STATE does not carry what would let the net pick between options
+  it can already tell apart.** That is a different repair (§8y) and a much
+  narrower target.
+- ⚠ **The Bayes floor could not be measured this way and that is worth
+  recording.** Of 235,654 rows only **43 full inputs repeat at all**, covering
+  0.8% of rows (almost all `IS_FIRST`), where demonstrators agree 98.7% of the
+  time. **Exact-duplicate states essentially do not occur in this game**, so
+  "how much of the residual is human noise" cannot be answered by de-duplication.
+  The one thing that does bear on it is §8u's expert arm: fitting **one** player
+  plateaus at 67.2% held out, barely above the 50-player mixture's ~70% —
+  **mixture entropy is not the explanation either.**
+
+Reproduce:
+
+```powershell
+python -X utf8 scripts/p17_encoding_ceiling.py --ds artifacts/pds_v3r
+python -X utf8 scripts/p17_encoding_ceiling.py --ds artifacts/pds_v3r --opt-cols 25   # the §8f control
+python -X utf8 scripts/context_accuracy.py --net out/policy_b1_v3.npz --ds artifacts/pds_v3r --equiv
+```
+
+## 8y. ⚡ The feature audit, done by ENUMERATION — and it killed three candidates the plan had been carrying for two days (2026-08-01, day 12)
+
+**Why this was run.** §8w's closing paragraph named the next candidate list:
+"opponent hand size (Alakazam is 22% of the field and attacks for 20 per card in
+hand), stadium, prizes remaining and turn number." That list has been in
+`HANDOFF.md` and `ROADMAP.md` since day 10. **Three of its four items are
+already encoded.**
+
+🔴 **`features.py` lines 88–99 have fed the net `turn`, both players' prize
+counts and both players' `handCount` since v1.** This is **rule 15 for the
+second time in one project** — a claim about the code, repeated in three files,
+justifying planned work, never opened and checked. The first instance cost eight
+days ("the net cannot see HP"); this one was caught before anything was built,
+by the same cure: read the file.
+
+### The instrument
+
+`scripts/p18_missing_state_audit.py` walks real observations, **diffs the
+observation's keys against the set `featurize()` actually reads**, and reports
+how much each dropped field varies at a decision point. Rule 14 applies to
+features exactly as to rules: *an absent input that is constant where the
+decisions happen cannot explain a single miss.* 44,992 decision points, 300
+games.
+
+**Everything the state carries and the net never sees:**
+`current`: `looking`, `retreated`, `stadium`, `stadiumPlayed`, `turnActionCount`;
+`player`: `benchMax`; `pokemon`: `energyCards`, `preEvolution`, `serial`;
+`select`: `contextCard`, `deck`, `effect`, `remainDamageCounter`,
+`remainEnergyCost`.
+
+### Sized, and two more died on the spot
+
+| candidate | distinct | modal share | verdict |
+|---|---|---|---|
+| `remainDamageCounter` | **1** | **100.0%** | ⛔ **dead — constant 0 at every decision** |
+| `remainEnergyCost` | 4 | **99.1%** | ⛔ **dead — 100% modal inside every context** |
+| `contextCard` | 22 | 89.8% | ⛔ weak, and ~constant per context |
+| `my/opp_tools_n` | 3 | 90.2% / 85.3% | ⚠ marginal (tools present 10–15%) |
+| **`turnActionCount`** | **20** | **9.9%** (17% in MAIN) | ✅ **the highest-variance dropped field** |
+| **`select.effect` card** | **45** | 66.5% (**26% in TO_HAND**) | ✅ **the highest-variance field where the misses are** |
+| **`stadium` id** | 7 | 60.7% (57% in MAIN) | ✅ absent entirely, incl. from every id bag |
+| `retreated` / `stadiumPlayed` | 2 | 91.0% / 90.2% | ✅ cheap; `retreated` is **43% non-modal in SWITCH** |
+| `opp_prize_left` *(control)* | 7 | 40.7% | — already encoded; included to prove the probe reads real variation |
+
+**The two survivors land exactly where the misses are** (v3 net, 12,939
+held-out rows: **MAIN 2,629 + TO_HAND 674 = 84% of all misses**):
+
+- **`turnActionCount`** — 1…25+, smoothly distributed. The net re-scores a
+  barely-changed board several times per turn **with no idea how deep into the
+  turn it is.** MAIN is 54% of the corpus and 67% of the misses.
+- **`select.effect`** — *which card caused this select*. In TO_HAND that is
+  Spikemuth Gym 16.4%, Poké Pad 13.0%, Team Rocket's Petrel 10.1%, Night
+  Stretcher 7.1%, Dawn 5.5%, Ultra Ball 2.9%, … — "tutor a Trainer", "take a
+  Supporter", "recover from the discard" and "search anything" are **the same
+  context with the same select type**. 🔴 **And the net cannot infer it from the
+  option list, because it never sees the option list**: every option is scored
+  independently against a shared state vector. The effect card is the one input
+  that says *what kind of choice this is*.
+  ⚡ This is also where the strongest measured expert divergence lives — §8q:
+  Sixth Sense (#3) diverges from us **almost entirely in TO_HAND, −31.5 pp**.
+
+**Three instruments now point at TO_HAND** (lowest encoding ceiling, largest
+expert divergence, highest dropped-field variance) and one at MAIN (67% of the
+miss mass). ⏳ **The intervention is built and training; the verdict is §8z, and
+it is deliberately not written here yet** (ROADMAP's day-11 amendment: log the
+numbers, leave the verdict blank while runs are in flight).
+
+### The intervention, and its bar — written down before any result
+
+**The v4 state block** (`features.extra_feats`, 8 dense scalars + 2 card ids
+embedded through the existing slot table): `turnActionCount`, `retreated`,
+`stadiumPlayed`, has-stadium, `benchMax`, own/opponent tool counts, the search
+pool size, plus embeddings of **the stadium** and **the select's effect card**.
+⚠ **Appended after `seld`, the last block of the state vector**, so a v3 net
+slices to its own `state_in` and reads byte-identical input — the same
+compatibility trick `opt_in` uses, and what lets v3 and v4 run head-to-head in
+one process (rule 4).
+
+**The control is as tight as this project can make one.** `artifacts/pds_v4` was
+rebuilt from the same four replay days and verified **byte-identical to
+`artifacts/pds_v3r` on every pre-existing array** — same 248,985 rows, same
+labels, same option features — with only `xdense`/`xslots` added.
+`--no-extra` then trains the v3 state vector on those identical rows with the
+same seed and recipe. **Features are the only difference.**
+
+**Pre-registered, 2026-08-01, before the first arena game:**
+
+| test | bar |
+|---|---|
+| primary: `v4` vs `v4ctrl`, mirror, n=2,000 | **≤ 0.52 kills it** — a null at an instrument that resolves ±0.021 |
+| secondary: `v4` vs the live v3 net, mirror, n=2,000 | reported either way |
+| ship: weighted over the **five** field anchors | **+50 Elo or it is a chapter, not a submission** (§8k) |
+
+⚠ **The standing prior is unfriendly and is recorded here so the verdict cannot
+be reframed afterwards:** six axes of more/better training have now measured
+null or negative, and **exactly one intervention ever worked — a
+representational one (§8f, 0.878 against its same-corpus control).** This is the
+closest thing to a second instance of that axis, which is the reason to run it;
+it is not a reason to expect it to work. Rule 3 also applies: **held-out
+agreement will move and that predicts nothing** — the arena decides.
+
+Reproduce:
+
+```powershell
+python -X utf8 scripts/p18_missing_state_audit.py --games 300
+```
 
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 

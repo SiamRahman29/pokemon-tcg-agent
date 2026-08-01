@@ -91,6 +91,16 @@ def main() -> int:
                     help="score EVERY row, not just the trainer's gid%%20 val "
                          "split. Correct -- and required -- for a corpus the "
                          "net never trained on (e.g. artifacts/pds_expert).")
+    ap.add_argument("--equiv", action="store_true",
+                    help="count a hit when the argmax option is BITWISE "
+                         "IDENTICAL to the chosen one (same dense, card, "
+                         "attack and target). Those options are the same card "
+                         "in the same role -- two copies of one Trainer in the "
+                         "deck, two identical energies in hand -- so no net "
+                         "reading these inputs can tell them apart and picking "
+                         "either produces the same game. Plain top-1 charges "
+                         "the net for that coin flip: it is 7.8% of rows "
+                         "corpus-wide and 32.4% of TO_HAND (§8x).")
     args = ap.parse_args()
 
     net = Net(ROOT / args.net)
@@ -120,6 +130,13 @@ def main() -> int:
         tgt = (z["opt_target"] if "opt_target" in z
                else np.zeros_like(card)).astype(np.int64)
 
+        keys = None
+        if args.equiv:
+            raw = np.ascontiguousarray(np.concatenate(
+                [np.ascontiguousarray(x).view(np.uint8).reshape(len(card), -1)
+                 for x in (opt_dense, card, atk, tgt)], axis=1))
+            keys = raw.view([("k", np.void, raw.shape[1])]).reshape(-1)
+
         for k, row in enumerate(val):
             a, b = off[row], off[row + 1]
             ch = chosen[a:b]
@@ -130,8 +147,12 @@ def main() -> int:
                 np.repeat(srepr[k][None, :], k_opts, axis=0),
                 opt_dense[a:b], card[a:b], atk[a:b], tgt[a:b])
             c = int(ctx[row])
+            am = int(np.argmax(logits))
+            ok = ch[am] == 1
+            if keys is not None and not ok:
+                ok = keys[a + am] == keys[a + int(np.argmax(ch))]
             tries[c] = tries.get(c, 0) + 1
-            hit[c] = hit.get(c, 0) + int(ch[int(np.argmax(logits))] == 1)
+            hit[c] = hit.get(c, 0) + int(ok)
             rand[c] = rand.get(c, 0.0) + 1.0 / k_opts
 
     print(f"\nnet {args.net} on the held-out split of {args.ds}\n")

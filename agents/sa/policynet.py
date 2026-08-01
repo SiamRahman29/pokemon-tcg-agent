@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .features import featurize
+from .features import extra_feats, featurize
 from .optfeat import option_features
 
 # SA_PNET_PATH lets an arena run score a candidate net without overwriting the
@@ -89,8 +89,14 @@ class Net:
                          else np.zeros(self.bag_emb.shape[1],
                                        dtype=np.float32))
         parts.append(_sel_features(sel))
+        # The v4 block goes LAST, so slicing to this net's own `state_in` feeds
+        # a v3 net byte-identical input (features.py, "APPENDED, NEVER
+        # INSERTED"). Same trick as `opt_in` one level up.
+        xd, xids = extra_feats(state, sel, me)
+        parts.append(xd)
+        parts.append(self.slot_emb[xids].reshape(-1))
         x = np.concatenate(parts)
-        srepr = x
+        srepr = x[:self.state_in]
         for w, b in self.state_layers:      # every state layer is relu'd
             srepr = np.maximum(w @ srepr + b, 0.0)
 
@@ -159,14 +165,14 @@ def load(path) -> Net | None:
         return None
     try:
         net = Net(np.load(path))
-        from .features import DENSE_DIM
+        from .features import DENSE_DIM, N_EXTRA, N_XSLOT
         from .optfeat import KNOWN_OPT_DENSE
-        expect_state = (DENSE_DIM + 12 * net.slot_emb.shape[1]
-                        + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-        # The option width is now per-net (see Net.opt_in), so the guard asks
-        # whether it is a width we still know how to feed rather than whether it
-        # equals today's OPT_DENSE. An unrecognised width is a stale net.
-        if net.state_in == expect_state and net.opt_in in KNOWN_OPT_DENSE:
+        emb = net.slot_emb.shape[1]
+        base = (DENSE_DIM + 12 * emb + 3 * net.bag_emb.shape[1] + SEL_DENSE)
+        # Two legitimate state widths, exactly as with the option block: the v3
+        # layout and the v3 layout plus the appended v4 block.
+        known_state = (base, base + N_EXTRA + N_XSLOT * emb)
+        if net.state_in in known_state and net.opt_in in KNOWN_OPT_DENSE:
             return net
     except Exception:
         pass

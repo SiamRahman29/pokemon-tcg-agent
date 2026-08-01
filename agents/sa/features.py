@@ -12,12 +12,78 @@ import numpy as np
 from . import cards as cdb
 from .textdmg import best_estimated_damage
 
-VERSION = 2
+VERSION = 3
 N_CARD_IDS = 1300          # card id space (ids are 1..1267 today)
 N_SLOTS = 12               # my active, my bench x5, opp active, opp bench x5
 PER_SLOT = 18
 N_GLOBAL = 26
 DENSE_DIM = N_GLOBAL + N_SLOTS * PER_SLOT
+
+# --- the v4 block (day 12), APPENDED at the very end of the state vector ----
+# `scripts/p18_missing_state_audit.py` enumerated every field of the
+# observation that `featurize()` never reads and measured how much each varies
+# at a real decision point. It killed three candidates that had been on the
+# plan for two days -- opponent hand size, prizes remaining and turn number are
+# ALL already encoded above (lines "put(...)" below) -- and two it found
+# itself: `remainDamageCounter` is 0 at 100% of decisions and `remainEnergyCost`
+# at 99.1%, so neither can explain a single miss.
+#
+# What survived, with the miss mass it targets (v3 net, 12,939 held-out rows):
+#   * turnActionCount -- 20 distinct values, modal share 17% in MAIN.
+#     MAIN is 2,629 of 3,902 misses. The net re-scores a barely-changed board
+#     several times per turn with no idea how deep into the turn it is.
+#   * the select's EFFECT card -- which card caused this select. Modal share
+#     26% in TO_HAND (674 misses): the same context means "tutor a Trainer"
+#     (Petrel), "take a Supporter" (Poke Pad), "recover from discard" (Night
+#     Stretcher) or "search anything" (Ultra Ball), and the net scores each
+#     option INDEPENDENTLY, so it never sees the option set that would reveal
+#     which. This is the one input that tells it what kind of choice it is.
+#   * the stadium -- 7 distinct, 61% Spikemuth Gym, and Area Zero Underdepths
+#     changes the bench size. Absent entirely, including from every id bag.
+#   * `retreated` / `stadiumPlayed` -- the two missing members of the
+#     once-per-turn quartet whose other two (`supporterPlayed`,
+#     `energyAttached`) have been encoded since v1. `retreated` is 43%
+#     non-modal in SWITCH.
+#
+# ⚠ APPENDED, NEVER INSERTED -- and the append lands after `seld`, which is the
+# LAST block of the state vector (see policynet.scores / train_policy.forward).
+# A v3 net simply slices to its own `state_in` and reads byte-identical input,
+# which is what lets v3 and v4 run head-to-head in one process (rule 4).
+N_EXTRA = 8                # dense scalars
+N_XSLOT = 2                # card ids embedded through the existing slot table:
+#                            (stadium in play, the select's effect card)
+
+
+def extra_feats(state: dict, sel: dict,
+                me: int) -> tuple[np.ndarray, np.ndarray]:
+    """The v4 block: (dense scalars, card ids to embed). See the note above."""
+    x = np.zeros(N_EXTRA, dtype=np.float32)
+    mypl, oppl = state["players"][me], state["players"][1 - me]
+    stad = state.get("stadium") or []
+
+    def tools(pl) -> int:
+        n = 0
+        for pk in ([pl["active"][0] if pl["active"] else None]
+                   + list(pl["bench"])):
+            if pk:
+                n += len(pk.get("tools") or [])
+        return n
+
+    x[0] = min(int(state.get("turnActionCount") or 0), 24) / 24.0
+    x[1] = 1.0 if state.get("retreated") else 0.0
+    x[2] = 1.0 if state.get("stadiumPlayed") else 0.0
+    x[3] = 1.0 if stad else 0.0
+    x[4] = (mypl.get("benchMax") or 5) / 8.0
+    x[5] = min(tools(mypl), 4) / 4.0
+    x[6] = min(tools(oppl), 4) / 4.0
+    x[7] = min(len(sel.get("deck") or []), 60) / 60.0
+
+    eff = sel.get("effect")
+    ids = np.zeros(N_XSLOT, dtype=np.int32)
+    ids[0] = stad[0]["id"] if stad else 0
+    ids[1] = (eff or {}).get("id", 0) if isinstance(eff, dict) else 0
+    ids[ids >= N_CARD_IDS] = 0
+    return x, ids
 
 # id bags: per-slot card id (12), my hand, my discard, opp discard, opp known
 BAG_NAMES = ("slots", "my_hand", "my_discard", "opp_discard")

@@ -280,9 +280,12 @@ distrust it: mined episodes are the top-1150 band, and
    read `agents/sa/optfeat.py` and `features.py` against
    `context_accuracy.py`'s **MAIN misses (3,930 of 6,424)** and ask §8f's
    question — is the input **absent** (informational) or **present but
-   unbindable** (representational)? Only the second has ever paid. Cheap
-   candidates: opponent **hand size** (Alakazam is 22% of the field and attacks
-   for 20 per card in hand), stadium in play, prizes remaining, turn number.
+   unbindable** (representational)? Only the second has ever paid.
+   ⛔ **The cheap-candidate list this item carried is RETRACTED (§8y): opponent
+   hand size, prizes remaining and turn number are ALL already encoded**
+   (`features.py` lines 88–99); only the stadium was really absent.
+   `scripts/p18_missing_state_audit.py` now derives the list by diffing the
+   observation against what `featurize()` reads, and sizes each candidate.
    ⚡ **§8s gives this a new instrument**: `p16_policy_disagree.py` names the
    contexts where a stronger policy actually diverges from ours — **MAIN 45.8%,
    DAMAGE_COUNTER 30.5%, SWITCH 27.6%** — so the feature audit now has a
@@ -414,10 +417,11 @@ distrust it: mined episodes are the top-1150 band, and
      contexts and ask the §8f question for each: is the input **absent**
      (informational) or **present but unbindable** (representational)? Only the
      second kind has ever paid.
-   - ⚠ **Known unencoded candidates to check first** (cheap, each is one line to
-     verify): the opponent's **hand size** (Alakazam's Powerful Hand is 20 damage
-     per card in hand and is **22% of the field**); stadium in play; the
-     opponent's discard contents; turn number; prizes remaining on each side.
+   - ⛔ **This list was WRONG and was carried for two days — see §8y.** Hand
+     size, turn number, prizes and the opponent's discard are all encoded
+     already (`features.py` 88-99, and `opp_discard` is an id bag). Use
+     `p18_missing_state_audit.py`, which derives the list instead of recalling
+     it.
    - **Bar: any candidate must clear +50 Elo weighted across the five anchors
      before it is worth a submission** (§8k). Below that it is a report chapter.
 

@@ -115,6 +115,47 @@ supplied, the hand rules became *harmful*. `EVIDENCE` §8f.
 > they have opposite cures. Four hand rules cured the symptom; twelve features
 > cured the cause and dominated them.
 
+### 4b. How much blindness is left? A computable ceiling
+
+Having been wrong once about what the features can express, we stopped asserting
+it. **The bound is computable exactly, with no model involved.** Two options
+whose per-option encoding is *bitwise identical* receive identical scores from
+any net reading that encoding — the state vector is shared across a row's
+options, so it cannot break the tie. If the demonstrator's choice sits in a tie
+group of size `g`, no such net beats `1/g` on that row, and `Σ(1/g)/N` is a hard
+upper bound on achievable agreement.
+
+Over 235,654 single-choice decisions the bound is **95.6%**. Our clone reaches
+**69.8%**.
+
+| context | rows | chosen option is tied | ceiling | clone |
+|---|---|---|---|---|
+| MAIN | 127,683 | 5.0% | 97.4% | 62.7% |
+| TO_HAND | 31,901 | **32.4%** | **81.0%** | 61.2% |
+| ATTACH_TO | 2,395 | 45.3% | 74.1% | 71.1% |
+| 12 other contexts | 60,000+ | **0.0%** | 100.0% | 77–100% |
+| **all** | **235,654** | **7.8%** | **95.6%** | **69.8%** |
+
+**Two things follow, and they point in opposite directions.**
+
+**First, the residual is not un-expressibility.** At most 4.4 of the 30.2
+missing points can be blamed on options the encoding cannot tell apart. The §8f
+defect is real and we fixed it; what is left is not more of the same.
+
+**Second, the ties that remain are not errors at all — and finding that changed
+how we measure.** A tie requires the same card id, so every tie group is *two
+copies of one card in one role*: two identical Trainers sitting at different
+positions in the deck, two identical energies in hand attaching to the same
+Pokemon. **Picking either produces an identical game.** Plain top-1 agreement
+charges the model for a coin flip between interchangeable cards. Scoring a hit
+whenever the model's pick is bitwise identical to the human's puts corpus
+agreement at **71.0% rather than 69.8%**, and TO_HAND at **67.1% rather than
+61.2%**.
+
+That is a small correction and we report it because it is the *kind* of thing
+that silently inflates a disagreement metric — and because every conclusion in
+§7b is built on one.
+
 ---
 
 ## 5. Measurement discipline, and two failures of our own process
@@ -463,9 +504,15 @@ Honest nulls at n≥2000 are the section we are most confident in.
   decisions out of 12,939** (3,902 misses → 3,900), and **4.87M made it worse**
   (3,945). Both larger nets drove training loss far below the small one's while
   validation peaked early and declined — they already had more capacity than the
-  features could use. Combined with the demonstrator result above, this leaves
-  the option *encoding* as the only surviving explanation for the residual, and
-  the encoding is precisely where our one large win came from (§4).
+  features could use. Combined with the demonstrator result above, this left the
+  *encoding* as the only surviving explanation for the residual — and the
+  encoding is precisely where our one large win came from (§4).
+  ⚠ **We then checked that elimination instead of trusting it**, because an
+  elimination argument is only as good as its enumeration. §4b's ceiling says
+  the option layout permits 95.6% agreement, so "the encoding" cannot mean *the
+  right answer is inexpressible*. The surviving form of the claim is narrower
+  and testable: the **state** does not carry what would let the net choose
+  between options it can already tell apart.
 - **Turn-level sequencing** — three builds, and the one that is worth reporting
   is the last. The prototype scored **0.075** (n=40) by maximising the value of
   the board at the end of *our* turn, which structurally cannot see the

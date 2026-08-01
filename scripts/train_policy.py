@@ -36,7 +36,7 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import DENSE_DIM, N_CARD_IDS  # noqa: E402
+from sa.features import DENSE_DIM, N_CARD_IDS, N_EXTRA, N_XSLOT  # noqa: E402
 from sa.optfeat import OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS  # noqa: E402
 
 EMB = 16
@@ -91,25 +91,35 @@ def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential
 class PolicyNet(nn.Module):
     def __init__(self, state_h: tuple[int, ...] = (256,),
                  head_h: tuple[int, ...] = (128,), dropout: float = 0.1,
-                 opt_cols: int = OPT_DENSE):
+                 opt_cols: int = OPT_DENSE, extra: bool = True):
         super().__init__()
         self.opt_cols = opt_cols
+        self.extra = extra
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
         self.card_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.atk_emb = nn.Embedding(N_ATTACK_IDS, EMB)
         in_state = DENSE_DIM + 12 * EMB + len(BAGS) * EMB + SEL_DENSE
+        if extra:                       # the v4 block, appended (features.py)
+            in_state += N_EXTRA + N_XSLOT * EMB
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
         in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
-                opt_dense, opt_card, opt_atk, opt_tgt, opt_row):
+                opt_dense, opt_card, opt_atk, opt_tgt, opt_row,
+                xdense=None, xslots=None):
         parts = [dense, self.slot_emb(slots).flatten(1)]
         for name in BAGS:
             parts.append(self.bag_emb(bag_flat[name], bag_off[name]))
         parts.append(seld)
+        # v4 goes LAST so that `--no-extra` reproduces the v3 state vector
+        # byte-for-byte on the identical rows -- the same control discipline as
+        # `--opt-cols 25` for the option block.
+        if self.extra:
+            parts.append(xdense)
+            parts.append(self.slot_emb(xslots).flatten(1))
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
         # Slice to `opt_cols`. The v3 target block is APPENDED to the v2 layout,
         # so `--opt-cols 25` trains the exact v2-feature control on the identical
@@ -154,6 +164,7 @@ def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
 class Data:
     def __init__(self, paths: list[Path]):
         sd, slots, seld, gid, won, rating = [], [], [], [], [], []
+        xd, xs = [], []
         od, oc, oa, ot, om = [], [], [], [], []
         self.opt_rows: list[tuple[int, int]] = []  # (start,end) per row
         # ⚠ Bags are kept FLAT (one array + one offset array per bag), exactly
@@ -170,6 +181,12 @@ class Data:
             sd.append(z["dense"])
             slots.append(z["slots"])
             seld.append(z["seld"])
+            # Corpora built before day 12 have no v4 block; zeros keep them
+            # loadable, and `--extra` on such a corpus is refused in main().
+            xd.append(z["xdense"] if "xdense" in z
+                      else np.zeros((n, N_EXTRA), dtype=np.float32))
+            xs.append(z["xslots"] if "xslots" in z
+                      else np.zeros((n, N_XSLOT), dtype=np.int32))
             gid.append(z["gid"])
             won.append(z["won"])
             # Corpora built before `--ratings` have no per-row demonstrator.
@@ -193,6 +210,9 @@ class Data:
         self.dense = np.concatenate(sd)
         self.slots = np.concatenate(slots).astype(np.int64)
         self.seld = np.concatenate(seld)
+        self.xdense = np.concatenate(xd)
+        self.xslots = np.concatenate(xs).astype(np.int64)
+        self.has_extra = all("xdense" in np.load(p) for p in paths)
         self.gid = np.concatenate(gid)
         self.won = np.concatenate(won)
         self.rating = np.concatenate(rating)
@@ -250,7 +270,9 @@ class Data:
                    torch.from_numpy(self.opt_chosen[opt_idx]),
                    spans,
                    torch.from_numpy(self.w[sel]),
-                   sel)
+                   sel,
+                   torch.from_numpy(self.xdense[sel]),
+                   torch.from_numpy(self.xslots[sel]))
 
 
 def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
@@ -328,6 +350,10 @@ def main() -> int:
                     help="per-option feature columns to use. Default = all "
                          f"({OPT_DENSE}). Pass {OPT_DENSE_V2} to train the "
                          "v2-feature CONTROL on identical rows (ROADMAP B1).")
+    ap.add_argument("--no-extra", action="store_true",
+                    help="ignore the v4 state block (features.extra_feats). "
+                         "This is the day-12 CONTROL: identical rows, "
+                         "identical recipe, the v3 state vector byte-for-byte.")
     args = ap.parse_args()
     if not 1 <= args.opt_cols <= OPT_DENSE:
         raise SystemExit(f"--opt-cols must be in 1..{OPT_DENSE}")
@@ -378,12 +404,16 @@ def main() -> int:
 
     state_h = tuple(int(x) for x in args.state_h.split(","))
     head_h = tuple(int(x) for x in args.head_h.split(","))
+    if not args.no_extra and not data.has_extra:
+        raise SystemExit(f"{args.ds} was built before the v4 state block; "
+                         "rebuild it or pass --no-extra")
     model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
-                      opt_cols=args.opt_cols)
+                      opt_cols=args.opt_cols, extra=not args.no_extra)
     if args.init:
         load_init(model, ROOT / args.init)
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
+          f"extra={not args.no_extra} "
           f"params={sum(p.numel() for p in model.parameters())}")
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
                             weight_decay=args.wd)
@@ -398,9 +428,10 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             spans, rw, _sel) = batch
+             spans, rw, _sel, xd, xs) = batch
             opt.zero_grad()
-            out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow)
+            out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow,
+                        xd, xs)
             loss = torch.zeros((), dtype=out.dtype)
             wrow = rw if args.rating_temp > 0 else None
             if args.loss in ("bce", "both"):
@@ -422,9 +453,9 @@ def main() -> int:
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
                 (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-                 spans, _rw, vsel) = batch
+                 spans, _rw, vsel, xd, xs) = batch
                 out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
-                            orow).numpy()
+                            orow, xd, xs).numpy()
                 om = om.numpy()
                 pos = 0
                 for j, (a, b) in enumerate(spans):
