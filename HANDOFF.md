@@ -215,10 +215,26 @@ distrust it: mined episodes are the top-1150 band, and
 
 > # 🔴 THE DAY-15 HEADLINE: THE "META SHIFT" IS OUR OWN CLIMB, AND IT RE-PRICES EVERY WEIGHTED VERDICT IN THIS REPO
 >
-> ⚡ **RANK 185 / 6,103 AT 955.1 — our best ever** (read 16:06 UTC; v5 `55160229`
-> **955.1**, v4 `55156480` **914.9**, both active, both ≥5 h old). ⚠ **One
-> reading — rule 2 needs a second ≥1 h later before this is quotable**, and v5
-> was 5.4 h old at the read while v4 was 8.9 h, so they are not equally settled.
+> ⚡ **RANK 185 / 6,103 AT 955.1 — our best ever, and ✅ RULE 2 IS SATISFIED FOR
+> THE FIRST TIME ON A NET PAIR.** Two readings 61 minutes apart, and they agree:
+>
+> | submission | 16:06 UTC | 17:07 UTC | age at 2nd |
+> |---|---|---|---|
+> | **`55160229` v5** | **955.1** | **955.1** | 6.5 h |
+> | `55156480` v4 | 914.9 | **914.6** | 9.9 h |
+>
+> **Both converged, both active, same time — the only comparison rule 2 permits,
+> and this project has never had one for two nets before.** v5 is **+40.5**.
+>
+> 🔴 **It still does not adjudicate §8aa, and saying so is the point.** The arena
+> put v5 at **+14 Elo** (**+13.8 re-weighted**, §8ac), and rule 2's second clause
+> is that **the LB cannot resolve an effect that size at all** — it confirmed
+> `chip_target` at ~150 points and could never have adjudicated `counter_source`
+> at ~12. The ladder agreeing in *sign* at ~3× the magnitude is consistent with
+> §8i's calibration (the arena ranks matchups right and reads optimistic) and
+> with §8ab's compression caveat; it is **not** independent confirmation.
+> ⚠ Minor: v5 read **exactly** 955.1 twice, which more likely means few rated
+> games in that hour than a perfectly stable rating. v4 moved 0.3.
 >
 > **The supplied replays answered day-15 item 2, and the answer was not the one
 > the item expected.** Pooled over v4+v5 (75 games) the field looks transformed
