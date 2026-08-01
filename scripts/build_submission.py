@@ -79,8 +79,47 @@ else:
     _agent = _A(_deck)
 
 
+# --- health logging (day 15) -------------------------------------------------
+# Kaggle keeps our own submission's stdout, and until now we printed NOTHING on
+# the happy path, so the logs were empty. The thing worth the bytes is whether
+# the NET IS ACTUALLY LIVE: `bcagent.__call__`'s catch-all returns
+# `range(minCount)` -- index order -- and a submission running that on every
+# decision still returns legal moves, still finishes games and still gets a
+# rating, so it looks normal from outside. EVIDENCE 8g had to infer the net was
+# live from a 40.7% index-0 rate; this makes it a direct read.
+#
+# Discipline: ONE line per game (the deck handshake fires once per game), plus a
+# heartbeat every 1000 selects so a single long episode still reports, plus a
+# one-shot line the first time the fallback ever fires. Never per-decision.
+#
+# EVERYTHING here is wrapped: a logging bug must never be able to break the
+# agent, which would trade a real rating for a diagnostic.
+#
+# ⚠ MAIN_PY is a str.format() template -- every literal brace below is doubled.
+_LOG = {{"next": 0, "failed": False}}
+
+
+def _log_health(force=False):
+    try:
+        from sa import bcagent as _bc
+        s = _bc.STATS
+        if s["fallbacks"] and not _LOG["failed"]:
+            _LOG["failed"] = True
+            print("[health] FIRST FALLBACK -- net path raised; now playing "
+                  "index order", flush=True)
+            print(str(s["first_error"])[:1500], flush=True)
+            return
+        if force or s["calls"] >= _LOG["next"]:
+            _LOG["next"] = s["calls"] + 1000
+            print(_bc.health_line(), flush=True)
+    except Exception:
+        pass
+
+
 def agent(obs):
-    return _agent(obs)
+    out = _agent(obs)
+    _log_health(force=obs.get("select") is None)
+    return out
 '''
 
 SMOKE = r'''

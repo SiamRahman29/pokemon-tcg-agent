@@ -3336,6 +3336,132 @@ the measured seed deviation (0.018) is **larger than the v5 block's real effect
 python -X utf8 scripts/p21_rl_variance_probe.py --boot 1500
 ```
 
+## 8af. 🃏 WOULD SWAPPING A CARD BREAK THE CLONE? The exposure audit, and it makes deck work SAFE-ISH rather than forbidden (2026-08-02, day 15)
+
+**The user's question, and it is the right one:** *"Would changing a card
+dramatically decrease our strength because the agent wouldn't know how to play
+that new card?"* Track C has carried this as a hand-waved caveat since day 8
+("every change is off-distribution for the net"). It has a mechanism, so it is
+measurable. `scripts/p22_deck_change_risk.py`.
+
+### The mechanism: a card is encoded TWICE, and only one channel is fragile
+
+| channel | what it carries | behaviour on an unseen card |
+|---|---|---|
+| **derived properties** | HP, max HP, damage fraction, stage, ex/megaEx/tera, retreat cost, prize value, attached energy, cost satisfaction, `best_estimated_damage` (`features._slot_feats`, `optfeat` 25..36) | ✅ **computed from the card DB, correct on first sight** |
+| **card-id embeddings** | `slot_emb`, `bag_emb`, `card_emb` (1300×16), `atk_emb` (1600×16) | 🔴 **random init — pure noise** |
+
+### The measurement
+
+**The training corpus contains exactly 134 distinct card ids.** So **1,166 of
+the 1,300 rows in each of the three embedding tables never received a gradient
+and are still random initialisation.** A card outside those 134 injects three
+random 16-dimensional vectors into the sums the net reads.
+
+⚡ **But the 134 are not our 60 — they are the FIELD's cards.** The corpus is
+2,810 games of many demonstrators on many archetypes, and every one of the 134
+was at some point *the acting player's own option* (1,345,021 occurrences). So
+the net has chosen Mega Kangaskhan ex, Latias ex, Ultra Ball, Crispin, Area Zero
+Underdepths and 129 others **from the driving seat**, despite none being in our
+list.
+
+**And the bar for "well known" is lower than it looks.** Our own least-offered
+cards, by how often *we* were given them as a choice:
+
+| our card | as OUR option | anywhere |
+|---|---|---|
+| Tool Scrapper | **2,820** | 41,753 |
+| Unfair Stamp | 6,197 | 126,306 |
+| Pokégear 3.0 | 7,759 | 157,345 |
+
+⇒ **A swap-in with ≥ ~3,000 "as our option" occurrences is no more
+off-distribution than Tool Scrapper, which we play today.**
+
+### The verdict, and it is conditional rather than a yes or a no
+
+1. ✅ **Swapping to a card inside the 134 is low risk.** Both channels are
+   populated and the exposure is comparable to cards we already run.
+2. 🔴 **Swapping to a card outside the 134 is the real hazard** — the user's
+   worry is correct *for that case*, and it is the case to avoid.
+3. ⚠ **Exposure is necessary, not sufficient.** It says the net has seen the
+   card, not that it plays it well. **Any real swap still needs an arena A/B at
+   n≥2000 against the §8ac-re-weighted anchors, with the seed floor carried in.**
+
+### 🔴 A methods failure, the third in two days, and the same shape every time
+
+The first version of this script tried to detect untrained rows **from the net
+alone**: an untrained row sits at its init, so untrained rows should share one
+tight norm. **Measured: seen rows average 4.008 and unseen 3.952, with 1,032 of
+1,166 unseen rows inside the seen rows' 5–95 percentile band.** The heuristic
+separated nothing and the column it printed ("row trained: yes") was meaningless
+for every card in the table — including the ones it marked safe.
+
+The bug: **the init is i.i.d. random, so every untrained row has its OWN random
+norm.** There was never a cluster to find. And the corpus id set was sitting
+right there as ground truth, needing no inference at all.
+
+⇒ **Third instance in two days of the same failure: `p20_recorder_equivalence`
+(a test that could not fail), `p21_rl_variance_probe` (seat-indexed archives
+read as agent-indexed), and this. All three PRINTED CONFIDENT NUMBERS.** The
+standing lesson is now earned three times over: **a check that cannot come out
+the other way is not evidence, and the tell is a column with no variance in it.**
+
+## 8ag. 🃏 POKÉGEAR 3.0: the user is right about the mechanism and the sizing closes it anyway (2026-08-02, day 15)
+
+**The user's observation:** *"Pokégear lets us see 7 cards and pick one. I see
+that we are picking cards but I don't think we have any mechanism of using the
+knowledge."* `scripts/p23_pokegear_audit.py`, over our **75 real ladder games**.
+
+**The mechanism claim is correct.** `features.BAG_NAMES` is `slots`, `my_hand`,
+`my_discard`, `opp_discard`. **There is no bag for "cards I have seen in my
+deck"**, and `optfeat` reads the `looking` zone (area 12) only while the select
+is open. Once it closes, the 5.3 non-Supporter cards we saw per look — 207 over
+39 looks — are gone.
+
+⚠ **But the card destroys most of that value itself:** *"Shuffle the other cards
+back into your deck."* The ordering is randomised by the card, not lost by our
+encoding. What a perfect player retains is only *"these cards are in my deck,
+therefore not prized"* — real, and far smaller than "I know my next draws".
+
+### And the decision itself is already played correctly
+
+⚡ **The engine PRE-FILTERS the options to the Supporters found in the top 7**
+(options are `{"area": 12, "index": N, "type": 3}` naming only Supporters), and
+`optfeat._card_at` resolves area 12, **so the net does see which Supporters are
+on offer.** `minCount=0`, so declining is legal.
+
+| | count | share |
+|---|---|---|
+| Pokégear selects | **39** over 75 games | **0.52 / game** |
+| FORCED (1 Supporter offered — nothing can go wrong) | 19 | 48.7% |
+| **REAL CHOICE (2+ offered)** | **20** | 51.3% |
+| **took a Supporter** | **39 / 39** | **100%** |
+| declined | **0** | — |
+
+✅ **We never decline a free Supporter.** That is the *dominated* half of the
+card (rule 11's good column, where rules have gone 3 for 3) and it is already
+100% right, so **no rule can buy anything there.**
+
+🔴 **And the remaining half is closed by sizing (rule 14): 0.27 real choices per
+game.** The Morgrem out was closed **without spending an A/B** at ~0.2
+firings/game (§8e), and an n=2000 arena A/B resolves ~0.021 of win rate. Which
+Supporter to take is also a **tradeoff**, not a dominated choice — rule 11's bad
+column, 0 for 4.
+
+⇒ **Nothing to build here.** When 2+ were offered we took Lillie's Determination
+12×, Boss's Orders 4×, Petrel 4×, and passed Petrel 14× — whether that
+preference is right is exactly the judgment the net has watched 2,810 games of
+humans make.
+
+⚠ **This does NOT answer whether the 1-of Pokégear earns its slot** — that is a
+deck question, not a play question, and it needs an A/B. §8af says such an A/B
+is now safe to run provided the replacement is one of the 134 known cards.
+
+```powershell
+python -X utf8 scripts/p22_deck_change_risk.py --net out/policy_v5.npz
+python -X utf8 scripts/p23_pokegear_audit.py
+```
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
