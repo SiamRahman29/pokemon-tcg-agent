@@ -211,7 +211,103 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 15 PLAN (set 2026-08-01 late; user-directed. The goal is to WIN)
+### ▶ START HERE — DAY 15 (in progress 2026-08-01; user-directed. The goal is to WIN)
+
+> # 🔴 THE DAY-15 HEADLINE: THE "META SHIFT" IS OUR OWN CLIMB, AND IT RE-PRICES EVERY WEIGHTED VERDICT IN THIS REPO
+>
+> ⚡ **RANK 185 / 6,103 AT 955.1 — our best ever** (read 16:06 UTC; v5 `55160229`
+> **955.1**, v4 `55156480` **914.9**, both active, both ≥5 h old). ⚠ **One
+> reading — rule 2 needs a second ≥1 h later before this is quotable**, and v5
+> was 5.4 h old at the read while v4 was 8.9 h, so they are not equally settled.
+>
+> **The supplied replays answered day-15 item 2, and the answer was not the one
+> the item expected.** Pooled over v4+v5 (75 games) the field looks transformed
+> since day 9 — the **mirror 13.8% → 33.3%** (Fisher **p=0.002**), **Mega Lucario
+> 12.8% → 4.0%**, win rate 63.0% → 70.7%. **But hold the opponent-rating band
+> fixed and every era difference vanishes** (all Fisher p ≥ 0.065, n=181 games
+> over four dumps). What actually moved is **us**: mean opponent rating **799 →
+> 867**, tracking our own 820 → 955.
+>
+> | archetype | opp <800 | 800–900 | 900–1000 | 1000+ |
+> |---|---|---|---|---|
+> | **mirror** | 5.3% | 18.6% | **42.4%** | **71.4%** |
+> | Alakazam | 13.3% | 28.8% | 33.3% | 14.3% |
+> | Crustle | 16.0% | 5.1% | 9.1% | 7.1% |
+> | **Mega Lucario** | 17.3% | 6.8% | **0.0%** | **0.0%** |
+> | **Archaludon** | 10.7% | 15.3% | **0.0%** | **0.0%** |
+>
+> 🔴 **The opponent pool is not a population we sample — it is a function of our
+> own rating, and it moves when we do.** Every anchor weight in this repo carries
+> an invisible parameter: the score we held when the census was taken. **Rule 16's
+> sampling-frame trap, committed a second time, on our own data.** `EVIDENCE` §8ac.
+>
+> **Re-weighted, measurements untouched — only the shares change:**
+>
+> | verdict | day-9 weights | **day-15 weights** |
+> |---|---|---|
+> | §8i `v3 − P4b` | +35.6 | **+62.1** |
+> | §8j **rules ON − OFF** | **+0.8** | **−18.1** 🔴 **sign flip** |
+> | §8z `v4 − v3` | +23.4 | +24.8 |
+> | §8aa `v5 − v4` | +10.2 | +13.8 |
+>
+> ✅ **Nothing shipped has to change** — the v5 bundle already pins
+> `chip_targeting/energy_spread/counter_source = False` (verified by reading
+> `main.py` out of the tarball). **§8j's "the rules are worth nothing" was the
+> right call for ~18× weaker reasons than the true ones.**
+>
+> ⚡ **AND IT RESOLVES A STANDING CONTRADICTION INSTEAD OF CREATING ONE.** §8b
+> (mined ≥1144 band) said **52.1% of seats play our archetype**; §8i (our games at
+> ~820) said the mirror is **13.8%**; day 9 filed these as irreconcilable. **They
+> are two points on one monotone curve and we have been walking up it.**
+>
+> #### What this changes for the remaining 16 days
+>
+> 1. ⛔ **Track C's Archaludon lead is CLOSED BY SIZING, before it was built**
+>    (rule 14). Promoted on "10.1% of the field and our worst matchup"; it is
+>    **8.0% overall and 0 of 47 games above rating 900**. Same for B3's Mega
+>    Lucario instance (**4.0%**) and, more mildly, Crustle (6.7%).
+> 2. ⚡ **THE MIRROR IS THE MATCHUP THAT MATTERS AND GETS MORE SO AS WE CLIMB** —
+>    33.3% now, **51.1% above 900**, 71.4% above 1000. It is also what our
+>    head-to-head net A/Bs already measure, so **our most sensitive instrument is
+>    now also our most representative one.** Weight it accordingly.
+> 3. ⚠ **Two archetypes have no anchor and now outrank two that do:** Cynthia's
+>    Garchomp ex **6.7%** + Dragapult ex **5.3%** = 12.0%, against Crustle +
+>    Lucario's 10.7%. `decks/dragapult_ex.py` already exists.
+>
+> ✅ **ITEM 4 IS BUILT AND VERIFIED: `harness.Recorder`.** Optional recorder on
+> `play_game`; `visualize_data()` output is byte-compatible with Kaggle replays,
+> so recorded local games are read **unmodified** by `p9_field_census.py`,
+> `build_policy_dataset.py` et al., and watchable in `notebooks/visualizer.html`.
+> `scripts/p20_record_games.py` (CLI), `scripts/p20_recorder_equivalence.py`
+> (12/12 exact checks). 🔴 **Its first version was a test that could not have
+> failed** — it demanded identical games run-to-run, but `battle_start` takes no
+> seed. **Before trusting an equivalence test, ask what would have counted as
+> success.** `EVIDENCE` §8ad.
+> 📼 **Ready to watch:** `out/replays/v5_vs_alakazam`, `out/replays/anchor_vs_anchor`
+> (⚠ one anchor-vs-anchor game ran **39 turns** against 11 and 11 — first thing to
+> explain in the item-6 audit).
+>
+> ⚡ **ITEM 5 RAN, AND RL SURVIVED ITS OWN KILL CRITERION.** The probe cost zero
+> new games — four archives already carry pairs of known separation.
+> **Throughput 5.96 games/s per process ⇒ ~5.5M games to the deadline.**
+> Detecting §8z's +37 Elo from outcomes takes **800 games (0.015% of budget)**;
+> resolving a **1-percentage-point** effect at a single select's context takes
+> **960 games** if that context recurs ~20×/game (201 selects/game).
+> 🔴 **So the credit-assignment objection — the last one standing after §8x
+> narrowed the encoding argument — does not bind. It dies with a NUMBER, which
+> is what §2 never had.** `EVIDENCE` §8ae.
+> ⛔ **This is NOT a licence to build.** B4 passed all three of its kill criteria
+> and then died at n=200. The model prices one context in isolation and ignores
+> non-stationarity and shared parameters; training cost is not priced at all;
+> and the nearest real measurement (`--winners-only` 0.375) still points the
+> wrong way. **The next step is the smallest real thing: fine-tune a SMALL
+> parameter set on our own recorded outcomes, A/B at n≥2000 vs a byte-identical
+> control with the seed floor carried in.**
+> ⚠ **Its first run was garbage in an instructive way:** arena archives are
+> **seat-indexed and the seats swap every game**, so reading seat 0 as agent A
+> averaged both agents together. It reported +37 as undetectable and +14 as
+> detectable. **A bug that biases everything toward the null looks like a
+> finding, not a crash.**
 
 > ## 📍 THE SITUATION AT THE TOP OF DAY 15
 >
@@ -344,14 +440,27 @@ distrust it: mined episodes are the top-1150 band, and
      diminishing-returns curve (+115 → +37 → +14) — a better chapter than a
      fourth null.
    - **C. Track C deck work — 20% of the rubric and NOW FOUR SESSIONS UNTOUCHED.**
-     Only one decklist variant has ever been A/B'd (0.490, null). Concrete lead:
-     Archaludon runs **Full Metal Lab ×4 (card 1244), a stadium**; we run
-     **Spikemuth Gym ×4 (1259)**, so playing ours removes theirs — and
-     `WALL_POKEMON = {345}` does not model Full Metal Lab's damage reduction at
-     all. **Audit before rule (rule 14):** how often do we hold Spikemuth Gym
-     while Full Metal Lab is in play? Archaludon is **10.1% of the field and our
-     worst real matchup (45.5% over 11 games)**, and both v4 (+7) and v5 (−6)
-     barely move there.
+     Only one decklist variant has ever been A/B'd (0.490, null).
+     🔴 **ITS CONCRETE LEAD DIED ON DAY 15, BY SIZING, BEFORE ANYTHING WAS
+     BUILT — and that is rule 14 working, not a setback.** The lead was:
+     Archaludon runs **Full Metal Lab ×4 (card 1244)**, we run **Spikemuth Gym
+     ×4 (1259)**, and `WALL_POKEMON = {345}` models neither. It was promoted on
+     *"Archaludon is 10.1% of the field and our worst real matchup"*. **At our
+     current rating Archaludon is 8.0% of the field and 0 of 47 games above
+     rating 900** (§8ac) — the tech would serve a band we are leaving. ⛔ Do not
+     build it. **Same sizing kills B3's Mega Lucario instance (4.0%, also 0/47
+     above 900).**
+     ⚡ **What Track C should aim at instead, in order:**
+     1. **The MIRROR — 33.3% of our field, 51.1% above rating 900, and rising
+        with every point we gain.** A deck edge in the mirror is worth more than
+        one anywhere else on the board, and it is the matchup our A/Bs measure
+        best. Nobody has ever asked what beats our own 60.
+     2. **Cynthia's Garchomp ex (6.7%) and Dragapult ex (5.3%)** — 12.0%
+        together, more than Crustle + Lucario, and **neither has an anchor**.
+        `decks/dragapult_ex.py` already exists; the pilot notebook is in
+        `notebooks/`. Build the anchor before the deck opinion (rule 12).
+     3. **The stewardship write-up is owed either way** — "we measured a change
+        and kept the list" is deck analysis, and this closure is exactly that.
    - **D. `report/STRATEGY.md` — one edit per session, minimum.** §6 (opponent
      modelling) is still *in progress*; §8 needs the v5 entry. ⚡ **Day 14 already
      handed it a chapter for free: the self-play retraction belongs in §5's

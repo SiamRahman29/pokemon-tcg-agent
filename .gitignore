@@ -17,6 +17,11 @@ artifacts/**
 # --- Arena game archive (local measurement data, grows per run) ---
 out/arena/
 
+# --- Recorded local games (harness.Recorder, ~2-3 MB each and regenerable
+#     with scripts/p20_record_games.py; the LB snapshot beside them is NOT
+#     regenerable and stays tracked) ---
+out/replays/
+
 # --- Net checkpoints / experiment scratch (the shipped nets live in agents/sa/) ---
 out/*.npz
 

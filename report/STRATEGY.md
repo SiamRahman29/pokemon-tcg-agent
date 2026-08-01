@@ -389,6 +389,76 @@ against an agent that had not converged, inside the instrument's own ±50–100.
 **We report this because the correction is the finding.** Two days of work were
 directed at explaining a contradiction that largely did not exist.
 
+### 5.5 Failure four: the census we built to fix §5.2 had the same flaw
+
+§5.2 ends on a fix — stop mining a censored public dataset, census your *own*
+replays instead — and coverage duly went from 39.4% to 71.5% of the field. **We
+then used those shares to weight every arena verdict for six days without once
+asking what determined them.**
+
+They were determined by our own rating.
+
+The competition matches you against opponents near your own score. So the
+opponent pool is **not a fixed population being sampled** — it is a function of
+where you sit, and it moves when you move. Our census was taken at ~820. By day
+15 we were at 955, and the same measurement on 75 fresh games looked like a
+metagame upheaval:
+
+| archetype | census at ~820 (n=54) | census at ~955 (n=75) | Fisher *p* |
+|---|---|---|---|
+| the **mirror** (our own archetype) | 13.8% | **33.3%** | **0.002** |
+| Alakazam | 22.0% | 21.3% | 1.000 |
+| Crustle | 12.8% | 6.7% | 0.222 |
+| Mega Lucario | 12.8% | 4.0% | 0.067 |
+| Archaludon | 10.1% | 8.0% | 0.797 |
+
+**It is not an upheaval.** Bucketing all 181 rated games we have by *opponent
+rating* rather than by date shows a clean monotone structure, and **holding the
+band fixed, not one archetype differs significantly between the two eras** (all
+*p* ≥ 0.065):
+
+| archetype | opp <800 | 800–900 | 900–1000 | 1000+ |
+|---|---|---|---|---|
+| **mirror** | 5.3% | 18.6% | **42.4%** | **71.4%** |
+| Mega Lucario | 17.3% | 6.8% | **0.0%** | **0.0%** |
+| Archaludon | 10.7% | 15.3% | **0.0%** | **0.0%** |
+
+The decks we had built our counter-meta program around are **0 for 47 above
+opponent rating 900.** They were never the metagame; they were the metagame
+*beneath us*, and we were climbing away from them while tuning against them.
+
+**What it cost, quantified.** Re-weighting our four headline verdicts with
+band-correct shares — the measurements untouched, only the weights changed —
+moves one of them across zero:
+
+| verdict | as published | re-weighted |
+|---|---|---|
+| feature-block generations | +35.6 / +23.4 / +10.2 | +62.1 / +24.8 / +13.8 |
+| **"our handcrafted rules are worth nothing globally"** | **+0.8 Elo** | **−18.1 Elo** |
+
+That verdict rested on an almost exact cancellation: a **−51 Elo** loss in the
+mirror at an assumed 13.8% weight against a **+47 Elo** gain versus Mega Lucario
+at 12.8%. The true weights are **33.3%** and **4.0%**. The cancellation was an
+artifact of the wrong denominator, and the rules are not neutral — they are
+**actively harmful at the level we now play.** (We had already disabled them, on
+narrower mirror-only evidence. The right call for the wrong reason is still a
+process failure.)
+
+**And the correction dissolved a contradiction we had recorded as unresolvable.**
+§5.2 reports mined data saying 52.1% of high-rated seats play our archetype,
+while our own census said the mirror was 13.8% — filed as proof that mined data
+"can never describe our field". Both numbers are right. They are two points on
+one curve, and the whole disagreement was the 300 rating points between where
+they were measured.
+
+> **The transferable lesson, and it is the sharper form of §5.2's.** There, the
+> sampling frame was chosen by someone else and we failed to ask what it
+> excluded. Here we chose the frame ourselves, fixed the first bug, and still
+> failed — because **the parameter that governed it was our own success.** Any
+> measurement taken on a ladder is conditioned on your position in it. If your
+> agent improves, your evaluation set changes underneath you, and every weight
+> derived from it silently expires.
+
 ---
 
 ## 6. Robustness and consistency *(in progress)*

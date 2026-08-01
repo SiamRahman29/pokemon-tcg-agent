@@ -6,9 +6,11 @@ the observation dict and returns option indices (or the 60-card deck when
 """
 from __future__ import annotations
 
+import json
 import math
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Callable
 
 from ptcg.env import sdk
@@ -16,6 +18,97 @@ from ptcg.env import sdk
 Agent = Callable[[dict], list[int]]
 
 MAX_SELECTS = 6000  # runaway-game guard
+
+
+class Recorder:
+    """Capture a game in Kaggle's own replay format. OPT-IN, off by default.
+
+    **Why this exists (day 15).** `scripts/arena.py` archives one summary row
+    per game -- winner, turns, selects, latency, pool. No observations, no
+    actions, no trajectories. So after fifteen days there was nothing to watch
+    and nothing to learn from: the anchors that carry 71.5% of every weighted
+    verdict in this repo had never been observed playing a single turn, and an
+    RL probe had no data source at all.
+
+    ⚡ **The payoff is that the format is not ours.** `cg.game.visualize_data()`
+    emits exactly the structure Kaggle puts at `steps[0][0]["visualize"]` in a
+    downloaded replay, and attaching `obs`/`action` per step is what the
+    engine's own notebook does. So a recorded local game is readable by
+    **every replay tool already in this repo** -- `p9_field_census.py`,
+    `p5a_replays.py`, `build_policy_dataset.py`, `p16_policy_disagree.py` --
+    with no adapter, and by the official viewer at `ptcgvis.heroz.jp` via
+    `notebooks/visualizer.html`.
+
+    ⚠ `visualize_data()` must be called BEFORE `battle_finish()`; the engine is
+    a single-battle-at-a-time ctypes wrapper and finishing frees the buffer.
+
+    ⚠ The `info.TeamNames` / `rewards` keys are what the replay tools key on to
+    find "our" seat, so `dump()` writes them even though a local game has no
+    teams -- pass `names=` to make a recording addressable by those tools.
+    """
+
+    def __init__(self, names: tuple[str, str] = ("seat0", "seat1"),
+                 keep_obs: bool = True):
+        self.names = names
+        self.keep_obs = keep_obs
+        # index 0 is the pre-battle state, which has no action -- the engine's
+        # notebook seeds both logs with a placeholder and so do we, otherwise
+        # every obs is off by one against the visualize stream.
+        self.obs_log: list = [""]
+        self.action_log: list = [None]
+        self.seat_log: list = [None]
+        self.vis: list | None = None
+        self.result: GameResult | None = None
+
+    def on_select(self, obs: dict, who: int, action: list[int]) -> None:
+        if self.keep_obs:
+            # `search_begin_input` is the engine's internal scratch and is by
+            # far the largest key; the notebook drops it and nothing reads it.
+            rec = {k: v for k, v in obs.items() if k != "search_begin_input"}
+        else:
+            rec = ""
+        self.obs_log.append(rec)
+        self.action_log.append(list(action))
+        self.seat_log.append(who)
+
+    def capture(self, game) -> None:
+        """Pull the engine's visualize stream. Call before `battle_finish()`."""
+        try:
+            self.vis = json.loads(game.visualize_data())
+        except Exception:  # noqa: BLE001 -- a recording must never fail a game
+            self.vis = None
+
+    def to_replay(self) -> dict:
+        """The Kaggle-shaped replay dict: steps[0][0]['visualize'] + info."""
+        vis = list(self.vis or [])
+        for i in range(len(vis)):
+            if i < len(self.obs_log):
+                vis[i]["obs"] = self.obs_log[i]
+                # the viewer expects one action per seat; the notebook writes
+                # the same list twice and the renderer picks by seat.
+                a = self.action_log[i]
+                vis[i]["action"] = [a, a]
+        r = self.result
+        rewards = [0, 0]
+        if r is not None and r.winner in (0, 1):
+            rewards = [1, 0] if r.winner == 0 else [0, 1]
+        return {
+            "steps": [[{"visualize": vis}]],
+            "rewards": rewards,
+            "info": {"TeamNames": list(self.names)},
+            "ptcg_local": {          # our own metadata, ignored by the viewer
+                "winner": None if r is None else r.winner,
+                "turns": None if r is None else r.turns,
+                "selects": None if r is None else r.selects,
+                "seats": self.seat_log,
+            },
+        }
+
+    def dump(self, path: str | Path) -> Path:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(self.to_replay()), encoding="utf-8")
+        return p
 
 
 @dataclass
@@ -33,8 +126,18 @@ class GameResult:
 
 
 def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
-              deck1: list[int]) -> GameResult:
-    """One full game. agentN plays seat N. Decks are dealt by the engine."""
+              deck1: list[int], recorder: "Recorder | None" = None
+              ) -> GameResult:
+    """One full game. agentN plays seat N. Decks are dealt by the engine.
+
+    `recorder` is OPT-IN and defaults to None, in which case this function is
+    byte-identical to its pre-day-15 form: the only additions are two `if
+    recorder is not None` guards, so the A/B path pays one predictable branch
+    per select and allocates nothing. Proven a no-op by
+    `scripts/p20_recorder_equivalence.py`, not by the arena -- §8aa's methods
+    rule (the arena is not deterministic run to run and cannot settle a
+    question about whether a refactor changed anything).
+    """
     api = sdk.api()
     game = sdk.game()
 
@@ -52,12 +155,14 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
     times: tuple[list[float], list[float]] = ([], [])
     overage = [600.0, 600.0]  # mirror Kaggle's per-agent thinking pool
     selects = 0
+    result: GameResult | None = None
     try:
         while True:
             state = obs.get("current")
             if state is not None and state["result"] != -1:
-                return GameResult(state["result"], state["turn"], selects,
-                                  times, (overage[0], overage[1]))
+                result = GameResult(state["result"], state["turn"], selects,
+                                    times, (overage[0], overage[1]))
+                return result
             who = state["yourIndex"]
             agent = agent0 if who == 0 else agent1
             obs["remainingOverageTime"] = overage[who]
@@ -66,12 +171,22 @@ def play_game(agent0: Agent, agent1: Agent, deck0: list[int],
             dt = time.perf_counter() - t0
             overage[who] -= dt
             times[who].append(dt * 1000.0)
-            obs = game.battle_select([int(c) for c in choice])
+            picked = [int(c) for c in choice]
+            if recorder is not None:
+                recorder.on_select(obs, who, picked)
+            obs = game.battle_select(picked)
             selects += 1
             if selects > MAX_SELECTS:
-                return GameResult(2, state["turn"], selects, times,
-                                  (overage[0], overage[1]))
+                result = GameResult(2, state["turn"], selects, times,
+                                    (overage[0], overage[1]))
+                return result
     finally:
+        # ⚠ ORDER IS LOAD-BEARING: `visualize_data()` reads a buffer that
+        # `battle_finish()` frees, so the capture happens first or it returns
+        # nothing.
+        if recorder is not None:
+            recorder.result = result
+            recorder.capture(game)
         game.battle_finish()
 
 

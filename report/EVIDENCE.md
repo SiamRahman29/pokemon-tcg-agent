@@ -3027,6 +3027,315 @@ python -X utf8 scripts/arena.py play "bc:no3,net=out/policy_v4_no3.npz,noChip,no
 Archives: `out/arena/p21_v4no{turnAction,effect,stadium,3}_vs_v4.jsonl`,
 `out/arena/p21_v4no3_vs_v4ctrl.jsonl`. Logs: `out/logs/v4_no*_train.txt`.
 
+## 8ac. 🔴 THE "META SHIFT" IS OUR OWN CLIMB — anchor weights are a function of OUR rating, and every weighted verdict in this repo was weighted for a band we have left (2026-08-01, day 15)
+
+**Hypothesis.** The user supplied 8–9 h of replays for both live submissions
+(`replays/submission_v5`, 46 games; `replays/submission_v4`, 29). Day 15's plan
+asked two questions of them: *has our field composition moved* — it drives every
+anchor weight in this repo — and *does v5 face a different field than v4*, which
+it should not, since the two agents play the same 60 cards.
+
+**Both answers came back "yes", and the second one is what explains the first.**
+
+### Result 1 — the pooled census has moved a long way from day 9
+
+`p9_field_census.py --dir replays/submission_v4 replays/submission_v5`, 75 games:
+
+| archetype | day 9 (`submission_optv3`, n=54) | day 15 (v4+v5, n=75) | Fisher p |
+|---|---|---|---|
+| **Marnie's Grimmsnarl ex** (the **mirror**) | 13.8% | **33.3%** | **0.002** |
+| `rule:alakazam5` | 22.0% | 21.3% | 1.000 |
+| `rule:crustle` | 12.8% | 6.7% | 0.222 |
+| `rule:v10` (Mega Lucario) | 12.8% | **4.0%** | 0.067 |
+| `rule:archaludon` | 10.1% | 8.0% | 0.797 |
+
+Our win rate over the same games rose **63.0% → 70.7%**. On its face this is a
+meta shift: the mirror has more than doubled and Mega Lucario has collapsed.
+
+### Result 2 — 🔴 but it is not a shift in the meta, it is a shift in US
+
+The two dumps are the same agent architecture on the same 60 cards, 3½ hours
+apart, and **their opponents are drawn from the same strength pool** — mean
+rating **860 (v5)** vs **878 (v4)**, medians 877 and 882. So the difference
+between the two dumps cannot be a rating-band effect *between them*. But
+between **day 9 and day 15** we climbed from ~820 to 915–955, and the mean
+opponent rating went **799 → 867** with us.
+
+`scripts/p19_field_drift.py` runs the discriminator: bucket all 181 rated games
+from all four of our dumps by **opponent rating** and read the shares along that
+axis instead of along time.
+
+| archetype | opp <800 (n=75) | 800–900 (n=59) | 900–1000 (n=33) | 1000+ (n=14) |
+|---|---|---|---|---|
+| **mirror** | 5.3% | 18.6% | **42.4%** | **71.4%** |
+| Alakazam | 13.3% | 28.8% | 33.3% | 14.3% |
+| Crustle | 16.0% | 5.1% | 9.1% | 7.1% |
+| **Mega Lucario** | **17.3%** | 6.8% | **0.0%** | **0.0%** |
+| **Archaludon** | 10.7% | 15.3% | **0.0%** | **0.0%** |
+
+⚡ **Mega Lucario and Archaludon are 0 for 47 above rating 900** (≤7.6% by the
+rule of three). The mirror rises monotonically across every bucket.
+
+**And now hold the band fixed and compare the eras** — old = the 07-29 and 07-31
+dumps, new = v4+v5:
+
+| band | n old / new | largest era difference | Fisher p |
+|---|---|---|---|
+| <800 | 59 / 16 | mirror 3.4% → 12.5% | 0.198 |
+| 800–900 | 28 / 31 | mirror 14.3% → 22.6% | 0.513 |
+| 900–1000 | 13 / 20 | Alakazam 53.8% → 20.0% | 0.065 |
+| 1000+ | 6 / 8 | mirror 66.7% → 75.0% | 1.000 |
+
+🔴 **Not one archetype differs significantly between the eras once the band is
+held fixed** — every p ≥ 0.065, and the smallest one points the *opposite* way
+from the pooled table. **The uncontrolled comparison is confounded by our own
+rating, and the confound is the entire effect.**
+
+⇒ **The field did not change its decks. We changed our seat in it.**
+
+### Result 3 — what that costs, re-weighted verdict by verdict
+
+Rule 16 says an arena result is a weighted average over the anchor set and
+nothing else. The weights were measured at ~820 and every verdict since has
+used them. Re-weighting with the band-correct shares (measurements untouched —
+only the shares change):
+
+| verdict | day-9 weights | **day-15 weights** | change |
+|---|---|---|---|
+| §8i `v3 − P4b` | +35.6 | **+62.1** | +26.5 |
+| §8j **rules ON − OFF** | **+0.8** | **−18.1** 🔴 | **−18.9** |
+| §8z `v4 − v3` | +23.4 | +24.8 | +1.5 |
+| §8aa `v5 − v4` | +10.2 | +13.8 | +3.6 |
+
+🔴 **§8j changes sign.** "Turning the rules on globally is worth NOTHING
+(+1 Elo)" rested on a near-exact cancellation between a **−51 Elo mirror loss at
+13.8%** and a **+47 Elo Mega Lucario gain at 12.8%**. At the real weights the
+mirror term is **33.3%** and the Lucario term is **4.0%**, so the cancellation
+collapses and the rules are **−18 Elo — actively harmful, not neutral.**
+
+✅ **This does not change what is shipped, and that is the good news.** The v5
+bundle pins `chip_targeting=False, energy_spread=False, counter_source=False`
+(verified by reading `main.py` out of
+`dist/submission_bc-grimmsnarl-netspolicy_20260801-163829.tar.gz`). The decision
+to ship rules-off was made on §8f's mirror evidence and is now supported ~18×
+more strongly than the table that was used to justify it.
+
+### The general form, and it is the report's methods chapter
+
+Rule 16's deep trap was **"a sampling frame you did not choose is a hypothesis,
+not a fact"** — written after Kaggle's episode datasets turned out to be
+censored below 1055. This is the same error committed with our *own* data:
+
+> 🔴 **The opponent pool is not a fixed population we are sampling. It is a
+> function of our own rating, and it moves when we do.** Every anchor weight in
+> this repo therefore has an invisible parameter — the score we held when the
+> census was taken — and re-deriving the weights is not optional maintenance,
+> it is part of reading any arena number at all.
+
+⚡ **It also resolves a standing tension in these files rather than creating
+one.** §8b mined the ≥1144 band and found **52.1% of seats on our archetype**;
+§8i censused our own games at ~820 and found the mirror at **13.8%**; day 9
+recorded these as a contradiction ("mined meta can NEVER describe our field").
+**They were never in conflict — they are two points on one monotone curve**
+(5.3% → 18.6% → 42.4% → 71.4% → ~52% of *seats* at the very top), and we have
+been walking up it. Both numbers were right about the band they measured.
+
+### Consequences taken
+
+1. **The anchor weights are re-derived** and carry the band they were measured
+   at. Any future weighted total states our score at census time.
+2. **The mirror is now the dominant matchup and gets more so as we climb** —
+   33.3% overall, **51.1% above rating 900**, 71.4% above 1000. It is also the
+   matchup our head-to-head net A/Bs already measure best, so the most sensitive
+   instrument we own is now also the most representative one.
+3. 🔴 **Track C's Archaludon lead is closed by sizing, before it was built**
+   (rule 14). It was promoted on "10.1% of the field and our worst real matchup".
+   It is **8.0% overall and 0 of 47 games above rating 900** — the work would
+   serve a population we are leaving. Same for the Mega Lucario branch (B3
+   instance 2, 4.0%) and, more mildly, Crustle (6.7%).
+4. ⚠ **Two archetypes have no anchor and now outrank two that do:** Cynthia's
+   Garchomp ex **6.7%** and Dragapult ex **5.3%** (12.0% together) against
+   Crustle + Lucario's 10.7%. `decks/dragapult_ex.py` already exists.
+
+⚠ **Honest limits.** n=75 for the new shares (Wilson 95% CIs: mirror
+[23.7%, 44.5%], Lucario [1.4%, 11.1%]); only the mirror and Lucario moves have
+the old share outside the new CI. Opponent ratings come from a snapshot taken
+2026-08-01 16:07 UTC, not from the time each game was played, which blurs the
+bucket assignment for the older dumps — it cannot manufacture a monotone trend,
+but it widens every band boundary.
+
+```powershell
+python -X utf8 scripts/p9_field_census.py --dir replays/submission_v4 replays/submission_v5 `
+    --lb out/lb_snapshot_0801pm.json
+python -X utf8 scripts/p19_field_drift.py --lb out/lb_snapshot_0801pm.json
+```
+
+## 8ad. 🔧 THE TRAJECTORY RECORDER — and a test that could not have failed (2026-08-01, day 15)
+
+**The gap.** `arena.py` archives **one summary row per game** (winner, turns,
+selects, latency, pool — `arena.py:281-294`). No observations, no actions, no
+trajectories. After fifteen days that meant the five anchors carrying **71.5% of
+every weighted verdict in this repo had never been watched playing a single
+turn**, the RL variance probe had no data source, and a losing A/B could not be
+inspected.
+
+**The fix is small because the format is not ours.** `harness.Recorder` +
+`play_game(..., recorder=)`. `cg.game.visualize_data()` emits exactly the
+structure Kaggle puts at `steps[0][0]["visualize"]` in a downloaded replay, and
+attaching `obs`/`action` per step is what the engine's own notebook does
+(`notebooks/how-to-output-local-battle-as-json-and-view.ipynb`). So a recorded
+local game is read **unmodified by every replay tool already in this repo** —
+`p9_field_census.py`, `p5a_replays.py`, `build_policy_dataset.py`,
+`p16_policy_disagree.py` — and by the official viewer through
+`notebooks/visualizer.html`. ⚠ `visualize_data()` must be called **before**
+`battle_finish()`, which frees the buffer.
+
+### 🔴 The methods lesson: the first equivalence test was worthless
+
+§8aa's rule was *"when a refactor is supposed to be a no-op, prove it with an
+equivalence test, not the noisy end-to-end instrument"*. The first version of
+`p20_recorder_equivalence.py` obeyed the letter of that and broke it anyway: it
+played each game twice, once with `recorder=None` and once with a `Recorder`,
+and demanded identical action streams. **All four games "failed", diverging at
+select 2–4.**
+
+The recorder was fine. **`cg.game.battle_start` takes no seed** — the engine
+shuffles internally, so two consecutive games diverge no matter what, and §8aa
+had *already recorded this* ("match 0 was 15 turns in one run and 11 in the
+next"). ⇒ **A test that cannot pass for the reason you are testing is not
+evidence, and neither is one that cannot fail.** It is rule 9 — *a metric that
+never prints is not a metric that passed* — one level up: **before trusting an
+equivalence test, ask what result would have looked like success.**
+
+**The rewrite tests only claims that can be made exact, per game:**
+
+| check | how | 12/12 games |
+|---|---|---|
+| the tap is **faithful** | wrap `game.battle_select`; the args the **engine** received must equal `action_log` element for element | ✅ |
+| the tap has **no side effects** | serialise `obs` before and after `on_select`; require equality | ✅ |
+| the capture is **complete** | observations == selects, visualize steps == selects + 1 | ✅ |
+| the artifact **round-trips** | write it, re-read it with `p9_field_census.analyse` | ✅ |
+
+⚠ **What is deliberately NOT claimed:** that `recorder=None` reproduces the
+identical *game* to the pre-edit code. No seed exists to prove that with. That
+path differs from the original by two `is not None` guards, one local
+assignment and one hoisted list comprehension — behaviour-preserving by
+inspection — and the script reports the turns/selects distributions with the
+recorder on and off (12.8 / 205.7 vs 12.5 / 191.4, n=12) explicitly labelled
+**weak**, because agreement there is not proof while a difference would have
+been evidence.
+
+```powershell
+python -X utf8 scripts/p20_recorder_equivalence.py --games 12
+python -X utf8 scripts/p20_record_games.py --a rule:alakazam5 --deck-a alakazam5 `
+    --b rule:crustle --deck-b crustle --games 3 --out out/replays/anchor_vs_anchor
+```
+
+Recorded so far: `out/replays/v5_vs_alakazam` (v5 2–1), `out/replays/anchor_vs_anchor`
+(alakazam5 2–1 crustle — ⚠ one of the three ran **39 turns** against 11 and 11,
+the first thing worth explaining in the day-15 item-6 audit).
+
+## 8ae. ⚡ RL, SIZED AT LAST: the pre-registered kill criterion is NOT met, and the twelve-day-old prior does not survive contact with arithmetic (2026-08-01, day 15)
+
+**Why this had to be measured.** "Self-play RL is dead" was asserted in four
+documents for twelve days and struck on day 14 (§2's retraction box): it was
+**never run** — no code, no `n`, no reward function, in this repo or the old one.
+Rule 15's third instance, and the unmeasured claim was living inside
+`EVIDENCE.md` itself. §8w's separate objection (a policy gradient reads the same
+feature vectors, so bitwise-identical options get identical gradients) was
+narrowed by §8x: the encoding binds **at most 4.4 pp** against a clone at 71%.
+
+⇒ **The live objection was neither compute nor expressiveness but
+credit-assignment variance** — one binary reward over a ~40-turn game with
+hundreds of selects, the same term that killed search. **Rule 14: size it before
+building it.** The probe and its kill criterion were written before any code:
+
+> measure how many games the terminal-outcome signal needs to separate two
+> policies of KNOWN Elo separation. **Kill if separation needs more games than
+> ~1.4 cores can produce in the remaining days.**
+
+⚡ **It cost zero new games.** Four head-to-head archives already exist whose
+separations were measured at n≥2000. `p21_rl_variance_probe.py` bootstraps them.
+
+### Result 1 — the outcome signal is cheap
+
+Throughput measured from the archives' own timestamps (so it includes real
+contention): **5.96 games/s per process**, ≈ **43,000 games/h** at 2 processes,
+≈ **5.5M games** to the 08-17 deadline.
+
+| pair | measured Δ | archived score | games for 80% power |
+|---|---|---|---|
+| `v4` vs `v4ctrl` (§8z) | **+37 Elo** | 0.567 | **800** — 0.015% of the budget |
+| `no3` vs `v4` (§8ab) | **−36 Elo** | 0.449 | **800** — 0.015% of the budget |
+| `v5` vs `v4` (§8aa) | +14 Elo | 0.514 | **not detected even at 6,400** |
+
+### Result 2 — 🔴 and the credit signal is affordable too, which is the surprise
+
+A REINFORCE advantage at one select is the game outcome minus a baseline, so its
+per-visit SE is ~0.5. There are **201 selects per game** (median 200, max 380,
+over 8,000 archived games), and a context recurs `k` times per game:
+
+| true effect on win prob | visits needed | games at k=1 | k=5 | **k=20** |
+|---|---|---|---|---|
+| 10% | 192 | 192 | 38 | 10 |
+| 5% | 768 | 768 | 154 | 38 |
+| 2% | 4,802 | 4,802 | 960 | 240 |
+| **1%** | 19,208 | 19,208 | 3,842 | **960** |
+
+**Against a 5.5M-game budget, every row is affordable by three orders of
+magnitude.** ⇒ **The pre-registered criterion is not met. RL does not die
+here.** The variance argument that stood in for a measurement since day 8 is,
+when actually sized, **not the binding constraint** — and it dies with a number,
+which is the thing §2 never had.
+
+### 🔴 What this does NOT license, stated before anyone acts on it
+
+1. **A sizing probe that fails to kill is not evidence that a thing works.**
+   Rule 3 in its original form. B4 passed all three of its kill criteria (§8l)
+   and then died at n=200 (§8v). This probe is exactly as weak as that one was.
+2. **The model in Result 2 is crude and optimistic.** It prices one context in
+   isolation with a two-sample test. Real policy-gradient training adds
+   non-stationarity (the data distribution moves as the policy moves),
+   correlated returns within a game, and shared parameters — so contexts are not
+   estimated independently and the effective sample size is smaller, unmeasured.
+3. **Game generation is the cheap part; training is not priced here at all.**
+4. ⚠ **The nearest real measurement remains unfriendly**: `--winners-only`
+   scored **0.375** (§1). It is **not the same mechanism** — that filtered
+   *other people's* games by outcome and discarded half the corpus, where a
+   gradient signed on *our own* trajectories does neither — but it is the
+   closest thing to evidence we have and it points the wrong way.
+
+⇒ **The honest next step is the smallest real thing**: fine-tune a *small* set
+of parameters on our own recorded outcomes (the day-15 recorder, §8ad, supplies
+the trajectories) and A/B it at n≥2000 against a byte-identical control with the
+seed floor carried in — the same discipline as §8z. **Not a league, not
+from scratch, and not on faith.**
+
+### A methods note: the first run of this probe was garbage in an instructive way
+
+`agent0`/`agent1` in an arena archive are **seat-indexed, and the seats swap
+every game** (`arena.py:280-283`). The first version read seat 0 as though it
+were always agent A, averaging A's wins together with B's. The output claimed
+the **+37 Elo** pair was undetectable at n=6,400 while the **+14** pair detected
+comfortably, and put **61% "false positives"** on a measured null.
+
+**Three impossibilities in one table is what made it obvious** — and the general
+form is worth keeping: **a bug that biases everything toward the null looks like
+a finding, not a crash.** Had the pair ordering happened to come out plausible,
+this section would have reported the opposite verdict.
+
+⚠ **And one true caveat surfaced by the same table.** The bootstrap resamples an
+archive's own outcomes, so it sizes the effect that archive *observed*. The
+seed-only pair observed **0.482**, and at large `n` the instrument duly
+"detects" it. That is not a false-positive rate — it is a demonstration that
+**past ~2,000 games the arena begins resolving its own noise floor**, and that
+the measured seed deviation (0.018) is **larger than the v5 block's real effect
+(0.014)**. §8aa's "+14 Elo is one noise-width", in arithmetic.
+
+```powershell
+python -X utf8 scripts/p21_rl_variance_probe.py --boot 1500
+```
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
