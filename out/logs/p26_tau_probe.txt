@@ -1,0 +1,14 @@
+  probe: 200 games per tau, deck=grimmsnarl, net=out/policy_v5.npz
+     tau  off-argmax   score vs argmax           95% CI   turns
+    0.25      14.1%             0.465   [0.397, 0.534]    12.5
+    0.50      20.4%             0.520   [0.451, 0.588]    12.5
+    1.00      30.5%             0.315   [0.255, 0.382]    12.4
+    2.00      44.0%             0.055   [0.031, 0.096]    12.8
+
+  Read this as a TRADE, not a maximum:
+  * off-argmax ~0%  -> the trajectories carry no exploration and
+    the outcome column has nothing to attribute variance to.
+  * score well under 0.5 -> the behaviour policy is not the one we
+    ship, so its outcomes describe a different agent (§8u's
+    ordering: distance from the field's modal policy costs Elo).
+  Pick the largest tau whose CI still covers ~0.5.

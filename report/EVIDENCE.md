@@ -3889,6 +3889,66 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8am. ⚡ B8's EXPLORATION TEMPERATURE, SIZED BEFORE ANY TRAINING — and it finds a CLIFF at 20% (2026-08-02, day 17)
+
+**Why this had to be measured first.** B8 fine-tunes on our own recorded
+outcomes, and a policy playing argmax against a copy of itself produces
+near-deterministic games with nothing to attribute the outcome to. So actions
+are sampled from `softmax(logits/tau)` — and `tau` is a design parameter, which
+under rule 14 gets **sized, not guessed**. Too cold and there is no exploration;
+too hot and the trajectories describe a policy we do not ship, which §8u
+measured is exactly how a net gets weaker (distance from the field's modal
+policy cost 0 → −55 → −92 Elo, monotonically).
+
+**The instrument** (`scripts/p26_selfplay_gen.py --probe`): the sampling agent
+plays the **argmax** agent — same net, same weights, seats alternating — so the
+only difference between the two sides is the temperature. 200 games per arm.
+
+| tau | off-argmax selects | score vs argmax | 95% CI | ≈ Elo |
+|---|---|---|---|---|
+| 0.25 | 14.1% | 0.465 | [0.397, 0.534] | −24 (null) |
+| **0.50** | **20.4%** | **0.520** | **[0.451, 0.588]** | **+14 (null)** |
+| 1.00 | 30.5% | **0.315** | [0.255, 0.382] | **−135** |
+| 2.00 | 44.0% | **0.055** | [0.031, 0.096] | **−494** |
+
+### 🔴 The finding is the shape, not the chosen value
+
+**The first ~20% of deviations are FREE and the next 10% cost ~150 Elo.** From
+tau 0.25 → 0.50, off-argmax rises 6.3 pp for **no measurable change**. From 0.50
+→ 1.00 it rises 10.1 pp and the agent loses **0.520 → 0.315**. There is no
+gradual degradation: the exploration budget has a **cliff**.
+
+⇒ **The net's selects are sharply stratified. About a fifth of them are genuine
+near-ties where the choice does not matter, and essentially every deviation
+beyond that band is a real mistake.**
+
+⚡ **Two things this connects to, and one of them re-prices B8.**
+
+1. **It corroborates §8x from a completely different direction.** §8x bounded
+   the encoding by counting *bitwise-identical* option pairs and found the ties
+   that exist are "two copies of one card in one role, i.e. free choices". This
+   probe finds ~20% of selects are free in a behavioural sense — randomise them
+   and measure nothing. Two instruments, no shared machinery, same story.
+2. 🔴 **It sizes B8's headroom, and the reading is CAUTIOUSLY GOOD rather than
+   bad.** The 20% band is free *on average*, which is not the same as every
+   decision in it being irrelevant — a band of indifferent-on-average choices is
+   precisely where some are better and some worse, netting to zero. **That is
+   the population an outcome signal exists to sort, and it is the only
+   population where it can act**: outside the band, deviating loses. It is also
+   an independent justification for `--margin-max`, which was designed from §8u
+   before this was run.
+
+⚠ **What it does not say.** That the 20% band contains *recoverable* Elo. It
+says the band exists and that the signal has somewhere to go. **B4 had a correct
+diagnosis too and died anyway** (§8v).
+
+**tau = 0.50 is the pick**: the largest temperature whose CI still covers 0.5.
+
+```powershell
+python -X utf8 scripts/p26_selfplay_gen.py --probe --games 200 --taus 0.25,0.5,1.0,2.0
+```
+Log: `out/logs/p26_tau_probe.txt`.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
