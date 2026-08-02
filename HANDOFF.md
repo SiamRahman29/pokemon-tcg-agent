@@ -1953,6 +1953,41 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     exactly; keep verified renames in `replays/team_aliases.tsv`; and **print the
     match rate and the biggest unmatched names every time** (rule 9).
 
+18. **🔴 DO NOT RE-DERIVE A STATISTIC THE TOOL ALREADY PRINTS — and when two
+    numbers for the same quantity disagree, that disagreement is the most
+    valuable signal you will get all day.** Day 17 read `winner == 0` out of an
+    arena archive as "agent A won" and reported the Crustle re-run as **v3 0.489
+    / v4 0.510 / v5 0.502** — three numbers hugging 0.5, from which a draft
+    concluded the pilot repair "moved things in both directions, none of it
+    significant". **`agent0`/`agent1` are seat-indexed and `arena.py` alternates
+    seats every game**, so that computation averaged every net together with its
+    own opponent. The true values were **0.857 / 0.888 / 0.870**.
+
+    ⚡ **§8ae documented this exact bug five days earlier** and it was committed
+    again anyway — because the earlier fix was applied to `p21`, and this was a
+    throwaway analysis snippet, which felt exempt. **Nothing is exempt.**
+
+    ✅ **What caught it was `arena.py`'s own summary line printing `score=0.888`
+    next to the snippet's 0.510.** Every arena run already emits the
+    seat-corrected score, the CI, and the per-seat W/D/L. Reading the archive by
+    hand re-implements all of that and can only *introduce* error.
+
+    ⚠ **The general shape, and it is the FIFTH instance this week** (§8ad's
+    equivalence test that could not fail, §8ae's seat bug, §8af's third-in-two-days,
+    §8ah's overcounting detector, this): **a bug in an analysis script produces a
+    PLAUSIBLE NUMBER, not a crash.** Three of the five biased toward the null,
+    which reads as a finding. The defence is not care; it is **redundancy** —
+    compute the headline number a second way, or take it from a tool that
+    already computes it, and reconcile the two before writing a word.
+
+    ⛔ **Corollary, paid for the same day:** `train_policy.py` exported the
+    checkpoint with the best `val_top1`, so an arm whose objective deliberately
+    departs from corpus fit would have exported an *earlier epoch* than its
+    control and the A/B would have measured training length. **Any A/B between
+    two training arms must pin the checkpoint rule (`--export-last`), not just
+    the data and the seed.** Rule 3 is not only about what you *report* — it is
+    about what the training loop *selects*.
+
     ⚠ **A third form, same session: a control population built from "the
     opponents of X" contained US.** `Scio` is on that list because we played
     them, and our own agent's selects are exactly what the net was fitted to —

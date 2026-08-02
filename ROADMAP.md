@@ -91,7 +91,7 @@ keep the manifest even when episodes are pruned (`replays/manifests/`).
 > arithmetic rules. We present a falsifiable discriminator — **rules that delete
 > a *dominated* option win (3/3); rules that pick a side in a *tradeoff* lose
 > (0/4)** — validated by arena A/B at n≥2000 every time. Plus a
-> measurement-discipline codex (HANDOFF §2, 17 rules, each paid for) and
+> measurement-discipline codex (HANDOFF §2, 18 rules, each paid for) and
 > evidence-backed negative results on search, RL and data scaling.
 
 Everything from here should either (a) raise the LB, (b) add a chapter, or (c)
@@ -123,7 +123,7 @@ Deliverables: **`report/EVIDENCE.md`** (the log — exists, backfilled 07-30) an
 3. **The discriminator** — dominated vs tradeoff, the 7-rule table, and *why* it
    predicts (the net has seen 2,810 games of human tradeoffs; it has seen zero HP
    values).
-4. **Measurement discipline** — HANDOFF §2's 17 rules as a methods section.
+4. **Measurement discipline** — HANDOFF §2's 18 rules as a methods section.
 5. **Robustness & consistency** — multi-anchor A/B tables, seat balance, n and CI
    everywhere, and the `counter_source` false-positive post-mortem (§3.0). **A
    documented failure of our own validation process, diagnosed and fixed, is

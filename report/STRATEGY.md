@@ -381,7 +381,7 @@ curve, and we had been walking up it.
 
 ## 5. Measurement discipline, and two failures of our own process
 
-The full codex is 17 rules, each paid for by invalidated work (`HANDOFF.md` §2).
+The full codex is 18 rules, each paid for by invalidated work (`HANDOFF.md` §2).
 The load-bearing ones:
 
 1. **n=24 is noise.** ~2 pp effects need n≈2000.
