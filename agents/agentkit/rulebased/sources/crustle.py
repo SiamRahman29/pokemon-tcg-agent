@@ -355,8 +355,18 @@ def score_option(obs: Observation, option) -> int:
             # An empty bench means the next KO loses the game outright, so
             # filling it dominates every other play in the option set. This
             # guard is the WHOLE repair.
+            #
+            # ⚠ The +5000 is not a tuning knob, it is a defect fix that needs
+            # no theory: a flat 90000 scored EVERY Pokemon identically, so the
+            # pilot's own Dwebble preference (25000 vs -5000 below) was
+            # destroyed at exactly the moment it matters most, and the choice
+            # fell to option order. This restores the preference INSIDE the
+            # guard without changing the guard's priority against anything
+            # else. ⛔ It is NOT claimed to recover §8an's +0.09 -- that
+            # mechanism is still not understood and tuning on a guess is how
+            # this file acquired the problem in the first place.
             if not player.bench:
-                return 90000
+                return 90000 + (5000 if card_id == DWEBBLE else 0)
             # 🔴 NARROWED 2026-08-02 (day 17). The first version of this fix
             # also returned 12000 here instead of -5000, which changed the
             # pilot's behaviour on EVERY bench decision rather than only the

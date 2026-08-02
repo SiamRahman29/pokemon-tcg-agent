@@ -1,0 +1,2 @@
+  net=out/policy_v5.npz tau=0.5 deck=grimmsnarl opp=self(tau=0.5)
+  -> E:\Kaggle\pokemon-tcg-simulation-2\artifacts\rl_v5_t05_big\w0
