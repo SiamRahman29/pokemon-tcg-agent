@@ -201,6 +201,10 @@ class Data:
     def __init__(self, paths: list[Path]):
         sd, slots, seld, gid, won, rating = [], [], [], [], [], []
         xd, xs = [], []
+        # B8. Present only in shards written by p26_selfplay_gen.py; a BC
+        # corpus gets NaN, which is what `--advantage` refuses to weight.
+        margin: list = []
+        self.rows_per_path: list[int] = []
         od, oc, oa, ot, om = [], [], [], [], []
         self.opt_rows: list[tuple[int, int]] = []  # (start,end) per row
         # ⚠ Bags are kept FLAT (one array + one offset array per bag), exactly
@@ -225,6 +229,9 @@ class Data:
                       else np.zeros((n, N_XSLOT), dtype=np.int32))
             gid.append(z["gid"])
             won.append(z["won"])
+            self.rows_per_path.append(n)
+            margin.append(z["margin"] if "margin" in z
+                          else np.full(n, np.nan, dtype=np.float32))
             # Corpora built before `--ratings` have no per-row demonstrator.
             rating.append(z["rating"] if "rating" in z
                           else np.full(n, np.nan, dtype=np.float32))
@@ -252,6 +259,7 @@ class Data:
         self.gid = np.concatenate(gid)
         self.won = np.concatenate(won)
         self.rating = np.concatenate(rating)
+        self.margin = np.concatenate(margin)
         self.w = np.ones(len(self.gid), dtype=np.float32)
         self.opt_dense = np.concatenate(od)
         self.opt_card = np.concatenate(oc).astype(np.int64)
@@ -309,6 +317,86 @@ class Data:
                    sel,
                    torch.from_numpy(self.xdense[sel]),
                    torch.from_numpy(self.xslots[sel]))
+
+
+def advantage_weights(data: "Data", is_rl: np.ndarray, beta: float,
+                      anchor_w: float, margin_max: float) -> np.ndarray:
+    """B8: advantage-weighted regression over our OWN recorded outcomes.
+
+    The weight on an RL row is `exp((won - baseline) / beta)`, so a select from
+    a game we won is cloned harder than one from a game we lost. This is
+    deliberately NOT a policy gradient with negative steps: an AWR weight is
+    always positive, so the update can only ever re-weight behaviour the clone
+    already produces. That is the property that makes it safe to run on a net
+    worth ~942 on the ladder -- the downside is bounded by how far a reweighting
+    can move it, not by an unbounded ascent direction.
+
+    ⚠ **`--winners-only` is not this.** It scored 0.375 (§1) by filtering OTHER
+    people's games and discarding half the corpus. Here nothing is discarded,
+    the games are our own, and the losing rows still train -- at lower weight.
+    The distinction is the whole reason B8 is not a repeat of that measurement.
+
+    `anchor_w` is the weight held by corpus rows, which keeps the fine-tune
+    tethered to the clone (rule: the thing being risked is a working agent).
+    `margin_max` restricts the reweighting to selects where the net's top-1
+    logit lead was small. §8u measured that agreement with the FIELD predicts
+    strength, so a confident select is one we have a positive reason not to
+    disturb; and an outcome signal can only change a decision that was close.
+    Rows above the threshold fall back to weight 1 -- still trained, just not
+    re-weighted.
+    """
+    if not is_rl.any():
+        raise SystemExit("--advantage needs RL shards (a corpus built by "
+                         "p26_selfplay_gen.py); every row came from --anchor-ds")
+    won = data.won
+    base = float(won[is_rl].mean())
+    w = np.ones(data.n, dtype=np.float32)
+    gate = is_rl.copy()
+    if margin_max > 0:
+        m = data.margin
+        # NaN margins are BC rows; they are never gated here anyway.
+        gate &= np.nan_to_num(m, nan=np.inf) <= margin_max
+    w[gate] = np.exp((won[gate] - base) / max(beta, 1e-6))
+    w[~is_rl] = anchor_w
+    # Normalise over the rows that actually carry the objective, so the step
+    # size stays comparable to the byte-identical control's (§8z's discipline).
+    w = (w / w.mean()).astype(np.float32)
+    n_gate = int(gate.sum())
+    print(f"--advantage {beta}: baseline won={base:.4f}; "
+          f"{n_gate:,} of {int(is_rl.sum()):,} RL rows re-weighted "
+          f"({n_gate / max(int(is_rl.sum()), 1):.1%}"
+          + (f", margin<={margin_max}" if margin_max > 0 else "") + ")")
+    print(f"  weights [{w.min():.4f}, {w.max():.3f}]; "
+          f"anchor rows {int((~is_rl).sum()):,} at {anchor_w}")
+    ess = w[is_rl].sum() ** 2 / np.square(w[is_rl]).sum()
+    print(f"  effective sample size {ess:,.0f} of {int(is_rl.sum()):,} RL rows "
+          f"({ess / max(int(is_rl.sum()), 1):.1%})")
+    return w
+
+
+def apply_freeze(model: "PolicyNet", spec: str) -> None:
+    """Train only the named top-level parameter groups; freeze the rest.
+
+    B8's pre-registered form is "fine-tune a SMALL parameter set", and the
+    reason is §8w: 8.2x the parameters bought -43 decisions, so capacity is not
+    what is missing and a full-net update on a much smaller, much noisier
+    corpus is the way to lose the clone rather than improve it.
+    """
+    keep = {s.strip() for s in spec.split(",") if s.strip()}
+    known = {n.split(".", 1)[0] for n, _ in model.named_parameters()}
+    unknown = keep - known
+    if unknown:
+        raise SystemExit(f"--freeze-except names {sorted(unknown)}; "
+                         f"parameter groups are {sorted(known)}")
+    n_train = n_frozen = 0
+    for name, p in model.named_parameters():
+        if name.split(".", 1)[0] in keep:
+            n_train += p.numel()
+        else:
+            p.requires_grad_(False)
+            n_frozen += p.numel()
+    print(f"--freeze-except {sorted(keep)}: training {n_train:,} params, "
+          f"froze {n_frozen:,} ({n_train / max(n_train + n_frozen, 1):.1%} live)")
 
 
 def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
@@ -391,7 +479,24 @@ def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ds", default="artifacts/pds")
+    ap.add_argument("--ds", default="artifacts/pds",
+                    help="shard dir; comma-separated for several")
+    ap.add_argument("--anchor-ds", default="",
+                    help="B8: corpus shard dir(s) mixed in as the ANCHOR term, "
+                         "so the fine-tune cannot drift off the clone it "
+                         "started from. Rows from here are never "
+                         "advantage-weighted.")
+    ap.add_argument("--advantage", type=float, default=0.0,
+                    help="B8: AWR temperature. Weight = exp((won-baseline)/B) "
+                         "on --ds rows. 0 disables (plain cloning).")
+    ap.add_argument("--anchor-w", type=float, default=1.0,
+                    help="weight held by --anchor-ds rows")
+    ap.add_argument("--margin-max", type=float, default=0.0,
+                    help="B8: only re-weight selects whose top1-top2 logit "
+                         "margin was <= this. 0 = re-weight every RL row.")
+    ap.add_argument("--freeze-except", default="",
+                    help="B8: comma-separated top-level parameter groups to "
+                         "train; everything else is frozen (e.g. 'head')")
     ap.add_argument("--epochs", type=int, default=4)
     ap.add_argument("--bs", type=int, default=1024)
     ap.add_argument("--lr", type=float, default=1e-3)
@@ -447,10 +552,33 @@ def main() -> int:
     # B1) differs in its FEATURES and not in dropout masks or batch order. Weight
     # init still differs where the layer widths differ, which cannot be avoided.
     torch.manual_seed(args.seed)
-    paths = sorted((ROOT / args.ds).rglob("shard_*.npz"))
-    if not paths:
-        raise SystemExit(f"no shards under {ROOT / args.ds}")
+    paths: list[Path] = []
+    for d in args.ds.split(","):
+        d = d.strip()
+        if not d:
+            continue
+        got = sorted((ROOT / d).rglob("shard_*.npz"))
+        if not got:
+            raise SystemExit(f"no shards under {ROOT / d}")
+        paths += got
+    n_primary = len(paths)
+    for d in args.anchor_ds.split(","):
+        d = d.strip()
+        if not d:
+            continue
+        got = sorted((ROOT / d).rglob("shard_*.npz"))
+        if not got:
+            raise SystemExit(f"no shards under {ROOT / d}")
+        paths += got
     data = Data(paths)
+    # Which rows came from --ds rather than --anchor-ds. Built from the
+    # per-path row counts Data records, so it cannot drift from the actual
+    # concatenation order.
+    is_rl = np.zeros(data.n, dtype=bool)
+    is_rl[:sum(data.rows_per_path[:n_primary])] = True
+    if args.anchor_ds:
+        print(f"--anchor-ds: {int(is_rl.sum()):,} primary rows + "
+              f"{int((~is_rl).sum()):,} anchor rows")
     x_mask = None
     if args.drop_x:
         if args.no_extra:
@@ -485,6 +613,17 @@ def main() -> int:
               f"({ess / max(int(keep.sum()), 1):.1%})")
         print(f"  {int((~rated & keep).sum())} unrated rows held at the median "
               f"rating ({np.nanmedian(data.rating):.1f})")
+    if args.advantage > 0:
+        if args.rating_temp > 0:
+            raise SystemExit("--advantage and --rating-temp both set data.w; "
+                             "pick one")
+        if args.winners_only:
+            # §1's 0.375 result IS --winners-only. Running both would produce a
+            # net that is neither intervention and would be reported as B8.
+            raise SystemExit("--advantage subsumes --winners-only (it keeps "
+                             "the losing rows at lower weight); refusing both")
+        data.w = advantage_weights(data, is_rl, args.advantage,
+                                   args.anchor_w, args.margin_max)
     val_mask = (data.gid % 20) == 0
     train_idx = np.where(keep & ~val_mask)[0]
     val_idx = np.where(keep & val_mask)[0]
@@ -506,12 +645,19 @@ def main() -> int:
                       pool=args.pool)
     if args.init:
         load_init(model, ROOT / args.init)
+    if args.freeze_except:
+        if not args.init:
+            raise SystemExit("--freeze-except without --init trains a few "
+                             "layers on top of RANDOM embeddings; that is not "
+                             "a fine-tune of anything")
+        apply_freeze(model, args.freeze_except)
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
           f"extra={not args.no_extra} pool={args.pool} "
           f"params={sum(p.numel() for p in model.parameters())}")
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr,
-                            weight_decay=args.wd)
+    opt = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad],
+        lr=args.lr, weight_decay=args.wd)
     bcef = nn.BCEWithLogitsLoss()
     bce_none = nn.BCEWithLogitsLoss(reduction="none")
     rng = np.random.default_rng(args.seed)
@@ -528,7 +674,7 @@ def main() -> int:
             out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow,
                         xd, xs)
             loss = torch.zeros((), dtype=out.dtype)
-            wrow = rw if args.rating_temp > 0 else None
+            wrow = rw if (args.rating_temp > 0 or args.advantage > 0) else None
             if args.loss in ("bce", "both"):
                 if wrow is None:
                     loss = loss + bcef(out, om)
