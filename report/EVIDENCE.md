@@ -3722,7 +3722,7 @@ python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" `
     "bc:v5,net=out/policy_v5.npz" --deck-a grimmsnarl_g4 --deck-b grimmsnarl --matches 2000
 ```
 
-## 8ak. ⏳ TWO DECISION-IDENTICAL AGENTS, 69–82 POINTS APART — numbers logged, VERDICT DELIBERATELY BLANK (2026-08-02, day 16)
+## 8ak. 🔴 TWO DECISION-IDENTICAL AGENTS READ ≥63 POINTS APART — the LB's noise floor is LARGER THAN EVERY EFFECT THIS PROJECT HAS EVER MEASURED (2026-08-02, days 16–17)
 
 `55169114` is **decision-identical to v5** (`55160229`): `diff -rq` over the
 extracted bundles shows only `main.py` and `sa/bcagent.py` differing, and only by
@@ -3734,20 +3734,55 @@ instrument, not the agent — **if the readings are settled.**
 |---|---|---|---|---|
 | 05:08 | 874.8 | 956.5 | **81.7** | 910.5 |
 | 05:25 | 874.8 | 951.0 | **76.2** | 910.5 |
-| **07:25** | **875.3** | **944.3** | **69.0** | 910.5 |
+| 07:25 | 875.3 | 944.3 | **69.0** | 910.5 |
+| **10:33 (day 17)** | **879.5** | **942.7** | **63.2** | 910.5 |
 
-🔴 **Rule 2 is satisfied on ONE of the two and that is why there is no verdict
-here.** `55169114` is converged — 874.8 → 875.3 over 2 h 17 m, agreeing. **v5 is
-not**: 956.5 → 951.0 → 944.3, a monotone **−12.2** over the same window, and the
-gap is closing with it (81.7 → 76.2 → 69.0). §10's standing warning — *a rising
-score is unconverged, not momentum* — applies identically to a falling one.
+### ✅ The fourth read landed and the verdict is now writable
 
-⇒ **What can be said: two agents that make the same move in the same state read
-at least 69 points apart after 12.7 h and 20.8 h of play. What cannot: the
-magnitude, or that it is a stable noise floor.** It may be entirely v5 descending
-toward the health bundle's number.
+**v5 satisfies the withheld condition.** It moved **−1.6 over 3 h 08 m**
+(944.3 → 942.7) against **−12.2 over the preceding 2 h 17 m** — an order of
+magnitude of deceleration. The test is not a fixed threshold but a comparison:
+**the reference agent moved MORE.** `55169114` went 875.3 → **879.5**, **+4.2**,
+in the identical window. Any bar that certifies the health bundle as settled
+certifies v5 as settled, so the verdict is written.
 
-### 🔴 The part that is already a result: rule 2's one-hour clause is not enough
+🔴 **THE RESULT: two agents that make the same move in the same state read
+63.2 points apart** after **15.8 h** and **23.9 h** of play. `diff -rq` over the
+extracted bundles finds only `main.py` and `sa/bcagent.py` differing, and only by
+health counters plus one `print` — weights, deck, engine, every other module
+byte-identical, no branch changed.
+
+⚡ **And that number is bigger than everything this project has ever measured.**
+
+| effect | magnitude | instrument |
+|---|---|---|
+| **decision-identical pair, LB** | **63.2 points** | this section |
+| v5 − v4, "rule 2 satisfied" (day 15) | +40.5 | LB, live-vs-live |
+| §8z v4 state block | +37 Elo | arena, n=2,000 |
+| §8ab drop-all-three ablation | −36 Elo | arena, n=2,000 |
+| §8aa v5 pooled block | +14 Elo | arena, n=4,000 |
+
+⇒ **Rule 2's second clause — "the LB cannot resolve an effect that size at all" —
+has stopped being an argument and become a measurement.** It was inferred on day
+15 from the LB's ±50–100 swing; it is now demonstrated directly, by a pair whose
+true difference is **exactly zero**. **The ladder cannot adjudicate any net
+change this project has produced or is likely to produce.** The arena, with its
+byte-identical controls and its measured 0.482 seed floor, is not a weaker
+instrument than the LB — **it is the only instrument.**
+
+⚠ **Two things this does NOT establish, and both matter.**
+
+1. **63.2 is a lower bound observed at one moment, not a stable floor.** The gap
+   has closed **monotonically across all four reads** — 81.7 → 76.2 → 69.0 →
+   **63.2** over 5.4 h — and nothing here says it stops. Quote it as *"at least
+   63 points, still closing"*, never as "the noise floor is 63".
+2. 🔴 **The mechanism flipped between read 3 and read 4, and that is the reason
+   for caveat 1.** Reads 1–3 closed because **v5 fell**. Read 4 closed mostly
+   because **the health bundle ROSE (+4.2)** — after rule 2 had already
+   certified it as converged. **Both agents fail day-scale convergence**, which
+   is the amendment below, arriving a second time and from the other direction.
+
+### 🔴 The part that was already a result: rule 2's one-hour clause is not enough
 
 **v5 satisfied rule 2 on day 15** — 955.1 twice, 61 minutes apart, and it was
 written into HANDOFF as the first settled net-pair reading this project ever had.
@@ -3757,17 +3792,31 @@ that moved **11 points within a day**.
 ⇒ **Rule 2 amendment: an hour of agreement licenses an hour-scale claim, not a
 day-scale one.** Anything quoted across sessions needs re-reading in the session
 that quotes it. The day-15 headline's **v5 +40.5 over v4** was built on exactly
-this and is now **+33.8** on the same arithmetic, with v5 still moving.
+this and is now **+32.2** on the same arithmetic — ⚠ and even that is no longer a
+legal comparison, because `55156480` is **evicted and frozen** while v5 is live.
+
+🔴 **The amendment needed strengthening the same day it was written.** The health
+bundle satisfied it too — 874.8 → 875.3 over 2 h 17 m — and then moved **+4.2**
+over the next three hours. **A two-hour agreement does not license a day-scale
+claim either.** The operative rule is now: *quote a ladder number only from a
+read taken in the session that quotes it, and only against another agent read in
+the same call.*
 
 ### The active-pair model, confirmed as a side effect
 
-`55156480` (910.5) and `55129730` (836.4) are **identical across all three
-reads**, while both active submissions moved. That is the "only the latest 2 play
-episodes" rule observed directly rather than inferred — evicted submissions
-freeze and still display.
+`55156480` (910.5) and `55129730` (836.4) are **identical across all four
+reads** spanning 5.4 h, while both active submissions moved every time. That is
+the "only the latest 2 play episodes" rule observed directly rather than
+inferred — evicted submissions freeze and still display.
 
-*A fourth read is armed. Do not write a verdict until v5 gives two agreeing
-readings.*
+### Standing, read 2026-08-02 10:33 UTC
+
+**Rank 198 of 6,136 at 942.7** — our best rank, on a board that grew 6,103 →
+6,136 since day 15. Top is `Luca` **1322.6** (new, and 127 points clear of the
+old #1), then やる気元気ミワハルキ 1195.1, `Majkel1337` 1187.5 (was #1 at 1251.3),
+`Raihan Ramadistra` 1176.3, `ntumlnoob` 1172.4. ⚠ **Our rank improved while our
+score fell** (955.1 → 942.7) — the board moves under us, so rank and score are
+separate readings and neither substitutes for the other.
 
 ## 8al. 🃏 THREE VARIANTS, AND STRENGTH FALLS MONOTONICALLY WITH DISTANCE FROM THE CONSENSUS 60 (2026-08-02, day 16)
 

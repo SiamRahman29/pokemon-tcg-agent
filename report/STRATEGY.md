@@ -36,8 +36,23 @@ baseline's MCTS has never once executed** (two bugs, confirmed by timing
 instrumentation), and it holds its rating anyway. A search stack is not what wins
 this board. `EVIDENCE` §2.
 
-**Why not reinforcement learning.** Dropped on the same evidence, plus ~1.4 cores
-of real throughput on the development machine.
+**Why not reinforcement learning — and this sentence has been corrected.** It
+previously read "dropped on the same evidence, plus ~1.4 cores of real
+throughput". That describes a *decision*, not an experiment: **self-play RL was
+never run** — no code, no `n`, no interval, in this repository or the one it
+inherited from. The claim had been filed beside the measured negatives in four
+documents for twelve days. It is retracted in §8 and its post-mortem belongs
+there and in §5; the honest status is **"declined on a compute prior, never
+attempted"**. `EVIDENCE` §2's retraction box.
+
+What *is* measured and must not be laundered into an RL verdict: **search**
+(0.323, above) and **`--winners-only`** (0.375, §1's table) — the latter filters
+*other people's* games by outcome and discards half the corpus, which is not the
+same mechanism as a gradient signed on our own trajectories. When the objection
+that remained — credit-assignment variance — was finally sized rather than
+asserted, **it did not bind**: separating two policies of known ±37 Elo takes 800
+games against a ~5.5M-game budget (`EVIDENCE` §8ae). A small-parameter fine-tune
+of the clone on its own recorded outcomes was scheduled on that basis.
 
 **Why not more data.** Three independent scaling axes all measured negative: a
 4,010-game corpus lost to the 2,810-game one (**0.491**), winners-only training
@@ -59,7 +74,8 @@ primary record; this report cites it rather than restating it.
 |---|---|---|
 | training scale/objective | 5 | all negative (§1) |
 | demonstrator selection | 2 (B7) | both negative, −55 and −92 Elo (§7b.3) |
-| search / RL | 3 | all negative (§2) |
+| search | 2 | both negative (§2) |
+| self-play RL | **0 — never run** | not a result; a decision misfiled as one (§1, §8) |
 | targeting rules | 7 A/B'd at n≥2000 | 3 win, 4 null (§3) |
 | feature representation | 1 (B1) | large win (§8f) |
 | matchup branches | 1 shipped | +0.104 recovered (§8c) |

@@ -267,12 +267,26 @@ distrust it: mined episodes are the top-1150 band, and
 >
 > #### Carried into day 17
 >
-> - ⏳ **A fourth ladder read is armed** (§8ak). **Do not write a verdict on the
->   identical-agent gap until v5 gives two AGREEING readings** — it was still
->   descending at 07:25 (956.5 → 951.0 → 944.3) while `55169114` had converged
->   (874.8 → 875.3). Gap 81.7 → 76.2 → **69.0** and closing.
-> - ⏸ **Re-running the Crustle-term verdicts against the repaired pilot is still
->   unauthorised** — hours of compute, rewrites published numbers, user's call.
+> - ✅ **DONE FIRST, AND IT IS THE BIGGEST NUMBER IN THE REPO** (§8ak). The
+>   fourth read landed at **10:33 UTC**: v5 **942.7**, health bundle **879.5**,
+>   **gap 63.2**. v5 moved −1.6 in 3 h 08 m against −12.2 in the prior 2 h 17 m,
+>   and **the reference agent moved MORE (+4.2)** — so the withheld condition is
+>   met and the verdict is written. 🔴 **Two decision-identical agents read 63.2
+>   points apart, which is LARGER than every effect this project has measured**
+>   (+40.5 day-15 headline, +37 §8z, −36 §8ab, +14 §8aa). **Rule 2's second
+>   clause is now a measurement, not an argument: the ladder cannot adjudicate
+>   any net change we make. The arena is not the weaker instrument — it is the
+>   only one.** ⚠ Quote it as *"≥63 and still closing"* (81.7 → 76.2 → 69.0 →
+>   63.2); read 4 closed because the **health bundle rose**, after rule 2 had
+>   certified it converged, so **both** agents fail day-scale convergence.
+>   📈 **Standing: rank 198 / 6,136 at 942.7** — best rank ever, and our score
+>   *fell* while our rank rose. New #1 is `Luca` at 1322.6.
+> - ✅ **THE CRUSTLE RE-RUN IS AUTHORISED (user, day 17).** Every verdict
+>   carrying a Crustle term was measured against the pilot that threw games
+>   (§8ah). ⚡ **It is now also forced rather than optional**: B8's five-anchor
+>   sweep will carry a *repaired* Crustle term while every published number
+>   carries the broken one, and comparing them would be apples to oranges at
+>   6.7% of the field.
 > - 📝 `STRATEGY.md` §7c is written; §6 was corrected; §4f now exists. The
 >   standing one-edit-per-session rule is satisfied for day 16.
 
