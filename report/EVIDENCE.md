@@ -3889,6 +3889,82 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8ap. 🔴 BOTH MISSING ANCHORS ARE CLOSED — and measuring them found that our anchor set's INFORMATIVENESS runs INVERSELY to its REPRESENTATIVENESS (2026-08-02, day 17)
+
+**The gap.** §8ac named two archetypes that together outrank Crustle + Mega
+Lucario and had **no anchor at all**: Cynthia's Garchomp ex **6.7%** and
+Dragapult ex **5.3%**. Both are now closed, and neither cost what was expected.
+
+- ⚡ **`rule:dragapult` ALREADY EXISTED.** Wired to `dragapult_ex` in
+  `DECK_MODULE`, importable, functional — and **never once used**: no arena
+  archive, no `EVIDENCE` reference, mentioned in exactly one `arena.py` docstring
+  line. It was audited (`p24`) over 6 recorded games: **EXPOSED 0.000, 0
+  empty-bench losses**. A working anchor sat unused for nine days.
+- ✅ **Garchomp was BUILT** (`decks/cynthia_garchomp.py`) from the consensus 60
+  in `out/meta/pre_shift_0722_0724.txt` (that exact list seen **159×**). §8af's
+  exposure filter was run **first**: **all 20 distinct card ids are in the
+  corpus, 0 of 60 copies untrained**, so our own net can pilot it and no rule
+  pilot was needed — ROADMAP's *"hold the pilot constant and vary the 60"*.
+
+### The complete anchor table for v5, sorted by how hard the anchor is
+
+| anchor | v5 score, n=2,000 | §8ac field share | resolution |
+|---|---|---|---|
+| **mirror** | **~0.500** | **33.3%** (51.1% above rating 900) | ⚡ **best** |
+| `rule:v10` (Mega Lucario) | 0.569 [0.547, 0.591] | 4.0% — **0 of 47 above 900** | good |
+| `rule:archaludon` | 0.671 [0.650, 0.691] | 8.0% — **0 of 47 above 900** | fair |
+| `rule:crustle` (v1, broken) | 0.768 [0.749, 0.786] | 6.7% | poor |
+| `rule:alakazam5` | 0.789 [0.771, 0.807] | 22.0% | poor |
+| **`rule:dragapult`** ⭐ new | **0.809** [0.791, 0.826] | **5.3%** | poor |
+| **`bc:garchomp`** ⭐ new | **0.857** [0.841, 0.872] | **6.7%** | ⛔ near ceiling |
+| `rule:crustle` (v3, guard) | 0.866 [0.850, 0.880] | 6.7% | ⛔ near ceiling |
+
+### 🔴 The finding, and it is not the one this work was started to get
+
+**Sort the anchors by resolution and you have also sorted them by
+UNrepresentativeness.** The two anchors where we sit closest to 0.5 — and can
+therefore actually separate two of our nets — are `rule:v10` (**4.0%** of the
+field) and `rule:archaludon` (**8.0%**), and §8ac measured **both at 0 of 47
+games above opponent rating 900**: they model a band we have left. Every anchor
+that represents the field we now play is one we beat **77–87%** of the time,
+where a difference between two nets compresses toward the ceiling.
+
+⇒ 🔴 **§8ac's re-weighting was correct and had a side effect nobody noticed: it
+moved weight ONTO the anchors that cannot resolve a difference and OFF the ones
+that can.** At §8ac's weights, **40.7%** of the weighted verdict now sits on
+anchors scoring above 0.75.
+
+⚡ **The mirror is the only anchor that is both, and it is carrying the set.**
+33.3% of the field, 51.1% above rating 900, 71.4% above 1000 — and it sits at
+0.500 where resolution is best. **It does nearly all the discriminating work in
+every weighted table in this repo.** ✅ Which is also the retrospective
+justification for measuring §8ao's B8 A/B in the mirror: it was the right
+instrument, not merely the convenient one.
+
+⛔ **Adding more representative anchors does NOT fix this**, and today is the
+proof: both new anchors landed at 0.809 and 0.857, i.e. among the least
+informative in the set. **More coverage bought honesty, not sensitivity.**
+
+### ⚠ And the net-piloted anchor is weak in a SECOND way
+
+`bc:garchomp` is our own net holding someone else's 60. It therefore measures
+**deck × how well OUR net pilots that deck**, and there is no reason to think it
+pilots Garchomp as well as it pilots the list it was tuned on. So **0.857 is an
+upper bound on our true win rate against the archetype**, biased optimistic by an
+unmeasured amount. ⇒ **The "point our net at their deck" recipe produces anchors
+that are both uninformative and flattering.** Better than having no Garchomp
+opponent; **not** a substitute for a tuned pilot, and not to be quoted as "we
+beat Garchomp 86% of the time."
+
+### 🔧 A correction, made in the session that made the error
+
+Off a **6-game** smoke (dragapult won 2/6) this was written up mid-session as
+*"dragapult is far more competitive than Crustle"* and *"the new anchors may be
+materially better instruments."* **At n=2,000 dragapult reads 0.809** — the
+second-least informative anchor in the set, and the opposite of the direction
+claimed. **Rule 1 exists for exactly this and it was violated by the person who
+maintains it.** The n=6 figure should never have been characterised at all.
+
 ## 8ao. 🔴 B8 FAILS ITS PRE-REGISTERED BAR — the RL fine-tune is a CLEAN NULL, and the control arm is what makes it clean (2026-08-02, day 17)
 
 **The pre-registration, written before any code** (ROADMAP §2.5 B8, HANDOFF day-17
