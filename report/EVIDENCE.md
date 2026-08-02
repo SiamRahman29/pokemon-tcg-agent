@@ -3889,6 +3889,104 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8an. 🔴 THE CRUSTLE RE-RUN: the repair made the anchor EASIER, the alarm is ANSWERED, and the fixed pilot is a WORSE INSTRUMENT than the broken one (2026-08-02, day 17)
+
+**The standing item.** §8ah found `sources/crustle.py:338` scoring every Pokémon
+but Dwebble at −5000 for a bench play with no empty-bench guard, so the pilot
+played on an empty bench and lost to the first KO. It filed the consequence as
+*"every verdict carrying a Crustle term is suspect"* and *"our arena reads 0.663
+against a 57.1% real win rate — this is a mechanism for part of it"*, i.e. **the
+expectation was that our numbers were OPTIMISTIC.** The re-run was left
+unauthorised for a day and is authorised now.
+
+**The instrument.** Identical agent specs, identical decks (`grimmsnarl` vs
+`crustle_v1`), n=2,000 each, seats alternating. **Only the pilot's bench logic
+differs** — the deck file was never touched, so old and new archives are
+directly comparable.
+
+| net | vs **broken** pilot (v1) | vs **repaired** pilot (v2) | Δ | turns |
+|---|---|---|---|---|
+| v3 | 0.7700 [0.751, 0.788] | **0.8565** [0.840, 0.871] | **+0.087** | 14.3 → 16.3 |
+| v4 | 0.7885 [0.770, 0.806] | **0.8880** [0.873, 0.901] | **+0.100** | 14.2 → 15.7 |
+| v5 | 0.7680 [0.749, 0.786] | **0.8700** [0.855, 0.884] | **+0.102** | 14.2 → 15.8 |
+
+**All three disjoint, all three the same sign, and the expected sign was the
+other one.**
+
+### ✅ Result 1 — the alarm is answered, and nothing needs rewriting
+
+**The shift is a LEVEL shift, not a differential one.** +0.087 / +0.100 / +0.102
+across three nets is one number within noise of itself. Every weighted verdict
+in this repo is a **difference between nets**, and a common offset on one
+anchor cancels in a difference:
+
+| verdict's Crustle term | broken | repaired | change |
+|---|---|---|---|
+| v4 − v3 | +0.0185 | +0.0315 | **+0.013** |
+| v5 − v4 | −0.0205 | −0.0180 | **+0.003** |
+
+At §8ac's weight for Crustle (**6.7%**) those move the weighted totals by
+**+0.0009 and +0.0002**. ⇒ **§8ah's consequence is retired: the defect did not
+bias any published verdict by an amount any of them turn on.** The re-run cost
+~21 minutes, not the "hours" the item assumed.
+
+### 🔴 Result 2 — and the repaired pilot is a WORSE anchor than the broken one
+
+It now sits at **0.86–0.89 against us**. An anchor we beat 89% of the time has
+almost no room left to separate two of our nets — the same compression the
+ROADMAP warns about for an anchor that is too *strong* (the 0.911 Crispin
+anchor), arriving from the other end. **Fixing the pilot made it a more correct
+agent and a less informative instrument.**
+
+### ⚠ The mechanism is UNTESTED, and the leading hypothesis is uncomfortable
+
+The naive reading fails: a pilot that throws games by standing on an empty bench
+should be *easier* to beat, and we scored **lower** against it. The leading
+hypothesis is the opposite of a repair:
+
+> **The fix tells a Crustle pilot to fill its bench against the one deck in the
+> field that snipes benches.** The old line benched nothing but Dwebble; the new
+> one defaults any Pokémon to 12000. Our list is built on **Shadow Bullet snipe
+> and Munkidori passive damage** (§9) — every extra benched Pokémon is another
+> body our damage can reach and another prize source.
+
+If that is right, the repaired pilot is **not** a better model of a real Crustle
+player, it is a pilot mis-tuned in a new direction that happens to be maximally
+bad against us. ⛔ **Rule 12, one level up: the repaired pilot has been validated
+as "does not instantly lose", never as "plays Crustle well."** Do not read
+0.888 as "we beat Crustle 89% of the time" — 6.7% of the real field plays this
+archetype and §8i measured **76.9% over 13 real ladder games** against the
+broken-pilot arena's 0.770, which was the *accurate* pairing.
+
+⇒ **Standing consequence: quote the v1 (broken-pilot) numbers for anything that
+compares against the real field, and the v2 numbers only for net-vs-net
+differences, where the level cancels.** A third option — retune the pilot until
+it matches the 76.9% real win rate — is real deck-and-anchor work and is **not**
+authorised by this section.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz,noChip,noSpread,noSrc" `
+    "rule:crustle" --deck-a grimmsnarl --deck-b crustle --matches 1000 `
+    --archive out/arena/p27_v5_vs_crustle_v2.jsonl
+```
+
+### 🔧 A methods note: this section was nearly published with the seat bug §8ae documents
+
+The first pass scored the archives with `winner == 0` as "agent A won" and
+reported **v3 0.489, v4 0.510, v5 0.502** — three numbers hugging 0.5, from
+which the draft concluded the repair "moved the Crustle term in both directions,
+none of it significant". **`agent0`/`agent1` are seat-indexed and the arena
+alternates seats every game**, so that computation averaged each net together
+with its opponent, which is why every result landed near 0.5.
+
+⚡ **What caught it was not a review — it was `arena.py`'s own printed summary
+saying `score=0.888` where the ad-hoc script said 0.510.** §8ae described this
+exact bug five days ago and it was committed again anyway, in a throwaway
+analysis script rather than in the archived tooling. **The lesson is narrower
+and more useful than "be careful": do not re-derive a statistic the tool already
+prints.** Every arena run emits the seat-corrected score; reading the archive by
+hand re-implements that and can only introduce error.
+
 ## 8am. ⚡ B8's EXPLORATION TEMPERATURE, SIZED BEFORE ANY TRAINING — and it finds a CLIFF at 20% (2026-08-02, day 17)
 
 **Why this had to be measured first.** B8 fine-tunes on our own recorded

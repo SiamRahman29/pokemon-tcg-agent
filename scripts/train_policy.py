@@ -494,6 +494,12 @@ def main() -> int:
     ap.add_argument("--margin-max", type=float, default=0.0,
                     help="B8: only re-weight selects whose top1-top2 logit "
                          "margin was <= this. 0 = re-weight every RL row.")
+    ap.add_argument("--export-last", action="store_true",
+                    help="export the FINAL epoch instead of the best-val one. "
+                         "Required on both arms of any A/B where one arm's "
+                         "objective is not corpus fit (rule 3) -- otherwise "
+                         "the arms export different epochs and the comparison "
+                         "is confounded by training length.")
     ap.add_argument("--freeze-except", default="",
                     help="B8: comma-separated top-level parameter groups to "
                          "train; everything else is frozen (e.g. 'head')")
@@ -719,7 +725,20 @@ def main() -> int:
         print(f"epoch {epoch}: train={tot / seen:.4f} val_top1={acc:.4f} "
               f"val_top1@{VAL_HI_RATING:.0f}+={hi:.4f} (n={tries_hi}) "
               f"({time.time() - t0:.0f}s)")
-        if acc > best:
+        # 🔴 rule 3. The default here SELECTS THE CHECKPOINT BY `val_top1`, and
+        # that metric is measured not to predict strength in either direction
+        # (§8z moved it by 8 decisions for +37 Elo; §8aa moved it by 214 for
+        # +14 -- a 70x exchange-rate difference). It is tolerable for a plain
+        # clone, whose objective IS corpus fit. It is NOT tolerable for any arm
+        # whose objective deliberately departs from corpus fit: an
+        # advantage-weighted arm will fit the corpus worse ON PURPOSE, stop
+        # improving `acc` earlier, and export an EARLIER EPOCH than its control
+        # -- so the A/B would be comparing epoch counts, not the intervention.
+        # `--export-last` is mandatory for both arms of such a pair.
+        if args.export_last:
+            if epoch == args.epochs - 1:
+                export_npz(model, ROOT / args.out, count_frac, x_mask)
+        elif acc > best:
             best = acc
             export_npz(model, ROOT / args.out, count_frac, x_mask)
     return 0
