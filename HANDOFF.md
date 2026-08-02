@@ -269,9 +269,27 @@ distrust it: mined episodes are the top-1150 band, and
 > to rescue it. ⚠ **Compute the full weighted number before writing the verdict**
 > — §8i was retracted for exactly this (a verdict written after 2 of 5 anchors).
 >
-> **(b) `p38_xero2` — the Xerosic ISOLATION test.** Stock 60 − Dawn − Pokegear
-> + Xerosic's Machinations ×2. n=4,000, direct head-to-head, vs the **0.504
-> [0.488, 0.519]** control.
+> **(b) ✅ `p38_xero2` — the Xerosic ISOLATION test LANDED, and it decomposes the
+> bundle cleanly.** Stock 60 − Dawn − Pokegear + Xerosic's Machinations ×2,
+> n=4,000, direct head-to-head:
+>
+> | deck | cards changed | score | Δ vs 0.504 control | Elo |
+> |---|---|---|---|---|
+> | control (stock v stock) | 0 | 0.504 [0.488, 0.519] | — | — |
+> | **Xerosic ×2, isolated** | **2** | **0.464** [0.449, 0.479] | **−0.040** | **≈ −28** |
+> | community + Xerosic bundle | 5 | 0.431 [0.415, 0.446] | −0.073 | ≈ −51 |
+>
+> **Both disjoint from the control.** ⚡ **The decomposition is the useful part:
+> the bundle's −0.073 is Xerosic ×2 at −0.040 plus the other three changes at
+> −0.033**, so §8ab's no-bundling rule paid for itself — the card really does
+> carry most of it, which a 5-card test could not have shown.
+> ⚠ **For scale: §8al's 2-card Budew swap was −0.022. Xerosic ×2 is roughly twice
+> as costly per card changed.**
+> 🔴 **BUT THIS STILL DOES NOT SEPARATE CARD FROM PILOT**, and that is the honest
+> limit: the replays show the net firing Xerosic at opponent hand size **4** when
+> nine offers at **7** were available. *"The card is wrong for this deck"* and
+> *"the card is fine and our clone misplays it"* both predict −0.040. **Only a
+> timing rule (day-19 item, rule 11 tradeoff column) can tell them apart.**
 >
 > # 🃏 WHAT DAY 18 SETTLED
 >
