@@ -1,0 +1,122 @@
+=== TRACK C DECK SEARCH -- pre-registration, written 2026-08-02 (day 18) ===
+=== BEFORE any variant deck file existed and before any game was played. ===
+
+WHY THIS FILE EXISTS
+  §8al retired guess-a-swap: three user-proposed hunches -> one null, two
+  significant losses, strength falling MONOTONICALLY with distance from the
+  consensus 60. A search fixes the "hunch" half and makes the multiplicity half
+  worse: k variants at alpha=0.05 manufactures a winner at k~20. That is the
+  same shopping the B8 beta sweep was declined for (§8ao). So the candidate
+  list, the screen, the confirmation and the kill line are all fixed here, in
+  advance, and the generator cannot be retuned after seeing results.
+
+PRIOR, STATED HONESTLY
+  §8al measured the consensus 60 as a local optimum. The EXPECTED outcome of
+  this search is a NULL. "A proper search over the slot space and the list
+  survived it" is the Deck Score deliverable; it is not an Elo lever, and it
+  will not be sold as one.
+
+-------------------------------------------------------------------------------
+STAGE 1 -- SCREEN. RANKING, NOT TESTING.
+-------------------------------------------------------------------------------
+  No p-value is computed at stage 1 and no candidate is called a winner here.
+  Stage 1 exists only to order the list. This is what keeps stage 2 a single
+  test.
+
+  1a. MIRROR-SCREENABLE candidates (the cut card has §8ar spec <= 0.16, i.e.
+      the mirror sees essentially all of its use). n = 4,000 games, DIRECT
+      head-to-head variant-vs-stock (§8aj's design), which is the cheapest and
+      only unbiased-by-construction cell we own.
+      Reference: §8aj's same-deck control 0.4980 [0.483, 0.513]. NOT 0.500.
+
+  1b. MIRROR-BLIND candidates (§8ar spec >= 0.5: Tool Scrapper 0.93, Froslass
+      0.54). The mirror answers the wrong question BY CONSTRUCTION, so these
+      skip 1a and screen at the two anchors where the card is most live:
+      rule:alakazam5 (22.0% of the field) and rule:crustle (6.7%).
+      n = 2,000 per arm. The stock-60 control arm at each anchor is measured
+      ONCE and shared by every candidate there.
+
+  Ranking statistic: estimated change in field-weighted W = sum_i w_i p_i,
+  using §8ac weights, with unmeasured cells assumed 0.
+
+-------------------------------------------------------------------------------
+STAGE 2 -- CONFIRM. ONE CANDIDATE, ONE TEST.
+-------------------------------------------------------------------------------
+  The single top-ranked candidate from stage 1 -- and only that one -- is run
+  at p33's Neyman allocation over all seven anchors (57,600 games, ~1.1 h at
+  rule 7's 2-3 jobs):
+
+    mirror 15,800 | alakazam5 8,500 | archaludon 3,600 | crustle 2,700
+    garchomp 2,200 | dragapult 2,000 | v10 1,900          (per arm)
+
+  Resolution: +/-0.0050 on W.
+
+  ⛔ If stage 2 is run on a candidate that was not stage 1's top rank, or on
+     more than one candidate, this pre-registration is void and the result is
+     a screen, not a test.
+
+-------------------------------------------------------------------------------
+KILL LINE (user-approved 2026-08-02: "if the numbers say kill, kill")
+-------------------------------------------------------------------------------
+  A variant SHIPS only if, at stage 2, it beats the stock 60 on field-weighted
+  W with a 95% CI EXCLUDING ZERO.
+
+  ⛔ A mirror-only win does not ship. §8ar measured why: 17 of 19 slots are
+     mirror-safe but Munkidori (18.6 mirror vs 11.3-14.2 elsewhere), Impidimp
+     and Morgrem are all played MORE in the mirror, so a mirror-only result
+     overstates the core engine as much as it understates the tech.
+
+  ⛔ No re-run at larger n after a null. §8ao's branch (b) is the precedent:
+     "run it bigger" is the most available excuse after any null.
+
+  ⛔ No second candidate promoted to stage 2 after the first fails. That is
+     the multiplicity this design exists to prevent. If stage 1's leader dies
+     at stage 2, THE SEARCH IS OVER and the consensus 60 stands.
+
+-------------------------------------------------------------------------------
+THE FROZEN CANDIDATE LIST -- 11 single-card swaps, all 1-for-1
+-------------------------------------------------------------------------------
+  Generator, applied mechanically:
+    * CUT candidates are ranked by §8ar weighted plays/game (what we can most
+      afford to lose). ⚠ liveness caps what a swap can PAY; it is not a claim
+      that the card is bad (§8e's Boss's Orders trap).
+    * ADD candidates must pass §8af's exposure filter -- inside the corpus's
+      134 card ids, at or above the exposure of the weakest card we already
+      play (Tool Scrapper, 2,820 as our own option).
+    * ALL swaps are 1-for-1. §8al's 2- and 4-card arms both lost and its
+      4-card arm could not be attributed; §8ab's "derive and size, do not
+      bundle" applies to decks too.
+    * Excluded because already measured: Dawn -> 4th Marnie's Grimmsnarl ex
+      (§8aj, null), Boss's Orders +1 (§6, null at 0.490), Budew lines (§8al).
+
+  1a. MIRROR-SCREENED (8)
+      A  Dawn x1            -> Ultra Ball x1        (1231 -> 1121)
+      B  Pokegear 3.0 x1    -> Ultra Ball x1        (1122 -> 1121)
+      C  Unfair Stamp x1    -> Ultra Ball x1        (1080 -> 1121)
+      D  Rare Candy 3->2    -> Ultra Ball x1        (1079 -> 1121)
+      E  Night Stretcher 3->2 -> Ultra Ball x1      (1097 -> 1121)
+      F  Buddy-Buddy Poffin 4->3 -> Ultra Ball x1   (1086 -> 1121)
+      G  Pokegear 3.0 x1    -> Fezandipiti ex x1    (1122 -> 140)
+      H  Dawn x1            -> Latias ex x1         (1231 -> 184)
+
+  1b. STRATIFIED-SCREENED (3) -- mirror-blind, per §8ar
+      I  Tool Scrapper x1   -> Ultra Ball x1        (1137 -> 1121)
+      J  Pokegear 3.0 x1    -> Froslass 2->3        (1122 -> 104)
+      K  Dawn x1           -> Snorunt 2->3          (1231 -> 860)
+
+  Ultra Ball recurs by design, not by accident: holding the ADD side fixed
+  across six different CUT slots turns six separate hunches into one question
+  ("which slot is worth least?") measured six ways.
+
+  ⚠ J and K are the Froslass line, which ROADMAP Track C step 4 named as the
+  only growable passive-damage line and §8ar found to be the deck's one
+  genuinely matchup-specific slot (1.44 plays/game in the mirror vs 5.57 and
+  6.83 against alakazam5 and Crustle). They are the reason the stratified
+  design was built; they are not permitted to be judged in the mirror.
+
+-------------------------------------------------------------------------------
+WHAT WOULD FALSIFY THE WHOLE DESIGN
+-------------------------------------------------------------------------------
+  If the stage-1 mirror control (stock vs stock) does not reproduce §8aj's
+  0.4980 [0.483, 0.513], the harness has changed and every number below it is
+  suspect. This is checked FIRST and nothing else runs until it passes.
