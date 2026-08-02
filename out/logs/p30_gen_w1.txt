@@ -1,2 +1,25 @@
   net=out/policy_v5.npz tau=0.5 deck=grimmsnarl opp=self(tau=0.5)
   -> E:\Kaggle\pokemon-tcg-simulation-2\artifacts\rl_v5_t05_big\w1
+  wrote shard_000.npz: 60000 rows
+    1000/8000 games     75977 rows  3.46 games/s  seat0=484 seat1=514 draw=2
+  wrote shard_001.npz: 60000 rows
+    2000/8000 games    150910 rows  3.50 games/s  seat0=998 seat1=997 draw=5
+  wrote shard_002.npz: 60000 rows
+    3000/8000 games    227019 rows  3.54 games/s  seat0=1499 seat1=1495 draw=6
+  wrote shard_003.npz: 60000 rows
+  wrote shard_004.npz: 60000 rows
+    4000/8000 games    302825 rows  3.66 games/s  seat0=2004 seat1=1990 draw=6
+  wrote shard_005.npz: 60000 rows
+    5000/8000 games    378699 rows  3.72 games/s  seat0=2539 seat1=2455 draw=6
+  wrote shard_006.npz: 60000 rows
+    6000/8000 games    454397 rows  3.68 games/s  seat0=3068 seat1=2926 draw=6
+  wrote shard_007.npz: 60000 rows
+    7000/8000 games    530174 rows  3.75 games/s  seat0=3579 seat1=3414 draw=7
+  wrote shard_008.npz: 60000 rows
+  wrote shard_009.npz: 60000 rows
+    8000/8000 games    606094 rows  3.80 games/s  seat0=4095 seat1=3898 draw=7
+  wrote shard_010.npz: 6094 rows
+
+  8000 games, 606094 rows, 35.1 min (3.80 games/s)
+  --keep-margin 1.0: kept 606,094 of 1,413,527 decisions (42.9%), 75.8 rows/game
+  seat0=4095 seat1=3898 draw=7
