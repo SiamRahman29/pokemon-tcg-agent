@@ -211,7 +211,171 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 18 IS RUNNING. THE STRATIFIED DESIGN IS PRICED, AND ITS OWN INSTRUMENT NARROWED IT TO TWO SLOTS.
+### ▶ START HERE — DAY 19. THE USER'S CALL: RULE-BASED COUNTERS AGAINST THE TOP ARCHETYPES (B3). TWO THINGS ARE NEEDED FROM THE USER FIRST.
+
+> # 📥 WHAT THE USER IS BRINGING (asked for at the end of day 18)
+>
+> **1. 🔴 A FRESH REPLAY DUMP OF OUR OWN AGENT — this is the gating input, not a
+> nice-to-have.** §8ac measured that our opponent pool is **a function of our own
+> rating**, and our last own-field census is from **day 15**. Day 18's meta mine
+> describes the **≥1055 band**; we play at **~942**. **Coding counters for
+> archetypes we do not actually face is rule 14's exact failure mode**, and it
+> killed three rules this week (Morgrem 0.2/game, Pokégear 0.27, empty-bench
+> 0.187). Dump `55160229` (v5), then:
+>
+> ```powershell
+> python -X utf8 scripts/p9_field_census.py --us Scio --dir replays/<new_dump>
+> ```
+>
+> **That table decides WHICH counters are worth writing. Do not write one before
+> it exists.**
+>
+> **2. A targeted per-team dump of a top Dunsparce pilot** — `Majkel1337` (284
+> games, **64.1% WR**) or `Brahim` (Buneary/Dunsparce, 102 games) or `Luca` (#1).
+> ROADMAP calls targeted per-team dumps the best data source we have, and unlike
+> mined episodes they are **not censored by band**.
+> ⚠ **FOR READING THE ARCHETYPE'S LINE OF PLAY, NOT FOR CLONING.** §8u measured
+> that cloning a 1163-rated expert cost **−92 Elo** and that agreement with an
+> expert **anti-predicts** strength. A 1279 demonstrator is further away, not
+> closer. Read it; do not fit to it.
+>
+> # ⏳ TWO RUNS WERE STILL IN FLIGHT WHEN DAY 18 ENDED — READ THESE FIRST
+>
+> Both finish unattended. **Read the verdicts before anything else:**
+>
+> ```powershell
+> python -X utf8 scripts/p36_deck_search.py --rank        # stage 2 is p37_*, see below
+> Get-Content out/logs/p37_G_*.log    | Select-String "score="
+> Get-Content out/logs/p37_ctrl_*.log | Select-String "score="
+> Get-Content out/logs/p38_xero2_mirror.log | Select-String "score="
+> ```
+>
+> **(a) `p37` — the pre-registered stage-2 confirmation of candidate G**
+> (`Pokegear 3.0 -> Fezandipiti ex`), 57,600 games over all seven anchors at
+> p33's Neyman allocation. ⛔ **The kill line is written in
+> `out/logs/deck_search_prereg.txt` and is binding: G ships only if it beats
+> stock on field-weighted W with a CI excluding zero. If it fails, THE SEARCH IS
+> OVER and no second candidate is promoted.** Cells that had reported:
+>
+> | anchor | weight | control | G | Δ |
+> |---|---|---|---|---|
+> | mirror | 33.3% | — | **0.500** [0.492, 0.507] | **0.000** |
+> | alakazam5 | 22.0% | 0.793 [0.785, 0.802] | 0.768 [0.759, 0.777] | 🔴 **−0.025** disjoint |
+> | crustle | 6.7% | 0.764 | 0.760 | −0.004 |
+> | dragapult | 5.3% | 0.807 [0.789, 0.823] | *pending* | — |
+>
+> **Partial dW ≈ −0.0058 against a resolution of ±0.0050**, so the remaining 24%
+> of weight (archaludon, garchomp, dragapult, v10) would have to average **+0.024**
+> to rescue it. ⚠ **Compute the full weighted number before writing the verdict**
+> — §8i was retracted for exactly this (a verdict written after 2 of 5 anchors).
+>
+> **(b) `p38_xero2` — the Xerosic ISOLATION test.** Stock 60 − Dawn − Pokegear
+> + Xerosic's Machinations ×2. n=4,000, direct head-to-head, vs the **0.504
+> [0.488, 0.519]** control.
+>
+> # 🃏 WHAT DAY 18 SETTLED
+>
+> **1. ⛔ THE DECK SEARCH FOUND NOTHING — 11 pre-registered variants, ALL ≤ 0**
+> (§8ar, `out/logs/deck_search_prereg.txt`, frozen in commit `d93cf04` **before**
+> any variant deck file existed). Six of eight mirror candidates lost
+> significantly. **Ultra Ball was held fixed across six different cut slots and
+> lost in all six (0.439–0.488)** — which separates *"we cut six good slots"*
+> from *"the add card is wrong"*, and only the second explains six losses.
+> ⚡ **A single A/B could not have distinguished those, and that is the part of
+> the design that earned its cost.**
+> ⚡ **The cheap screen predicted the expensive confirmation almost exactly:**
+> stage 1 called the mirror at **0.501** on 4,000 games; stage 2 says **0.500**
+> on 15,800.
+>
+> **2. 🔴 §8af's EXPOSURE FILTER IS NECESSARY BUT NOT SUFFICIENT, and this is the
+> most reusable finding of the day.** Ultra Ball sits at **5.59×** the exposure of
+> our weakest card and lost every slot. Energy Switch sits at **3.61×** and the
+> net **played it 1 time in 28 offers**. **Card-level exposure is not the binding
+> constraint; card × DECK-CONTEXT is**, and nothing in this repo measures that.
+>
+> **3. ⛔ THE COMMUNITY LIST IS NOT PLAYED ON THIS BOARD.** The 08-01 consensus
+> Grimmsnarl list is **identical to `decks/grimmsnarl.py`, card for card, seen
+> 158×**. Budew, Yveltal and Energy Switch appear in **zero** 08-01 lists;
+> **Special Red Card is not implemented in this engine at all.**
+> The user's revision (Budew + Yveltal out, Xerosic ×2 in) measured
+> **0.431 [0.415, 0.446]** vs the 0.504 control ≈ **−51 Elo**, the largest deck
+> loss measured here — ⚠ **but it is a FIVE-card bundle and §8ab forbids
+> attributing it to any one card.** That is what `p38_xero2` isolates.
+>
+> **4. ⚡ THE XEROSIC MECHANISM IS MEASURED AND IT IS A PILOT PROBLEM, NOT
+> NECESSARILY A CARD PROBLEM.** Over 6 recorded games the card was offered 28
+> times with the opponent holding a mean of **5.2** cards — **nine of those at 7
+> cards** — and the net played it **twice, both at hand size 4**, discarding
+> **1 card each time** (it discards down to 3). Best available moment would have
+> discarded **5**. ⚠ n=6, a smoke test; and the 7% take rate is NOT itself low
+> (Boss's Orders takes 6% — supporters are offered many times a turn and only one
+> is playable). 🔴 **This is a live B3-shaped rule candidate for day 19** — *play
+> Xerosic at the highest opponent `handCount`* — ⚠ but rule 11 puts it in the
+> **tradeoff** column (it competes for the one Supporter play), and tradeoff
+> rules are **0 for 4** here.
+> 🔧 **A correction made before publishing:** the first pass read the opponent's
+> `hand` array and got "0 cards both times", a far more dramatic claim. **That
+> array is hidden and always empty**; the true count is in `handCount`. Same
+> shape as rule 18.
+>
+> **5. 🔴 AN ANCHOR HAD DRIFTED (§8aq) ⇒ RULE 19.** `rule:crustle` is a **fourth**
+> pilot committed **26 minutes after** its last measurement and verified on
+> **n=6**. It reads **0.755 [0.735, 0.773]**, not the **0.866** three docs quoted
+> — confirmed three times independently (p35 0.755, p34 0.748, p37 ctrl 0.764).
+> **The one-line Dwebble tie-break inside the empty-bench guard is worth 0.111**,
+> larger than the whole repair it was a footnote to. ⇒ **WHICH Pokémon a pilot
+> benches matters more than WHETHER it benches**, and §8an's Result 2 is reversed
+> for the pilot we ship. ⛔ **No verdict retracted** — both nets faced the same
+> pilot and §8an showed the shift is a level shift that cancels in differences.
+>
+> **6. ⚠ THE "META SHIFT" AT THE TOP IS MOSTLY A SAMPLING ARTIFACT.** By **games**
+> our archetype fell 52.1% → 20.1% and Dunsparce variants are **58.8%**; by
+> **teams** ours is still the most-played at **37.9%** against all Dunsparce
+> variants' **17.2%**. **One team (Majkel1337) supplied 284 of 399 games** and
+> mining caps at 400 by `avg_score`, so a hyperactive team crowds the sample —
+> rule 16's sampling frame, third instance. ⚠ Our team count *did* fall 22 → 11,
+> which activity does not explain on its face, but with 284 of 399 games taken
+> there are only ~115 left to spread over everyone else, so crowding confounds
+> that too. **Neither reading is clean and both are recorded.**
+>
+> # ▶ THE DAY-19 PLAN — B3, ARCHETYPE COUNTERS (user-directed)
+>
+> **The precedent is good and it is the ONLY axis with a shipped win.** B3
+> instance 1 (the Crustle branch) recovered **+0.104** and is live in v5. Every
+> other axis is closed: search, data, demonstrators, capacity, sequencing, RL,
+> and now deck.
+>
+> 1. 📥 **Census our own field from the fresh dump FIRST** (above). Nothing else
+>    runs until the archetype shares for *our band* exist.
+> 2. 🔴 **THE BLOCKER NOBODY HAS NAMED YET: we cannot SIMULATE 58.6% of the top
+>    band.** There is **no deck file and no pilot** for any Dunsparce variant, nor
+>    for Teal Mask Ogerpon (9.4%). **A counter we cannot A/B is a hunch.** The
+>    consensus lists are already mined and sitting in `out/meta/day_0801.txt`;
+>    building the deck is the `cynthia_garchomp` recipe. ⚠ **The pilot is the hard
+>    part, and §8ap warns a net-piloted anchor is both uninformative and
+>    flattering** (`bc:garchomp` 0.857 is an upper bound, biased optimistic).
+> 3. ⚡ **The Dunsparce shell, for reference** (consistent across all three
+>    variants — a speed/disruption deck, not a damage race):
+>    `4x Mist Energy · 4x Dunsparce · 4x Dudunsparce · 4x Buneary · 3x Mega
+>    Lopunny ex · 4x Ultra Ball · 4x Poké Pad · 4x Buddy-Buddy Poffin · 4x Air
+>    Balloon · 4x Hilda · 4x Lillie's Determination · 4x Wally's Compassion ·
+>    1x Fan Rotom`. ⚡ **Xerosic's Machinations ×1 is in Majkel1337's 64.1% list** —
+>    the user's card is real, just as a 1-of in a free-retreat/disruption deck.
+> 4. ⚠ **RULE 11 GOVERNS EVERY RULE WRITTEN TOMORROW: dominated → build,
+>    tradeoff → distrust. 3 for 3 and 0 for 4.** Before writing one, say which
+>    column it is in.
+> 5. ⚠ **RULE 14 BEFORE RULE 11: size it first.** How often does the condition
+>    fire per game, and how big is it per instance? Three rules died on that
+>    question this week without an A/B being spent.
+> 6. ⛔ **Do NOT submit.** Rank 198 with v5 live; calendar is consolidate
+>    08-08→08-14 then freeze.
+> 7. 📝 **`STRATEGY.md` is the standing one-edit-per-session obligation** and is
+>    now owed **seven** chapters (§8am, §8an, §8ao, §8ap, §8aq, §8ar, and the deck
+>    search). It is 30%+ of the rubric against LB's one bullet of five.
+
+<details><summary>Day 18's own plan and results as written mid-session</summary>
+
+### ▶ DAY 18 — THE STRATIFIED DESIGN IS PRICED, AND ITS OWN INSTRUMENT NARROWED IT TO TWO SLOTS.
 
 > # 🃏 DAY 18 SO FAR — measurement only. ⛔ NO DECK VARIANT HAS BEEN BUILT OR A/B'd (user is reviewing the design first).
 >
@@ -278,6 +442,8 @@ distrust it: mined episodes are the top-1150 band, and
 >    stale Crustle row**; use 0.755.
 > 4. 📝 `STRATEGY.md` — §8am/§8an/§8ao/§8ap are owed chapters, plus §8aq/§8ar.
 > 5. ⛔ **Do NOT submit.** Rank 198 with v5 live; consolidate 08-08→08-14.
+
+</details>
 
 <details><summary>The day-18 plan as set at the end of day 17 (items 1–2 are now in progress above)</summary>
 
