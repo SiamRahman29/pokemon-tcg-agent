@@ -211,7 +211,74 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 16 (in progress 2026-08-02; user-directed. The goal is to WIN)
+### ▶ START HERE — DAY 17 IS B8: THE RL FINE-TUNE. IT IS SCHEDULED, IT HAS A KILL LINE, AND IT HAS A HARD STOP.
+
+> # 🤖 NEXT SESSION STARTS HERE. EVERYTHING ELSE IS PARKED.
+>
+> **The user's decision at the end of day 16: park deck work, do RL.** Both halves
+> are evidenced — §8al retired the guess-a-swap method, and B8 is the only axis
+> left that is neither dead nor spent.
+>
+> 🔴 **WHY IT IS THE LAST ONE.** Search (§2), more data (§1), demonstrator
+> selection (§8t/§8u), capacity (§8w — 8.2× params bought **−43** decisions),
+> within-turn sequencing (§8v), and now **deck (§8al)** are all closed. The
+> feature axis is the only one that ever paid and it is falling ~3× a generation:
+> **+115 → +37 → +14 Elo.**
+>
+> ⚡ **AND THE THING A CLONE STRUCTURALLY CANNOT KNOW IS EXACTLY WHAT AN OUTCOME
+> SIGNAL SUPPLIES.** The corpus records *what humans did*, never *whether it
+> worked*. That is not a re-parameterisation of existing information — it is new
+> information, which is why B8 is different from capacity (§8w) and from
+> per-card expert heads (same data, same features, strictly less context).
+>
+> ✅ **PREREQUISITES ARE ALL BUILT — nothing blocks the first line of code.**
+> `harness.Recorder` (§8ad) emits trajectories; the feature audit has been done
+> twice (§8y/§8z, §8ab); the encoding ceiling is computed (§8x, 95.6% vs a clone
+> at 71%, so expressiveness binds ≤4.4 pp); the seed-only null is measured
+> (**0.482**, §8z); `arena.py play --archive` is the A/B harness.
+>
+> ✅ **AND THE VARIANCE OBJECTION IS PRICED, NOT ARGUED** (§8ae): **5.96 games/s
+> per process ⇒ ~5.5M games to the deadline.** +37 Elo separates in **800 games**;
+> a **1%** effect at a context recurring 20×/game needs **960**. Every row is
+> affordable by three orders of magnitude.
+>
+> #### The build, smallest version only
+>
+> 1. **Fine-tune a SMALL parameter set** — final layer or a low-rank delta, not
+>    the whole net — on our own recorded game outcomes.
+> 2. **Keep the corpus loss as an anchor term** so the policy cannot drift off the
+>    clone it started from. The clone is worth ~955 on the ladder; the downside
+>    risk is undoing that.
+> 3. **A/B at n≥2000 against a BYTE-IDENTICAL control**, seed floor carried in.
+> 4. ⛔ **Never screen on `val_top1`** — rule 3, paid for twice: §8z moved
+>    agreement by **8 decisions** and bought **+37 Elo**; §8aa moved it by **214**
+>    and bought **+14**. A 70× exchange-rate difference means the fit metric
+>    cannot screen in either direction.
+>
+> 🔴 **PRE-REGISTERED KILL LINE, WRITTEN BEFORE ANY CODE:** *if the fine-tuned net
+> does not beat its byte-identical control by a margin whose CI excludes the
+> seed-only null at n≥2000, B8 DIES and becomes a report chapter.*
+> ⚠ **And §8ae's own warning binds:** *a sizing probe that fails to kill is not
+> evidence that a thing works.* **B4 passed all three of its kill criteria and
+> then died at n=200.**
+> ⏰ **HARD STOP 08-08.** After that the calendar is consolidate (08-08→08-14)
+> then freeze; a winner found later could not be integrated and submitted with
+> time to converge (~4 h+, last safe submission ~08-15).
+>
+> #### Carried into day 17
+>
+> - ⏳ **A fourth ladder read is armed** (§8ak). **Do not write a verdict on the
+>   identical-agent gap until v5 gives two AGREEING readings** — it was still
+>   descending at 07:25 (956.5 → 951.0 → 944.3) while `55169114` had converged
+>   (874.8 → 875.3). Gap 81.7 → 76.2 → **69.0** and closing.
+> - ⏸ **Re-running the Crustle-term verdicts against the repaired pilot is still
+>   unauthorised** — hours of compute, rewrites published numbers, user's call.
+> - 📝 `STRATEGY.md` §7c is written; §6 was corrected; §4f now exists. The
+>   standing one-edit-per-session rule is satisfied for day 16.
+
+<details><summary>Day 16 (2026-08-02) — the anchor bug, the deck programme, and the health-check submission (complete; B8 above supersedes its plan)</summary>
+
+### ▶ DAY 16 (2026-08-02; user-directed. The goal is to WIN)
 
 > # 🔴 THE DAY-16 HEADLINE: THE USER WATCHED ONE REPLAY AND FOUND AN ANCHOR THAT WAS THROWING GAMES
 >
@@ -327,13 +394,32 @@ distrust it: mined episodes are the top-1150 band, and
 >    slot weak in both populations, and §8ag left it open) — then **Tool Scrapper,
 >    but ONLY against a tool-running anchor**, which needs the §8ah repair
 >    validated first.
-> 4. 🃏 **REMAINING DECK WORK.** ⛔ **Anchor-based deck A/Bs are still BLOCKED**
->    until the repaired pilot is re-validated (rule 12: build the anchor before
->    the deck opinion) — which is what gates the Tool Scrapper test. ⚡ **The
->    MIRROR is not blocked** and is where §8aj ran. §8af says swaps inside the
->    **134 corpus cards** are low-risk; §8ai notes we run **10 basics in 60** but
->    caps that lead at ~1.3% of games.
+> 4. ✅ **DECK WORK IS DONE FOR THIS PHASE AND ITS METHOD IS RETIRED** (§8al).
+>    Two more user-directed variants tested at n=8,000 each, against §8aj's
+>    same-deck control of **0.4980 [0.483, 0.513]**:
+>
+>    | variant | swaps | score | vs control | p |
+>    |---|---|---|---|---|
+>    | `Dawn → 4th Grimmsnarl ex` | 1 | 0.4911 | −0.007 | 0.54 |
+>    | `Poffin −1, Scrapper −1 → Budew ×2` | 2 | **0.4757** | **−0.022** | **0.021** |
+>    | four-card reconfiguration | 4 | **0.4637** | **−0.034** | **0.0004** |
+>
+>    🔴 **Strength falls MONOTONICALLY with distance from the consensus 60.**
+>    ✅ **And the charitable defence is ruled out** — over 6 recorded games
+>    (`out/replays/budew_v2_watch/`, watchable in `notebooks/visualizer.html`)
+>    Budew reached the **Active spot 3/6** and Itchy Pollen fired **4×**. The
+>    mechanism works at the intended rate and the deck is worse anyway: **the
+>    plan loses, not the execution.**
+>    ⇒ **The consensus 60 is a local optimum and our net is tuned to it.**
+>    ⛔ **THE GUESS-A-SWAP METHOD IS RETIRED** (user's own call, and the data
+>    agrees): three single-card hunches → one null, two significant losses. **The
+>    next deck programme needs a MATCHUP-STRATIFIED SEARCH DESIGN over the whole
+>    slot ranking** — ⚠ all four A/Bs so far were **mirror-only**, which flatters
+>    variants cutting mirror-dead tech (Tool Scrapper 0.00 plays/game there) and
+>    cannot judge a card aimed anywhere else. **Do not run another one-off swap.**
 > 5. ⏸ Re-run the Crustle-term verdicts against the fixed pilot — **user's call**.
+
+</details>
 
 <details><summary>Day 15's headline box (2026-08-01) — the rating-dependent field; still live, superseded only in its item-6 status</summary>
 

@@ -780,6 +780,83 @@ mode of your demonstrator mixture, and moving the target off that mode costs
 more than the better target gains — even when the better target is measurably,
 symmetrically better and you successfully imitate it.*
 
+## 7c. The deck: we tried to improve a netdecked list and measured ourselves failing
+
+We did not design our 60. We mined it — it is card-for-card the most common exact
+list among top episodes, seen **353 times in a single day's data**. That is an
+honest starting point and a slightly embarrassing one, so the question we owed
+the reader is: **can we do better than the list we copied?**
+
+**Answering it required building an instrument first.** For most of the project
+we avoided decklist changes with a hand-waved caveat — *"every change is
+off-distribution for the net"* — which is an excuse, not a measurement. It has a
+mechanism, so we measured it. A card is encoded twice: **derived properties** (HP,
+retreat, damage, cost satisfaction), computed from the card database and
+therefore correct for any card on first sight; and a **card-id embedding**, which
+is meaningful only if that id appeared in training. Our corpus contains exactly
+**134 distinct card ids**, so 1,166 of the 1,300 embedding rows are still random
+initialisation. ⇒ **A swap inside the 134 is low risk; a swap outside it is the
+real hazard.** The excuse became a filter.
+
+**Then we sized every slot**, over 75 real ladder games and 7,094 of our own
+decisions. Two things fell out that we would not have guessed.
+
+**First, deck swaps are measurable where play-rules are not — and the reason is
+which frequency you count.** Three arithmetic-rule candidates died this week
+because the *situation* was rare (0.187–0.27 firings per game against an n=2000
+A/B that resolves 0.021 of win rate). A replacement card is different: it sits in
+the deck whether or not the old card is ever played, so the relevant rate is the
+**draw** rate. Our thinnest card is played 0.13 times per game but is **drawn in
+81%** of them. That single distinction is why deck work deserved days and the
+last three rule candidates did not.
+
+**Second, the obvious cut was disqualified by the matchup rather than by its
+value.** Tool Scrapper is our least-used card — and it is played **0.00 times per
+game across 24 mirror games**, necessarily, because our own list runs no Tools
+and there is nothing to scrap. Testing it in the mirror would have returned
+*"cutting it is free"* by construction, with the matchup producing the answer
+instead of the card. **A slot audit must be stratified by matchup before it can
+rank anything.** This is the same sampling-frame error as §4f and §5.2, in a
+third costume.
+
+**Then we tested three variants against a same-deck control.** The control
+matters: identical decks, identical net on both seats, `n=4,000` — it measures
+what the harness does when nothing has changed, and it came out at **0.4980
+[0.483, 0.513]**, essentially on 0.500. Every deck claim below clears that floor
+or it is noise.
+
+| variant | swaps from consensus | score | vs control | p |
+|---|---|---|---|---|
+| **control** — identical decks | 0 | **0.4980** | — | — |
+| `Dawn → 4th Grimmsnarl ex` | 1 | 0.4911 | −0.007 | 0.54 |
+| `Poffin −1, Scrapper −1 → Budew ×2` | 2 | **0.4757** | **−0.022** | **0.021** |
+| four-card reconfiguration | 4 | **0.4637** | **−0.034** | **0.0004** |
+
+🔴 **Strength falls monotonically with distance from the list we copied.** One
+swap is indistinguishable from noise; two lose ≈17 Elo; four lose ≈25.
+
+**And the comfortable explanation is ruled out.** The natural defence of a losing
+variant is that the clone never learned to use the new card. We recorded six
+games and counted: Budew reached the Active spot in **3 of 6**, and its attack
+fired **4 times**. The mechanism works at roughly the intended rate and the deck
+is worse anyway. **This is not an execution failure — the plan loses.**
+
+> **What we take from it.** The consensus 60 behaves like a **local optimum**, and
+> our policy is a clone trained on games played with that exact list, so it is
+> tuned to it twice over. "We measured a change and kept the list" is a deck
+> result, and it is a stronger one than an unmeasured opinion in either
+> direction. ⚠ **Its scope is narrow and we state it rather than bury it: all
+> four A/Bs were run in the mirror.** That flatters variants which cut
+> mirror-dead tech — and they lost regardless — but a card aimed at a different
+> matchup cannot be judged by these runs at all.
+>
+> 🔴 **The methodological failure is ours and worth naming: three of these
+> variants were single-card guesses.** Guessing produced one null and two
+> significant losses, which is what an unstructured search over a
+> near-optimal 60 should produce. A serious deck programme needs a
+> matchup-stratified design over the whole slot ranking, not a sequence of
+> hunches — and we ran out of days before building one.
+
 ## 8. Negative results
 
 Honest nulls at n≥2000 are the section we are most confident in.

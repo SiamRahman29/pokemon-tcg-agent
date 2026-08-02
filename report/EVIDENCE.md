@@ -3769,6 +3769,77 @@ freeze and still display.
 *A fourth read is armed. Do not write a verdict until v5 gives two agreeing
 readings.*
 
+## 8al. 🃏 THREE VARIANTS, AND STRENGTH FALLS MONOTONICALLY WITH DISTANCE FROM THE CONSENSUS 60 (2026-08-02, day 16)
+
+Two user-directed variants were tested after §8aj's slot audit, both built on
+**Budew** — a card whose case is mechanically sound: `Itchy Pollen` costs
+**`energies: []`**, deals 10, and *"during your opponent's next turn, they can't
+play any Item cards from their hand."* Our list runs **17 Items in 60**, and in
+the mirror the opponent runs the same 17. Exposure was not a concern (§8af):
+Budew appears **4,375 times as our own option**, 1.55× Tool Scrapper's.
+
+All arms are the mirror — our own net on both seats, only the 60 differing —
+against the same-deck control floor from §8aj.
+
+| variant | swaps | score | 95% CI | vs control | p |
+|---|---|---|---|---|---|
+| **CONTROL** identical decks | 0 | **0.4980** | [0.483, 0.513] | — | — |
+| `Dawn → 4th Grimmsnarl ex` | 1 | 0.4911 | [0.476, 0.507] | −0.0069 | 0.54 |
+| `Poffin −1, Scrapper −1 → Budew ×2` | 2 | **0.4757** | [0.465, 0.487] | **−0.0223** | **0.021** |
+| `Petrel −1, Poffin −2, Scrapper −1 → Grimmsnarl ex +1, Boss +1, Budew ×2` | 4 | **0.4637** | [0.453, 0.475] | **−0.0343** | **0.0004** |
+
+🔴 **The ordering is monotone in distance from the consensus list: 0.498 →
+0.491 → 0.476 → 0.464.** One swap is null; two swaps lose ≈17 Elo; four lose
+≈25 Elo. Three points do not establish a functional form, and the two Budew arms
+are not distinguishable from each other (−0.0120 ± 0.0079, z = −1.52) — but every
+deviation is at or below the floor and **none is above it.**
+
+### 🔴 The charitable explanation is ruled out: the net DOES play the card
+
+The obvious defence of a losing variant is *"the clone never learned to use the
+new card, so we measured two dead slots."* Six recorded games
+(`out/replays/budew_v2_watch/`) say otherwise:
+
+| | count of 6 games |
+|---|---|
+| Budew reached our hand | **5** |
+| Budew reached the **Active spot** | **3** (all on turn 0, as the opening active) |
+| **Itchy Pollen attacks fired** | **4** |
+
+⇒ **The mechanism fires at roughly the rate the design intended and the deck is
+still worse.** This is not an execution failure; the plan loses. The leading
+hypothesis — **untested**, so recorded as a hypothesis — is that opening with
+Budew means *not* opening with Marnie's Impidimp, delaying the
+Impidimp → Morgrem → Grimmsnarl ex line in a deck whose Stage 2 is played
+**9.12 times per game**. Trading a turn of setup for one denied Item play is a
+bad trade when you must evolve twice.
+
+### ⚠ What this does and does not license
+
+**Does:** the consensus 60 — card-for-card the list seen **353×** among the
+field's strongest players — behaves like a **local optimum**, and our net is
+tuned to it. Combined with §8o (the deck is not the bottleneck) and §8ac (deck
+shares are a function of our own rating), **Track C's experimentation half is
+answered: measured, and we kept the list.** That is the stewardship result, and
+it now rests on four A/Bs rather than one.
+
+**Does NOT:** ⚠ **every arm was run in the MIRROR ONLY.** That matters
+asymmetrically — cutting Tool Scrapper is **free by construction** in the mirror
+(§8aj: 0.00 plays/game there, our list runs no tools), so the mirror **flatters**
+these variants on that cut and they lost anyway. But a variant aimed at a
+non-mirror matchup cannot be judged here at all.
+⚠ **And the four-card arm is a bundle** — §8ab's "derive and size, do not bundle"
+applies: it lost, and we cannot say which of the four changes lost it. That is
+the acknowledged cost of testing a configuration rather than a component.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" `
+    "bc:v5,net=out/policy_v5.npz" --deck-a grimmsnarl_budew_v2 --deck-b grimmsnarl --matches 4000
+python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
+    --deck-a grimmsnarl_budew_v2 --b "bc:v5,net=out/policy_v5.npz" --deck-b grimmsnarl `
+    --games 6 --out out/replays/budew_v2_watch
+```
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
@@ -3781,12 +3852,21 @@ readings.*
   / 2 Froslass) can grow — which substantially weakens "run more passive damage"
   as a plan.
 - The one variant measured scored **0.490** [0.468, 0.512] n=2000 (§8).
-- ⚡ **A SECOND variant is now measured, and it is the first chosen by
-  measurement rather than argument (§8aj).** All 60 slots sized over 75 real
-  ladder games; `Dawn ×1 → 4th Marnie's Grimmsnarl ex` tested at **n=4,000
-  against a same-deck control**: **0.4911 [0.476, 0.507]** vs the control's
-  **0.4980 [0.483, 0.513]**, difference −0.0069 ± 0.0112. **Null — the list
-  stands.**
+- ⚡ **FOUR variants are now measured (was one), and strength falls MONOTONICALLY
+  with distance from the consensus 60** (§8aj, §8al). Against a same-deck control
+  of **0.4980 [0.483, 0.513]**: 1 swap **0.4911** (null, p=0.54) · 2 swaps
+  **0.4757** (**−17 Elo**, p=0.021) · 4 swaps **0.4637** (**−25 Elo**, p=0.0004).
+  **Every deviation is at or below the floor and none is above it.**
+- 🔴 **The consensus 60 behaves like a LOCAL OPTIMUM and our net is tuned to it.**
+  With §8o (the deck is not the bottleneck) this answers Track C's
+  experimentation half: **measured, and we kept the list.**
+- ⚠ **All four A/Bs are MIRROR-ONLY.** That flatters variants which cut
+  mirror-dead tech (Tool Scrapper is 0.00 plays/game there) and they lost anyway
+  — but a variant aimed at a non-mirror matchup **cannot be judged by these runs
+  at all.** Any future deck programme must be matchup-stratified from the start.
+- ⛔ **Single-card guesses are retired as a method.** Three user-proposed edits
+  produced one null and two significant losses; the next deck work needs a
+  systematic search design, not another suggestion.
 - ✅ **The same-deck variance floor for deck A/Bs is 0.4980 [0.483, 0.513]** —
   the deck-side analogue of the seed-only null for nets. Any future decklist
   claim must clear it, and it sits essentially on 0.500, so the harness is
