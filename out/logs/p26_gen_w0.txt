@@ -1,0 +1,19 @@
+  net=out/policy_v5.npz tau=0.5 deck=grimmsnarl opp=self(tau=0.5)
+  -> E:\Kaggle\pokemon-tcg-simulation-2\artifacts\rl_v5_t05\w0
+     250/2000 games     44681 rows  2.61 games/s  seat0=126 seat1=124 draw=0
+  wrote shard_000.npz: 60000 rows
+     500/2000 games     88280 rows  2.72 games/s  seat0=262 seat1=238 draw=0
+  wrote shard_001.npz: 60000 rows
+     750/2000 games    132007 rows  2.79 games/s  seat0=374 seat1=376 draw=0
+    1000/2000 games    175335 rows  2.87 games/s  seat0=504 seat1=496 draw=0
+  wrote shard_002.npz: 60000 rows
+    1250/2000 games    219462 rows  2.87 games/s  seat0=629 seat1=621 draw=0
+  wrote shard_003.npz: 60000 rows
+    1500/2000 games    263777 rows  2.87 games/s  seat0=749 seat1=751 draw=0
+  wrote shard_004.npz: 60000 rows
+    1750/2000 games    308463 rows  2.86 games/s  seat0=895 seat1=855 draw=0
+    2000/2000 games    351925 rows  2.82 games/s  seat0=1024 seat1=976 draw=0
+  wrote shard_005.npz: 51925 rows
+
+  2000 games, 351925 rows, 11.9 min (2.80 games/s)
+  seat0=1024 seat1=976 draw=0
