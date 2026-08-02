@@ -3938,25 +3938,61 @@ ROADMAP warns about for an anchor that is too *strong* (the 0.911 Crispin
 anchor), arriving from the other end. **Fixing the pilot made it a more correct
 agent and a less informative instrument.**
 
-### ⚠ The mechanism is UNTESTED, and the leading hypothesis is uncomfortable
+### 🔴 The mechanism was hypothesised, TESTED, and the hypothesis was WRONG
 
-The naive reading fails: a pilot that throws games by standing on an empty bench
-should be *easier* to beat, and we scored **lower** against it. The leading
-hypothesis is the opposite of a repair:
+**The user asked the right question — "I thought we were only making sure it
+benches when the bench is empty"** — and the diff says otherwise. `b7869d2`
+replaced one line with three rules, and only one was the authorised repair:
 
-> **The fix tells a Crustle pilot to fill its bench against the one deck in the
-> field that snipes benches.** The old line benched nothing but Dwebble; the new
-> one defaults any Pokémon to 12000. Our list is built on **Shadow Bullet snipe
-> and Munkidori passive damage** (§9) — every extra benched Pokémon is another
-> body our damage can reach and another prize source.
+| change | authorised | effect |
+|---|---|---|
+| bench-full → −5000 | — | no behavioural change |
+| **empty bench → 90000** | ✅ **the fix** | benches when the bench is empty |
+| **non-Dwebble default −5000 → 12000** | 🔴 **no** | benches *anything, always* |
 
-If that is right, the repaired pilot is **not** a better model of a real Crustle
-player, it is a pilot mis-tuned in a new direction that happens to be maximally
-bad against us. ⛔ **Rule 12, one level up: the repaired pilot has been validated
-as "does not instantly lose", never as "plays Crustle well."** Do not read
-0.888 as "we beat Crustle 89% of the time" — 6.7% of the real field plays this
-archetype and §8i measured **76.9% over 13 real ladder games** against the
-broken-pilot arena's 0.770, which was the *accurate* pairing.
+**The hypothesis written here first was that the third line did the damage:**
+our list wins on Shadow Bullet snipe and Munkidori passive damage (§9), so
+telling a Crustle pilot to fill its bench hands us targets and prize sources.
+The line was narrowed to the guard alone (`p28`, pilot v3) and re-measured.
+
+| pilot | v3 net scores | vs broken |
+|---|---|---|
+| **v1** broken (no guard, Dwebble-only) | 0.7700 [0.751, 0.788] | — |
+| **v2** guard **+** bench-anything default | 0.8565 [0.840, 0.871] | +0.087 |
+| **v3** guard only, original default restored | **0.8670** [0.851, 0.881] | **+0.097** |
+
+🔴 **REFUTED. The minimal repair produces the SAME shift — slightly more, not
+less.** The default inversion contributed nothing; if anything the
+bench-everything version was marginally *better* for the pilot (0.8565 vs
+0.8670, CIs overlapping), which is the opposite sign to the snipe argument.
+**The empty-bench guard is the whole effect.**
+
+⚠ **The narrowing was still right, for a reason that is not this measurement:**
+a defect fix may restore an author's intent, it may not install a new strategy.
+It simply was not what moved the number.
+
+### ⚡ The live hypothesis, and it is about the guard's MAGNITUDE
+
+`return 90000` **dominates every other option in the set** — Dwebble as a wanted
+card is 25000 and nothing else comes close. So whenever the bench is empty the
+pilot benches, **at the cost of whatever else it would have done that select**.
+Over 6 recorded games (`out/replays/audit_crustle_v3`) the pilot met an empty
+bench at **54 decision points, ~9 per game**, against `rule:alakazam5`'s 19.
+
+⇒ **A guard that was meant to fire on the brink of a loss is firing nine times a
+game and hijacking the turn each time.** A value just above Dwebble's 25000
+would remove the catastrophic failure without overriding the pilot's own plan.
+⛔ **Not done — that is anchor tuning, and it is not authorised by this section.**
+✅ **What IS verified is that the narrowed pilot still fixes the original
+defect**: over the same 6 games, **EXPOSED = 0.000 and declines = 0** (`p24`).
+Its 2 of 4 empty-bench losses are games with no Pokémon in hand to bench, which
+is losing rather than a defect — the over-corrected pilot showed the same 2/10.
+
+⛔ **Rule 12, one level up: no version of this pilot has been validated as
+"plays Crustle well", only as "does not instantly lose."** Do not read 0.888 as
+"we beat Crustle 89% of the time" — 6.7% of the real field plays this archetype
+and §8i measured **76.9% over 13 real ladder games** against the broken-pilot
+arena's 0.770, which was the *accurate* pairing.
 
 ⇒ **Standing consequence: quote the v1 (broken-pilot) numbers for anything that
 compares against the real field, and the v2 numbers only for net-vs-net
