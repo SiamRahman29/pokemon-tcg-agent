@@ -1,0 +1,174 @@
+parsed 399 games
+
+=== archetypes by usage (win% excl. draws) ===
+   284 games  64.1%  Dudunsparce / Mist Energy  (1 teams)
+   160 games  50.0%  Basic {D} Energy / Munkidori  (11 teams)
+   102 games  45.1%  Buneary / Dunsparce  (2 teams)
+    82 games  56.1%  Dunsparce / Mist Energy  (1 teams)
+    75 games  28.0%  Basic {G} Energy / Teal Mask Ogerpon ex  (4 teams)
+    59 games  11.9%  Mist Energy / Spiky Energy  (2 teams)
+    15 games  33.3%  Basic {G} Energy / Crispin  (1 teams)
+    10 games  70.0%  Drakloak / Dreepy  (1 teams)
+     5 games  80.0%  Basic {F} Energy / Rock Fighting Energy  (2 teams)
+     2 games   0.0%  Basic {G} Energy / Team Rocket's Energy  (1 teams)
+     2 games  50.0%  Abra / Telepath Psychic Energy  (1 teams)
+     1 games   0.0%  Applin / Basic {G} Energy  (1 teams)
+     1 games   0.0%  Dunsparce / Lillie's Determination  (1 teams)
+
+=== top teams by best avg_score seen ===
+   1279.2  Luca: Dunsparce / Mist Energy x82, Basic {D} Energy / Munkidori x2
+   1279.2  やる気元気ミワハルキ: Basic {D} Energy / Munkidori x95
+   1264.8  Majkel1337: Dudunsparce / Mist Energy x284, Basic {G} Energy / Teal Mask Ogerpon ex x26
+   1262.7  Brahim: Buneary / Dunsparce x101
+   1253.7  YuPengCao: Basic {D} Energy / Munkidori x1
+   1242.7  Sixth Sense: Basic {D} Energy / Munkidori x42
+   1238.3  flg: Mist Energy / Spiky Energy x56
+   1236.9  pikachu: Applin / Basic {G} Energy x1
+   1234.0  NguyenThanhNhan: Basic {D} Energy / Munkidori x10
+   1232.9  James Cox & Henry Chao: Basic {G} Energy / Crispin x15
+   1232.2  keidroid: Basic {G} Energy / Teal Mask Ogerpon ex x25
+   1228.8  Rmy: Basic {G} Energy / Teal Mask Ogerpon ex x22
+   1228.5  junlee789: Basic {F} Energy / Rock Fighting Energy x2
+   1223.2  MissingNo.: Mist Energy / Spiky Energy x3
+   1220.4  LumenLiquidity: Drakloak / Dreepy x10
+   1218.1  Raihan Ramadistra: Basic {D} Energy / Munkidori x2
+   1217.6  szlachetny snieg: Basic {D} Energy / Munkidori x1
+   1215.9  Yushin Ito: Abra / Telepath Psychic Energy x2
+   1209.8  bono: Basic {G} Energy / Team Rocket's Energy x2
+   1208.1  tonakaiiii: Basic {G} Energy / Teal Mask Ogerpon ex x2
+   1205.3  Dominic Peel: Basic {D} Energy / Munkidori x4
+   1205.0  lolzpo+ emonga: Dunsparce / Lillie's Determination x1
+   1204.3  Octavi Grau: Basic {F} Energy / Rock Fighting Energy x3
+   1202.8  lmaffei: Buneary / Dunsparce x1
+   1201.2  @kdcyberdude: Basic {D} Energy / Munkidori x1
+
+=== most common decklist per top archetype ===
+
+--- Dudunsparce / Mist Energy (this exact list seen 284x) ---
+  4x Mist Energy [11]
+  4x Dudunsparce [66]
+  4x Dunsparce [305]
+  4x Buneary [848]
+  4x Buddy-Buddy Poffin [1086]
+  4x Ultra Ball [1121]
+  4x Pokégear 3.0 [1122]
+  4x Poké Pad [1152]
+  4x Air Balloon [1174]
+  4x Hilda [1225]
+  4x Lillie's Determination [1227]
+  4x Wally's Compassion [1229]
+  3x Spiky Energy [14]
+  3x Mega Lopunny ex [849]
+  3x Boss’s Orders [1182]
+  1x Enriching Energy [13]
+  1x Fan Rotom [174]
+  1x Xerosic’s Machinations [1197]
+
+--- Basic {D} Energy / Munkidori (this exact list seen 158x) ---
+  10x Basic {D} Energy [7]
+  4x Munkidori [112]
+  4x Marnie's Impidimp [646]
+  4x Buddy-Buddy Poffin [1086]
+  4x Poké Pad [1152]
+  4x Team Rocket's Petrel [1219]
+  4x Lillie's Determination [1227]
+  4x Spikemuth Gym [1259]
+  3x Marnie's Morgrem [647]
+  3x Marnie's Grimmsnarl ex [648]
+  3x Rare Candy [1079]
+  3x Night Stretcher [1097]
+  2x Froslass [104]
+  2x Snorunt [860]
+  2x Boss’s Orders [1182]
+  1x Unfair Stamp [1080]
+  1x Pokégear 3.0 [1122]
+  1x Tool Scrapper [1137]
+  1x Dawn [1231]
+
+--- Buneary / Dunsparce (this exact list seen 102x) ---
+  4x Mist Energy [11]
+  4x Dudunsparce [66]
+  4x Dunsparce [305]
+  4x Buneary [848]
+  4x Buddy-Buddy Poffin [1086]
+  4x Ultra Ball [1121]
+  4x Pokégear 3.0 [1122]
+  4x Poké Pad [1152]
+  4x Air Balloon [1174]
+  4x Boss’s Orders [1182]
+  4x Hilda [1225]
+  4x Lillie's Determination [1227]
+  4x Wally's Compassion [1229]
+  3x Spiky Energy [14]
+  3x Mega Lopunny ex [849]
+  1x Enriching Energy [13]
+  1x Fan Rotom [174]
+
+--- Dunsparce / Mist Energy (this exact list seen 82x) ---
+  4x Mist Energy [11]
+  4x Dunsparce [305]
+  4x Buddy-Buddy Poffin [1086]
+  4x Ultra Ball [1121]
+  4x Poké Pad [1152]
+  4x Lillie's Determination [1227]
+  4x Wally's Compassion [1229]
+  3x Basic {W} Energy [3]
+  3x Dudunsparce [66]
+  3x Hand Trimmer [1087]
+  3x Air Balloon [1174]
+  3x Hilda [1225]
+  3x Battle Cage [1264]
+  2x Buneary [848]
+  2x Mega Lopunny ex [849]
+  2x Snorunt [860]
+  2x Mega Froslass ex [861]
+  2x Pokégear 3.0 [1122]
+  2x Boss’s Orders [1182]
+  1x Enriching Energy [13]
+  1x Fan Rotom [174]
+
+--- Basic {G} Energy / Teal Mask Ogerpon ex (this exact list seen 58x) ---
+  18x Basic {G} Energy [1]
+  4x Teal Mask Ogerpon ex [96]
+  4x Bug Catching Set [1094]
+  4x Energy Search [1119]
+  4x Judge [1213]
+  4x Lillie's Determination [1227]
+  3x Pokégear 3.0 [1122]
+  3x Boss’s Orders [1182]
+  2x Grow Grass Energy [18]
+  2x Energy Retrieval [1118]
+  2x Tera Orb [1127]
+  2x Jumbo Ice Cream [1147]
+  2x Harlequin [1223]
+  2x Lively Stadium [1251]
+  1x Tool Scrapper [1137]
+  1x Hero’s Cape [1159]
+  1x Briar [1201]
+  1x N's Plan [1221]
+
+--- Mist Energy / Spiky Energy (this exact list seen 59x) ---
+  4x Mist Energy [11]
+  4x Spiky Energy [14]
+  4x Grow Grass Energy [18]
+  4x Dwebble [344]
+  4x Pokégear 3.0 [1122]
+  4x Jumbo Ice Cream [1147]
+  4x Boss’s Orders [1182]
+  4x Team Rocket's Petrel [1219]
+  4x Lillie's Determination [1227]
+  3x Crustle [345]
+  2x Basic {G} Energy [1]
+  2x Rock Fighting Energy [20]
+  2x Mega Kangaskhan ex [756]
+  2x Buddy-Buddy Poffin [1086]
+  2x Ultra Ball [1121]
+  2x Colress’s Tenacity [1194]
+  2x Hilda [1225]
+  1x Cornerstone Mask Ogerpon ex [117]
+  1x Switch [1123]
+  1x Tool Scrapper [1137]
+  1x Hero’s Cape [1159]
+  1x Xerosic’s Machinations [1197]
+  1x Team Rocket's Factory [1257]
+  1x Battle Cage [1264]
