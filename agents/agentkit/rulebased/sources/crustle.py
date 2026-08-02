@@ -353,10 +353,23 @@ def score_option(obs: Observation, option) -> int:
             if len(player.bench) >= player.benchMax:
                 return -5000
             # An empty bench means the next KO loses the game outright, so
-            # filling it dominates every other play in the option set.
+            # filling it dominates every other play in the option set. This
+            # guard is the WHOLE repair.
             if not player.bench:
                 return 90000
-            return 25000 if card_id == DWEBBLE else 12000
+            # 🔴 NARROWED 2026-08-02 (day 17). The first version of this fix
+            # also returned 12000 here instead of -5000, which changed the
+            # pilot's behaviour on EVERY bench decision rather than only the
+            # empty-bench one -- it went from "bench nothing but Dwebble" to
+            # "bench anything, always". That was never the authorised change,
+            # and §8an measured what it cost: all three of our nets scored
+            # +0.087..+0.102 HIGHER against the over-corrected pilot, every CI
+            # disjoint. The mechanism is that our list wins on Shadow Bullet
+            # snipe and Munkidori passive damage (§9), so telling a Crustle
+            # pilot to fill its bench hands us targets and prize sources.
+            # ⛔ A defect fix may restore an author's intent; it may not
+            # install a new strategy. Restored to the original default.
+            return 25000 if card_id == DWEBBLE else -5000
         if card_id == BUDDY_POFFIN:
             return wanted_card_score(card_id, obs, my_index, ignore_hand=True)
         if card_id == BATTLE_CAGE:
