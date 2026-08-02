@@ -403,6 +403,45 @@ evidence against that rule and spent a session's prior on it. **The arena and th
 LB were never in conflict; the question was below the instrument's resolution.**
 `EVIDENCE` §7.
 
+#### 5.1b And we later measured that instrument's resolution directly
+
+§5.1 argued the point from the leaderboard's observed swing. On 2026-08-02 we
+measured it instead, by accident and then on purpose. A submission made purely
+to add logging turned out to be **decision-identical** to the agent it was
+built from — `diff -rq` over the extracted bundles showed only the counters and
+one `print` differing, with weights, deck and engine byte-identical. Two agents
+that make the same move in the same state therefore played the ladder side by
+side for a day, and **they read 63.2 points apart** (942.7 against 879.5, after
+23.9 h and 15.8 h of play, both settled by the same test).
+
+**That is a true difference of exactly zero, displayed as 63 points.** Set it
+against every effect this project has produced:
+
+| effect | magnitude |
+|---|---|
+| **two decision-identical agents** | **63.2 LB points** |
+| our best LB-measured net gap | +40.5 |
+| the v4 state block (§4d) | +37 Elo |
+| dropping its three derived members | −36 Elo |
+| the v5 option-set pool (§4e) | +14 Elo |
+
+⇒ **The leaderboard cannot adjudicate any change we have made or are likely to
+make.** This is not a complaint about Kaggle's rating system, which is doing the
+ordinary thing a rating system does over a few hundred games against a moving
+population of 6,136. It is an argument about which instrument a claim may rest
+on: **a 2,000-game arena A/B against a byte-identical control, with a measured
+seed-only noise floor, is not the weaker evidence here — it is the only
+evidence.** Every number in this report that could have been sourced from either
+is sourced from the arena, and the ladder appears only where the effect is large
+enough to clear 63 points.
+
+⚠ Two honest limits. The gap was still **closing** across four reads (81.7 →
+76.2 → 69.0 → 63.2 over 5.4 h), so 63 is a lower bound observed at one moment
+rather than a stable floor. And the last of those reads closed because the
+*converged* agent moved **+4.2** — after our own two-readings-an-hour-apart rule
+had certified it as settled. **A convergence test at hour scale does not license
+a claim at day scale**, which cost us a headline number the day before.
+
 ### 5.2 Failure two: an anchor set that was not the field
 
 Every routine number was measured against one opponent deck. When the metagame
