@@ -302,14 +302,38 @@ distrust it: mined episodes are the top-1150 band, and
 >    sizing closed · ✅ EVIDENCE §8ah/§8ai · ✅ STRATEGY §4f written and §6's stale
 >    day-9 shares corrected.
 > 2. ⏳ **Ladder settling read (~07:25 UTC) → §8aj**, the identical-agent null.
-> 3. 🃏 **DECK WORK IS THE USER'S PRIORITY AND IS NEXT.** ⛔ **Anchor-based deck
->    A/Bs are BLOCKED** until the repaired pilot is re-validated (rule 12: build
->    the anchor before the deck opinion). ⚡ **The MIRROR is not blocked** — both
->    seats are our own net on our own 60, so only the list differs — and it is
->    **33.3% of the field, 51.1% above rating 900, 71.4% above 1000**. Start
->    there. §8af says swaps inside the **134 corpus cards** are low-risk; §8ai
->    notes we run **10 basics in 60** but caps that lead at ~1.3% of games.
-> 4. ⏸ Re-run the Crustle-term verdicts against the fixed pilot — **user's call**.
+> 3. ✅ **DECK WORK RAN — Track C has its first measurement-driven result** (§8aj).
+>    `p25_deck_slot_audit.py` sized all 60 slots over 75 real games. ⚡ **Deck
+>    swaps PASS the sizing gate that killed three rules this week**, because the
+>    relevant frequency is the **draw** rate not the play rate — Tool Scrapper is
+>    played 0.13×/game but **drawn in 81% of games**. 🔴 **And the obvious cut was
+>    disqualified by the MATCHUP: Tool Scrapper is played 0.00 times per mirror
+>    game** (our list runs no tools), so a mirror A/B would return "cutting it is
+>    free" by construction — **rule 16 in deck clothing.** Tested instead
+>    `Dawn ×1 → 4th Marnie's Grimmsnarl ex`, n=4,000 per arm:
+>
+>    | arm | score | 95% CI |
+>    |---|---|---|
+>    | CONTROL `grimmsnarl` v `grimmsnarl` | **0.4980** | [0.483, 0.513] |
+>    | TEST `grimmsnarl_g4` v `grimmsnarl` | **0.4911** | [0.476, 0.507] |
+>
+>    **Δ = −0.0069 ± 0.0112, z = −0.61 — a clean NULL, exactly as pre-registered.
+>    The list stands.** ✅ **The control is the keeper: 0.4980 is the project's
+>    first same-deck variance floor for deck A/Bs** (the deck-side analogue of the
+>    0.482 seed null), and it sits on 0.500, so the harness is unbiased.
+>    ⚠ **First player is worth ~1 pp** (P0 0.510/0.513 vs P1 0.486/0.470) —
+>    `arena.py` alternates seats, anything that doesn't reads a ~2 pp bias.
+>    ⇒ **Next deck candidates, in order: Pokégear 3.0 ×1** (0.33/0.31, the other
+>    slot weak in both populations, and §8ag left it open) — then **Tool Scrapper,
+>    but ONLY against a tool-running anchor**, which needs the §8ah repair
+>    validated first.
+> 4. 🃏 **REMAINING DECK WORK.** ⛔ **Anchor-based deck A/Bs are still BLOCKED**
+>    until the repaired pilot is re-validated (rule 12: build the anchor before
+>    the deck opinion) — which is what gates the Tool Scrapper test. ⚡ **The
+>    MIRROR is not blocked** and is where §8aj ran. §8af says swaps inside the
+>    **134 corpus cards** are low-risk; §8ai notes we run **10 basics in 60** but
+>    caps that lead at ~1.3% of games.
+> 5. ⏸ Re-run the Crustle-term verdicts against the fixed pilot — **user's call**.
 
 <details><summary>Day 15's headline box (2026-08-01) — the rating-dependent field; still live, superseded only in its item-6 status</summary>
 

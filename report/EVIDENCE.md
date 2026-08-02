@@ -3683,7 +3683,38 @@ outcome is most likely *"we measured a change and kept the list."* Run with a
 measure the seat/variance floor, because `battle_start` takes no seed (§8ad) and
 these games are not reproducible run-to-run.
 
-*A/B in flight at n=2000 per arm; result appended here when it lands.*
+### Result 4 — ✅ THE A/B RAN AND IT IS A CLEAN NULL. The list stands.
+
+2,000 matches per arm, both seats played, **n=4,000 games each**:
+
+| arm | score | 95% CI | W/D/L |
+|---|---|---|---|
+| **CONTROL** `grimmsnarl` vs `grimmsnarl` | **0.4980** | [0.483, 0.513] | 1991/2/2007 |
+| **TEST** `grimmsnarl_g4` vs `grimmsnarl` | **0.4911** | [0.476, 0.507] | 1964/1/2035 |
+
+**TEST − CONTROL = −0.0069, SE 0.0112, z = −0.61, 95% CI [−0.029, +0.015].**
+The A/B resolves effects larger than **≈2.2 percentage points** and this is not
+one. ⇒ **`Dawn ×1 → 4th Marnie's Grimmsnarl ex` is null. Dawn stays in the 60.**
+
+**The pre-registered prior was right, and it was written down first** — which is
+what makes this a result rather than a shrug. The consensus list seen 353× by the
+field's strongest players survives the first slot we had measured grounds to
+doubt.
+
+⚡ **The control is the more valuable half, and it is new.** `0.4980
+[0.483, 0.513]` over 4,000 games is the **first measured same-deck variance floor
+for deck A/Bs in this project** — the deck-side analogue of §8z's seed-only null
+(0.482) for nets. Every future decklist claim now has a floor to clear, and the
+floor sits essentially on 0.500, which also says the harness itself is unbiased.
+
+⚠ **A seat effect exists and is worth recording**: P0 scores **0.510 / 0.513**
+against P1's **0.486 / 0.470** across the two arms. First player is worth roughly
+a point of win rate. `arena.py` alternates seats so it cancels here — **but any
+measurement that does not alternate is reading a ~2 pp bias as a result.**
+
+⇒ **Track C's stewardship entry, earned rather than asserted: we sized all 60
+slots, derived a candidate from our own games instead of from argument, tested it
+against a same-deck control at n=4,000, and kept the list.**
 
 ```powershell
 python -X utf8 scripts/p25_deck_slot_audit.py
@@ -3703,6 +3734,23 @@ python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" `
   / 2 Froslass) can grow — which substantially weakens "run more passive damage"
   as a plan.
 - The one variant measured scored **0.490** [0.468, 0.512] n=2000 (§8).
+- ⚡ **A SECOND variant is now measured, and it is the first chosen by
+  measurement rather than argument (§8aj).** All 60 slots sized over 75 real
+  ladder games; `Dawn ×1 → 4th Marnie's Grimmsnarl ex` tested at **n=4,000
+  against a same-deck control**: **0.4911 [0.476, 0.507]** vs the control's
+  **0.4980 [0.483, 0.513]**, difference −0.0069 ± 0.0112. **Null — the list
+  stands.**
+- ✅ **The same-deck variance floor for deck A/Bs is 0.4980 [0.483, 0.513]** —
+  the deck-side analogue of the seed-only null for nets. Any future decklist
+  claim must clear it, and it sits essentially on 0.500, so the harness is
+  unbiased.
+- ⚠ **First player is worth ~1 point of win rate** (P0 0.510/0.513 vs P1
+  0.486/0.470 across two 4,000-game arms). `arena.py` alternates seats; anything
+  that does not is reading a ~2 pp bias as a result.
+- 🔴 **Tool Scrapper is our thinnest slot on utilisation (0.13 plays/game) and is
+  NOT cuttable on that evidence** — it is played **0.00 times per mirror game**
+  because our list runs no tools, so a mirror test measures the matchup rather
+  than the card. It needs a tool-running anchor, which §8ah's repair gates.
 
 ---
 
