@@ -239,57 +239,47 @@ distrust it: mined episodes are the top-1150 band, and
 > expert **anti-predicts** strength. A 1279 demonstrator is further away, not
 > closer. Read it; do not fit to it.
 >
-> # ⏳ TWO RUNS WERE STILL IN FLIGHT WHEN DAY 18 ENDED — READ THESE FIRST
+> # ✅ BOTH RUNS LANDED — THE DECK SEARCH IS CLOSED
 >
-> Both finish unattended. **Read the verdicts before anything else:**
->
-> ```powershell
-> python -X utf8 scripts/p36_deck_search.py --rank        # stage 2 is p37_*, see below
-> Get-Content out/logs/p37_G_*.log    | Select-String "score="
-> Get-Content out/logs/p37_ctrl_*.log | Select-String "score="
-> Get-Content out/logs/p38_xero2_mirror.log | Select-String "score="
-> ```
->
-> **(a) `p37` — the pre-registered stage-2 confirmation of candidate G**
-> (`Pokegear 3.0 -> Fezandipiti ex`), 57,600 games over all seven anchors at
-> p33's Neyman allocation. ⛔ **The kill line is written in
-> `out/logs/deck_search_prereg.txt` and is binding: G ships only if it beats
-> stock on field-weighted W with a CI excluding zero. If it fails, THE SEARCH IS
-> OVER and no second candidate is promoted.** Cells that had reported:
+> **`p37` — stage 2, the pre-registered confirmation of candidate G. IT DIED.**
+> 57,600 fresh games, all seven anchors:
 >
 > | anchor | weight | control | G | Δ |
 > |---|---|---|---|---|
-> | mirror | 33.3% | — | **0.500** [0.492, 0.507] | **0.000** |
-> | alakazam5 | 22.0% | 0.793 [0.785, 0.802] | 0.768 [0.759, 0.777] | 🔴 **−0.025** disjoint |
-> | crustle | 6.7% | 0.764 | 0.760 | −0.004 |
-> | dragapult | 5.3% | 0.807 [0.789, 0.823] | *pending* | — |
+> | mirror | 33.3% | 0.504 | 0.500 [0.492, 0.507] | −0.004 |
+> | alakazam5 | 22.0% | 0.793 | 0.768 | 🔴 **−0.025** |
+> | archaludon | 8.0% | 0.688 | 0.656 | 🔴 **−0.032** |
+> | crustle (v4) | 6.7% | 0.764 | 0.760 | −0.004 |
+> | garchomp | 6.7% | 0.837 | 0.818 | −0.019 |
+> | dragapult | 5.3% | 0.807 | 0.787 | −0.020 |
+> | v10 | 4.0% | 0.615 | 0.564 | 🔴 **−0.051** |
+> | **WEIGHTED** | **86.0%** | | | 🔴 **−0.0140** |
 >
-> **Partial dW ≈ −0.0058 against a resolution of ±0.0050**, so the remaining 24%
-> of weight (archaludon, garchomp, dragapult, v10) would have to average **+0.024**
-> to rescue it. ⚠ **Compute the full weighted number before writing the verdict**
-> — §8i was retracted for exactly this (a verdict written after 2 of 5 anchors).
+> **ΔW = −0.0140 against ±0.0050 resolution — 2.8× outside, NEGATIVE on 7 of 7.**
+> ⛔ **The kill line is not met. G dies, and per the pre-registration THE SEARCH
+> IS OVER — no second candidate is promoted.** That clause is what made this one
+> test instead of eleven. `EVIDENCE` §8as.
 >
-> **(b) ✅ `p38_xero2` — the Xerosic ISOLATION test LANDED, and it decomposes the
-> bundle cleanly.** Stock 60 − Dawn − Pokegear + Xerosic's Machinations ×2,
-> n=4,000, direct head-to-head:
+> ⚡ **The cheap screen predicted the expensive confirmation**: stage 1 called the
+> mirror at **0.501** on 4,000 games, stage 2 says **0.500** on 15,800. The
+> two-stage design's central bet is confirmed on first use.
 >
-> | deck | cards changed | score | Δ vs 0.504 control | Elo |
+> **`p38_xero2` — the Xerosic isolation. −0.040, and it does NOT convict the
+> card.** `EVIDENCE` §8at.
+>
+> | deck | cards changed | score | Δ | Elo |
 > |---|---|---|---|---|
-> | control (stock v stock) | 0 | 0.504 [0.488, 0.519] | — | — |
-> | **Xerosic ×2, isolated** | **2** | **0.464** [0.449, 0.479] | **−0.040** | **≈ −28** |
+> | control | 0 | 0.504 [0.488, 0.519] | — | — |
+> | **Xerosic ×2 isolated** | **2** | **0.464** [0.449, 0.479] | **−0.040** | ≈ −28 |
 > | community + Xerosic bundle | 5 | 0.431 [0.415, 0.446] | −0.073 | ≈ −51 |
 >
-> **Both disjoint from the control.** ⚡ **The decomposition is the useful part:
-> the bundle's −0.073 is Xerosic ×2 at −0.040 plus the other three changes at
-> −0.033**, so §8ab's no-bundling rule paid for itself — the card really does
-> carry most of it, which a 5-card test could not have shown.
-> ⚠ **For scale: §8al's 2-card Budew swap was −0.022. Xerosic ×2 is roughly twice
-> as costly per card changed.**
-> 🔴 **BUT THIS STILL DOES NOT SEPARATE CARD FROM PILOT**, and that is the honest
-> limit: the replays show the net firing Xerosic at opponent hand size **4** when
-> nine offers at **7** were available. *"The card is wrong for this deck"* and
-> *"the card is fine and our clone misplays it"* both predict −0.040. **Only a
-> timing rule (day-19 item, rule 11 tradeoff column) can tell them apart.**
+> ⚡ **§8ab's no-bundling rule paid for itself** — the bundle's −0.073 splits into
+> Xerosic ×2 at −0.040 and the other three changes at −0.033.
+> 🔴 **But "the card is wrong here" and "our clone misplays it" both predict
+> −0.040**, and the replays show the net firing it at opponent hand size **4**
+> while **nine offers at 7** went by (it discards down to 3, so those plays
+> removed **one card each** against a best-available **five**). **Only a timing
+> rule separates them — a day-19 candidate, rule 11 tradeoff column, 0 for 4.**
 >
 > # 🃏 WHAT DAY 18 SETTLED
 >

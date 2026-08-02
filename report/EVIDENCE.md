@@ -3889,6 +3889,173 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8as. 🔴 THE DECK SEARCH IS CLOSED — 11 pre-registered variants, all ≤ 0, and the confirmation is negative on 7 anchors of 7 (2026-08-02, day 18)
+
+**The design** is §8ar's, pre-registered in `out/logs/deck_search_prereg.txt` and
+committed (`d93cf04`) **before any variant deck file existed** — git enforces the
+ordering, which is what makes stage 2 a test rather than shopping. Two stages:
+a mirror screen that **ranks** (no p-values, by construction), then a **single**
+stratified confirmation of the top-ranked candidate and nothing else.
+
+### Step 0 — the falsification check, run before anything else
+
+Stock vs stock: **0.504 [0.488, 0.519]** over 4,000 games against §8aj's
+**0.4980 [0.483, 0.513]**. Consistent, so the harness had not moved.
+
+⚡ **It also priced a rule-18 trap caught in this script before it ran.** The
+first ranker scored archives directly and derived our seat from
+`deck0 == <variant name>` — correct for a variant, whose two deck names differ,
+and **silently wrong for the stock-vs-stock control**, where both sides are named
+`grimmsnarl` and every row reads as seat 0. This run measured **P0 52.6% vs P1
+48.1%**, so that control would have returned **0.526** instead of 0.504 and
+biased every candidate's ΔW downward by **0.022** — larger than any single-card
+effect §8al ever measured, and it would have read as a clean finding that every
+variant loses. The ranker now parses the seat-corrected `score=` line `arena.py`
+already prints.
+
+### Stage 1 — the screen. All eleven at or below stock.
+
+| id | swap | screen | ΔW |
+|---|---|---|---|
+| **G** | Pokegear 3.0 → Fezandipiti ex | 0.501 [0.486, 0.517] | **−0.0010** ⭐ leader |
+| J | Pokegear 3.0 → Froslass 2→3 | −0.012 / **+0.015** | −0.0016 |
+| D | Rare Candy 3→2 → Ultra Ball | 0.488 | −0.0053 |
+| F | Poffin 4→3 → Ultra Ball | 0.485 | −0.0063 |
+| I | Tool Scrapper → Ultra Ball | −0.027 / −0.010 | −0.0066 |
+| K | Dawn → Snorunt 2→3 | −0.029 / −0.033 | −0.0086 |
+| A / B | Dawn, Pokegear → Ultra Ball | 0.475 | −0.0097 |
+| E | Night Stretcher 3→2 → Ultra Ball | 0.472 | −0.0107 |
+| H | Dawn → Latias ex | 0.450 | −0.0180 |
+| C | Unfair Stamp → Ultra Ball | 0.439 | −0.0217 |
+
+🔴 **Every one of eleven is ≤ 0; six of eight mirror candidates lose
+significantly.** §8al's monotone result reproduced by a mechanical search — and
+this time **the cut slots were chosen by measured liveness (§8ar) rather than
+intuition**, which removes the standing objection that §8al simply picked bad
+cards.
+
+⚡ **The design's real payoff: Ultra Ball was held fixed across SIX different cut
+slots and lost in all six (0.439–0.488).** That separates *"we cut six good
+slots"* from *"the add card is wrong"*, and only the second explains six
+independent losses. **A single A/B cannot distinguish those two, and every deck
+A/B this project ran before today was a single A/B.**
+
+### Stage 2 — the confirmation. Negative on 7 of 7.
+
+Candidate G only, 57,600 fresh games at §8ar's Neyman allocation. **Fresh** so the
+confirmation is independent of the screen.
+
+| anchor | weight | control | G | Δ | w·Δ |
+|---|---|---|---|---|---|
+| mirror | 33.3% | 0.504 | 0.500 [0.492, 0.507] | −0.004 | −0.0013 |
+| `rule:alakazam5` | 22.0% | 0.793 [0.785, 0.802] | 0.768 [0.759, 0.777] | 🔴 **−0.025** | −0.0055 |
+| `rule:archaludon` | 8.0% | 0.688 [0.673, 0.703] | 0.656 [0.640, 0.671] | 🔴 **−0.032** | −0.0026 |
+| `rule:crustle` (v4) | 6.7% | 0.764 | 0.760 | −0.004 | −0.0003 |
+| `bc:garchomp` | 6.7% | 0.837 [0.821, 0.852] | 0.818 [0.801, 0.833] | −0.019 | −0.0013 |
+| `rule:dragapult` | 5.3% | 0.807 | 0.787 | −0.020 | −0.0011 |
+| `rule:v10` | 4.0% | 0.615 [0.593, 0.636] | 0.564 [0.542, 0.586] | 🔴 **−0.051** | −0.0020 |
+| **WEIGHTED** | **86.0%** | | | | **−0.0140** |
+
+**ΔW = −0.0140 against a design resolution of ±0.0050 — 2.8× outside, and
+negative on every anchor.** ⛔ **The pre-registered kill line is not met. G dies,
+and per the pre-registration THE SEARCH IS OVER: no second candidate is
+promoted.** That clause is what makes this one test instead of eleven.
+
+### ⚡ The methodological result: the cheap screen predicted the expensive confirmation
+
+Stage 1 called the mirror at **0.501** on 4,000 games; stage 2 says **0.500** on
+15,800. **The two-stage design's central bet — that a cheap screen can rank
+honestly if it is never asked to test — is confirmed on its first use.**
+
+### 🔴 And the finding that will outlive the null: §8af is necessary, not sufficient
+
+Two independent lines say the same thing:
+
+- **Ultra Ball** sits at **5.59×** the corpus exposure of our weakest card and
+  lost **all six** slots it was tried in.
+- **Energy Switch** sits at **3.61×** and, over recorded games, was **offered 28
+  times and played once**.
+
+⇒ **Card-level exposure is not the binding constraint; card × DECK-CONTEXT is.**
+The corpus knows Ultra Ball from *decks that play it* — never alongside Marnie's
+Impidimp and Buddy-Buddy Poffin. **Nothing in this repo measures that, and §8af
+has been quoted as if it did.**
+
+### ⚠ What this does NOT establish
+
+1. **Eleven of ~8,000 possible single-card swaps.** This is not proof that no
+   improvement exists — it is evidence that the easy ones do not, and that the
+   prior on any given swap is negative. **14 deck variants have now been measured
+   across three sessions with zero wins.**
+2. **Every number here is deck × how well OUR net pilots that deck** (§8ap's
+   warning, one level up). A list our clone plays badly is not thereby a bad
+   list — see §8at, where exactly that ambiguity is live.
+3. ⚠ **The mirror cell's Δ depends on a convention**: it is a direct
+   head-to-head, so referencing the measured stock-vs-stock 0.504 gives −0.004
+   and the symmetric 0.500 gives 0.000. That is 0.0013 of ΔW and changes nothing.
+
+```powershell
+python -X utf8 scripts/p36_deck_search.py          # writes the 11 variants + commands
+python -X utf8 scripts/p36_deck_search.py --rank   # stage 1 ranking
+```
+
+## 8at. 🃏 THE COMMUNITY LIST AND XEROSIC'S MACHINATIONS — a −0.040 that does NOT convict the card (2026-08-02, day 18)
+
+**The user supplied a community-updated Grimmsnarl list.** Three findings before
+any game was played, and they matter more than the A/B:
+
+1. 🔴 **The list counts to 54, not 60**, and **`Special Red Card` is not
+   implemented in this engine** — every card id was searched; no name contains
+   "Red Card". **The community pool and this board's pool have diverged.**
+2. 🔴 **It is not played here.** The 08-01 consensus Grimmsnarl list is
+   **identical to `decks/grimmsnarl.py`, card for card, seen 158×**. Budew,
+   Yveltal and Energy Switch appear in **zero** 08-01 lists of any archetype.
+3. ✅ Completed with the user's judgement calls (one slot, +1 Poffin, is the
+   assistant's and is marked as such in `decks/grimmsnarl_community.py`), it is a
+   **five-card** change, not the 18 a diff against the incomplete core suggested.
+
+### The measurements, and why the second one was necessary
+
+| deck | cards changed | mirror score, n=4,000 | Δ vs 0.504 control | Elo |
+|---|---|---|---|---|
+| control (stock v stock) | 0 | 0.504 [0.488, 0.519] | — | — |
+| community + Xerosic ×2 | **5** | 0.431 [0.415, 0.446] | −0.073 | ≈ −51 |
+| **Xerosic ×2, ISOLATED** | **2** | **0.464** [0.449, 0.479] | **−0.040** | **≈ −28** |
+
+⚡ **§8ab's no-bundling rule paid for itself.** The five-card bundle convicts
+nothing; the two-card isolation splits it — **Xerosic ×2 carries −0.040 and the
+other three changes carry −0.033.** For scale, §8al's two-card Budew swap was
+−0.022, so **Xerosic ×2 costs about twice as much per card changed.**
+
+### 🔴 But it is a PILOT result as much as a CARD result, and the replays show the mechanism
+
+Xerosic's Machinations discards the opponent down to **3** cards. Over 6 recorded
+games (`out/replays/xerosic_vs_stock`) it was:
+
+- **offered 28 times**, opponent holding a mean of **5.2** cards — **nine of
+  those offers at 7 cards**, one at 8;
+- **played twice, both at hand size 4** → **1 card discarded each time**;
+- best available moment would have discarded **5**.
+
+⚠ **The 7% take rate is NOT itself the evidence** — Boss's Orders takes 6%,
+because supporters are offered many times a turn and only one is playable
+(`state.supporterPlayed`; the list runs 10 supporters, 12 with Xerosic).
+**The evidence is the hand-size distribution.**
+
+⇒ 🔴 **"The card is wrong for this deck" and "the card is fine and our clone
+misplays it" BOTH predict −0.040.** The isolation test cannot separate them.
+**Only a timing rule can** — *play Xerosic at the highest opponent `handCount`* —
+⚠ and rule 11 puts that in the **tradeoff** column (it competes for the one
+Supporter play), where this project is **0 for 4**.
+
+### 🔧 A correction made before publishing, not after
+
+The first pass read the opponent's `hand` array and reported *"both plays at hand
+size 0"* — i.e. the card was a total blank, a far more dramatic claim. **That
+array is hidden in the observation and is always empty**; the true count lives in
+a separate **`handCount`** field. Same shape as rule 18: a plausible number, not
+a crash. The figures above are the corrected ones.
+
 ## 8ar. 🃏 THE MATCHUP-STRATIFIED DESIGN, PRICED AND THEN NARROWED BY ITS OWN INSTRUMENT — 17 of 19 slots are mirror-safe, and the mirror-only critique is real but narrow (2026-08-02, day 18)
 
 **The standing item.** §8al retired guess-a-swap and named its successor: *"the
