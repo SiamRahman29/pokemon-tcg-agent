@@ -3722,6 +3722,53 @@ python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" `
     "bc:v5,net=out/policy_v5.npz" --deck-a grimmsnarl_g4 --deck-b grimmsnarl --matches 2000
 ```
 
+## 8ak. ⏳ TWO DECISION-IDENTICAL AGENTS, 69–82 POINTS APART — numbers logged, VERDICT DELIBERATELY BLANK (2026-08-02, day 16)
+
+`55169114` is **decision-identical to v5** (`55160229`): `diff -rq` over the
+extracted bundles shows only `main.py` and `sa/bcagent.py` differing, and only by
+health counters plus one `print`. Weights, deck, engine, every other module are
+byte-identical; no branch changed. So any ladder gap between them is the
+instrument, not the agent — **if the readings are settled.**
+
+| read (UTC) | `55169114` (health) | `55160229` (v5) | gap | `55156480` (frozen) |
+|---|---|---|---|---|
+| 05:08 | 874.8 | 956.5 | **81.7** | 910.5 |
+| 05:25 | 874.8 | 951.0 | **76.2** | 910.5 |
+| **07:25** | **875.3** | **944.3** | **69.0** | 910.5 |
+
+🔴 **Rule 2 is satisfied on ONE of the two and that is why there is no verdict
+here.** `55169114` is converged — 874.8 → 875.3 over 2 h 17 m, agreeing. **v5 is
+not**: 956.5 → 951.0 → 944.3, a monotone **−12.2** over the same window, and the
+gap is closing with it (81.7 → 76.2 → 69.0). §10's standing warning — *a rising
+score is unconverged, not momentum* — applies identically to a falling one.
+
+⇒ **What can be said: two agents that make the same move in the same state read
+at least 69 points apart after 12.7 h and 20.8 h of play. What cannot: the
+magnitude, or that it is a stable noise floor.** It may be entirely v5 descending
+toward the health bundle's number.
+
+### 🔴 The part that is already a result: rule 2's one-hour clause is not enough
+
+**v5 satisfied rule 2 on day 15** — 955.1 twice, 61 minutes apart, and it was
+written into HANDOFF as the first settled net-pair reading this project ever had.
+**It now reads 944.3.** Two agreeing readings an hour apart certified a number
+that moved **11 points within a day**.
+
+⇒ **Rule 2 amendment: an hour of agreement licenses an hour-scale claim, not a
+day-scale one.** Anything quoted across sessions needs re-reading in the session
+that quotes it. The day-15 headline's **v5 +40.5 over v4** was built on exactly
+this and is now **+33.8** on the same arithmetic, with v5 still moving.
+
+### The active-pair model, confirmed as a side effect
+
+`55156480` (910.5) and `55129730` (836.4) are **identical across all three
+reads**, while both active submissions moved. That is the "only the latest 2 play
+episodes" rule observed directly rather than inferred — evicted submissions
+freeze and still display.
+
+*A fourth read is armed. Do not write a verdict until v5 gives two agreeing
+readings.*
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
