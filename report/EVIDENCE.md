@@ -3889,6 +3889,212 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8ar. 🃏 THE MATCHUP-STRATIFIED DESIGN, PRICED AND THEN NARROWED BY ITS OWN INSTRUMENT — 17 of 19 slots are mirror-safe, and the mirror-only critique is real but narrow (2026-08-02, day 18)
+
+**The standing item.** §8al retired guess-a-swap and named its successor: *"the
+next deck programme needs a MATCHUP-STRATIFIED SEARCH DESIGN over the whole slot
+ranking"*, because **all four deck A/Bs so far were mirror-only**, which flatters
+a variant cutting mirror-dead tech (Tool Scrapper: 0.00 plays per mirror game)
+and cannot judge a card aimed anywhere else. §8ap then appeared to block it:
+sorting the anchors by resolution sorts them by UNrepresentativeness, and
+everything representative is something we beat 77–87% of the time, filed as
+⛔ *"near ceiling"*.
+
+**Both claims were checked before anything was built (rule 14), and both move.**
+
+### Result 1 — §8ap's "near ceiling" is true in ELO units and false in the units a deck decision uses
+
+`p33_anchor_resolution.py`. A fixed **Elo** delta maps to a win-rate delta
+proportional to `p(1-p)` while the noise falls only as `sqrt(p(1-p))`, so Elo
+resolution degrades as `1/sqrt(p(1-p))` — but the noise **falls** near the
+ceiling, and a deck maximises the field-weighted **win rate** `W = Σ wᵢpᵢ`,
+which is linear in win rate.
+
+| anchor | p | min **WR** change @ n=8,000 | min **Elo** | n× vs mirror |
+|---|---|---|---|---|
+| mirror | 0.500 | **0.0110** | 7.6 | 1.00 |
+| `rule:v10` | 0.569 | 0.0153 | 10.9 | 1.02 |
+| `rule:archaludon` | 0.671 | 0.0146 | 11.5 | 1.13 |
+| `rule:crustle` (v4, §8aq) | 0.755 | 0.0133 | 12.5 | 1.35 |
+| `rule:alakazam5` | 0.789 | 0.0126 | 13.2 | 1.50 |
+| `rule:dragapult` | 0.809 | 0.0122 | 13.7 | 1.62 |
+| `bc:garchomp` | 0.857 | **0.0108** | 15.4 | 2.04 |
+
+⇒ **The worst anchor in the set costs 2.04× the games for equal ELO resolution —
+not "cannot resolve".** And in win-rate units `bc:garchomp` is the **most**
+sensitive cell we own. §8ap's alarm is correct about nets and does not transfer
+to decks.
+
+### Result 2 — 🔴 and the case for stratifying is entirely BIAS, not precision
+
+Weighted over all seven anchors the design resolves **±0.0050 on W**, at **57,600
+games ≈ 1.1 h** at rule 7's 2–3 jobs (Neyman allocation with costs; **55%** of
+the naive equal-n cost, because the mirror is a *direct* head-to-head and every
+other cell needs two arms). ⚠ **But spend those same 57,600 games mirror-only and
+Δ is measured to ±0.0041 — tighter.** Every game in one cell beats games spread
+over seven.
+
+⇒ **Stratifying buys an unbiased estimate of the right quantity, and pays for it
+in precision.** A more precise estimate of the wrong quantity is worse, not
+better — it is rule 16 with a tighter CI. So the design question is not *"should
+we stratify"* but *"which cards require it"*, and that is a **liveness** question
+per card per matchup, which nothing in this repo could answer.
+
+⚠ **A model check was attempted and FAILED to be informative, which is why the
+table above is stated in win-rate units throughout.** §8an's three nets × two
+Crustle pilots is the only handle on how a real difference compresses near the
+ceiling; predicted 0.0121 / −0.0134 against observed 0.0080 / −0.0090 with
+**SE 0.0119**. Both observations sit inside one SE of the prediction *and* of
+zero. **It cannot distinguish the Elo model from any other, and is reported as a
+failed check rather than a confirmation.**
+
+### Result 3 — the instrument, and it reproduces the one fact it could be checked against
+
+`p34_matchup_liveness.py` wraps our agent so every select is tallied as it
+happens — no replay files (§8ad's recorder writes multi-MB per game, which is
+~7 GB at this n), and **the wrapper travels with the agent rather than a seat
+index**, so rule 18's seat bug cannot arise. Option → card resolution uses
+`optfeat.option_features`, the same resolver `p25` and the net itself use.
+400 games × 7 anchors.
+
+✅ **Positive control, unprompted:** it puts **Tool Scrapper at 0.02 plays per
+mirror game against 0.28 field-weighted (spec 0.93)** — independently recovering
+the single fact §8al built its whole critique on, without being told.
+
+### 🔴 Result 4 — the finding: the mirror-only critique is REAL but NARROW
+
+| card | mirror | alakazam5 (22%) | crustle (6.7%) | weighted | spec |
+|---|---|---|---|---|---|
+| **Tool Scrapper** | 0.02 | 0.56 | 0.47 | **0.28** ⚠ under every sizing floor | **0.93** |
+| **Froslass** ⭐ | 1.44 | **5.57** | **6.83** | **3.14** | **0.54** |
+| Snorunt | 1.53 | 2.41 | 2.31 | 1.77 | 0.13 |
+| Rare Candy | 0.82 | 0.99 | 0.97 | 0.91 | 0.10 |
+| *(15 others)* | — | — | — | — | **≤ 0.05** |
+
+**17 of the 19 distinct cards in our 60 have spec ≤ 0.16, and 15 have ≤ 0.05.**
+⇒ **For almost the whole deck the mirror is an UNBIASED screen**, and the
+expensive stratified design is needed for exactly **two** slots.
+
+🔴 **§8al's Tool Scrapper example was not representative — it is the single most
+extreme card in the list.** The mirror-only critique stands as stated and is far
+narrower in scope than the plan built on it assumed.
+
+⚡ **And the one card that matters is the one ROADMAP already named.** Track C
+step 4 says *"the Froslass line is the only growable passive-damage line
+(Munkidori capped at 4)"*. It is played **1.44×** per mirror game and **5.57 /
+6.83** against alakazam5 and Crustle — **a mirror A/B sees under a quarter of its
+real use.** Tool Scrapper, the other mirror-blind slot, is at **0.28 weighted
+plays/game, under every sizing floor this project has killed a rule at** (§8e
+0.2, §8ag 0.27, §8ai 0.187), so its blindness is real and its ceiling is not.
+
+⚡ **The bias runs the other way too, and nobody had looked:** Munkidori (18.6
+mirror vs 11.3–14.2 elsewhere), Marnie's Impidimp (10.6 vs 6.4–7.7) and Morgrem
+(8.4 vs 4.1–6.3) are played **more** in the mirror. ⇒ **A mirror-only A/B
+overstates the core engine as much as it understates the tech**, which is the
+same error with the opposite sign and was not part of §8al's argument.
+
+### ⚠ What this does NOT establish
+
+1. **Liveness is not value.** A card played 0.1×/game can win those games
+   (Boss's Orders — §8e's trap, restated in `p25`'s own footer). This says
+   **where** a swap could pay and caps **how much**; it never says a card is bad.
+2. **These are arena games we win 75–82% of**, not ladder games. Liveness
+   measured while dominating need not equal liveness in a close game.
+3. **`spec` is defined against OUR anchor set and OUR §8ac weights**, both of
+   which §8ac showed are a function of our own rating.
+4. ⚠ **One cross-check is marginally disjoint:** `bc:garchomp` read 0.802
+   [0.761, 0.839] here against §8ap's 0.857 [0.841, 0.872]. Its deck and pilot
+   files predate that measurement (checked, §8aq), and **seven cross-checks at
+   95% produce one marginal failure by construction** — so this is logged, not
+   chased.
+
+```powershell
+python -X utf8 scripts/p33_anchor_resolution.py
+python -X utf8 scripts/p34_matchup_liveness.py --games 400
+```
+
+## 8aq. 🔴 AN ANCHOR CHANGED AFTER ITS LAST MEASUREMENT, AND EVERY DOC QUOTED THE OLD NUMBER — the shipped Crustle pilot is 0.755, not 0.866 (2026-08-02, day 18)
+
+**How it surfaced.** `p34_matchup_liveness.py` (built today for the deck design)
+prints each anchor's arena score beside the liveness table as a **cross-check** —
+rule 18's "compute the headline a second way", installed deliberately because
+this project has now shipped five analysis scripts that produced plausible wrong
+numbers. On its first real use it read `rule:crustle` at **0.735 [0.670, 0.791]**
+over 200 games against §8ap's published **0.866 [0.850, 0.880]**. Disjoint.
+
+**The cause is not a bug in either script. The anchor is a different agent.**
+
+| pilot | what changed | v5 scores | archive |
+|---|---|---|---|
+| **v1** | original import, no empty-bench guard | 0.7680 [0.749, 0.786] | `p20_v5_vs_crustle_v1` |
+| **v2** | guard (flat 90000) + bench-anything default | 0.8700 [0.855, 0.884] | `p27_v5_vs_crustle_v2` |
+| **v3** | guard (flat 90000), default restored | 0.8660 [0.850, 0.880] | `p28_v5_vs_crustle_v3` |
+| 🔴 **v4** ⭐ **the one in the repo** | guard breaks ties toward Dwebble (`90000 + 5000`) | **0.7550** [0.735, 0.773] | `p35_v5_vs_crustle_v4` |
+
+`83daa48` landed at **17:48:55**. The last game of the 0.866 run finished at
+**17:22**. **The instrument was modified 26 minutes after its calibration and
+three documents kept quoting the calibration.** The commit verified it on **six
+recorded games** and said so honestly — but n=6 is rule 1, and nothing forced the
+n=2,000 re-read.
+
+### 🔴 The finding underneath it: the tie-break is worth more than the repair
+
+v3 → v4 differ in **one term** — whether the empty-bench guard prefers Dwebble.
+Everything else, including the guard itself, is identical. That tie-break is
+worth **0.111** of win rate to the pilot (0.866 → 0.755), **larger than the whole
+v1 → v3 empty-bench repair (+0.098) and in the opposite direction.**
+
+⇒ **WHICH Pokémon a pilot benches on an empty bench matters more than WHETHER it
+benches at all.** Under v3's flat 90000 every Pokémon scored identically, so the
+choice fell to option order; Dwebble is the engine (it evolves into Crustle), and
+picking it deliberately is the difference.
+
+### ✅ Two published claims are corrected by this, and one survives
+
+- 🔴 **§8an's Result 2 is no longer true of the shipped pilot.** It concluded
+  *"the repaired pilot is a WORSE anchor than the broken one"* — at **0.755**, v4
+  is the **best-resolving Crustle we have ever had**, better than the broken v1
+  (0.768) *and* it keeps the guard, so it is not throwing games. **The repair did
+  not have to cost resolution; the flat 90000 did.**
+- 🔴 **§8an's live hypothesis is answered, in the direction it guessed.** It
+  proposed that `90000` *"dominates every other option and hijacks the turn"* and
+  that a smaller value would help — ⛔ correctly declining to tune it. The fix
+  that shipped kept 90000 and added a tie-break, and that was enough.
+- ✅ **§8ap's headline SURVIVES.** *"40.7% of the weighted verdict sits on anchors
+  above 0.75"* is unchanged: 0.755 is still above 0.75. Its **Crustle row**
+  ("⛔ near ceiling") is wrong; its conclusion is not.
+
+### ⚠ What this does NOT say
+
+**No verdict in this repo is retracted.** Every net-vs-net comparison carrying a
+Crustle term was measured with *both* nets against the *same* pilot version, and
+§8an established the pilot shift is a **level** shift that cancels in
+differences. This is a stale *anchor table*, not a stale *verdict*.
+
+### 🔧 The methods lesson, and it is a new one rather than a fifth instance
+
+The five recent errors (§8ad, §8ae, §8af, §8ah, §8an's seat bug) were all **a
+buggy script producing a plausible number**. This one is different: **both
+scripts were correct and the world changed between them.** An anchor is a *file*,
+and a number quoted from it is only valid for the version that produced it.
+
+⇒ **RULE 19** (HANDOFF §2): **before quoting an anchor's score, check that its
+source file is older than the archive you are quoting.** One command:
+
+```powershell
+git log -1 --format='%cd' -- agents/agentkit/rulebased/sources/<pilot>.py
+python -X utf8 -c "import json;rows=[json.loads(l) for l in open('out/arena/<run>.jsonl')];import time;print(time.ctime(rows[-1]['ts']))"
+```
+
+✅ **Run over all seven anchors today: Crustle is the only one that drifted.**
+Every other pilot and deck file predates its last A/B.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" "rule:crustle" `
+    --deck-a grimmsnarl --deck-b crustle_v1 --matches 1000 `
+    --archive out/arena/p35_v5_vs_crustle_v4.jsonl
+```
+
 ## 8ap. 🔴 BOTH MISSING ANCHORS ARE CLOSED — and measuring them found that our anchor set's INFORMATIVENESS runs INVERSELY to its REPRESENTATIVENESS (2026-08-02, day 17)
 
 **The gap.** §8ac named two archetypes that together outrank Crustle + Mega
@@ -3917,7 +4123,7 @@ Dragapult ex **5.3%**. Both are now closed, and neither cost what was expected.
 | `rule:alakazam5` | 0.789 [0.771, 0.807] | 22.0% | poor |
 | **`rule:dragapult`** ⭐ new | **0.809** [0.791, 0.826] | **5.3%** | poor |
 | **`bc:garchomp`** ⭐ new | **0.857** [0.841, 0.872] | **6.7%** | ⛔ near ceiling |
-| `rule:crustle` (v3, guard) | 0.866 [0.850, 0.880] | 6.7% | ⛔ near ceiling |
+| ~~`rule:crustle` (v3, guard)~~ 🔴 **superseded — see §8aq** | ~~0.866 [0.850, 0.880]~~ → the shipped pilot is **v4** at **0.755** [0.735, 0.773] | 6.7% | ~~⛔ near ceiling~~ → **fair** |
 
 ### 🔴 The finding, and it is not the one this work was started to get
 
@@ -4187,6 +4393,17 @@ a defect fix may restore an author's intent, it may not install a new strategy.
 It simply was not what moved the number.
 
 ### ⚡ The live hypothesis, and it is about the guard's MAGNITUDE
+
+> 🔴 **ANSWERED ON DAY 18, IN THE DIRECTION THIS SECTION GUESSED — and it
+> reverses Result 2 above.** `83daa48` shipped a fourth pilot (guard keeps 90000
+> but breaks ties toward Dwebble) **26 minutes after the 0.866 run finished**, and
+> it was never measured above n=6. At n=2,000 it reads **0.755 [0.735, 0.773]**.
+> **That single tie-break is worth 0.111 to the pilot — larger than the whole
+> +0.098 empty-bench repair and in the opposite direction.** So *"the repaired
+> pilot is a WORSE instrument than the broken one"* is **not true of the pilot we
+> actually ship**: v4 resolves better than the broken v1 (0.768) *and* keeps the
+> guard. **WHICH Pokémon it benches matters more than WHETHER it benches.**
+> `EVIDENCE` §8aq.
 
 `return 90000` **dominates every other option in the set** — Dwebble as a wanted
 card is 25000 and nothing else comes close. So whenever the bench is empty the

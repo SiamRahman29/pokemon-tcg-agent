@@ -1,0 +1,91 @@
+
+ANCHOR RESOLUTION AT n=8000 GAMES PER ARM PER ANCHOR
+  'min WR' = smallest win-rate change detectable at 95% (1.96 x SE of
+  the two-arm difference).  'min Elo' = the same thing in Elo units.
+  'n x vs mirror' = games needed for EQUAL Elo resolution, relative
+  to the mirror.
+
+anchor                      p  share   min WR  min Elo  nx vs mir       w*SE
+----------------------------------------------------------------------------
+mirror (grimmsnarl)     0.500   33.3%   0.0110      7.6       1.00    0.00186
+rule:v10 (M Lucario)    0.569    4.0%   0.0153     10.9       1.02    0.00031
+rule:archaludon         0.671    8.0%   0.0146     11.5       1.13    0.00059
+rule:alakazam5          0.789   22.0%   0.0126     13.2       1.50    0.00142
+rule:dragapult          0.809    5.3%   0.0122     13.7       1.62    0.00033
+bc:garchomp             0.857    6.7%   0.0108     15.4       2.04    0.00037
+rule:crustle (v4)       0.755    6.7%   0.0133     12.5       1.35    0.00046
+----------------------------------------------------------------------------
+WEIGHTED (all anchors)          86.0%   0.0050      3.4
+  ^ the field-weighted win rate W = sum_i w_i p_i, which is the
+    quantity a deck choice is actually trying to maximise.
+    14.0% of the field is not covered by any anchor
+    and is assumed to move like the covered part.
+
+COST of one variant, all 7 anchors, EQUAL n: 104,000 games
+  = 4.8 h single-process at 5.96 games/s (1.9 h at the 2-3 jobs rule 7 allows)
+
+SHARE OF THE WEIGHTED VARIANCE, per anchor (equal n):
+  mirror (grimmsnarl)     54.3%
+  rule:v10 (M Lucario)     1.5%
+  rule:archaludon          5.5%
+  rule:alakazam5          31.6%
+  rule:dragapult           1.7%
+  bc:garchomp              2.2%
+  rule:crustle (v4)        3.3%
+  ⇒ this is the honest form of §8ap's complaint.  The mirror does not
+    merely 'carry the set' -- it IS the set, in variance terms, and
+    the near-ceiling anchors are cheap to add rather than useless.
+    ⚠ which also means EQUAL n is the wrong design: 5 of the 7
+      anchors are consuming most of the games for a few percent of
+      the precision.
+
+THE DESIGN -- optimal allocation for the SAME weighted precision
+  (±0.0050 on W), by Neyman allocation with costs:
+
+  anchor                  n per arm      games
+  mirror (grimmsnarl)        15,800     15,800
+  rule:v10 (M Lucario)        1,900      3,800
+  rule:archaludon             3,600      7,200
+  rule:alakazam5              8,500     17,000
+  rule:dragapult              2,000      4,000
+  bc:garchomp                 2,200      4,400
+  rule:crustle (v4)           2,700      5,400
+  TOTAL                                 57,600
+  = 2.7 h single-process, 1.1 h at 2-3 jobs -- 55% of the equal-n cost for the same precision.
+  ⚠ These n are for ONE variant.  A search over k variants costs k
+    times this, minus the control arms, which are shared.
+
+WHAT STRATIFICATION BUYS -- and it is NOT precision:
+  Spend the same 57,600 games mirror-only and Delta_mirror is
+  measured to ±0.0041, i.e. BETTER than the
+  stratified design's ±0.0050 on W.
+  Every game in one cell beats games spread over seven.
+  ⇒ 🔴 The case for stratifying is entirely about BIAS.  Mirror-only
+    estimates W by assuming Delta is the same in every matchup, and
+    §8al showed that assumption failing by construction: Tool
+    Scrapper is played 0.00 times per mirror game and drawn in 81% of
+    real games, so a mirror A/B returns 'cutting it is free' however
+    many games you buy.  A more precise estimate of the wrong
+    quantity is worse, not better -- it is rule 16 with a tighter CI.
+  ⇒ So a variant is stratified when its cards are matchup-specific,
+    and measured mirror-only when they are not.  Deciding which is a
+    LIVENESS question, per card per matchup, and that instrument does
+    not exist yet.  It is the next build, not this one.
+
+DOES A REAL DIFFERENCE COMPRESS THE WAY THE ELO MODEL SAYS? (§8an)
+  Same three nets, one anchor, two pilot versions of different
+  difficulty.  If the Elo model holds, a net-vs-net difference should
+  shrink by the ratio of p(1-p) between the two pilots.
+
+  pair       at p~.78  predicted   observed    SE(obs)
+  v4-v3        0.0185     0.0121     0.0080     0.0119
+  v5-v4       -0.0205    -0.0134    -0.0090     0.0119
+
+  ⚠ READ THE LAST COLUMN BEFORE THE OTHERS.  Both observed values sit
+    well inside one SE of both the prediction and of zero, so this
+    CANNOT distinguish the Elo model from any other.  It is reported
+    because it is the only empirical handle available and because
+    'we checked and it was underpowered' is the honest verdict --
+    not because it confirms anything.  The design below therefore
+    rests on the arithmetic above, which needs no model of how
+    effects compress: it is stated in win-rate units throughout.

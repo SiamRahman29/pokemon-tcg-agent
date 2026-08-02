@@ -211,7 +211,77 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 18. B8 IS DEAD, THE LADDER IS PROVABLY UNUSABLE, AND TRACK C IS THE ONLY RUBRIC-WEIGHTED TRACK LEFT UNSTARTED.
+### ▶ START HERE — DAY 18 IS RUNNING. THE STRATIFIED DESIGN IS PRICED, AND ITS OWN INSTRUMENT NARROWED IT TO TWO SLOTS.
+
+> # 🃏 DAY 18 SO FAR — measurement only. ⛔ NO DECK VARIANT HAS BEEN BUILT OR A/B'd (user is reviewing the design first).
+>
+> **1. ✅ §8ap's "near ceiling ⇒ cannot resolve" does NOT block Track C** (§8ar,
+> `p33_anchor_resolution.py`). It is true in **Elo** units and false in the units
+> a deck decision uses: `W = Σ wᵢpᵢ` is linear in **win rate**, and noise *falls*
+> near the ceiling. Worst anchor costs **2.04×** the games for equal Elo
+> resolution, not infinity; in win-rate units `bc:garchomp` is our **most**
+> sensitive cell. Full design: **±0.0050 on W for 57,600 games ≈ 1.1 h** at 2–3
+> jobs (Neyman allocation, 55% of naive equal-n).
+>
+> 🔴 **But the case for stratifying is BIAS, not precision** — the same games
+> spent mirror-only measure Δ to **±0.0041**, *tighter*. Stratify only where the
+> mirror is biased. That is a liveness question, and it needed a new instrument.
+>
+> **2. 🔴 THE MIRROR-ONLY CRITIQUE IS REAL BUT NARROW — 17 of 19 slots are
+> mirror-safe** (§8ar, `p34_matchup_liveness.py`, 400 games × 7 anchors).
+>
+> | card | mirror | alakazam5 | crustle | weighted | spec |
+> |---|---|---|---|---|---|
+> | **Tool Scrapper** | 0.02 | 0.56 | 0.47 | **0.28** ⚠ under every sizing floor | **0.93** |
+> | **Froslass** ⭐ | 1.44 | **5.57** | **6.83** | **3.14** | **0.54** |
+> | *(17 others)* | — | — | — | — | **≤ 0.16** |
+>
+> ✅ **Positive control:** it recovered §8al's Tool Scrapper fact unprompted.
+> 🔴 **§8al's example was the deck's single most extreme card**, so the critique
+> its plan was built on is far narrower than assumed. ⚡ **The one slot that
+> matters is the one ROADMAP already named — the Froslass line** (Track C step 4,
+> "the only growable passive-damage line"): a mirror A/B sees **under a quarter**
+> of its real use. ⚡ **And the bias runs both ways** — Munkidori 18.6 mirror vs
+> 11.3–14.2 elsewhere, so a mirror A/B **overstates the core engine** too.
+>
+> **3. 🔴 AN ANCHOR HAD DRIFTED AND EVERY DOC QUOTED THE OLD NUMBER** (§8aq).
+> `rule:crustle` is a **fourth** pilot (`83daa48`, committed **26 min after** the
+> 0.866 run's last game, verified on **n=6**). At n=2,000 it reads **0.755
+> [0.735, 0.773]**, confirmed independently by `p34` at 0.748. **The one-line
+> Dwebble tie-break inside the guard is worth 0.111 — larger than the entire
+> +0.098 empty-bench repair, in the opposite direction.** ⇒ **WHICH Pokémon a
+> pilot benches matters more than WHETHER it benches.**
+> ✅ **§8an's Result 2 is reversed for the pilot we actually ship**: v4 resolves
+> *better* than the broken v1 (0.768) **and** keeps the guard. §8ap's headline
+> (40.7% above 0.75) survives; its Crustle row does not.
+> ⛔ **No verdict is retracted** — both nets in every comparison faced the same
+> pilot, and §8an showed the shift is a level shift that cancels in differences.
+> ⇒ **HANDOFF rule 19**, and it is a NEW shape: not a buggy script, but **two
+> correct scripts with the world changed between them.** Only a timestamp catches
+> it. ✅ Swept all seven anchors — Crustle was the only drift.
+>
+> #### ▶ WHAT IS NEXT (blocked on the user's review of the design)
+>
+> 1. 🃏 **The deck search, two-stage, pre-registered.** Stage 1 screens
+>    candidates **in the mirror** (33.3% of the field, the only matchup we win
+>    exactly 50% of, and 4× cheaper per unit precision) against §8aj's same-deck
+>    control **0.4980 [0.483, 0.513]** — **ranking, not testing.** Stage 2
+>    confirms **the top-1 only** at p33's stratified allocation. 🔴 **The
+>    multiplicity rule is the point:** k variants at α=0.05 manufactures a winner
+>    at k≈20, which is the shopping the B8 β-sweep was declined for.
+>    ⚠ **Froslass and Tool Scrapper skip stage 1** — the mirror cannot judge them.
+> 2. ⚠ **The expected outcome is a NULL and it is on the record before the run.**
+>    §8al measured strength falling monotonically with distance from the consensus
+>    60. "A proper search over the slot space, and the list survived it" is a good
+>    Deck Score result and is **not** an Elo lever.
+> 3. 📈 Re-sweep the anchor table — ⚠ **now known to have been about to quote a
+>    stale Crustle row**; use 0.755.
+> 4. 📝 `STRATEGY.md` — §8am/§8an/§8ao/§8ap are owed chapters, plus §8aq/§8ar.
+> 5. ⛔ **Do NOT submit.** Rank 198 with v5 live; consolidate 08-08→08-14.
+
+<details><summary>The day-18 plan as set at the end of day 17 (items 1–2 are now in progress above)</summary>
+
+### ▶ DAY 18 AS PLANNED — B8 IS DEAD, THE LADDER IS PROVABLY UNUSABLE, AND TRACK C IS THE ONLY RUBRIC-WEIGHTED TRACK LEFT UNSTARTED.
 
 > # 🔴 THE DAY-17 HEADLINE: TWO DECISION-IDENTICAL AGENTS READ 63.2 POINTS APART
 >
@@ -351,6 +421,8 @@ distrust it: mined episodes are the top-1150 band, and
 >    them; the deadline is **09-14** and the material is now unusually strong.
 > 5. ⛔ **Do NOT submit anything** without a reason that survives §8ak. We are at
 >    rank 198 with v5 live; the calendar is consolidate 08-08→08-14 then freeze.
+
+</details>
 
 <details><summary>Day 17's original plan as set at the end of day 16 (B8 ran and is closed above)</summary>
 
@@ -2139,6 +2211,32 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     left in, it scores ~98% against itself and inflates the control.
     **`--exclude` yourself from any population you intend to treat as
     independent.**
+
+19. **🔴 AN ANCHOR IS A FILE, AND A NUMBER QUOTED FROM IT IS ONLY VALID FOR THE
+    VERSION THAT PRODUCED IT. Check the source is OLDER than the archive before
+    quoting a score.** §8ap's anchor table published `rule:crustle` at **0.866**
+    and called it "the shipped guard-only pilot". `83daa48` replaced that pilot
+    at **17:48:55**; the last game behind the 0.866 finished at **17:22**. The
+    repo held a **fourth** version, verified on **six games**, and three
+    documents quoted the old number for a day. Measured at n=2,000 it is
+    **0.755** — and the one-line tie-break separating them is worth **0.111**,
+    larger than the entire empty-bench repair it was a footnote to (§8aq).
+
+    ⚠ **This is NOT the "buggy script, plausible number" shape** that §8ad,
+    §8ae, §8af, §8ah and §8an's seat bug all had. **Both scripts were correct
+    and the world changed between them.** Redundancy (rule 18) does not catch
+    it; only a timestamp does:
+
+    ```powershell
+    git log -1 --format='%cd' -- agents/agentkit/rulebased/sources/<pilot>.py
+    python -X utf8 -c "import json,time;r=[json.loads(l) for l in open('out/arena/<run>.jsonl')];print(time.ctime(r[-1]['ts']))"
+    ```
+
+    ✅ **Swept over all seven anchors on day 18: Crustle was the only drift.**
+    ⚡ **The cheap standing defence, and it is what caught this one:** any script
+    that plays an anchor should **print that anchor's arena score beside its own
+    output**, so a changed instrument announces itself on the next run instead
+    of on the next audit.
 
 ---
 
