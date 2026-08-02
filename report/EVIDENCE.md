@@ -3955,17 +3955,22 @@ our list wins on Shadow Bullet snipe and Munkidori passive damage (§9), so
 telling a Crustle pilot to fill its bench hands us targets and prize sources.
 The line was narrowed to the guard alone (`p28`, pilot v3) and re-measured.
 
-| pilot | v3 net scores | vs broken |
-|---|---|---|
-| **v1** broken (no guard, Dwebble-only) | 0.7700 [0.751, 0.788] | — |
-| **v2** guard **+** bench-anything default | 0.8565 [0.840, 0.871] | +0.087 |
-| **v3** guard only, original default restored | **0.8670** [0.851, 0.881] | **+0.097** |
+| net | **v1** broken (no guard) | **v2** guard + bench-anything | **v3** guard only | v1 → v3 |
+|---|---|---|---|---|
+| v3 | 0.7700 [0.751, 0.788] | 0.8565 [0.840, 0.871] | **0.8670** [0.851, 0.881] | **+0.097** |
+| v4 | 0.7885 [0.770, 0.806] | 0.8880 [0.873, 0.901] | **0.8750** [0.860, 0.889] | **+0.087** |
+| v5 | 0.7680 [0.749, 0.786] | 0.8700 [0.855, 0.884] | **0.8660** [0.850, 0.880] | **+0.098** |
 
-🔴 **REFUTED. The minimal repair produces the SAME shift — slightly more, not
-less.** The default inversion contributed nothing; if anything the
-bench-everything version was marginally *better* for the pilot (0.8565 vs
-0.8670, CIs overlapping), which is the opposite sign to the snipe argument.
-**The empty-bench guard is the whole effect.**
+🔴 **REFUTED, on all three nets.** The minimal repair reproduces the whole shift
+(**+0.087 … +0.098**, mean +0.094). And the v2−v3 difference — the *entire*
+contribution of the unauthorised default inversion — is **+0.011, −0.013,
+−0.004**: it **flips sign between nets** and averages to −0.002. That is noise,
+measured three times. **The empty-bench guard is the whole effect and the
+bench-anything default did nothing.**
+
+✅ **The net ORDERING is unchanged by any of it** — v4 first under both the
+broken pilot (0.7885) and the shipped guard-only one (0.8750) — which is the
+second, independent reason no published verdict moves.
 
 ⚠ **The narrowing was still right, for a reason that is not this measurement:**
 a defect fix may restore an author's intent, it may not install a new strategy.
