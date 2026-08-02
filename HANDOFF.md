@@ -278,7 +278,8 @@ distrust it: mined episodes are the top-1150 band, and
 > holds it is **the project's first measured LB null**, and it is **double** the
 > +40.5 that day 15 called "rule 2 satisfied on a net pair". ⚠ **Two readings
 > only 17 min apart — rule 2 wants ≥1 h. A settling read is armed for ~07:25 UTC
-> and §8aj is NOT to be written until it lands.**
+> and **§8ak** is NOT to be written until it lands.** (§8aj was taken by the deck
+> sizing, which concluded first.)
 >
 > ✅ **THE SUBMISSION-LOG TRACK IS CLOSED, and only one of its four goals paid.**
 > Three episode logs collected:

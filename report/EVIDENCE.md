@@ -3605,6 +3605,92 @@ deck question, but the same 1.3% ceiling caps what changing it could pay.
 discriminator tells you whether a rule *would* work; sizing tells you whether it
 would be *visible*. Both gates, in that order, before any code.**
 
+## 8aj. 🃏 SIZING ALL 60 SLOTS — deck swaps PASS the gate that killed three rules, and the obvious candidate is disqualified by the matchup (2026-08-02, day 16)
+
+Track C had **one** decklist A/B to its name (0.490, null) and it was chosen by
+argument. §8af removed the safety excuse (swaps inside the corpus's **134** known
+ids are no more off-distribution than Tool Scrapper, which we already play), so
+the question became *which* slot — and that is a measurement, not an opinion.
+`scripts/p25_deck_slot_audit.py`, our **75 real ladder games**, 7,094 of our own
+selects, resolving every option through **`optfeat.option_features`** (the same
+resolver the net uses — hand-rolling it silently misattributes decisions, because
+option `type` decides whether `index` means a hand slot or an `(area,index)`).
+
+### Result 1 — ⚡ the sizing gate that killed three rules does NOT bind here
+
+The Morgrem out (§8e, ~0.2 firings/game), Pokégear's real choices (§8ag, 0.27)
+and the empty-bench rule (§8ai, 0.187) all died because the **situation** was
+rare. **A card swap is different, and the difference is exactly the frequency you
+measure.** The replacement sits in the deck whether or not the old card gets
+played, so the relevant rate is the **draw** rate, not the **play** rate.
+
+Tool Scrapper is played **0.13 times/game** — under every floor above — but is
+*unseen* in only **14 of 75 games**, so it is **drawn in 81%** of them and sits
+dead in hand in 20%. **A swap changes something in four games out of five**,
+against the ~0.021 of win rate an n=2000 A/B resolves.
+
+⇒ 🔴 **Deck work is measurable where the play-rules were not.** That single
+distinction is why Track C is worth days and the last three rule candidates were
+not, and it had never been stated in this repo.
+
+### Result 2 — 🔴 and the obvious cut is disqualified BY THE MATCHUP, not by its value
+
+Split the same 75 games into **24 mirror / 51 non-mirror** (opponent's board ever
+showed Marnie's Grimmsnarl ex):
+
+| card | n | plays/game **mirror** | plays/game **other** |
+|---|---|---|---|
+| **Tool Scrapper** | 1 | **0.00** | 0.20 |
+| Boss's Orders | 2 | 0.29 | 0.37 |
+| **Dawn** | 1 | **0.29** | **0.25** |
+| **Pokégear 3.0** | 1 | **0.33** | **0.31** |
+| Rare Candy | 3 | 0.46 | 0.63 |
+| Snorunt | 2 | 0.50 | 1.08 |
+| Buddy-Buddy Poffin | 4 | 0.50 | 0.75 |
+| Munkidori | 4 | 9.08 | 7.45 |
+| **Marnie's Grimmsnarl ex** | **3** | **9.12** | 8.96 |
+
+**Tool Scrapper is played 0.00 times in 24 mirror games, and it must be: our list
+runs no tools, so there is nothing to scrap.** A mirror A/B on it would return
+*"cutting it is free"* **by construction** — the matchup producing the answer
+rather than the card. **This is rule 16 in deck clothing**, and it is the same
+error that retired `rule:v10` on a meta share measured in the wrong band. Tool
+Scrapper is anti-tool tech; it can only be judged against a tool-running anchor,
+which §8ah's repair currently blocks.
+
+⇒ **A slot audit must be run per-matchup before it can rank anything.** The
+pooled table alone would have sent us to test the one card the test cannot see.
+
+### Result 3 — the shortlist, and the variant actually built
+
+Cuts that survive the mirror check are the ones weak in **both** populations —
+**Dawn (0.29 / 0.25)** and **Pokégear 3.0 (0.33 / 0.31)**. Boss's Orders is rare
+*and* game-winning, which is precisely the §8e trap, so it is not touched. Add
+candidates verified inside the 134, exposure relative to Tool Scrapper's 1.00×
+baseline: Boss's Orders **9.82×**, Night Stretcher 8.17×, Snorunt 7.29×, Froslass
+6.31×, Ultra Ball 5.59×.
+
+**Built: `decks/grimmsnarl_g4.py` — `Dawn ×1 → 4th Marnie's Grimmsnarl ex`.** The
+cut is our thinnest genuine slot; the add is our single most-played card, sitting
+at 3 of a legal 4, and it is maximally mirror-relevant — the matchup that is
+**33.3% of our field, 51.1% above rating 900** (§8ac) and the only one testable
+without an anchor, since both seats are our own net.
+
+⚠ **Pre-registered prior: expect a null.** Our 60 is card-for-card the consensus
+list seen **353×** among the field's strongest players, and the informative
+outcome is most likely *"we measured a change and kept the list."* Run with a
+**same-deck control** (`grimmsnarl` vs `grimmsnarl`, identical net both seats) to
+measure the seat/variance floor, because `battle_start` takes no seed (§8ad) and
+these games are not reproducible run-to-run.
+
+*A/B in flight at n=2000 per arm; result appended here when it lands.*
+
+```powershell
+python -X utf8 scripts/p25_deck_slot_audit.py
+python -X utf8 scripts/arena.py play "bc:v5,net=out/policy_v5.npz" `
+    "bc:v5,net=out/policy_v5.npz" --deck-a grimmsnarl_g4 --deck-b grimmsnarl --matches 2000
+```
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
