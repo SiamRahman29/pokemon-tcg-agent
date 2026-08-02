@@ -3889,6 +3889,89 @@ python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
     --games 6 --out out/replays/budew_v2_watch
 ```
 
+## 8ao. 🔴 B8 FAILS ITS PRE-REGISTERED BAR — the RL fine-tune is a CLEAN NULL, and the control arm is what makes it clean (2026-08-02, day 17)
+
+**The pre-registration, written before any code** (ROADMAP §2.5 B8, HANDOFF day-17
+box): *if the fine-tuned net does not beat its byte-identical control by a margin
+whose CI excludes the seed-only null at n≥2000, B8 DIES and becomes a report
+chapter.* The seed-only null is **0.482** (§8z), a deviation of 0.018, so the
+excluded band is **[0.482, 0.518]** and the numeric bar — computed and recorded
+**before the A/B ran** — is **≥ 0.541 at n=2000**.
+
+### The two arms
+
+| A/B | score | 95% CI | verdict |
+|---|---|---|---|
+| **`b8` (advantage) vs `b8_ctrl`** | **0.512** | **[0.491, 0.534]** | 🔴 **FAILS the 0.541 bar** |
+| `b8_ctrl` vs `v5` | 0.480 | [0.458, 0.502] | ≈ the seed floor |
+
+**0.512 is ≈ +8 Elo.** The CI contains 0.5 and overlaps the excluded band almost
+entirely. **This is a null, not a loss.** ⇒ **B8 dies by its own criterion.**
+
+### ⚡ The second arm is not decoration — it is what licenses the word "clean"
+
+It was **not** in the pre-registration; it was added because a bare null is
+ambiguous between *"the outcome signal added nothing"* and *"we degraded both
+arms equally and compared two damaged nets."* The control — same init, same
+frozen 82.8% of parameters, same rows, same epochs, **advantage weighting off** —
+reads **0.480 against v5**, which is within a noise-width of the measured
+seed-only null of 0.482. ⇒ **The fine-tuning procedure itself costs nothing
+detectable. Both arms sit where v5 sits, and the advantage weighting added
+nothing on top of that.**
+
+⚠ **Seat balance, as a sanity check on the instrument:** the treatment reads
+**P0 0.529 / P1 0.496**, the ~1.8% first-player edge measured this morning over
+4,000 mirror games, showing up exactly where it should — in an A/B between two
+near-identical policies. The arena is behaving.
+
+### The configuration that died, stated precisely so the verdict is not overread
+
+| knob | value |
+|---|---|
+| corpus | **4,000** self-play games at τ=0.5, 702,138 rows |
+| anchor | `pds_v4`, 248,985 rows at weight 1.0 |
+| AWR temperature β | 1.0 ⇒ a **2.7×** win/loss weight ratio |
+| gate | `--margin-max 1.0` ⇒ 300,181 rows (42.8%) re-weighted |
+| effective sample size | **91.3%** of RL rows |
+| trainable parameters | **120,577 of 702,913 (17.2%)** — head only |
+| epochs / lr / seed | 3 / 2e-4 / 0 |
+
+🔴 **What is killed is THIS configuration, and saying so is not hedging — it is
+the difference between a measured result and an overreach.** A deliberately
+gentle reweighting of a fifth of the parameters, on 4,000 games, failing to move
+a clone, is not evidence that outcome signals are worthless. §8am independently
+established that the 20% band of genuine near-ties **exists** and has somewhere
+for such a signal to go.
+
+### 🔴 And the null is consistent with §8ae's OWN unpriced caveat
+
+§8ae passed RL's sizing probe on the arithmetic that a 1% effect at a context
+recurring 20×/game needs **960 games** against a 5.5M-game budget. **That number
+priced ONE context in isolation**, and §8ae said so in its own caveat 2:
+*"shared parameters — so contexts are not estimated independently and the
+effective sample size is smaller, unmeasured."*
+
+**4,000 games is 0.073% of the budget it priced.** The binding constraint was
+**memory, not compute**: 951,123 rows already occupy ~2.4 GB on a 7.3 GB machine
+and `Data` materialises the whole corpus. ⇒ **The null does not distinguish "the
+method does not work" from "the method was not given enough data", and no
+honest reading of 0.512 resolves that.** ⚠ **This is exactly the sizing probe's
+own warning arriving on schedule — §8ae wrote "a sizing probe that fails to kill
+is not evidence that a thing works", and it was right.**
+
+⇒ **Authorised follow-up (user, day 17): ONE rerun at more data, identical
+config, identical bar.** ⛔ **Not a β sweep. Not a gate sweep.** Running several
+configurations and reporting the best is shopping, and this project has a rule
+about screening on the wrong metric that cost it two sessions.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:b8,net=out/policy_b8.npz,noChip,noSpread,noSrc" `
+    "bc:b8ctrl,net=out/policy_b8_ctrl.npz,noChip,noSpread,noSrc" `
+    --deck-a grimmsnarl --deck-b grimmsnarl --matches 1000 `
+    --archive out/arena/p29_b8_vs_ctrl.jsonl
+```
+Archives: `out/arena/p29_b8_vs_ctrl.jsonl`, `out/arena/p29_ctrl_vs_v5.jsonl`.
+
 ## 8an. 🔴 THE CRUSTLE RE-RUN: the repair made the anchor EASIER, the alarm is ANSWERED, and the fixed pilot is a WORSE INSTRUMENT than the broken one (2026-08-02, day 17)
 
 **The standing item.** §8ah found `sources/crustle.py:338` scoring every Pokémon

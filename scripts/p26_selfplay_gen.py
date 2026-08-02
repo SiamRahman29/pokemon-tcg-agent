@@ -258,7 +258,7 @@ def generate(args) -> int:
     print(f"  net={args.net} tau={args.tau} deck={args.deck} opp={opp_label}")
     print(f"  -> {out}")
 
-    n_rows = 0
+    n_rows = n_seen = 0
     tally = {0: 0, 1: 0, 2: 0}
     t0 = time.time()
     for g in range(args.games):
@@ -300,6 +300,9 @@ def generate(args) -> int:
         gid = args.gid_base + g
         for (dense, bags, seld, opts, mask, extra,
              logp, margin, me) in pending:
+            n_seen += 1
+            if args.keep_margin > 0 and margin > args.keep_margin:
+                continue
             # `won` is from the acting seat's point of view -- the same
             # convention build_policy_dataset uses (`rewards[me] > rewards[1-me]`).
             # A draw is 0.5, which the BC corpus never had to represent because
@@ -321,6 +324,10 @@ def generate(args) -> int:
     el = time.time() - t0
     print(f"\n  {args.games} games, {n_rows} rows, {el / 60:.1f} min "
           f"({args.games / max(el, 1e-9):.2f} games/s)")
+    if args.keep_margin > 0:
+        print(f"  --keep-margin {args.keep_margin}: kept {n_rows:,} of "
+              f"{n_seen:,} decisions ({n_rows / max(n_seen, 1):.1%}), "
+              f"{n_rows / max(args.games, 1):.1f} rows/game")
     print(f"  seat0={tally[0]} seat1={tally[1]} draw={tally[2]}")
     return 0
 
@@ -345,6 +352,18 @@ def main() -> int:
                     help="game ids start here. ⚠ The trainer's val split is "
                          "`gid %% 20 == 0`, so parallel workers MUST use "
                          "disjoint bases or the same game lands in both sides.")
+    ap.add_argument("--keep-margin", type=float, default=0.0,
+                    help="write ONLY rows whose top1-top2 logit margin is <= "
+                         "this. 0 = keep everything. §8ao's rerun is memory- "
+                         "bound rather than compute-bound (the trainer "
+                         "materialises the whole corpus), and the rows above "
+                         "the training gate are ones the AWR term never "
+                         "re-weights anyway -- so dropping them at WRITE time "
+                         "buys ~2.3x the games for the same RAM. ⚠ It is not "
+                         "free: those rows trained at weight 1.0 as extra "
+                         "cloning of our own confident play. The corpus anchor "
+                         "(--anchor-ds) is what tethers the fine-tune, and it "
+                         "is unaffected.")
     ap.add_argument("--report", type=int, default=50)
     ap.add_argument("--probe", action="store_true",
                     help="size the temperature and write nothing")
