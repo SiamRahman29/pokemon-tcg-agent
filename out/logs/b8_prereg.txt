@@ -1,0 +1,20 @@
+=== B8 rerun decision rule, written 2026-08-02 before the 16k A/B reported ===
+
+Bar (unchanged): >= 0.541 at n=2000 vs the byte-identical control.
+
+If it CLEARS      -> B8 lives; five-anchor sweep, then a submission decision.
+
+If it NULLS, the question is whether to spend the now-feasible 40,000-game run.
+Decide on the DIRECTION of the point estimate, not on wanting another go:
+
+  4,000 games gave 0.512 [0.491, 0.534].
+
+  (a) 16k point estimate materially ABOVE 0.512 -> more data is moving it;
+      the 40k run is justified and gets the same bar.
+  (b) 16k point estimate AT or BELOW 0.512 -> 4x the data moved nothing, so
+      10x is not indicated. The axis closes on the method, not the budget,
+      and B8 becomes a report chapter.
+
+This is written down because "run it bigger" is the most available excuse after
+any null, and the project has a rule about screening on the wrong thing.
+Nothing here licenses a beta sweep either way.
