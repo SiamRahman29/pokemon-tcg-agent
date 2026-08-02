@@ -313,6 +313,56 @@ seed-only null is ±13 Elo.
 
 ---
 
+### 4f. The opponent pool is a function of your own rating
+
+Every result above is a weighted average over an anchor set, and the weights come
+from a census of who we actually play. We measured that census once, at ~820
+rating, and then spent five days quoting it while climbing to 955.
+
+Pooled over 75 games from two live agents, the field looked **transformed** since
+the first census: the mirror **13.8% → 33.3%** (Fisher **p=0.002**), Mega Lucario
+**12.8% → 4.0%**, our win rate 63.0% → 70.7%. The obvious reading is a meta
+shift, and it is wrong.
+
+`scripts/p19_field_drift.py` runs the discriminator: bucket all 181 rated games
+from all four dumps by **opponent rating** rather than by date.
+
+| archetype | opp <800 | 800–900 | 900–1000 | 1000+ |
+|---|---|---|---|---|
+| **mirror** | 5.3% | 18.6% | **42.4%** | **71.4%** |
+| Alakazam | 13.3% | 28.8% | 33.3% | 14.3% |
+| Crustle | 16.0% | 5.1% | 9.1% | 7.1% |
+| Mega Lucario | **17.3%** | 6.8% | **0.0%** | **0.0%** |
+| Archaludon | 10.7% | 15.3% | **0.0%** | **0.0%** |
+
+🔴 **Hold the band fixed and every era difference vanishes** — all Fisher
+p ≥ 0.065 across four dumps, and the smallest points the *opposite* way from the
+pooled table. What moved was us: mean opponent rating **799 → 867**, tracking our
+own 820 → 955.
+
+**The field did not change its decks. We changed our seat in it.**
+
+The consequence is not cosmetic. Re-weighting with band-correct shares — the
+measurements themselves untouched, only the weights — moves every verdict, and
+**flips one**: our "the arithmetic rules are worth nothing" result went **+0.8 →
+−18.1**, because it rested on a −51 mirror term at 13.8% cancelling a +47 Lucario
+term at 12.8%, and the true weights are 33.3% and 4.0%. We had shipped the right
+configuration for reasons that were wrong by a factor of 18.
+
+⚡ **It also dissolved a contradiction we had filed as irreconcilable.** A census
+of top-rated episodes said 52.1% of seats played our archetype; our own games
+said the mirror was 13.8%. Both are true — they are two points on one monotone
+curve, and we had been walking up it.
+
+> **The general form, and it is why this sits in a methods chapter:** *any*
+> statistic gathered from your own matches carries an invisible parameter — the
+> skill you had when you gathered it. This is the sampling-frame trap, committed
+> a second time, on data we generated ourselves after writing the rule that warns
+> about it. The fix is not a better census; it is **reporting the band alongside
+> every share**, the way one reports n.
+
+---
+
 ## 5. Measurement discipline, and two failures of our own process
 
 The full codex is 17 rules, each paid for by invalidated work (`HANDOFF.md` §2).
@@ -467,6 +517,10 @@ The exhibit is the **weighted multi-anchor A/B table** — five anchor decks
 covering 71.5% of the measured field, n=2000 per cell, every anchor a real pilot
 rather than a self-play stand-in.
 
+🔴 **Both columns of the obvious version of this table are wrong, and finding out
+why is the chapter.** Here it is as we first wrote it, measured over 109 games
+while we sat at ~820 rating:
+
 | anchor | share of field | our WR (real games) |
 |---|---|---|
 | Alakazam / Telepath | 22.0% | 66.7% |
@@ -475,8 +529,30 @@ rather than a self-play stand-in.
 | Mega Lucario ex | 12.8% | **50.0%** |
 | Archaludon ex | 10.1% | **45.5%** |
 
+**Failure one — the shares are a function of our own rating, not of the meta**
+(§4f). Re-measured over 75 games at 915–955, the same five anchors read:
+
+| anchor | share at ~820 | **share at ~955** | share above opp. rating 900 |
+|---|---|---|---|
+| **Grimmsnarl mirror** | 13.8% | **33.3%** | **51.1%** (71.4% above 1000) |
+| Alakazam / Telepath | 22.0% | 21.3% | 33.3% |
+| Archaludon ex | 10.1% | 8.0% | **0 of 47 games** |
+| Crustle | 12.8% | 6.7% | 9.1% |
+| Mega Lucario ex | 12.8% | **4.0%** | **0 of 47 games** |
+
+**Failure two — one of the five anchors was throwing games** (§8ah). The Crustle
+pilot scored every Pokémon except Dwebble at −5000 for a bench play, so once its
+Dwebbles were gone it played on an empty bench until the first KO ended the
+match; it **ended its turn exposed 0.667 times per game and lost 2 of 2 that
+way.** Our arena number against it was **0.663** against a **57.1%** real win
+rate. **An anchor that loses games does not add noise — it biases every A/B that
+uses it in our favour, in the direction that looks like progress.** It was found
+by a human watching a replay, in a project that had run arena A/Bs at n=2000 for
+fifteen days, because *an anchor that throws games still returns a number.*
+
 **The key methodological point: an arena result is a weighted average over your
-anchor set and nothing else.** "Wins two anchors, loses one" is not a verdict.
+anchor set and nothing else** — and both the weights and the members have now
+been caught wrong. "Wins two anchors, loses one" is not a verdict.
 
 **Calibration — how much to trust it.** Comparing each anchor's arena score to
 the *same agent's* real win rate on that archetype: **the ordering is correct 4

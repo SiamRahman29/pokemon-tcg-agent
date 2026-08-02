@@ -211,7 +211,106 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 15 (in progress 2026-08-01; user-directed. The goal is to WIN)
+### ▶ START HERE — DAY 16 (in progress 2026-08-02; user-directed. The goal is to WIN)
+
+> # 🔴 THE DAY-16 HEADLINE: THE USER WATCHED ONE REPLAY AND FOUND AN ANCHOR THAT WAS THROWING GAMES
+>
+> **Day-15 item 6 said the five anchors carry 71.5% of every weighted verdict
+> here, were imported rather than written by us, and had never been watched. The
+> user watched `out/replays/anchor_vs_anchor/game000` and reported the Crustle
+> pilot never benched a second Pokémon and lost when its active was KO'd. It was
+> correct.** `EVIDENCE` §8ah.
+>
+> `sources/crustle.py:338` scored **every Pokémon except Dwebble at −5000** for a
+> bench play, with **no empty-bench guard**, so once the Dwebbles were gone it
+> played on an empty bench until the first KO ended the match. ✅ **Fixed** —
+> bench-full −5000, **empty bench 90000**, otherwise Dwebble 25000 / any 12000.
+>
+> | agent | games | EXPOSED turn-ends | empty-bench losses |
+> |---|---|---|---|
+> | **`rule:crustle` before** | 3 | **0.667/game** | **2 of 2 losses** |
+> | **`rule:crustle` after** | 12 | **0.000** | 2 of 10 |
+> | `rule:archaludon` | 12 | 0.000 | 1 of 3 |
+> | `rule:alakazam5` | 18 | 0.000 | 0 of 11 |
+> | `rule:lucario` | 12 | 0.000 | 0 of 5 |
+> | **`bc:v5` (ours)** | 51 | 0.000 | **0 of 23** |
+>
+> 🔴 **CONSEQUENCE — EVERY VERDICT CARRYING A CRUSTLE TERM IS SUSPECT and must be
+> re-run against the repaired pilot.** Our arena reads **0.663** vs `rule:crustle`
+> against a **57.1%** real win rate; §8i filed that as "the arena reads
+> optimistic" and this is a mechanism for part of it. ⚠ **NOT YET DONE — user
+> has not authorised the re-run** (hours of compute, rewrites published numbers).
+> At §8ac weights Crustle is 6.7% of the field, so the dilution is real.
+>
+> ⚡ **The methods lesson is about OUR detector, not the pilot.** The obvious
+> screen — "bench empty, bench play offered, chose something else" — **overcounts
+> and is not an error rate**: a pilot that plays three items and *then* benches
+> scores three declines and did nothing wrong. On it, `rule:archaludon` looked
+> **worse than Crustle** (1.333/game) and **is clean**. The sharp detector adds
+> *"...and it ATTACKED or ENDED THE TURN anyway"*. **Fourth confident-but-wrong
+> script in three days** (§8ad, §8ae, §8af, this) — ⚡ but the first one caught
+> *before* reporting, by asking **"what is the benign reading of this count?"**
+>
+> ⛔ **AND THE RULE IT SUGGESTED FOR OUR OWN AGENT DIED BY SIZING** (§8ai). Empty
+> bench is the most *dominated* option there is (rules go 3/3 there), so it was
+> promoted as the best-shaped candidate in days — then sized: over 75 real ladder
+> games and 7,094 decisions it fires **0.187/game** and matches **1 of 22
+> losses**. The Morgrem out died at ~0.2 (§8e), Pokégear at 0.27 (§8ag). ~1.3% of
+> games against an n=2000 A/B that resolves 2.1%. **Not built. Third sizing
+> closure in three days.**
+>
+> #### 📋 The health-check submission — `55169114`, and it is decision-identical to v5
+>
+> ⚠ **It was submitted 2026-08-01 18:42 UTC and recorded in NO doc until now.**
+> `dist/submission_bc-grimmsnarl-netspolicy_20260802-004209.tar.gz`. `diff -rq`
+> against the v5 bundle: **only `main.py` and `sa/bcagent.py` differ**, and only
+> by the health counters + one `print`. **Weights, deck, engine, every other
+> module byte-identical. No decision path changed.**
+>
+> | submission | what it is | age | read 05:08 UTC | read 05:25 UTC |
+> |---|---|---|---|---|
+> | `55160229` | **v5** | 18.8 h | 956.5 | **951.0** |
+> | `55169114` | **v5 + stdout counters** | 10.7 h | **874.8** | **874.8** |
+> | `55156480` | v4 (frozen, evicted) | 22.2 h | 910.5 | 910.5 |
+>
+> 🔴 **≈ −80 points between two agents that make the same move in the same
+> state**, both past the 4 h convergence window, read in the same call. If it
+> holds it is **the project's first measured LB null**, and it is **double** the
+> +40.5 that day 15 called "rule 2 satisfied on a net pair". ⚠ **Two readings
+> only 17 min apart — rule 2 wants ≥1 h. A settling read is armed for ~07:25 UTC
+> and §8aj is NOT to be written until it lands.**
+>
+> ✅ **THE SUBMISSION-LOG TRACK IS CLOSED, and only one of its four goals paid.**
+> Three episode logs collected:
+> - ✅ **pool usage settled** — 318 selects, **1.12 s of a 1,800 s budget**, worst
+>   call 0.153 s (startup). The "0.1 s of 600 s" claim is real.
+> - ✅ **net is live, two ways in one file** — 86–98 net calls at **1.2–1.6 ms**
+>   against 7–10 fallback-shaped calls at **23–37 µs**, a 50× separation.
+> - 🔴 **Kaggle starts a FRESH PROCESS PER EPISODE** — all three logs read
+>   `calls=1`, so the cumulative counter line can never print. The heartbeat fix
+>   would cost a submission slot.
+> - ⛔ **Nothing further is worth a slot.** The crash alarm already fires on the
+>   next select (it does *not* wait for the heartbeat) and has reported zero over
+>   3 games; `net_missing` belongs in a **build-time assertion**, not a log; and
+>   the margin-distribution idea is obtainable **offline from replays we already
+>   download**. Leave the counters in as passengers; never submit for logging.
+>
+> #### The day-16 order of work
+>
+> 1. ✅ `crustle.py:338` fixed · ✅ anchor pathology audit (`p24`) · ✅ empty-bench
+>    sizing closed · ✅ EVIDENCE §8ah/§8ai · ✅ STRATEGY §4f written and §6's stale
+>    day-9 shares corrected.
+> 2. ⏳ **Ladder settling read (~07:25 UTC) → §8aj**, the identical-agent null.
+> 3. 🃏 **DECK WORK IS THE USER'S PRIORITY AND IS NEXT.** ⛔ **Anchor-based deck
+>    A/Bs are BLOCKED** until the repaired pilot is re-validated (rule 12: build
+>    the anchor before the deck opinion). ⚡ **The MIRROR is not blocked** — both
+>    seats are our own net on our own 60, so only the list differs — and it is
+>    **33.3% of the field, 51.1% above rating 900, 71.4% above 1000**. Start
+>    there. §8af says swaps inside the **134 corpus cards** are low-risk; §8ai
+>    notes we run **10 basics in 60** but caps that lead at ~1.3% of games.
+> 4. ⏸ Re-run the Crustle-term verdicts against the fixed pilot — **user's call**.
+
+<details><summary>Day 15's headline box (2026-08-01) — the rating-dependent field; still live, superseded only in its item-6 status</summary>
 
 > # 🔴 THE DAY-15 HEADLINE: THE "META SHIFT" IS OUR OWN CLIMB, AND IT RE-PRICES EVERY WEIGHTED VERDICT IN THIS REPO
 >
@@ -324,6 +423,8 @@ distrust it: mined episodes are the top-1150 band, and
 > averaged both agents together. It reported +37 as undetectable and +14 as
 > detectable. **A bug that biases everything toward the null looks like a
 > finding, not a crash.**
+
+</details>
 
 > ## 📍 THE SITUATION AT THE TOP OF DAY 15
 >

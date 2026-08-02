@@ -1,0 +1,17 @@
+  seat0 'bc:v5,net=out/policy_v5.npz' on grimmsnarl
+  seat1 'rule:lucario' on mega_lucario_ex
+  game   0  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 17 selects= 214  -> out\replays\audit_lucario\game000.json (3.6 MB)
+  game   1  winner=1 (rule:lucario)  turns= 12 selects= 171  -> out\replays\audit_lucario\game001.json (2.8 MB)
+  game   2  winner=1 (rule:lucario)  turns= 10 selects= 118  -> out\replays\audit_lucario\game002.json (1.9 MB)
+  game   3  winner=1 (rule:lucario)  turns= 12 selects= 192  -> out\replays\audit_lucario\game003.json (3.2 MB)
+  game   4  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 141  -> out\replays\audit_lucario\game004.json (2.4 MB)
+  game   5  winner=1 (rule:lucario)  turns= 10 selects= 159  -> out\replays\audit_lucario\game005.json (2.6 MB)
+  game   6  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 167  -> out\replays\audit_lucario\game006.json (2.7 MB)
+  game   7  winner=1 (rule:lucario)  turns= 12 selects= 165  -> out\replays\audit_lucario\game007.json (2.7 MB)
+  game   8  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 146  -> out\replays\audit_lucario\game008.json (2.3 MB)
+  game   9  winner=0 (bc:v5,net=out/policy_v5.npz)  turns=  9 selects= 130  -> out\replays\audit_lucario\game009.json (2.1 MB)
+  game  10  winner=1 (rule:lucario)  turns= 10 selects= 176  -> out\replays\audit_lucario\game010.json (3.0 MB)
+  game  11  winner=1 (rule:lucario)  turns= 10 selects= 157  -> out\replays\audit_lucario\game011.json (2.6 MB)
+
+  A (bc:v5,net=out/policy_v5.npz) won 5/12, lost 7, drew 0
+  open notebooks/visualizer.html and pick a file from out\replays\audit_lucario to watch one

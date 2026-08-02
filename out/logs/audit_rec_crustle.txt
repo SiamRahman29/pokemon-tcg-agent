@@ -1,0 +1,17 @@
+  seat0 'bc:v5,net=out/policy_v5.npz' on grimmsnarl
+  seat1 'rule:crustle' on crustle
+  game   0  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 168  -> out\replays\audit_crustle_fixed\game000.json (2.7 MB)
+  game   1  winner=1 (rule:crustle)  turns= 20 selects= 214  -> out\replays\audit_crustle_fixed\game001.json (3.6 MB)
+  game   2  winner=1 (rule:crustle)  turns= 18 selects= 147  -> out\replays\audit_crustle_fixed\game002.json (2.3 MB)
+  game   3  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 164  -> out\replays\audit_crustle_fixed\game003.json (2.7 MB)
+  game   4  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 104  -> out\replays\audit_crustle_fixed\game004.json (1.6 MB)
+  game   5  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 192  -> out\replays\audit_crustle_fixed\game005.json (3.1 MB)
+  game   6  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 160  -> out\replays\audit_crustle_fixed\game006.json (2.5 MB)
+  game   7  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 21 selects= 175  -> out\replays\audit_crustle_fixed\game007.json (2.7 MB)
+  game   8  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 13 selects= 143  -> out\replays\audit_crustle_fixed\game008.json (2.3 MB)
+  game   9  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 17 selects= 193  -> out\replays\audit_crustle_fixed\game009.json (3.1 MB)
+  game  10  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 20 selects= 175  -> out\replays\audit_crustle_fixed\game010.json (2.8 MB)
+  game  11  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 128  -> out\replays\audit_crustle_fixed\game011.json (2.0 MB)
+
+  A (bc:v5,net=out/policy_v5.npz) won 10/12, lost 2, drew 0
+  open notebooks/visualizer.html and pick a file from out\replays\audit_crustle_fixed to watch one

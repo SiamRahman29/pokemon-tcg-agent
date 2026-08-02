@@ -1,0 +1,17 @@
+  seat0 'bc:v5,net=out/policy_v5.npz' on grimmsnarl
+  seat1 'rule:archaludon' on archaludon_ex
+  game   0  winner=1 (rule:archaludon)  turns= 14 selects= 127  -> out\replays\audit_archaludon\game000.json (2.0 MB)
+  game   1  winner=1 (rule:archaludon)  turns= 14 selects= 172  -> out\replays\audit_archaludon\game001.json (2.7 MB)
+  game   2  winner=1 (rule:archaludon)  turns= 14 selects= 174  -> out\replays\audit_archaludon\game002.json (2.8 MB)
+  game   3  winner=1 (rule:archaludon)  turns= 14 selects= 150  -> out\replays\audit_archaludon\game003.json (2.3 MB)
+  game   4  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 13 selects= 142  -> out\replays\audit_archaludon\game004.json (2.2 MB)
+  game   5  winner=1 (rule:archaludon)  turns= 14 selects= 160  -> out\replays\audit_archaludon\game005.json (2.6 MB)
+  game   6  winner=0 (bc:v5,net=out/policy_v5.npz)  turns=  9 selects= 103  -> out\replays\audit_archaludon\game006.json (1.5 MB)
+  game   7  winner=1 (rule:archaludon)  turns= 14 selects= 151  -> out\replays\audit_archaludon\game007.json (2.4 MB)
+  game   8  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 138  -> out\replays\audit_archaludon\game008.json (2.2 MB)
+  game   9  winner=1 (rule:archaludon)  turns= 14 selects= 161  -> out\replays\audit_archaludon\game009.json (2.5 MB)
+  game  10  winner=1 (rule:archaludon)  turns= 16 selects= 162  -> out\replays\audit_archaludon\game010.json (2.5 MB)
+  game  11  winner=1 (rule:archaludon)  turns= 16 selects= 168  -> out\replays\audit_archaludon\game011.json (2.6 MB)
+
+  A (bc:v5,net=out/policy_v5.npz) won 3/12, lost 9, drew 0
+  open notebooks/visualizer.html and pick a file from out\replays\audit_archaludon to watch one

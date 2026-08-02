@@ -1,0 +1,17 @@
+  seat0 'bc:v5,net=out/policy_v5.npz' on grimmsnarl
+  seat1 'rule:alakazam5' on alakazam5
+  game   0  winner=1 (rule:alakazam5)  turns= 14 selects= 172  -> out\replays\audit_alakazam5\game000.json (2.8 MB)
+  game   1  winner=0 (bc:v5,net=out/policy_v5.npz)  turns=  9 selects= 162  -> out\replays\audit_alakazam5\game001.json (2.6 MB)
+  game   2  winner=1 (rule:alakazam5)  turns= 18 selects= 148  -> out\replays\audit_alakazam5\game002.json (2.4 MB)
+  game   3  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 13 selects= 152  -> out\replays\audit_alakazam5\game003.json (2.4 MB)
+  game   4  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 17 selects= 216  -> out\replays\audit_alakazam5\game004.json (3.6 MB)
+  game   5  winner=0 (bc:v5,net=out/policy_v5.npz)  turns=  7 selects= 102  -> out\replays\audit_alakazam5\game005.json (1.6 MB)
+  game   6  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 152  -> out\replays\audit_alakazam5\game006.json (2.4 MB)
+  game   7  winner=1 (rule:alakazam5)  turns= 16 selects= 184  -> out\replays\audit_alakazam5\game007.json (3.0 MB)
+  game   8  winner=1 (rule:alakazam5)  turns= 16 selects= 249  -> out\replays\audit_alakazam5\game008.json (4.2 MB)
+  game   9  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 15 selects= 204  -> out\replays\audit_alakazam5\game009.json (3.2 MB)
+  game  10  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 168  -> out\replays\audit_alakazam5\game010.json (2.7 MB)
+  game  11  winner=0 (bc:v5,net=out/policy_v5.npz)  turns= 11 selects= 116  -> out\replays\audit_alakazam5\game011.json (1.8 MB)
+
+  A (bc:v5,net=out/policy_v5.npz) won 8/12, lost 4, drew 0
+  open notebooks/visualizer.html and pick a file from out\replays\audit_alakazam5 to watch one

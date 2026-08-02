@@ -335,7 +335,28 @@ def score_option(obs: Observation, option) -> int:
         card_id = card.id
         data = CARD_TABLE[card_id]
         if data.cardType == CardType.POKEMON:
-            return 25000 if card_id == DWEBBLE and len(player.bench) < player.benchMax else -5000
+            # 🔴 FIXED 2026-08-02. This line used to read:
+            #     return 25000 if card_id == DWEBBLE and ... else -5000
+            # so ONLY Dwebble was ever benchable and every other Pokemon in the
+            # list -- Mega Kangaskhan ex (300 HP!), Cornerstone Mask Ogerpon ex
+            # -- scored -5000 and lost to literally any other play. There was no
+            # empty-bench guard at all, so once the Dwebbles were gone the pilot
+            # played on an empty bench until the first KO ended the game on the
+            # spot. Watched happening in out/replays/anchor_vs_anchor/game000
+            # (turn 10: bench empty, Mega Kangaskhan ex offered TWICE and
+            # declined for an energy attach; turn 11 the active is KO'd and the
+            # engine returns result reason 3). 9 declined bench plays over 3
+            # games, against 1 for rule:alakazam5 and 1 for our own net.
+            # Every other pilot in this directory defaults a Pokemon to
+            # benchable (alakazam5/lucario/v10 = 20000, iono = 100000) and
+            # subtracts for redundancy; this one inverted that default.
+            if len(player.bench) >= player.benchMax:
+                return -5000
+            # An empty bench means the next KO loses the game outright, so
+            # filling it dominates every other play in the option set.
+            if not player.bench:
+                return 90000
+            return 25000 if card_id == DWEBBLE else 12000
         if card_id == BUDDY_POFFIN:
             return wanted_card_score(card_id, obs, my_index, ignore_hand=True)
         if card_id == BATTLE_CAGE:

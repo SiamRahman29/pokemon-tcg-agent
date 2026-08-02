@@ -3462,6 +3462,149 @@ python -X utf8 scripts/p22_deck_change_risk.py --net out/policy_v5.npz
 python -X utf8 scripts/p23_pokegear_audit.py
 ```
 
+## 8ah. 🔴 THE FIRST ANCHOR ANYONE WATCHED WAS THROWING GAMES — day-15 item 6, and the user found it by watching (2026-08-02, day 16)
+
+**Item 6 existed because the five anchors carry 71.5% of every weighted verdict
+in this repo, they were imported rather than written here, and nobody on this
+project had ever watched one play.** The user watched
+`out/replays/anchor_vs_anchor/game000` and reported that the Crustle pilot never
+benched a second Pokémon and lost when its active was KO'd.
+
+**The report was correct.** `scripts/p24_anchor_pathology.py`.
+
+### Result 1 — the game, and the reason code was NOT what established it
+
+Game 000 is `rule:alakazam5` (seat 0) vs `rule:crustle` (seat 1), rewards `[1,0]`.
+At **turn 10** seat 1 had active Dwebble (70 HP), **bench empty**, and **Mega
+Kangaskhan ex** — a 300 HP card whose DB entry is `"basic": true,
+evolvesFrom: null` — in hand. The engine **offered the bench play twice**, at two
+consecutive decisions. Both were declined for an energy attach. Turn 11,
+Alakazam attacked, Dwebble was KO'd, game over.
+
+⚠ **The `Result` log said `reason: 3`, and that is not evidence** — real ladder
+replays carry `result: 1, reason: 3` on ordinary prize-out wins. What settles it
+is the **prize counts**: seat 0 won *holding 2 prizes* and seat 1 never took one,
+so the only available win condition was seat 1 having no Pokémon in play.
+**Read the board state, not the reason code.**
+
+### Result 2 — the cause was one line, and it inverted a default every other pilot gets right
+
+`agents/agentkit/rulebased/sources/crustle.py:338`, before:
+
+```python
+if data.cardType == CardType.POKEMON:
+    return 25000 if card_id == DWEBBLE and len(player.bench) < player.benchMax else -5000
+```
+
+**Only Dwebble was ever benchable**; Mega Kangaskhan ex ×2 and Cornerstone Mask
+Ogerpon ex scored **−5000** and lost to every other play, with **no empty-bench
+guard at all**. Once the Dwebbles were gone it played on an empty bench until the
+first KO ended the match. Every other pilot defaults a Pokémon to *benchable* and
+subtracts for redundancy — `alakazam5`/`lucario`/`v10` **20000**, `iono`
+**100000**, `abomasnow` **10000**. This one inverted the default.
+
+Fixed: bench-full still −5000, **empty bench returns 90000** (filling it
+dominates every other play in the set), otherwise Dwebble 25000 / anything 12000.
+
+### Result 3 — 🔴 and the first detector OVERCOUNTED, which nearly produced a second false finding
+
+The obvious detector — *"bench empty, a bench play was offered, agent chose
+something else"* — **is not an error rate.** A turn is many selects, so a pilot
+that plays three items and *then* benches scores three "declines" and has done
+nothing wrong. On that detector `rule:archaludon` looked worse than Crustle
+(1.333/game, Duraludon ×14) and **it is fine**.
+
+The sharp detector is *"...and it ATTACKED or ENDED THE TURN anyway"*, which has
+no benign reading. 12 recorded games per anchor vs `bc:v5`, plus the existing
+dumps:
+
+| agent | games | declined | **EXPOSED turn-ends** | empty-bench losses |
+|---|---|---|---|---|
+| **`rule:crustle` (before)** | 3 | 6 | **2 (0.667/game)** | **2 of 2 losses** |
+| **`rule:crustle` (after)** | 12 | **0** | **0** | 2 of 10 |
+| `rule:archaludon` | 12 | 16 | **0** | 1 of 3 |
+| `rule:alakazam5` | 18 | 1 | **0** | 0 of 11 |
+| `rule:lucario` | 12 | 1 | **0** | 0 of 5 |
+| **`bc:v5` (ours)** | 51 | 1 | **0** | **0 of 23** |
+
+⇒ **One real defect existed, it is fixed (0.667 → 0.000 exposed/game), and the
+other four anchors — and our own net — are clean on this pathology.**
+
+⚠ **Unresolved and deliberately not closed:** the repaired Crustle pilot still
+loses **2 of 10** with an empty bench, and Archaludon **1 of 3**, in games where
+no bench play was ever *offered*. That is a card-search priority question
+(`wanted_card_score` stops fetching once `dwebble_total >= 3` regardless of an
+empty bench), not a play-selection one, and n is far too small to call it.
+
+### The cost, and what it does NOT license
+
+🔴 **An anchor that throws games biases every A/B that uses it in our favour, in
+the direction that looks like progress.** Our arena number vs `rule:crustle` is
+**0.663** against a **57.1%** real win rate on that archetype; §8i logged that
+gap as "the arena reads optimistic" and this is a concrete mechanism for part of
+it. **Every verdict carrying a Crustle term is now suspect and must be re-run
+against the repaired pilot.** At §8ac's re-weighting Crustle is 6.7% of the
+field, so the dilution is real but the correction is owed.
+
+⛔ **It does NOT license re-running everything on faith.** Crustle is one of five
+anchors; the pathology audit covers one failure mode; and §8ab's caveat still
+binds — weighted five-anchor totals are ordinal, not arithmetic.
+
+### The methods lesson, and it is the fourth of the same shape in three days
+
+`p20_recorder_equivalence` (a test that could not fail), `p21_rl_variance_probe`
+(seat-indexed archives read as agent-indexed), `p22`'s embedding-norm heuristic
+(no cluster to find), and now a pathology detector that **overcounted by design
+and made a clean pilot look like the worst one on the board.** All four printed
+confident numbers. ⚡ **The new part: this one was caught by asking "what is the
+benign reading of this count?" before reporting it** — which is the same question
+`p20`'s rewrite should have asked and didn't.
+
+⚡ **And the finding itself came from a human watching a replay, not from any
+script.** Fifteen days of arena A/Bs at n=2000 never surfaced it, because an
+anchor that loses games still returns a number.
+
+```powershell
+python -X utf8 scripts/p20_record_games.py --a "bc:v5,net=out/policy_v5.npz" `
+    --b rule:crustle --deck-b crustle --games 12 --out out/replays/audit_crustle_fixed
+python -X utf8 scripts/p24_anchor_pathology.py
+```
+
+## 8ai. ⚡ THE EMPTY-BENCH RULE FOR OUR OWN AGENT: right shape, wrong frequency — closed by sizing (2026-08-02, day 16)
+
+§8ah's bug is the most **dominated** option class in the game (skip it and the
+next KO wins), and this project's discriminator says rules deleting a dominated
+option go **3 for 3** while rules picking a side in a tradeoff go **0 for 4**. So
+it was promoted as the best-shaped rule candidate in days — **and then sized
+before anything was built** (rule 14).
+
+Over our **75 real ladder games** (`replays/submission_v4` + `submission_v5`),
+7,094 of our own decisions, 22 losses:
+
+| measure | value |
+|---|---|
+| decisions with an empty bench | 283 (3.77/game) |
+| ...where a legal bench play was **offered and declined** | **14 → 0.187/game** |
+| games with ≥1 decline | 12 of 75 |
+| losses matching the empty-bench signature | **1 of 22** |
+
+🔴 **0.187 firings/game.** The Morgrem out was closed **without spending an A/B**
+at ~0.2 firings/game (§8e) and Pokégear at 0.27 (§8ag). The failure costs ~1.3%
+of games; an n=2000 arena A/B resolves ~0.021 of win rate. **We could not measure
+the fix even if we built it.** ⇒ **Not built.**
+
+⚠ Scope: this counts declines where the engine *offered* a bench play, which is
+an upper bound on "ended a turn with an empty bench holding a benchable basic",
+so the closure is sound. It does **not** measure turns where we had no basic at
+all — and in **269 of the 283** empty-bench decisions we had nothing to play.
+The declined cards were our own basics (Munkidori ×6, Marnie's Impidimp ×5,
+Snorunt ×4); we run **10 basic Pokémon in 60**. Whether 10 is right is a genuine
+deck question, but the same 1.3% ceiling caps what changing it could pay.
+
+⇒ **Third sizing closure in three days, and the pattern is now worth naming: the
+discriminator tells you whether a rule *would* work; sizing tells you whether it
+would be *visible*. Both gates, in that order, before any code.**
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
