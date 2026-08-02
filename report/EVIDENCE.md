@@ -4040,6 +4040,57 @@ config, identical bar.** ⛔ **Not a β sweep. Not a gate sweep.** Running sever
 configurations and reporting the best is shopping, and this project has a rule
 about screening on the wrong metric that cost it two sessions.
 
+### 🔴 THE RERUN RAN AT 4× THE DATA AND THE ESTIMATE WENT DOWN — B8 IS CLOSED
+
+**16,000 games** (`--keep-margin 1.0`, 1,211,887 rows of 2,830,848 decisions),
+**everything else identical**: same init, same frozen 82.8%, same β=1.0, same
+gate, same 3 epochs / 2e-4 / seed 0 / `--export-last`.
+
+| corpus | treatment vs its control | control vs v5 |
+|---|---|---|
+| 4,000 games | 0.512 [0.491, 0.534] | 0.480 [0.458, 0.502] |
+| **16,000 games** | **0.506 [0.484, 0.528]** | 0.491 [0.469, 0.513] |
+
+**Both fail the 0.541 bar. Both controls sit at v5.** And the point estimate
+moved **0.512 → 0.506**, i.e. *down*.
+
+⚡ **The decision rule was written down BEFORE this reported** (`out/logs/b8_prereg.txt`,
+committed while the arena was still running), precisely because *"run it bigger"*
+is the most available excuse after any null:
+
+> (a) 16k materially **above** 0.512 ⇒ data is moving it, the 40,000-game run is
+> justified. (b) 16k **at or below** 0.512 ⇒ 4× moved nothing, 10× is not
+> indicated, and the axis closes on the **method**, not the budget.
+
+**Branch (b). ⛔ No 40,000-game run. B8 is closed and becomes a report chapter.**
+
+### ⚡ And a parameter-level diagnostic says what the null MEANS
+
+Taken before the A/B reported, so it could not be fitted to the answer:
+
+| | total abs Δ over the trained head |
+|---|---|
+| treatment vs control | **455.6** |
+| control vs v5 | 1349.1 |
+
+**The advantage weighting moved the head by ~34% of the distance the fine-tune
+itself moved it from v5.** ⇒ **The null is not "the signal never reached the
+parameters". The parameters moved substantially and the win rate did not.**
+That is a stronger negative than a bare 0.506.
+
+⚠ **One dimension remains genuinely untested and it is named rather than
+buried: β.** Both runs used β=1.0 (a 2.7× win/loss weight ratio). A sweep was
+declined **by instruction and by rule** — reporting the best of several
+configurations is exactly the shopping this project has a rule against — so
+"a stronger reweighting might work" is **unfalsified, not refuted**. It goes in
+the report as an open question, not as a defeat and not as a hope.
+
+✅ **What IS established, on 20,000 self-play games across two corpus sizes:
+advantage-weighting a clone on its own recorded outcomes, at the smallest honest
+scale, does not beat the same fine-tune without the outcome signal.**
+
+Archives: `out/arena/p32_b8big_vs_ctrl.jsonl`, `out/arena/p32_bigctrl_vs_v5.jsonl`.
+
 ```powershell
 python -X utf8 scripts/arena.py play "bc:b8,net=out/policy_b8.npz,noChip,noSpread,noSrc" `
     "bc:b8ctrl,net=out/policy_b8_ctrl.npz,noChip,noSpread,noSrc" `

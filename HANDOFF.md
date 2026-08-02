@@ -211,7 +211,150 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 17 IS B8: THE RL FINE-TUNE. IT IS SCHEDULED, IT HAS A KILL LINE, AND IT HAS A HARD STOP.
+### ▶ START HERE — DAY 18. B8 IS DEAD, THE LADDER IS PROVABLY UNUSABLE, AND TRACK C IS THE ONLY RUBRIC-WEIGHTED TRACK LEFT UNSTARTED.
+
+> # 🔴 THE DAY-17 HEADLINE: TWO DECISION-IDENTICAL AGENTS READ 63.2 POINTS APART
+>
+> `55169114` differs from v5 (`55160229`) only by health counters and one
+> `print` — weights, deck, engine byte-identical. A fourth read closed §8ak's
+> withheld verdict: **942.7 vs 879.5**, both settled by the same test.
+>
+> **A true difference of EXACTLY ZERO, displayed as 63 points.** Against every
+> effect this project has measured: day-15's +40.5 headline, §8z's **+37**,
+> §8ab's **−36**, §8aa's **+14**.
+>
+> ⇒ 🔴 **RULE 2'S SECOND CLAUSE IS NOW A MEASUREMENT, NOT AN INFERENCE. The
+> ladder cannot adjudicate any net change we make or are likely to make. The
+> arena — n≥2000, byte-identical control, 0.482 seed floor — is not the weaker
+> instrument. It is the ONLY instrument.** ⚠ Quote it as *"≥63 and still
+> closing"* (81.7 → 76.2 → 69.0 → 63.2); read 4 closed because the *converged*
+> agent rose **+4.2**, so **both** agents fail day-scale convergence.
+>
+> 📈 **Standing: rank 198 / 6,136 at 942.7 — best rank ever, and our SCORE FELL
+> while our RANK ROSE.** New #1 is `Luca` at 1322.6.
+>
+> # 🔴 B8 IS CLOSED — TWICE, ON 20,000 SELF-PLAY GAMES
+>
+> | corpus | treatment vs its byte-identical control | control vs v5 |
+> |---|---|---|
+> | 4,000 games | **0.512** [0.491, 0.534] | 0.480 [0.458, 0.502] |
+> | **16,000 games** | **0.506** [0.484, 0.528] | 0.491 [0.469, 0.513] |
+>
+> **Bar was 0.541 (computed before either A/B). Both failed. Each control sits
+> on v5, so the fine-tuning procedure itself is harmless — the null is clean,
+> not two damaged nets compared to each other.**
+>
+> ⚡ **4× the data moved the estimate DOWN (0.512 → 0.506).** A decision rule was
+> committed **while the second arena was still running** (`out/logs/b8_prereg.txt`):
+> *estimate above ⇒ scale to 40,000; at or below ⇒ the axis closes on the METHOD,
+> not the budget.* **Branch (b). ⛔ Do not run the 40,000-game version.**
+>
+> ⚡ **A parameter diagnostic, also taken before the result, says what the null
+> MEANS:** total abs Δ treatment-vs-control **455.6** against control-vs-v5's
+> **1349.1** — the advantage weighting moved the head **34%** as far as the
+> fine-tune moved it from v5. **The parameters moved substantially and the win
+> rate did not.** That is a stronger negative than a bare 0.506.
+>
+> ⚠ **β is UNTESTED, and it is named rather than buried.** Both runs used β=1.0
+> (2.7× win/loss ratio). A sweep was declined by rule — reporting the best of
+> several configs is shopping. *"A stronger reweighting might work"* is
+> **unfalsified, not refuted**, and belongs in the report as an open question.
+>
+> ✅ **Also built and reusable regardless:** `p26_selfplay_gen.py` writes
+> corpus-format shards straight from self-play (no replay dump, no adapter), and
+> `train_policy.py` gained `--advantage / --anchor-ds / --margin-max /
+> --freeze-except / --export-last`.
+>
+> # ⚡ THE CRUSTLE ALARM IS RETIRED, AND THE ANCHOR SET IS COMPLETE
+>
+> **§8an — the re-run the user authorised.** All three nets score **+0.087…
+> +0.102** higher against the repaired pilot, every CI disjoint, **and the sign
+> is the OPPOSITE of what §8ah predicted.** But it is a **LEVEL** shift, so it
+> cancels in the net-vs-net *differences* every weighted verdict is built from
+> (v4−v3 moves +0.013, v5−v4 +0.003; at 6.7% weight, +0.0009 and +0.0002) **and
+> the net ordering is unchanged under every pilot version.** ✅ **Nothing needed
+> rewriting. §8ah's "every verdict carrying a Crustle term is suspect" is
+> answered, for two independent reasons.**
+>
+> ⚡ **Decomposed, because the user asked the right question** (*"I thought we
+> only made it bench when the bench was empty"*): the fix had changed **three**
+> things where **one** was authorised. Narrowed to the guard alone and
+> re-measured — the unauthorised bench-anything default contributes **+0.011 /
+> −0.013 / −0.004**, sign-flipping noise. **The empty-bench guard is the whole
+> +0.09.** ⛔ **Its MAGNITUDE (90000, vs Dwebble's 25000) is NOT understood and
+> was deliberately left alone** — one mechanism hypothesis was already refuted
+> today. **The honest next step is watching a game, which is how the original
+> bug was found.**
+>
+> **§8ap — both missing anchors closed, and the finding is not the coverage.**
+> `rule:dragapult` **already existed and had never once been used** in nine days
+> (0.809); Garchomp was **built** from our own meta snapshot after checking
+> §8af's exposure filter first — all 20 card ids in the corpus, 0 of 60
+> untrained (0.857).
+>
+> 🔴 **Sorting the anchors by resolution also sorts them by
+> UNrepresentativeness.** The only two near 0.5 are `rule:v10` (**4.0%**) and
+> `rule:archaludon` (**8.0%**) — both **0 of 47 games above rating 900**.
+> Everything representative we beat **77–87%** of the time. **§8ac's re-weighting
+> was correct and moved weight ONTO the anchors that cannot resolve a
+> difference: 40.7% of every weighted verdict now sits above 0.75.**
+> ⚡ **The mirror is the only anchor that is both, and it carries the set** —
+> which is also why §8ao's B8 A/B was right to run there.
+> ⚠ **`bc:garchomp` is weak twice:** our net holding someone else's 60 measures
+> *deck × how well OUR net pilots it*, so 0.857 is an **upper bound, biased
+> optimistic**. Never quote it as "we beat Garchomp 86%".
+>
+> #### 🔧 Three of this session's own errors, corrected in the sections that made them
+>
+> 1. **The seat bug, AGAIN.** Crustle was first reported as **0.489 / 0.510 /
+>    0.502** by reading `winner==0` as "agent A won". Seats alternate. True:
+>    **0.857 / 0.888 / 0.870**. §8ae documented this five days earlier; the fix
+>    went into `p21` and a throwaway snippet felt exempt. ⇒ **rule 18**.
+> 2. **Dragapult characterised from n=6.** Written up mid-session as "far more
+>    competitive than Crustle" off a 2/6 smoke; **n=2000 says 0.809**, the
+>    opposite direction. Rule 1, violated by its own maintainer.
+> 3. **Memory over-estimated by 40%**, which sized the B8 rerun at 4× instead of
+>    the 10× requested. Measured **1.48 KB/row**, so ~55,000 games would fit.
+>    ⛔ Moot — the decision rule closed the axis anyway.
+>
+> #### ▶ THE DAY-18 ORDER OF WORK
+>
+> 🔴 **The strategic situation, stated plainly: every LB axis is now closed, and
+> §8ak says the LB could not have shown us the difference anyway.** Search (§2),
+> data (§1), demonstrators (§8t/§8u), capacity (§8w), sequencing (§8v), deck
+> guess-a-swap (§8al), and now RL (§8ao). The feature axis is spent (+115 → +37
+> → +14). **Chasing marginal Elo is now measurably unmeasurable.** ROADMAP §4
+> already commits to the consequence: *the dossier does not get sacrificed for
+> marginal Elo.*
+>
+> 1. 🃏 **TRACK C, DESIGNED PROPERLY — the only rubric-weighted track with a
+>    written next step nobody has taken.** Deck Score is **20%**. §8al retired
+>    guess-a-swap (three hunches → one null, two significant losses, monotone
+>    worse with distance from the consensus 60) and named the successor:
+>    **a MATCHUP-STRATIFIED SEARCH DESIGN over the whole slot ranking.**
+>    ⚠ **All four deck A/Bs so far were MIRROR-ONLY**, which flatters any variant
+>    cutting mirror-dead tech (Tool Scrapper: 0.00 plays/game in the mirror) and
+>    cannot judge a card aimed anywhere else. ⚡ **We now have the anchors to fix
+>    that** — dragapult and garchomp exist as of today, and `p25_deck_slot_audit.py`
+>    already sized all 60 slots.
+> 2. 📈 **Re-sweep the five-anchor table against the CURRENT anchor set** — the
+>    repaired Crustle, plus dragapult and garchomp — so the weighted verdicts
+>    quote instruments that exist today. ⚠ Carry §8ap's warning: report the
+>    mirror term separately, because it is doing nearly all the work.
+> 3. 👀 **User task: watch one Crustle game** (`out/replays/audit_crustle_v4`,
+>    `notebooks/visualizer.html`). The 90000 guard fires at ~9 decision points a
+>    game and nobody knows what it costs. **The last time a human watched an
+>    anchor, it found a game-throwing bug in one replay.**
+> 4. 📝 **`STRATEGY.md`** — day 17 satisfied the one-edit rule (§5.1b, the LB
+>    resolution measured rather than argued). Day 17's other four sections
+>    (§8am, §8an, §8ao, §8ap) are **owed chapters** and the user has deferred
+>    them; the deadline is **09-14** and the material is now unusually strong.
+> 5. ⛔ **Do NOT submit anything** without a reason that survives §8ak. We are at
+>    rank 198 with v5 live; the calendar is consolidate 08-08→08-14 then freeze.
+
+<details><summary>Day 17's original plan as set at the end of day 16 (B8 ran and is closed above)</summary>
+
+### ▶ DAY 17 IS B8: THE RL FINE-TUNE. IT IS SCHEDULED, IT HAS A KILL LINE, AND IT HAS A HARD STOP.
 
 > # 🤖 NEXT SESSION STARTS HERE. EVERYTHING ELSE IS PARKED.
 >
@@ -289,6 +432,8 @@ distrust it: mined episodes are the top-1150 band, and
 >   6.7% of the field.
 > - 📝 `STRATEGY.md` §7c is written; §6 was corrected; §4f now exists. The
 >   standing one-edit-per-session rule is satisfied for day 16.
+
+</details>
 
 <details><summary>Day 16 (2026-08-02) — the anchor bug, the deck programme, and the health-check submission (complete; B8 above supersedes its plan)</summary>
 
