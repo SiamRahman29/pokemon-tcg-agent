@@ -923,6 +923,10 @@ Honest nulls at n≥2000 are the section we are most confident in.
   `n`, no interval. We had propagated it into four documents as though it were
   measured. It belongs in §5's failures-of-our-own-process, not here, and it is
   the third instance of the same error the rest of §5 describes.
+- **E1 auxiliary representation learning** — three seed-matched arms, all null
+  at n=2,000: outcome **0.505 [0.484, 0.527]**, selection count **0.507
+  [0.486, 0.529]**, and both heads **0.500 [0.478, 0.522]**. The auxiliary
+  diagnostics learned, but their gradients did not improve playing strength.
 - **Data scaling** — three axes, all negative.
 - **Demonstrator weighting** — a fourth axis, and the one we most expected to
   work. Weighting every training row by its demonstrator's leaderboard rating
@@ -945,6 +949,18 @@ Honest nulls at n≥2000 are the section we are most confident in.
   statement is narrower and more useful: *summarising the option set into the
   shared state vector improves imitation of the mixture and barely improves
   play*, which is the same lesson as §7b arriving by a different road.
+- **Multi-task representation learning** — terminal-outcome, selected-count,
+  and combined auxiliary heads scored **0.505, 0.507, and exactly 0.500**
+  against their seed-matched control (`n=2,000` each). The combined model raised
+  held-out top-1 from **0.7134 to 0.7199** and won exactly 1,000 of 2,000 games.
+  This is the same lesson under a cleaner intervention: a supervised metric can
+  improve while playing strength does not move.
+- **Observable matchup adapters (E2)** — hard-routed residual adapters on
+  visible opponent Grimmsnarl / Alakazam lines left general-route agreement
+  exactly at **0.7137**, raised mirror-route fit **0.7300 → 0.7340**, then
+  scored **0.521 [0.490, 0.552]** against the seed-matched control in the
+  mirror and **0.782** versus **0.792** against `rule:alakazam5`. A correct
+  observable router that protects the base path is still not a strength win.
 - **The five unsized state features** (§4c) — worse than nothing, at −22 Elo
   against a net with no block at all. A negative result about *our own process*:
   they were bundled in because they were cheap, and cheap was the only argument.

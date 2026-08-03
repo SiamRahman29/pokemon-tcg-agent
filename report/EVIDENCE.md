@@ -4682,6 +4682,72 @@ python -X utf8 scripts/p26_selfplay_gen.py --probe --games 200 --taus 0.25,0.5,1
 ```
 Log: `out/logs/p26_tau_probe.txt`.
 
+## 8au. 🔴 E1 MULTI-TASK REPRESENTATION LEARNING IS A THREE-ARM NULL (2026-08-03, day 19)
+
+**Hypothesis.** The v5 policy encoder might learn a stronger state
+representation if it also predicted terminal outcome and the fraction of legal
+options selected. Unlike B8, the policy imitation target was unchanged: these
+were small auxiliary gradients on a shared encoder, each weighted at 0.1.
+
+All four arms used the same 248,985-row corpus, seed 0, 12 epochs, exact v5
+architecture, and final-epoch export. Auxiliary modules were initialized after
+all policy modules, preserving exact seeded policy initialization. Each
+treatment was screened against its seed-matched policy-only control in 1,000
+paired Grimmsnarl matches:
+
+| treatment | score | 95% CI | W/D/L |
+|---|---:|---:|---:|
+| outcome | **0.505** | [0.484, 0.527] | 1011/0/989 |
+| count | **0.507** | [0.486, 0.529] | 1015/0/985 |
+| outcome + count | **0.500** | [0.478, 0.522] | 1000/0/1000 |
+
+**Verdict: all three are null.** No arm advances to the weighted anchors and v5
+remains the frozen baseline. The combined arm improved final held-out top-1
+from **0.7134 → 0.7199** and then produced exactly **1,000 wins / 1,000
+losses**. That independently repeats §8z/§8aa's warning: a better supervised
+diagnostic is not evidence of a stronger agent. The outcome head overfit after
+its first epoch; the count head learned a low-error target, but neither gradient
+produced measurable playing strength. This is narrower than B8's null: B8
+tested outcome-signed policy optimization; E1 tested whether the same terminal
+signal helps when used only as an auxiliary representation target. Both routes
+are now negative, and E4 does not inherit a validated value representation.
+
+Record: `docs/experiments/beyond-bc/E1-multitask.md`. Archives:
+`out/arena/e1_outcome_vs_control_seed0.jsonl`,
+`out/arena/e1_count_vs_control_seed0.jsonl`, and
+`out/arena/e1_both_vs_control_seed0.jsonl`.
+
+## 8av. 🔴 E2 OBSERVABLE MATCHUP ADAPTERS ARE A NULL (2026-08-03, day 19)
+
+**Hypothesis.** Hard-routing residual adapters on visible opponent Grimmsnarl
+and Alakazam lines could improve those matchups without moving the frozen v5
+clone when neither line is visible.
+
+The router used only opponent active, bench, and discard card ids. Route audit
+on the fresh rating-977 trajectories recovered **100%** of true Grimmsnarl and
+Alakazam census games. Both arms warm-started from v5, froze the base, and
+exported after three epochs; the control kept adapters present but forced off.
+
+Held-out diagnostics: general-route agreement stayed exactly **0.7137**, mirror
+rose **0.7300 → 0.7340**, overall top-1 rose **0.7201 → 0.7221**. Strength:
+
+| screen | score | 95% CI |
+|---|---:|---:|
+| treatment vs control, grimmsnarl mirror, n=1,000 | **0.521** | [0.490, 0.552] |
+| treatment vs `rule:alakazam5`, n=1,000 | **0.782** | [0.756, 0.807] |
+| control vs `rule:alakazam5`, n=1,000 | **0.792** | [0.766, 0.816] |
+
+**Verdict: null.** The mirror interval includes 0.5, and the Alakazam cell is
+1.0 pp worse than the seed-matched control. Adapters are not promoted; v5
+remains the shipping baseline. The useful negative is architectural: a correct
+observable router that protects the general path is still not enough when the
+specialist residual cannot buy a clear arena delta.
+
+Record: `docs/experiments/beyond-bc/E2-routing.md`. Archives:
+`out/arena/e2_mirror.jsonl`,
+`out/arena/e2_vs_alakazam5_treatment.jsonl`,
+`out/arena/e2_vs_alakazam5_control.jsonl`.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
