@@ -11,6 +11,12 @@
 >
 > **Rubric (user-confirmed): Model Score 70% + Deck Score 20% + report writing
 > 10%.** Verbatim text in `competition_details_and_rubric.md`.
+>
+> 🔴 **SECOND ROUND ANNOUNCED 2026-08-03 — see §3.5. It changes what this file is
+> FOR, in one sentence: the top 8 advance on the STRATEGY CATEGORY result, not the
+> simulation leaderboard.** The dossier stopped being 30% of a score and became
+> the qualification gate. §3.5 also records the BO3/log-access rule and the
+> Round-2 hardware.
 
 ---
 
@@ -363,6 +369,226 @@ vibes.
 submission near the deadline risks evicting the best agent (HANDOFF §7 ⛔). Score
 convergence takes 4+ h, so the *last safe day* for a new agent is ~08-15, and
 earlier is better because continued play rewards a settled high-μ pair.
+
+---
+
+## 3.5 SECOND ROUND — announced 2026-08-03 (day 20)
+
+**Source: competition organisers, relayed by the user. Recorded verbatim first,
+consequences second, and nothing here is measured yet.**
+
+### The announcement
+
+- **Qualification is by the STRATEGY CATEGORY result.** The top eight teams after
+  First Round's Strategy Category advance; withdrawals are backfilled by rank.
+  A team must enter Strategy with the **same team** as Simulation.
+- **Simulation rank is "taken into consideration"** but is explicitly one input
+  among several — evaluation is "holistic", naming **deck construction,
+  originality of the proposed approach, and quality of the explanations in the
+  report.** Criteria page:
+  `kaggle.com/competitions/pokemon-tcg-ai-battle-challenge-strategy/overview/evaluation`
+- **Second Round is an in-person event in Tokyo**, a tournament among the eight.
+- **Format changes: best-of-three.** Same deck and same code for the whole match;
+  first to two games wins. **Games are played SEQUENTIALLY, and a team may read
+  the Game-1 log during Game 2 and the Game-1+2 logs during Game 3.**
+- **Resources: AWS p5.4xlarge or equivalent — 1× NVIDIA H100 80 GB, 256 GiB RAM,
+  16 vCPUs.**
+- ⏱ **Clock (announced same day): 30 minutes of TOTAL THINKING TIME PER GAME,
+  per team. Separate per game, NOT carried over between games of a BO3. Running
+  out loses that game.**
+- 🃏 **Card pool (announced same day): every First Round card remains legal, and
+  the pool is EXPANDED. The additional cards are announced only AFTER the
+  Simulation Category final rankings are confirmed** — i.e. after 08-17.
+
+### What it changes, largest first
+
+**1. 🔴 The dossier is no longer 30% of a score — it is the gate.** §4's
+tie-break rule ("the dossier does not get sacrificed for marginal Elo") was
+argued from rubric weights; it is now a structural fact about advancing. The
+standing **one-edit-per-session rule on `STRATEGY.md` is a qualification
+requirement**, and the seven owed chapters (§8am–§8as, plus the deck search) are
+the backlog that matters most in the repo. ⚠ **This does not license abandoning
+the ladder** — sim rank is an input, and a top-200 finish is part of the
+holistic case. It re-orders, it does not cancel.
+
+**2. ⚡ The BO3 log channel is NEW INFORMATION AT DECISION TIME — which is the
+only axis that has ever paid here.** Every win this project has had was
+representational or informational: §8f (`opt["index"]` was never encoded, +115
+Elo), §8z (the state block, +37). Every *more-of-the-same* axis measured null or
+negative — capacity §8w, data §1, demonstrators §8t/§8u, RL §8ao. **Game-2 and
+Game-3 log access is a strictly new input the agent has never had**, so it is the
+same shape as the two things that worked. ⚠ **It is not a compute lever and must
+not be filed as one.**
+
+**3. ⚡ The opponent field collapses from 6,000 anonymous entrants to 7 named
+teams.** ROADMAP already calls **targeted per-team replay dumps the best data
+source we have** (§0's day-10 amendment) — not band-censored, because we name the
+demonstrator rather than sampling a rating band. In Round 2 the entire field is
+nameable. ⚠ **Read them, do not clone them** — §8u measured that cloning a
+1163-rated expert cost **−92 Elo** and that agreement with an expert
+*anti*-predicts strength.
+
+**4. ⚠ THE HARDWARE DOES NOT RESURRECT WHAT DIED ON MEASUREMENT.** 16 vCPUs and
+an H100 make several closed axes *possible* again; that is not the same as
+*indicated*. Sorted by whether the cause of death was the clock:
+
+| closed axis | cause of death | does R2 hardware change it? |
+|---|---|---|
+| capacity (§8w) | 8.2× params bought **−43** decisions of 12,939 | ⛔ **No.** Measured on the features, not the clock |
+| more data (§1), demonstrator selection (§8t/§8u) | monotone worse with distance from the field | ⛔ **No** |
+| deck guess-a-swap (§8al), the 11-variant search (§8ar/§8as) | all ≤ 0 against a same-deck control | ⛔ **No** |
+| RL fine-tune (§8ao) | pre-registered rule; **4× the data moved the estimate DOWN** | ⛔ **Closed on the METHOD, not the budget** — that is the exact wording of the decision rule. ⚠ The one honest opening is the **untested β**, named as unfalsified rather than refuted |
+| game-tree search (§2) | ours 0.323, n=31, rollout SE≈0.14 | ⚠ **Partly.** Variance was the killer and n is affordable now; but V10's MCTS never executing while holding 950+ is not a compute finding |
+| **within-turn sequencing, B4 (§8v)** | −89 Elo vs a 1 ms clone | 🔴 **YES, and it is the only clean case.** The controlled arm measured **extra time ≈ +154 Elo** on its own, and the prototype spent **~12 s/game — 2% of even the 600 s First Round pool.** R2 gives **3× the clock × 8× the cores + a GPU**, i.e. **150× what B4 actually used.** **A re-probe candidate, not a revival** — it was −89 with the design fix already applied |
+
+**5. ⏱ THE CLOCK TRIPLES, AND IT COMPOUNDS WITH THE CORES: 600 s → 1,800 s PER
+GAME, PER PLAYER.**
+
+> ✅ **User-confirmed 2026-08-03: in the FIRST ROUND format, 600 s is the total
+> game clock for each player.** So this repo's **600 s** — carried in ten places
+> including `STRATEGY.md`'s opening constraint sentence — **is CORRECT and stands.
+> Nothing needs sweeping.**
+>
+> ⚠ **An earlier version of this box claimed the opposite** (that 600 s was 3×
+> wrong and the real budget was 1,800 s) **and it was itself the error it accused
+> the repo of.** Retracted in place, same session, per §2's rule.
+> 🔴 **What remains genuinely unexplained is HANDOFF:758's "1.12 s of a 1,800 s
+> budget", read off a real Kaggle episode log.** The format rule is authoritative
+> and the log line is not overridden by being unexplained — **re-check what field
+> that 1,800 s came from** (per-episode harness value? summed across seats?) and
+> record the answer. ⛔ **Until then, do not quote 1,800 s as a First Round number.**
+
+⇒ **Round 2 adds ~3× the wall clock AND ~8× the vCPUs AND a GPU.** These
+multiply on any throughput-bound method: **~24× the CPU work per decision** before
+counting batched net evaluation on the H100.
+
+**Budget arithmetic, at ~318 selects/game (day-16 measurement):**
+
+| | per-game clock | per decision | vs our clone's 1.2–1.6 ms call |
+|---|---|---|---|
+| **First Round** | 600 s | **≈ 1.9 s** | ~1,300× headroom, on 2 vCPU |
+| **Second Round** | **1,800 s** | **≈ 5.7 s** | ~3,800× headroom, on **16 vCPU + H100** |
+
+**We used 1.12 s of the 600 s. The headroom was already enormous and we never
+spent it** — which is why the R2 clock is an opportunity and not an excuse.
+
+🔴 **NEW FAILURE MODE WE HAVE NEVER BEEN NEAR: timeout = loss, per game, with no
+carry-over.** HANDOFF §7 notes Kaggle enforces the pool, but at 1.12 s of 600 s
+the risk was structurally zero. **The moment any agent here actually spends the
+budget, a hard-guarantee time manager becomes a correctness requirement** — and
+in a single in-person tournament, one game lost on clock is unrecoverable.
+
+⚡ **AND THIS RE-PRICES B4'S DEATH — as a named confound, NOT a revival, and the
+gap is far larger than first stated.** §8v's prototype used **~12 s/game of
+planning** (`EVIDENCE` §8v, "~40× the clone, well inside the 600 s pool") — that
+is **2% of even the First Round budget**. It lost by ≈ 89 Elo there, while its
+own controlled arm measured the extra time at **≈ +154 Elo**.
+**The Second Round budget is 1,800 s/game — 150× what the prototype actually
+spent — on 8× the cores with GPU-batchable net evals.**
+⚠ **This does not reopen B4**: the design fix was already applied when it lost,
+and a confound is not a result. It means the honest statement is *"B4 was never
+run within two orders of magnitude of the budget it would have, and we cannot
+close that gap locally"* — n=200 × ~300 selects × 5.7 s ≈ **95 h per arm** on one
+core.
+⇒ **The scaling-curve probe is the only affordable answer**: fit time→strength at
+3–4 budget points and extrapolate, because extrapolation is cheap and measurement
+is not.
+
+**6. 🃏 THE EXPANDED CARD POOL IS A DECK-SCORE OPPORTUNITY AND A NET HAZARD, and
+§8af already sized the hazard exactly.** The corpus holds **exactly 134 distinct
+card ids**; **1,166 of the 1,300 embedding rows are still random init.** **Every
+new card is, by construction, outside the 134** — maximally off-distribution.
+§8ar/§8as then measured that **card-level exposure is necessary but not
+sufficient**: Ultra Ball at **5.59×** our weakest card's exposure lost **all six**
+slots it was tried in, and Energy Switch at 3.61× was played **1 time in 28
+offers**. ⇒ **Our clone cannot pilot new cards, and no amount of H100 fixes that,
+because there is no corpus for them to be cloned from.**
+
+🔴 **AND WE CANNOT OPT OUT, WHICH IS THE PART THAT MATTERS: the opponent's cards
+enter OUR observation.** Declining to play new cards protects our own decklist
+and protects nothing else — a finalist who plays three new cards puts three
+unseen ids on the board that `featurize()` must encode, and (⚠ **VERIFY THIS
+FIRST — it is inferred from §8af, not measured**) they land on random-init
+embedding rows. **So the hazard is not a deck choice we control; it is a property
+of the match.** ⇒ **A cheap probe exists and should run before any posture is
+chosen: inject unseen card ids into a live observation and measure what the net
+does** — degrade gracefully, or produce garbage logits.
+
+⚠ **The asymmetry is not in our favour and should be stated plainly: OUR
+ARCHITECTURE IS THE ONE A POOL EXPANSION DAMAGES MOST.** §0 records that *nothing
+at the top of this board is learned* — a rule- or search-based finalist absorbs
+new cards at the cost of reading them, while a clone has no demonstrations of
+them at any price.
+
+⇒ **Two survivable postures, and both are report material:**
+- **(a) Decline the new cards, with the exposure measurement as the reason.**
+  "We measured why our architecture cannot absorb an unseen card and chose the
+  known-good 60" is an evidenced Deck Score position, not a punt.
+- **(b) Play them and have the RULE LAYER own every decision they touch.** ⚡
+  **This is the strongest argument the clone+rule-repair architecture has ever
+  had** — rules generalise to unseen cards and clones structurally cannot.
+
+⇒ **B6 (`deckfacts.py`) IS PROMOTED, and its parking condition is met.** It was
+parked as *"do it WITH the first decklist change"*; a pool expansion where rules
+must own new cards **is** that condition. Hardcoded ids — `MUNKIDORI`,
+`DARK_ENERGY`, `BOSS_ORDERS`, **`WALL_POKEMON = {345}`** — do not survive a pool
+change, and computing facts from decklist + card db is exactly the generalisation
+a new pool demands.
+
+⚠ **It also DEGRADES the seven-opponent anchor idea:** the finalists' First Round
+lists will not be their Second Round lists. **Read their replays for style and
+play patterns, not for decklists.**
+⚠ **And the engine must implement the new cards, so every anchor and pilot needs
+re-validation after the pool update** — rule 19 (an anchor drifted and every doc
+quoted the old number) at seven-anchor scale.
+
+⚡ **The one genuinely re-opened question: §8al/§8as's "the consensus 60 is a
+local optimum, and strength falls monotonically with distance from it" is a fact
+about the FIRST ROUND pool and meta.** A new pool can move that optimum, and the
+two-stage pre-registered search (§8ar/§8as) is already built and would be
+answering a genuinely new question rather than re-asking a settled one.
+⏰ **But the pool drops after 08-17 and the report is due 09-14, so this work
+lands inside the report window.** Schedule it as a conflict, not a freebie.
+
+**7. ⚠ Cross-game memory must travel through the LOG, because the process does
+not persist.** Day 16 measured that **Kaggle starts a fresh process per episode**
+(all three submission logs read `calls=1`, which is why the cumulative counter
+line could never print). The announcement's phrasing — teams *access the log* —
+is consistent with that. **Plan for parse-the-log, not for in-memory state
+across games.**
+
+### Unknowns that gate any Round-2 plan — confirm before building on them
+
+1. ✅ **ANSWERED 2026-08-03: 1,800 s per game per player, no carryover,
+   timeout = loss — against First Round's 600 s. The clock triples.** What
+   remains open is narrower and is worth **a 16× swing** in any search sizing:
+   **is the pool wall-clock or CPU-time?** On 16 vCPUs a wall-clock pool lets a
+   parallel search spend 16 core-seconds per wall-second; a CPU-time pool does
+   not. ⚠ Also unconfirmed: whether the H100 counts against it at all.
+   🔴 And re-check what HANDOFF:758's stray **1,800 s** log field actually was.
+2. **Whether the agent process can reach the GPU at all** — image, drivers,
+   frameworks, and whether model weights ship inside the submission bundle.
+3. **The exact log format and access mechanism** in Game 2/3, and whether it is
+   the same `visualize_data()` shape `harness.Recorder` already emits
+   byte-compatibly (§8ad). If it is, our whole replay toolchain reads it unmodified.
+4. **Whether the other seven finalists' First-Round replays are obtainable** —
+   this is the difference between 7 real anchors and 7 guesses.
+5. **The Round-2 date**, which decides whether R2 engineering competes with the
+   **09-14** report deadline or follows it. ⚠ **The card pool already does** — it
+   drops after 08-17 and the report is due 09-14.
+6. 🃏 **The additional cards themselves** — count, power level, and whether they
+   change the archetype hierarchy or only add tech slots. **Announced after the
+   Simulation rankings confirm**, so it cannot be pulled forward.
+
+### Standing position until those are answered
+
+**Round-2 engineering is CONTINGENT — the report is not.** The report is what
+qualifies us, and a written Round-2 design section is *itself* report material
+under "originality of the proposed approach". ⇒ **Design R2 on paper now, write
+it into `STRATEGY.md`, and build only what a First-Round deadline already
+justifies.** ⏳ **Ranked R2 candidates and their probes are being brainstormed
+with the user (day 20) and are NOT yet committed** — nothing below the line above
+has been sized, and rule 14 (size before you build) applies to all of it.
 
 ---
 
