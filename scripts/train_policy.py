@@ -40,6 +40,8 @@ from sa.features import (DENSE_DIM, N_CARD_IDS, N_EXTRA,  # noqa: E402
                          N_XSLOT, X_GROUPS)
 from sa.optfeat import (OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS,  # noqa: E402
                         pool_width)
+from sa.routing import (NAME_TO_ROUTE, ROUTE_NAMES,  # noqa: E402
+                        routes_from_corpus)
 
 EMB = 16
 SEL_DENSE = 14
@@ -77,6 +79,45 @@ def load_init(model: PolicyNet, path: Path) -> None:
                         f"model wants {tuple(lin.weight.shape)}")
                 lin.weight.copy_(torch.from_numpy(w))
                 lin.bias.copy_(torch.from_numpy(b))
+        # E1 auxiliary heads are append-only. A plain v5 checkpoint has no
+        # auxiliary tensors, so warm-starting it deliberately leaves these
+        # heads at their seeded initialization while loading the policy
+        # byte-for-byte. A later multitask checkpoint restores them as well.
+        for prefix, head in (("outcome", model.outcome_head),
+                             ("count", model.count_head)):
+            if head is None or f"{prefix}_w" not in z:
+                continue
+            w, b = z[f"{prefix}_w"], z[f"{prefix}_b"]
+            if w.shape != tuple(head.weight.shape):
+                raise SystemExit(f"--init {path.name}: {prefix}_w is {w.shape}, "
+                                 f"model wants {tuple(head.weight.shape)}")
+            head.weight.copy_(torch.from_numpy(w))
+            head.bias.copy_(torch.from_numpy(b))
+        # E2 adapters are append-only. A plain v5 checkpoint has none, so
+        # warm-starting leaves the zero-initialized residuals in place.
+        if model.adapters is not None and "adapter_names" in z:
+            names = [str(x) for x in z["adapter_names"].tolist()]
+            for name in names:
+                if name not in model.adapters:
+                    raise SystemExit(
+                        f"--init {path.name}: unknown adapter {name!r}")
+                seq = model.adapters[name]
+                lins = [m for m in seq if isinstance(m, nn.Linear)]
+                n = int(z[f"adapter_{name}_n"][0])
+                if n != len(lins):
+                    raise SystemExit(
+                        f"--init {path.name}: adapter {name} has {n} layers, "
+                        f"model has {len(lins)}")
+                for i, lin in enumerate(lins):
+                    w, b = (z[f"adapter_{name}{i}_w"],
+                            z[f"adapter_{name}{i}_b"])
+                    if w.shape != tuple(lin.weight.shape):
+                        raise SystemExit(
+                            f"--init {path.name}: adapter_{name}{i}_w is "
+                            f"{w.shape}, model wants "
+                            f"{tuple(lin.weight.shape)}")
+                    lin.weight.copy_(torch.from_numpy(w))
+                    lin.bias.copy_(torch.from_numpy(b))
     print(f"warm-started from {path}")
 
 
@@ -90,15 +131,31 @@ def _mlp(sizes: list[int], dropout: float, out_dim: int | None) -> nn.Sequential
     return nn.Sequential(*layers)
 
 
+def _make_adapter(in_dim: int, hidden: int) -> nn.Sequential:
+    """Residual logit MLP; final layer is zero-initialized for v5 equivalence."""
+    seq = nn.Sequential(
+        nn.Linear(in_dim, hidden),
+        nn.ReLU(),
+        nn.Linear(hidden, 1),
+    )
+    nn.init.zeros_(seq[-1].weight)
+    nn.init.zeros_(seq[-1].bias)
+    return seq
+
+
 class PolicyNet(nn.Module):
     def __init__(self, state_h: tuple[int, ...] = (256,),
                  head_h: tuple[int, ...] = (128,), dropout: float = 0.1,
                  opt_cols: int = OPT_DENSE, extra: bool = True,
-                 pool: bool = False):
+                 pool: bool = False, outcome: bool = False,
+                 count: bool = False, adapter_names: list[str] | None = None,
+                 adapter_h: int = 64, adapters_off: bool = False):
         super().__init__()
         self.opt_cols = opt_cols
         self.extra = extra
         self.pool = pool
+        self.adapters_off = adapters_off
+        self.adapter_h = adapter_h
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
@@ -112,10 +169,34 @@ class PolicyNet(nn.Module):
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
         in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
+        # Constructed AFTER every policy parameter. Resetting the seed therefore
+        # gives a control and an auxiliary treatment identical policy weights;
+        # only the treatment consumes additional RNG after that point.
+        self.outcome_head = (nn.Linear(state_h[-1], 1) if outcome else None)
+        self.count_head = (nn.Linear(state_h[-1], 1) if count else None)
+        # E2 adapters are also append-only and zero-initialized, so an untrained
+        # treatment matches the frozen base logits exactly.
+        self.adapter_names = list(adapter_names or [])
+        self.adapter_route_ids: dict[str, int] = {}
+        if self.adapter_names:
+            unknown = [n for n in self.adapter_names if n not in NAME_TO_ROUTE
+                       or NAME_TO_ROUTE[n] == 0]
+            if unknown:
+                raise SystemExit(
+                    f"adapters must be non-general route names; got {unknown}")
+            self.adapter_route_ids = {n: NAME_TO_ROUTE[n]
+                                      for n in self.adapter_names}
+            self.adapters = nn.ModuleDict({
+                n: _make_adapter(in_head, adapter_h)
+                for n in self.adapter_names
+            })
+        else:
+            self.adapters = None
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
                 opt_dense, opt_card, opt_atk, opt_tgt, opt_row,
-                xdense=None, xslots=None):
+                xdense=None, xslots=None, routes=None,
+                return_state: bool = False):
         # The per-option encoding is built FIRST, because the v5 pool feeds it
         # into the state. It is the same tensor the head consumes below, so the
         # pool costs one reduction and no extra embedding lookups.
@@ -144,7 +225,18 @@ class PolicyNet(nn.Module):
             parts.append(self._pool(oenc, opt_row, dense.shape[0]))
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
         per_opt = torch.cat([srepr[opt_row], oenc], dim=1)   # (O, ...)
-        return self.head(per_opt).squeeze(1)                 # (O,)
+        logits = self.head(per_opt).squeeze(1)               # (O,)
+        if (self.adapters is not None and not self.adapters_off
+                and routes is not None):
+            residual = torch.zeros_like(logits)
+            row_route = routes[opt_row]
+            for name, route_id in self.adapter_route_ids.items():
+                mask = row_route == route_id
+                if mask.any():
+                    residual[mask] = self.adapters[name](
+                        per_opt[mask]).squeeze(1)
+            logits = logits + residual
+        return (logits, srepr) if return_state else logits
 
     def _pool(self, oenc: torch.Tensor, opt_row: torch.Tensor,
               n_rows: int) -> torch.Tensor:
@@ -195,6 +287,24 @@ def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
         return per_row.mean()
     wv = w[valid]
     return (per_row * wv).sum() / wv.sum().clamp_min(1e-8)
+
+
+def count_targets(seld: torch.Tensor, chosen: torch.Tensor,
+                  opt_row: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return target fraction and validity mask for variable-count selects.
+
+    This is the row-level equivalent of `count_fraction_table`: the old table
+    averages these targets within `(selectType, context)` buckets, while E1
+    asks the shared state representation to predict each row separately.
+    """
+    n_rows = seld.shape[0]
+    picked = torch.zeros(n_rows, dtype=chosen.dtype,
+                         device=chosen.device).index_add_(0, opt_row, chosen)
+    mn = seld[:, 11] * 5.0
+    mx = seld[:, 12] * 5.0
+    valid = mx > mn + 1e-6
+    target = (picked - mn) / (mx - mn).clamp_min(1e-6)
+    return target.clamp(0.0, 1.0), valid
 
 
 class Data:
@@ -278,6 +388,10 @@ class Data:
             self.bag_flat[nm] = (np.concatenate(bag_flats[nm]) if off[-1]
                                  else np.zeros(0, dtype=np.int64))
         self.n = len(self.gid)
+        # E2 route labels from observable opponent slots + discard only.
+        self.routes = routes_from_corpus(
+            self.slots, self.bag_flat["opp_discard"],
+            self.bag_off["opp_discard"])
 
     def batches(self, idx: np.ndarray, bs: int,
                 rng: np.random.Generator | None):
@@ -316,7 +430,8 @@ class Data:
                    torch.from_numpy(self.w[sel]),
                    sel,
                    torch.from_numpy(self.xdense[sel]),
-                   torch.from_numpy(self.xslots[sel]))
+                   torch.from_numpy(self.xslots[sel]),
+                   torch.from_numpy(self.routes[sel]))
 
 
 def advantage_weights(data: "Data", is_rl: np.ndarray, beta: float,
@@ -448,11 +563,14 @@ def apply_x_drop(data: "Data", names: list[str]) -> np.ndarray:
 def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
                x_mask: np.ndarray | None = None):
     """Export every Linear generically, so inference mirrors any depth."""
+    def arr(t: torch.Tensor) -> np.ndarray:
+        return t.detach().cpu().numpy()
+
     out: dict[str, np.ndarray] = {
-        "slot_emb": model.slot_emb.weight.detach().numpy(),
-        "bag_emb": model.bag_emb.weight.detach().numpy(),
-        "card_emb": model.card_emb.weight.detach().numpy(),
-        "atk_emb": model.atk_emb.weight.detach().numpy(),
+        "slot_emb": arr(model.slot_emb.weight),
+        "bag_emb": arr(model.bag_emb.weight),
+        "card_emb": arr(model.card_emb.weight),
+        "atk_emb": arr(model.atk_emb.weight),
         "count_frac": count_frac,
         # Width of the v5 pooled block, 0 if the net has none. Inference cannot
         # derive this from `state_in` alone (the v4 and v5 widths are both
@@ -469,10 +587,29 @@ def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
         n = 0
         for mod in seq:
             if isinstance(mod, nn.Linear):
-                out[f"{prefix}{n}_w"] = mod.weight.detach().numpy()
-                out[f"{prefix}{n}_b"] = mod.bias.detach().numpy()
+                out[f"{prefix}{n}_w"] = arr(mod.weight)
+                out[f"{prefix}{n}_b"] = arr(mod.bias)
                 n += 1
         out[f"n_{prefix}"] = np.array([n], dtype=np.int64)
+    for prefix, head in (("outcome", model.outcome_head),
+                         ("count", model.count_head)):
+        if head is not None:
+            out[f"{prefix}_w"] = arr(head.weight)
+            out[f"{prefix}_b"] = arr(head.bias)
+    if model.adapters is not None:
+        out["adapter_names"] = np.asarray(model.adapter_names)
+        out["adapter_h"] = np.array([model.adapter_h], dtype=np.int64)
+        out["adapter_route_ids"] = np.asarray(
+            [model.adapter_route_ids[n] for n in model.adapter_names],
+            dtype=np.int64)
+        for name, seq in model.adapters.items():
+            n = 0
+            for mod in seq:
+                if isinstance(mod, nn.Linear):
+                    out[f"adapter_{name}{n}_w"] = arr(mod.weight)
+                    out[f"adapter_{name}{n}_b"] = arr(mod.bias)
+                    n += 1
+            out[f"adapter_{name}_n"] = np.array([n], dtype=np.int64)
     np.savez_compressed(path, **out)
     print(f"exported -> {path}")
 
@@ -491,6 +628,11 @@ def main() -> int:
                          "on --ds rows. 0 disables (plain cloning).")
     ap.add_argument("--anchor-w", type=float, default=1.0,
                     help="weight held by --anchor-ds rows")
+    ap.add_argument("--primary-mass", type=float, default=0.0,
+                    help="E3: target fraction of total supervised loss assigned "
+                         "to --ds rows, with --anchor-ds supplying the remaining "
+                         "mass. For example 0.1 gives curated DAgger labels 10%% "
+                         "and the frozen BC corpus 90%%. 0 disables.")
     ap.add_argument("--margin-max", type=float, default=0.0,
                     help="B8: only re-weight selects whose top1-top2 logit "
                          "margin was <= this. 0 = re-weight every RL row.")
@@ -515,6 +657,15 @@ def main() -> int:
     ap.add_argument("--head-h", default="128",
                     help="comma-separated hidden widths for the scoring MLP")
     ap.add_argument("--dropout", type=float, default=0.1)
+    ap.add_argument("--device", choices=("cpu", "cuda"), default="cpu",
+                    help="training device. Default cpu preserves historical "
+                         "recipes; use cuda for the private E1 GPU sweep.")
+    ap.add_argument("--aux-outcome-w", type=float, default=0.0,
+                    help="E1: weight of win/loss BCE on the shared state "
+                         "representation. 0 disables the outcome head.")
+    ap.add_argument("--aux-count-w", type=float, default=0.0,
+                    help="E1: weight of soft-label BCE for the selected-count "
+                         "fraction on variable-count rows. 0 disables the head.")
     ap.add_argument("--out", default="agents/sa/policy_net.npz")
     ap.add_argument("--rating-temp", type=float, default=0.0,
                     help="ROADMAP B7: weight each row by "
@@ -549,11 +700,46 @@ def main() -> int:
                     help="ignore the v4 state block (features.extra_feats). "
                          "This is the day-12 CONTROL: identical rows, "
                          "identical recipe, the v3 state vector byte-for-byte.")
+    ap.add_argument("--adapters", default="",
+                    help="E2: comma-separated residual adapter names "
+                         "(mirror,alakazam). Append-only; zero-initialized so "
+                         "an untrained treatment matches the frozen base.")
+    ap.add_argument("--adapter-h", type=int, default=64,
+                    help="E2: hidden width of each residual adapter MLP")
+    ap.add_argument("--adapters-off", action="store_true",
+                    help="E2 control: keep adapters in the checkpoint but do "
+                         "not add their residual during forward/training")
     args = ap.parse_args()
+    adapter_names = [s.strip() for s in args.adapters.split(",") if s.strip()]
     if not 1 <= args.opt_cols <= OPT_DENSE:
         raise SystemExit(f"--opt-cols must be in 1..{OPT_DENSE}")
+    if args.aux_outcome_w < 0 or args.aux_count_w < 0:
+        raise SystemExit("auxiliary loss weights must be non-negative")
+    if args.adapter_h < 1:
+        raise SystemExit("--adapter-h must be positive")
+    if args.adapters_off and not adapter_names:
+        raise SystemExit("--adapters-off requires --adapters")
+    if not 0.0 <= args.primary_mass < 1.0:
+        raise SystemExit("--primary-mass must be in [0, 1)")
+    if args.primary_mass > 0 and not args.anchor_ds:
+        raise SystemExit("--primary-mass needs --anchor-ds; otherwise there is "
+                         "no anchor mass to preserve")
+    if args.primary_mass > 0 and (args.advantage > 0 or args.rating_temp > 0):
+        raise SystemExit("--primary-mass, --advantage, and --rating-temp each "
+                         "define row weights; choose one")
+    if (args.aux_outcome_w > 0 or args.aux_count_w > 0) and not args.export_last:
+        raise SystemExit("E1 auxiliary treatments require --export-last so "
+                         "control and treatment export the same epoch")
+    if adapter_names and not args.export_last:
+        raise SystemExit("E2 adapter arms require --export-last so control "
+                         "and treatment export the same epoch")
 
-    torch.set_num_threads(max(1, torch.get_num_threads() - 1))
+    device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise SystemExit("--device cuda requested but torch.cuda.is_available() "
+                         "is false")
+    if device.type == "cpu":
+        torch.set_num_threads(max(1, torch.get_num_threads() - 1))
     # Seeded so that a control/treatment pair (e.g. --opt-cols 25 vs 37, ROADMAP
     # B1) differs in its FEATURES and not in dropout masks or batch order. Weight
     # init still differs where the layer widths differ, which cannot be avoided.
@@ -630,6 +816,19 @@ def main() -> int:
                              "the losing rows at lower weight); refusing both")
         data.w = advantage_weights(data, is_rl, args.advantage,
                                    args.anchor_w, args.margin_max)
+    if args.primary_mass > 0:
+        n_primary_rows = int(is_rl.sum())
+        n_anchor_rows = int((~is_rl).sum())
+        if not n_primary_rows or not n_anchor_rows:
+            raise SystemExit("--primary-mass needs non-empty primary and anchor "
+                             "datasets")
+        primary_w = (args.primary_mass / (1.0 - args.primary_mass)
+                     * n_anchor_rows / n_primary_rows)
+        data.w = np.ones(data.n, dtype=np.float32)
+        data.w[is_rl] = primary_w
+        print(f"--primary-mass {args.primary_mass:g}: "
+              f"{n_primary_rows:,} primary rows at {primary_w:.3f} + "
+              f"{n_anchor_rows:,} anchor rows at 1.0")
     val_mask = (data.gid % 20) == 0
     train_idx = np.where(keep & ~val_mask)[0]
     val_idx = np.where(keep & val_mask)[0]
@@ -648,7 +847,11 @@ def main() -> int:
                          "inference only knows the v4 and v5 state widths")
     model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
                       opt_cols=args.opt_cols, extra=not args.no_extra,
-                      pool=args.pool)
+                      pool=args.pool, outcome=args.aux_outcome_w > 0,
+                      count=args.aux_count_w > 0,
+                      adapter_names=adapter_names or None,
+                      adapter_h=args.adapter_h,
+                      adapters_off=args.adapters_off).to(device)
     if args.init:
         load_init(model, ROOT / args.init)
     if args.freeze_except:
@@ -657,13 +860,28 @@ def main() -> int:
                              "layers on top of RANDOM embeddings; that is not "
                              "a fine-tune of anything")
         apply_freeze(model, args.freeze_except)
+    if args.adapters_off and model.adapters is not None:
+        # Control: adapters exist for export shape parity but must not train.
+        for p in model.adapters.parameters():
+            p.requires_grad_(False)
+    if adapter_names:
+        route_counts = {
+            ROUTE_NAMES[rid]: int((data.routes == rid).sum())
+            for rid in sorted(set(data.routes.tolist()))
+        }
+        print(f"E2 routes: {route_counts} adapters={adapter_names} "
+              f"h={args.adapter_h} off={args.adapters_off}")
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
           f"extra={not args.no_extra} pool={args.pool} "
+          f"aux_outcome={args.aux_outcome_w:g} "
+          f"aux_count={args.aux_count_w:g} "
+          f"adapters={adapter_names or []} "
+          f"device={device.type} "
           f"params={sum(p.numel() for p in model.parameters())}")
-    opt = torch.optim.AdamW(
-        [p for p in model.parameters() if p.requires_grad],
-        lr=args.lr, weight_decay=args.wd)
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    opt = (torch.optim.AdamW(trainable, lr=args.lr, weight_decay=args.wd)
+           if trainable else None)
     bcef = nn.BCEWithLogitsLoss()
     bce_none = nn.BCEWithLogitsLoss(reduction="none")
     rng = np.random.default_rng(args.seed)
@@ -675,12 +893,28 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             spans, rw, _sel, xd, xs) = batch
-            opt.zero_grad()
-            out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow,
-                        xd, xs)
+             spans, rw, _sel, xd, xs, routes) = batch
+            dense, slots, seld = (dense.to(device), slots.to(device),
+                                  seld.to(device))
+            bf = {k: v.to(device) for k, v in bf.items()}
+            bo = {k: v.to(device) for k, v in bo.items()}
+            odn, ocd, oat = odn.to(device), ocd.to(device), oat.to(device)
+            otg, orow, om = otg.to(device), orow.to(device), om.to(device)
+            rw, xd, xs = rw.to(device), xd.to(device), xs.to(device)
+            routes = routes.to(device)
+            if opt is not None:
+                opt.zero_grad()
+            need_state = args.aux_outcome_w > 0 or args.aux_count_w > 0
+            result = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
+                           orow, xd, xs, routes=routes,
+                           return_state=need_state)
+            if need_state:
+                out, srepr = result
+            else:
+                out, srepr = result, None
             loss = torch.zeros((), dtype=out.dtype)
-            wrow = rw if (args.rating_temp > 0 or args.advantage > 0) else None
+            wrow = rw if (args.rating_temp > 0 or args.advantage > 0
+                          or args.primary_mass > 0) else None
             if args.loss in ("bce", "both"):
                 if wrow is None:
                     loss = loss + bcef(out, om)
@@ -689,21 +923,74 @@ def main() -> int:
                     loss = loss + per.sum() / wrow[orow].sum().clamp_min(1e-8)
             if args.loss in ("listwise", "both"):
                 loss = loss + listwise_loss(out, om, orow, len(spans), wrow)
-            loss.backward()
-            opt.step()
-            tot += loss.item() * len(om)
+            if args.aux_outcome_w > 0:
+                pred = model.outcome_head(srepr).squeeze(1)
+                target = torch.from_numpy(data.won[_sel]).to(
+                    device=device, dtype=pred.dtype)
+                per = bce_none(pred, target)
+                aux = (per.mean() if wrow is None else
+                       (per * rw).sum() / rw.sum().clamp_min(1e-8))
+                loss = loss + args.aux_outcome_w * aux
+            if args.aux_count_w > 0:
+                pred = model.count_head(srepr).squeeze(1)
+                target, valid = count_targets(seld, om, orow)
+                if valid.any():
+                    per = bce_none(pred[valid], target[valid])
+                    aux = (per.mean() if wrow is None else
+                           (per * rw[valid]).sum()
+                           / rw[valid].sum().clamp_min(1e-8))
+                    loss = loss + args.aux_count_w * aux
+            if opt is not None and loss.requires_grad:
+                loss.backward()
+                opt.step()
+            tot += float(loss.detach()) * len(om)
             seen += len(om)
         # val: top-1 accuracy on single-choice rows
         model.eval()
         hit = tries = 0
         hit_hi = tries_hi = 0
+        route_hit = {name: 0 for name in ROUTE_NAMES.values()}
+        route_tries = {name: 0 for name in ROUTE_NAMES.values()}
+        out_bce = out_ok = out_n = 0.0
+        count_abs = count_n = 0.0
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
                 (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-                 spans, _rw, vsel, xd, xs) = batch
-                out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
-                            orow, xd, xs).numpy()
-                om = om.numpy()
+                 spans, _rw, vsel, xd, xs, routes) = batch
+                dense, slots, seld = (dense.to(device), slots.to(device),
+                                      seld.to(device))
+                bf = {k: v.to(device) for k, v in bf.items()}
+                bo = {k: v.to(device) for k, v in bo.items()}
+                odn, ocd, oat = odn.to(device), ocd.to(device), oat.to(device)
+                otg, orow, om = otg.to(device), orow.to(device), om.to(device)
+                xd, xs = xd.to(device), xs.to(device)
+                routes = routes.to(device)
+                need_state = args.aux_outcome_w > 0 or args.aux_count_w > 0
+                result = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
+                               orow, xd, xs, routes=routes,
+                               return_state=need_state)
+                if need_state:
+                    out, srepr = result
+                else:
+                    out, srepr = result, None
+                if args.aux_outcome_w > 0:
+                    pred = model.outcome_head(srepr).squeeze(1)
+                    target = torch.from_numpy(data.won[vsel]).to(
+                        device=device, dtype=pred.dtype)
+                    out_bce += float(bce_none(pred, target).sum())
+                    out_ok += float(((pred >= 0) == (target >= 0.5)).sum())
+                    out_n += len(target)
+                if args.aux_count_w > 0:
+                    pred = model.count_head(srepr).squeeze(1)
+                    target, valid = count_targets(seld, om, orow)
+                    if valid.any():
+                        count_abs += float(
+                            (torch.sigmoid(pred[valid]) - target[valid])
+                            .abs().sum())
+                        count_n += float(valid.sum())
+                out = out.cpu().numpy()
+                om = om.cpu().numpy()
+                routes_np = routes.cpu().numpy()
                 pos = 0
                 for j, (a, b) in enumerate(spans):
                     k = b - a
@@ -714,6 +1001,9 @@ def main() -> int:
                         ok = ch[np.argmax(sc)] == 1
                         hit += ok
                         tries += 1
+                        rname = ROUTE_NAMES.get(int(routes_np[j]), "general")
+                        route_hit[rname] += int(ok)
+                        route_tries[rname] += 1
                         # Same rows, restricted to strong demonstrators. Rule 3
                         # still holds -- neither number predicts strength; this
                         # one just says WHOSE policy is being fit.
@@ -722,8 +1012,21 @@ def main() -> int:
                             tries_hi += 1
         acc = hit / max(tries, 1)
         hi = hit_hi / max(tries_hi, 1)
+        aux_msg = ""
+        if args.aux_outcome_w > 0:
+            aux_msg += (f" val_out_bce={out_bce / max(out_n, 1):.4f}"
+                        f" val_out_acc={out_ok / max(out_n, 1):.4f}")
+        if args.aux_count_w > 0:
+            aux_msg += f" val_count_mae={count_abs / max(count_n, 1):.4f}"
+        if adapter_names:
+            for rname in ("mirror", "alakazam", "general"):
+                rt = route_tries[rname]
+                if rt:
+                    aux_msg += (f" val_top1_{rname}="
+                                f"{route_hit[rname] / rt:.4f}(n={rt})")
         print(f"epoch {epoch}: train={tot / seen:.4f} val_top1={acc:.4f} "
-              f"val_top1@{VAL_HI_RATING:.0f}+={hi:.4f} (n={tries_hi}) "
+              f"val_top1@{VAL_HI_RATING:.0f}+={hi:.4f} (n={tries_hi})"
+              f"{aux_msg} "
               f"({time.time() - t0:.0f}s)")
         # 🔴 rule 3. The default here SELECTS THE CHECKPOINT BY `val_top1`, and
         # that metric is measured not to predict strength in either direction

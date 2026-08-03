@@ -8,6 +8,7 @@ import numpy as np
 
 from .features import extra_feats, featurize
 from .optfeat import option_features, pool_scalars, pool_width
+from .routing import ROUTE_GENERAL, route_from_obs
 
 # SA_PNET_PATH lets an arena run score a candidate net without overwriting the
 # shipped one. Kaggle sets no env vars, so there it is always the bundled npz.
@@ -51,6 +52,13 @@ class Net:
             self.state_layers = [(z["ws"], z["bs"])]
             self.head_layers = [(z["w1"], z["b1"]), (z["w2"], z["b2"])]
         self.count_frac = z["count_frac"] if "count_frac" in z else None
+        # E1 heads are optional and append-only. Legacy checkpoints keep the
+        # exact policy path; multitask checkpoints expose these predictions for
+        # diagnostics, learned count selection, and later planning.
+        self.outcome_head = ((z["outcome_w"], z["outcome_b"])
+                             if "outcome_w" in z else None)
+        self.count_head = ((z["count_w"], z["count_b"])
+                           if "count_w" in z else None)
         # The v5 pooled option-set block, 0 for every net before day 13. Recorded
         # rather than derived: the v4 and v5 state widths are both legal, so
         # `state_in` alone cannot tell them apart.
@@ -58,6 +66,24 @@ class Net:
         # Which members of the v4 block this net was shown (features.X_GROUPS).
         # Absent = all of them, which is every net before day 13.
         self.x_mask = z["x_mask"] if "x_mask" in z else None
+        # E2 residual adapters. Absent keys keep the exact legacy policy path.
+        self.adapters: dict[str, list[tuple[np.ndarray, np.ndarray]]] = {}
+        self.adapter_route_ids: dict[str, int] = {}
+        if "adapter_names" in z:
+            names = [str(x) for x in z["adapter_names"].tolist()]
+            route_ids = (z["adapter_route_ids"].tolist()
+                         if "adapter_route_ids" in z else [])
+            for i, name in enumerate(names):
+                n_layers = int(z[f"adapter_{name}_n"][0])
+                layers = [(z[f"adapter_{name}{j}_w"],
+                           z[f"adapter_{name}{j}_b"])
+                          for j in range(n_layers)]
+                self.adapters[name] = layers
+                if i < len(route_ids):
+                    self.adapter_route_ids[name] = int(route_ids[i])
+                else:
+                    from .routing import NAME_TO_ROUTE
+                    self.adapter_route_ids[name] = NAME_TO_ROUTE[name]
 
     @property
     def state_in(self) -> int:
@@ -83,15 +109,15 @@ class Net:
         return (self.head_in - self.state_out
                 - 2 * self.card_emb.shape[1] - self.atk_emb.shape[1])
 
-    def scores(self, obs: dict) -> np.ndarray:
-        """Logit per option of obs['select']."""
+    def _forward(self, obs: dict) -> tuple[np.ndarray, np.ndarray | None]:
+        """Return option logits and the shared state representation."""
         state = obs["current"]
         sel = obs["select"]
         me = state["yourIndex"]
         opts = sel.get("option") or []
         n = len(opts)
         if n == 0:
-            return np.zeros(0, dtype=np.float32)
+            return np.zeros(0, dtype=np.float32), None
         # The per-option encoding is built BEFORE the state, because the v5 pool
         # is a summary of it. Nets without the pool ignore it and slice it off,
         # so this costs them nothing but the loop order.
@@ -142,7 +168,43 @@ class Net:
             h = h @ w.T + b
             if j < len(self.head_layers) - 1:   # last layer is the raw logit
                 h = np.maximum(h, 0.0)
-        return h.reshape(-1)
+        logits = h.reshape(-1)
+        if self.adapters:
+            route = route_from_obs(obs)
+            if route != ROUTE_GENERAL:
+                for name, route_id in self.adapter_route_ids.items():
+                    if route_id != route:
+                        continue
+                    residual = feats
+                    layers = self.adapters[name]
+                    for j, (w, b) in enumerate(layers):
+                        residual = residual @ w.T + b
+                        if j < len(layers) - 1:
+                            residual = np.maximum(residual, 0.0)
+                    logits = logits + residual.reshape(-1)
+                    break
+        return logits, srepr
+
+    def scores(self, obs: dict) -> np.ndarray:
+        """Logit per option of obs['select']."""
+        return self._forward(obs)[0]
+
+    @staticmethod
+    def _head_value(head, srepr: np.ndarray) -> float | None:
+        if head is None:
+            return None
+        w, b = head
+        return float((w @ srepr + b).reshape(-1)[0])
+
+    def win_prob(self, obs: dict) -> float | None:
+        """Auxiliary E1 outcome estimate, or None for legacy checkpoints."""
+        _, srepr = self._forward(obs)
+        if srepr is None:
+            return None
+        logit = self._head_value(self.outcome_head, srepr)
+        if logit is None:
+            return None
+        return float(1.0 / (1.0 + np.exp(-np.clip(logit, -30.0, 30.0))))
 
     def choose(self, obs: dict) -> list[int]:
         """Rank options by logit; how MANY to take is the harder half.
@@ -158,13 +220,17 @@ class Net:
         sel = obs["select"]
         mn = sel.get("minCount", 0)
         mx = sel.get("maxCount", 0)
-        sc = self.scores(obs)
+        sc, srepr = self._forward(obs)
         order = list(np.argsort(-sc))
         k = mx
         if mx > mn:
             if COUNT_MODE == "expect":
                 probs = 1.0 / (1.0 + np.exp(-np.clip(sc, -30.0, 30.0)))
                 k = int(round(float(probs.sum())))
+            elif COUNT_MODE == "learned" and self.count_head is not None:
+                logit = self._head_value(self.count_head, srepr)
+                frac = 1.0 / (1.0 + np.exp(-np.clip(logit, -30.0, 30.0)))
+                k = mn + int(round(float(frac) * (mx - mn)))
             else:
                 frac = 1.0
                 if self.count_frac is not None:
