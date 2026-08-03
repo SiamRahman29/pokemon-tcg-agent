@@ -67,16 +67,20 @@ class PolicyAgent:
         # B4: turn-level lookahead (sequencer.py). OFF by default and opt-in
         # via `bc:<label>,seq` until it clears an arena A/B -- it is an
         # experiment, not a shipped component (EVIDENCE 8m).
+        # Load an explicit net before constructing the sequencer so simulated
+        # continuations use the same policy as the owning agent. Falling back
+        # to policynet.get() here would silently use the bundled checkpoint.
+        self.net = policynet.load(net_path) if net_path else None
         self.seq = None
         if sequencer:
             from .sequencer import Sequencer
             self.seq = Sequencer(decklist, k=seq_k, dets=seq_dets,
-                                 budget_s=seq_budget, reply=seq_reply)
+                                 budget_s=seq_budget, reply=seq_reply,
+                                 net=self.net)
         # An explicit net lets two candidate policies play each other inside
         # ONE arena process. Comparing them via a third opponent instead needs
         # ~2x the games for the same resolution, and the module-level
         # policynet.get() singleton cannot hold two nets at once.
-        self.net = policynet.load(net_path) if net_path else None
         # The net cannot see option HP at all (see targeting.py), so it aims
         # chip damage at chance. Per-instance so the two sides of an A/B can
         # differ inside one process.

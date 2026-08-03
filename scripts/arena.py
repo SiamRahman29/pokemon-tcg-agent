@@ -325,6 +325,15 @@ def cmd_play(args: argparse.Namespace) -> int:
         if left < 300.0:
             flag = "  <-- WOULD TIME OUT ON KAGGLE" if left <= 0 else ""
             print(f"  pool left ({name}): min {left:.0f}s of 600s{flag}")
+    for name, agent in ((name_a, agent_a), (name_b, agent_b)):
+        seq = getattr(agent, "seq", None)
+        if seq is not None:
+            st = seq.stats
+            per_plan = st["sim_s"] / max(st["planned"], 1)
+            print(f"  sequencer ({name}): {st['planned']} completed, "
+                  f"{st['overruled']} overrules, {st['fellback']} errors, "
+                  f"{st['aborted_budget']} budget aborts, "
+                  f"{st['sim_s']:.1f}s total ({per_plan:.3f}s/completed)")
     if "sa.planner" in sys.modules:  # search internals, summed over both sides
         st = sys.modules["sa.planner"].STATS
         if st["decides"]:

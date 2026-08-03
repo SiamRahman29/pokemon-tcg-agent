@@ -65,7 +65,7 @@ class Sequencer:
 
     def __init__(self, decklist: list[int], k: int = 8, dets: int = 4,
                  budget_s: float = 0.35, pool_floor_s: float = 120.0,
-                 seed: int = 17, reply: bool = False):
+                 seed: int = 17, reply: bool = False, net=None):
         self.decklist = list(decklist)
         self.k = k
         self.dets = dets
@@ -74,6 +74,9 @@ class Sequencer:
         # timeout is a LOSS, and the clone plays fine without us.
         self.pool_floor_s = pool_floor_s
         self.reply = reply
+        # Explicit arena checkpoints are per-agent. Keep that exact object for
+        # simulated continuations instead of silently using the bundled net.
+        self.net = net
         self.rng = random.Random(seed)
         self.stats = {"planned": 0, "fellback": 0, "overruled": 0,
                       "sim_s": 0.0, "aborted_budget": 0}
@@ -215,7 +218,7 @@ class Sequencer:
         t0 = time.perf_counter()
         deadline = t0 + self.budget_s
         me = st["yourIndex"]
-        net = pnet.get()
+        net = self.net or pnet.get()
         sbi = obs["search_begin_input"]
         deck_visible = sel.get("deck") is not None
         roots: list[int] = []
