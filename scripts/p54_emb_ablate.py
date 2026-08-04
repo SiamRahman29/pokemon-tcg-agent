@@ -17,6 +17,11 @@ Modes:
     perm_all    permute every row. Adds the untrained-row confound but needs
                 no census.
     zero        zero every row. The loose ablation, kept for contrast.
+    copy        change nothing. The serialisation control -- it round-trips
+                through the same dict(np.load) -> np.savez path as the real
+                arms, so a dtype or key regression in this script shows up as
+                a losing control instead of masquerading as an ablation
+                effect. Must score ~0.500 against its own source net.
 
 Row 0 is never touched in any mode: `slot_emb[0]` is the empty/unresolved slot
 and the net drove it to near-zero on its own (norm 0.835 against a 3.95 table
@@ -52,6 +57,8 @@ def sha(path: Path) -> str:
 def ablate(w: np.ndarray, mode: str, seen: list[int],
            rng: np.random.Generator) -> np.ndarray:
     out = w.copy()
+    if mode == "copy":
+        return out
     if mode == "zero":
         out[1:] = 0.0
         return out
@@ -78,9 +85,16 @@ def main() -> int:
     ap.add_argument("--net", default="out/policy_v5.npz")
     ap.add_argument("--vocab", default="out/emb/vocab.json")
     ap.add_argument("--mode", default="perm_seen",
-                    choices=["perm_seen", "perm_all", "zero"])
+                    choices=["perm_seen", "perm_all", "zero", "copy"])
     ap.add_argument("--tables", default="all",
                     help="comma list of tables, or 'all'")
+    # Global permutation scrambles our OWN 19 cards too, which is far harsher
+    # than the situation we actually face -- our deck is 19/19 in vocabulary
+    # and every lookup on it lands on a heavily-trained row. Excluding a deck
+    # holds our own-card identity fixed and scrambles only cards we can see
+    # but do not own, which is exactly "we cannot identify opponent cards".
+    ap.add_argument("--exclude-deck", default=None,
+                    help="decks/<name>.py whose card ids are left untouched")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default=None, help="output npz path")
     args = ap.parse_args()
@@ -103,18 +117,30 @@ def main() -> int:
             raise SystemExit(f"{vp} missing -- run scripts/p53_emb_vocab.py")
         vocab = json.loads(vp.read_text(encoding="utf-8"))["tables"]
 
+    keep: set[int] = set()
+    if args.exclude_deck:
+        import importlib
+        mod = importlib.import_module(f"decks.{args.exclude_deck}")
+        keep = set(int(c) for c in mod.DECK.decklist)
+        print(f"holding {len(keep)} card ids from decks/{args.exclude_deck}.py "
+              f"fixed")
+
     rng = np.random.default_rng(args.seed)
     print(f"source {args.net}  sha256={sha(src)[:16]}")
     for t in which:
         w = z[t]
         seen = sorted(int(k) for k in vocab.get(t, {})) if vocab else []
+        if keep:
+            seen = [i for i in seen if i not in keep]
         new = ablate(w, args.mode, seen, rng)
         moved = int(np.any(new != w, axis=1).sum())
         z[t] = new
         print(f"  {t:9s} rows={w.shape[0]:5d} emb={w.shape[1]:3d} "
-              f"seen={len(seen):4d} changed={moved:5d}")
+              f"perm_pool={len(seen):4d} changed={moved:5d}")
 
     tag = args.tables if args.tables != "all" else "all"
+    if args.exclude_deck:
+        tag += f"__keep-{args.exclude_deck}"
     name = args.out or f"out/emb/{src.stem}__{args.mode}__{tag}__s{args.seed}.npz"
     dst = ROOT / name
     dst.parent.mkdir(parents=True, exist_ok=True)
