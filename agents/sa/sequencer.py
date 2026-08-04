@@ -221,28 +221,37 @@ class Sequencer:
         net = self.net or pnet.get()
         sbi = obs["search_begin_input"]
         deck_visible = sel.get("deck") is not None
-        roots: list[int] = []
-        try:
-            def root(seed):
-                w = determinize(obs, self.decklist, [], random.Random(seed))
-                sid, o = fs.begin(sbi, [] if deck_visible else w.my_deck,
-                                  w.my_prize, w.opp_deck, w.opp_prize,
-                                  w.opp_hand, w.opp_active)
-                roots.append(sid)
-                return sid, o
 
-            # 1. propose K candidate continuations under one determinization
+        def begin_root(seed):
+            w = determinize(obs, self.decklist, [], random.Random(seed))
+            return fs.begin(sbi, [] if deck_visible else w.my_deck,
+                            w.my_prize, w.opp_deck, w.opp_prize,
+                            w.opp_hand, w.opp_active)
+
+        def release_root(sid):
+            try:
+                fs.release(sid)
+            except Exception:  # noqa: BLE001
+                pass
+
+        try:
+            # 1. propose K candidate continuations under one determinization.
+            # Release immediately: confirm (M=32) used to keep every world live
+            # until the end of plan(), which OOM'd 8 GB laptops.
             base = self.rng.randrange(1 << 30)
-            sid0, o0 = root(base)
+            sid0, o0 = begin_root(base)
             acts: list[list[list[int]]] = []
-            for j in range(self.k):
-                if time.perf_counter() > deadline:
-                    self.stats["aborted_budget"] += 1
-                    break
-                _v, a, ok = self._rollout(sid0, o0, me, net,
-                                          random.Random(base + 101 + j))
-                if ok and a:
-                    acts.append(a)
+            try:
+                for j in range(self.k):
+                    if time.perf_counter() > deadline:
+                        self.stats["aborted_budget"] += 1
+                        break
+                    _v, a, ok = self._rollout(sid0, o0, me, net,
+                                              random.Random(base + 101 + j))
+                    if ok and a:
+                        acts.append(a)
+            finally:
+                release_root(sid0)
             # distinct first actions only -- two candidates that open the same
             # way cannot inform THIS select, and they cost the same to score
             seen, uniq = set(), []
@@ -254,7 +263,8 @@ class Sequencer:
             if len(uniq) < 2:
                 return None
 
-            # 2. score each candidate, averaged over M determinizations
+            # 2. score each candidate, averaged over M determinizations.
+            # One live world at a time; planner.py likewise frees per world.
             totals = [0.0] * len(uniq)
             counts = [0] * len(uniq)
             for m in range(self.dets):
@@ -262,17 +272,27 @@ class Sequencer:
                     self.stats["aborted_budget"] += 1
                     break
                 try:
-                    sidm, om = root(base + 5000 + m)
+                    sidm, om = begin_root(base + 5000 + m)
                 except Exception:  # noqa: BLE001
                     continue
-                for i, a in enumerate(uniq):
-                    if time.perf_counter() > deadline:
-                        break
-                    v, _a, ok = self._rollout(sidm, om, me, net,
-                                              random.Random(base + 7), forced=a)
-                    if ok and v is not None:
-                        totals[i] += v
-                        counts[i] += 1
+                try:
+                    for i, a in enumerate(uniq):
+                        if time.perf_counter() > deadline:
+                            break
+                        v, _a, ok = self._rollout(
+                            sidm, om, me, net, random.Random(base + 7),
+                            forced=a)
+                        if ok and v is not None:
+                            totals[i] += v
+                            counts[i] += 1
+                finally:
+                    release_root(sidm)
+                    # Free stepped child nodes from this determinization's
+                    # rollouts. Safe here: only the sequencer uses search.
+                    try:
+                        fs.end()
+                    except Exception:  # noqa: BLE001
+                        pass
             scored = [(totals[i] / counts[i], i)
                       for i in range(len(uniq)) if counts[i] >= 2]
             if len(scored) < 2:
@@ -288,8 +308,7 @@ class Sequencer:
             return None
         finally:
             self.stats["sim_s"] += time.perf_counter() - t0
-            for sid in roots:
-                try:
-                    fs.release(sid)
-                except Exception:  # noqa: BLE001
-                    pass
+            try:
+                fs.end()
+            except Exception:  # noqa: BLE001
+                pass

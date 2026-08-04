@@ -42,10 +42,10 @@ Current state:
   general-route agreement untouched, but failed both strength screens
   (`0.521 [0.490, 0.552]` mirror; Alakazam treatment 0.782 vs control 0.792).
 - E4 remains blocked. `out/policy_v5.npz` is still the frozen baseline.
-- E5's first scale curve continues: `0.380 → 0.420 → 0.515` at `n=200`, with
-  rising realized work per plan. High still overlaps 0.5, so one confirmation
-  cell (`M=32`, `8.0s`) is preregistered and not yet run. Distillation remains
-  gated on a planner strength win.
+- E5 is closed as a local near-miss: the first curve rose
+  `0.380 → 0.420 → 0.515`, but the preregistered confirmation cell scored
+  `0.230 [0.177, 0.293]`. No planner configuration is promoted and distillation
+  is not opened.
 
 ## Required user handoffs
 

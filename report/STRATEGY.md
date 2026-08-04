@@ -961,6 +961,11 @@ Honest nulls at n≥2000 are the section we are most confident in.
   scored **0.521 [0.490, 0.552]** against the seed-matched control in the
   mirror and **0.782** versus **0.792** against `rule:alakazam5`. A correct
   observable router that protects the base path is still not a strength win.
+- **Planning scale (E5)** — repaired `seq,reply` vs frozen v5: point estimates
+  rose **0.380 → 0.420 → 0.515** as determinizations went 4 → 8 → 16, then the
+  preregistered confirmation cell at 32 / 8.0 s scored **0.230 [0.177, 0.293]**.
+  The local scale curve is not monotone through confirmation; no planner is
+  promoted and distillation is not opened.
 - **The five unsized state features** (§4c) — worse than nothing, at −22 Elo
   against a net with no block at all. A negative result about *our own process*:
   they were bundled in because they were cheap, and cheap was the only argument.

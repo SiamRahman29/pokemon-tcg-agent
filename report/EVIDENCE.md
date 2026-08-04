@@ -4748,6 +4748,41 @@ Record: `docs/experiments/beyond-bc/E2-routing.md`. Archives:
 `out/arena/e2_vs_alakazam5_treatment.jsonl`,
 `out/arena/e2_vs_alakazam5_control.jsonl`.
 
+## 8aw. 🔴 E5 PLANNING SCALE CONFIRMATION FAILS — higher compute collapses the curve (2026-08-04, day 21)
+
+**Hypothesis.** The repaired B4 turn sequencer (`seq,reply`) might recover with
+more hidden-state averaging under Round-2-scale budgets. B4 had lost at
+`0.375 [0.311, 0.444]` with a 1.0 s cap; ROADMAP §3.5 named a scaling-curve
+probe as the only affordable local answer.
+
+Fixed axis, no retuning: `K=8`, reply on, only `M` and a proportional cap change.
+Control is frozen v5 without sequencing. Each cell is n=200 grimmsnarl mirror.
+
+| arm | M | cap | score | 95% CI | s/completed plan |
+|---|---:|---:|---:|---:|---:|
+| low | 4 | 1.0 s | **0.380** | [0.316, 0.449] | 0.319 |
+| medium | 8 | 2.0 s | **0.420** | [0.354, 0.489] | 0.427 |
+| high | 16 | 4.0 s | **0.515** | [0.446, 0.583] | 0.724 |
+| confirm | 32 | 8.0 s | **0.230** | [0.177, 0.293] | 1.331 |
+
+The first three point estimates were non-decreasing and realized work per plan
+rose, so the continue gate opened one preregistered confirmation cell. Confirm
+then failed both fail rules: score below high, and upper bound below 0.5.
+
+**Verdict: E5 is closed as a local near-miss.** Do not promote a sequencer
+configuration, do not invent a fifth compute point, and do not distill planner
+labels. The low cell matches B4's repaired loss against v5 (`0.380` vs the
+older `0.375`). High's glance above 0.5 did not survive confirmation; more
+compute produced more completed plans and more clone overrules
+(`6228` / `3647` vs high's `837` / `503`) and a large loss. That is the
+search-selects-noise shape, not a monotone scaling curve.
+
+Record: `docs/experiments/beyond-bc/E5-planning.md`. Archives:
+`out/arena/e5_low_vs_control.jsonl`,
+`out/arena/e5_medium_vs_control.jsonl`,
+`out/arena/e5_high_vs_control.jsonl`,
+`out/arena/e5_confirm_vs_control.jsonl`.
+
 ## 9. Deck stewardship so far (feeds Deck Score — see ROADMAP Track C)
 
 - **The list is an exact 60 seen 290× in one day's top episodes**, and the net is
