@@ -24,6 +24,11 @@ out/replays/
 
 # --- Net checkpoints / experiment scratch (the shipped nets live in agents/sa/) ---
 out/*.npz
+out/e1/
+out/e2/
+out/e3/
+out/e5/
+out/emb/
 
 # --- Built submission zips ---
 dist/**
