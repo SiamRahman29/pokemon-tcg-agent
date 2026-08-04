@@ -52,6 +52,16 @@ Corpus `artifacts/pds_v6`, 248,985 rows — the same count as `pds_v4`, with
 `dense`, `xdense` and `opt_dense[:, :37]` verified byte-identical to it. The
 control therefore trains on **identical rows**.
 
+⚠ The treatment differs from the control in **three** ways, not one: the 276
+state attribute columns, the 9 new option columns, and — because
+`pool_width` is a function of `opt_cols` — a v5 pool that is 190 wide instead
+of 172. So a positive result licenses "the v6 block pays", not "the attribute
+columns pay". Sub-attribution needs `--drop-a` and `--opt-cols 37`, below.
+
+This does **not** weaken the mechanism test in rule 4. Arms B and C use the
+same treatment net, so the confound is constant across them and cancels out of
+`gain(C) - gain(B)`.
+
 ## Arms
 
 Treatment and control are trained by the same recipe on the same corpus:
