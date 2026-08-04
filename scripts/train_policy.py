@@ -36,8 +36,8 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import (DENSE_DIM, N_CARD_IDS, N_EXTRA,  # noqa: E402
-                         N_XSLOT, X_GROUPS)
+from sa.features import (A_GROUPS, DENSE_DIM, N_ATTR,  # noqa: E402
+                         N_CARD_IDS, N_EXTRA, N_XSLOT, X_GROUPS)
 from sa.optfeat import (OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS,  # noqa: E402
                         pool_width)
 
@@ -94,11 +94,12 @@ class PolicyNet(nn.Module):
     def __init__(self, state_h: tuple[int, ...] = (256,),
                  head_h: tuple[int, ...] = (128,), dropout: float = 0.1,
                  opt_cols: int = OPT_DENSE, extra: bool = True,
-                 pool: bool = False):
+                 pool: bool = False, attr: bool = False):
         super().__init__()
         self.opt_cols = opt_cols
         self.extra = extra
         self.pool = pool
+        self.attr = attr
         self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
         self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
                                        include_last_offset=True)
@@ -109,13 +110,15 @@ class PolicyNet(nn.Module):
             in_state += N_EXTRA + N_XSLOT * EMB
         if pool:                        # the v5 block, appended (optfeat.py)
             in_state += pool_width(opt_cols, EMB)
+        if attr:                        # the v6 block, appended (features.py)
+            in_state += N_ATTR
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
         in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
                 opt_dense, opt_card, opt_atk, opt_tgt, opt_row,
-                xdense=None, xslots=None):
+                xdense=None, xslots=None, attrs=None):
         # The per-option encoding is built FIRST, because the v5 pool feeds it
         # into the state. It is the same tensor the head consumes below, so the
         # pool costs one reduction and no extra embedding lookups.
@@ -142,6 +145,10 @@ class PolicyNet(nn.Module):
         # vector byte-for-byte. Same discipline, third generation.
         if self.pool:
             parts.append(self._pool(oenc, opt_row, dense.shape[0]))
+        # ...and v6 goes after v5, so `attr=False` reproduces the v5 state
+        # vector byte-for-byte. Same discipline, fourth generation.
+        if self.attr:
+            parts.append(attrs)
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
         per_opt = torch.cat([srepr[opt_row], oenc], dim=1)   # (O, ...)
         return self.head(per_opt).squeeze(1)                 # (O,)
@@ -200,7 +207,7 @@ def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
 class Data:
     def __init__(self, paths: list[Path]):
         sd, slots, seld, gid, won, rating = [], [], [], [], [], []
-        xd, xs = [], []
+        xd, xs, at = [], [], []
         # B8. Present only in shards written by p26_selfplay_gen.py; a BC
         # corpus gets NaN, which is what `--advantage` refuses to weight.
         margin: list = []
@@ -227,6 +234,11 @@ class Data:
                       else np.zeros((n, N_EXTRA), dtype=np.float32))
             xs.append(z["xslots"] if "xslots" in z
                       else np.zeros((n, N_XSLOT), dtype=np.int32))
+            # Same contract for the v6 block: corpora built before day 20 get
+            # zeros so they stay loadable, and `--attr` on such a corpus is
+            # refused in main() rather than silently training on nothing.
+            at.append(z["attr"] if "attr" in z
+                      else np.zeros((n, N_ATTR), dtype=np.float32))
             gid.append(z["gid"])
             won.append(z["won"])
             self.rows_per_path.append(n)
@@ -255,7 +267,9 @@ class Data:
         self.seld = np.concatenate(seld)
         self.xdense = np.concatenate(xd)
         self.xslots = np.concatenate(xs).astype(np.int64)
+        self.attr = np.concatenate(at)
         self.has_extra = all("xdense" in np.load(p) for p in paths)
+        self.has_attr = all("attr" in np.load(p) for p in paths)
         self.gid = np.concatenate(gid)
         self.won = np.concatenate(won)
         self.rating = np.concatenate(rating)
@@ -316,7 +330,8 @@ class Data:
                    torch.from_numpy(self.w[sel]),
                    sel,
                    torch.from_numpy(self.xdense[sel]),
-                   torch.from_numpy(self.xslots[sel]))
+                   torch.from_numpy(self.xslots[sel]),
+                   torch.from_numpy(self.attr[sel]))
 
 
 def advantage_weights(data: "Data", is_rl: np.ndarray, beta: float,
@@ -445,8 +460,30 @@ def apply_x_drop(data: "Data", names: list[str]) -> np.ndarray:
     return mask
 
 
+def apply_a_drop(data: "Data", names: list[str]) -> np.ndarray:
+    """Zero the named members of the v6 attribute block and return the mask.
+
+    Same discipline as `apply_x_drop`: the block ships whole, so without a
+    drop-one arm nothing would say WHICH of energyType / weakness / ability /
+    resist / weakHit paid for the result. Zeroing keeps widths, parameter count
+    and init identical, so an arm differs only in column content.
+    """
+    mask = np.ones(N_ATTR, dtype=np.float32)
+    for nm in names:
+        if nm not in A_GROUPS:
+            raise SystemExit(f"--drop-a {nm}: known groups are "
+                             f"{', '.join(A_GROUPS)}")
+        for i in A_GROUPS[nm]:
+            mask[i] = 0.0
+    data.attr = data.attr * mask
+    print(f"--drop-a {','.join(names)}: zeroed {int((mask == 0).sum())} of "
+          f"{N_ATTR} attr columns")
+    return mask
+
+
 def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
-               x_mask: np.ndarray | None = None):
+               x_mask: np.ndarray | None = None,
+               a_mask: np.ndarray | None = None):
     """Export every Linear generically, so inference mirrors any depth."""
     out: dict[str, np.ndarray] = {
         "slot_emb": model.slot_emb.weight.detach().numpy(),
@@ -460,7 +497,14 @@ def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
         # no such key and are read as 0.
         "n_pool": np.array([pool_width(model.opt_cols, EMB) if model.pool
                             else 0], dtype=np.int64),
+        # Width of the v6 attribute block, 0 if the net has none. Same reason as
+        # n_pool: `state_in` alone no longer identifies the layout once three
+        # optional blocks exist. Nets exported before day 20 lack this key and
+        # are read as 0.
+        "n_attr": np.array([N_ATTR if model.attr else 0], dtype=np.int64),
     }
+    if a_mask is not None:
+        out["a_mask"] = a_mask
     if x_mask is not None:
         # Which members of the v4 block this net was actually shown. Inference
         # applies it, so an ablation arm can never be fed a column it never saw.
@@ -540,6 +584,19 @@ def main() -> int:
                          "ABLATE (features.X_GROUPS: "
                          f"{','.join(X_GROUPS)}). The surviving mask is stored "
                          "in the npz and applied at inference.")
+    ap.add_argument("--attr", action="store_true",
+                    help="the v6 block: append per-slot CARD ATTRIBUTES "
+                         "(energyType, weakness, ability, resistance, "
+                         "weak-to-facing-type) to the STATE vector. These come "
+                         "from the card DB, which covers all 1,267 cards, so "
+                         "unlike an embedding row they transfer to cards the "
+                         "corpus never contained (E6). Default off = the v5 "
+                         "state vector, byte-for-byte, on identical rows.")
+    ap.add_argument("--drop-a", default="",
+                    help="comma-separated members of the v6 attribute block to "
+                         "ABLATE (features.A_GROUPS: "
+                         f"{','.join(A_GROUPS)}). The surviving mask is stored "
+                         "in the npz and applied at inference.")
     ap.add_argument("--pool", action="store_true",
                     help="the v5 block: append a mean/max pool of the option "
                          "encodings + two count scalars to the STATE vector "
@@ -592,6 +649,10 @@ def main() -> int:
                              "already removes all of it")
         x_mask = apply_x_drop(data, [s.strip() for s in args.drop_x.split(",")
                                      if s.strip()])
+    a_mask = None
+    if args.drop_a:
+        a_mask = apply_a_drop(data, [s.strip() for s in args.drop_a.split(",")
+                                     if s.strip()])
     keep = np.ones(data.n, dtype=bool)
     if args.winners_only:
         keep &= data.won > 0.5
@@ -643,12 +704,17 @@ def main() -> int:
     if not args.no_extra and not data.has_extra:
         raise SystemExit(f"{args.ds} was built before the v4 state block; "
                          "rebuild it or pass --no-extra")
+    if args.attr and not data.has_attr:
+        raise SystemExit(f"{args.ds} was built before the v6 attribute block; "
+                         "rebuild it with scripts/build_policy_dataset.py")
+    if args.drop_a and not args.attr:
+        raise SystemExit("--drop-a ablates the v6 block; it needs --attr")
     if args.pool and args.no_extra:
         raise SystemExit("--pool is the v5 block and is defined as v4 + pool; "
                          "inference only knows the v4 and v5 state widths")
     model = PolicyNet(state_h=state_h, head_h=head_h, dropout=args.dropout,
                       opt_cols=args.opt_cols, extra=not args.no_extra,
-                      pool=args.pool)
+                      pool=args.pool, attr=args.attr)
     if args.init:
         load_init(model, ROOT / args.init)
     if args.freeze_except:
@@ -675,10 +741,10 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             spans, rw, _sel, xd, xs) = batch
+             spans, rw, _sel, xd, xs, at) = batch
             opt.zero_grad()
             out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow,
-                        xd, xs)
+                        xd, xs, at)
             loss = torch.zeros((), dtype=out.dtype)
             wrow = rw if (args.rating_temp > 0 or args.advantage > 0) else None
             if args.loss in ("bce", "both"):
@@ -700,9 +766,9 @@ def main() -> int:
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
                 (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-                 spans, _rw, vsel, xd, xs) = batch
+                 spans, _rw, vsel, xd, xs, at) = batch
                 out = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
-                            orow, xd, xs).numpy()
+                            orow, xd, xs, at).numpy()
                 om = om.numpy()
                 pos = 0
                 for j, (a, b) in enumerate(spans):
@@ -737,10 +803,10 @@ def main() -> int:
         # `--export-last` is mandatory for both arms of such a pair.
         if args.export_last:
             if epoch == args.epochs - 1:
-                export_npz(model, ROOT / args.out, count_frac, x_mask)
+                export_npz(model, ROOT / args.out, count_frac, x_mask, a_mask)
         elif acc > best:
             best = acc
-            export_npz(model, ROOT / args.out, count_frac, x_mask)
+            export_npz(model, ROOT / args.out, count_frac, x_mask, a_mask)
     return 0
 
 

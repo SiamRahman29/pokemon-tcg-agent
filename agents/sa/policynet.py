@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .features import extra_feats, featurize
+from .features import attr_feats, extra_feats, featurize
 from .optfeat import option_features, pool_scalars, pool_width
 
 # SA_PNET_PATH lets an arena run score a candidate net without overwriting the
@@ -58,6 +58,12 @@ class Net:
         # Which members of the v4 block this net was shown (features.X_GROUPS).
         # Absent = all of them, which is every net before day 13.
         self.x_mask = z["x_mask"] if "x_mask" in z else None
+        # The v6 card-attribute block, 0 for every net before day 20. Recorded
+        # for the same reason as n_pool: with three optional blocks, `state_in`
+        # no longer identifies the layout on its own.
+        self.n_attr = int(z["n_attr"][0]) if "n_attr" in z else 0
+        # Which members of the v6 block this net was shown (features.A_GROUPS).
+        self.a_mask = z["a_mask"] if "a_mask" in z else None
 
     @property
     def state_in(self) -> int:
@@ -128,6 +134,12 @@ class Net:
         # ...and the v5 pool goes after v4, same rule (optfeat.pool_width).
         if self.n_pool:
             parts += [oenc.mean(axis=0), oenc.max(axis=0), pool_scalars(n)]
+        # ...and the v6 attribute block goes after v5, same rule again. Computed
+        # only when the net was trained with it -- attr_feats walks 12 slots and
+        # a v5 net would pay for a vector it then slices off.
+        if self.n_attr:
+            a = attr_feats(state, me)
+            parts.append(a * self.a_mask if self.a_mask is not None else a)
         x = np.concatenate(parts)
         srepr = x[:self.state_in]
         for w, b in self.state_layers:      # every state layer is relu'd
@@ -185,20 +197,24 @@ def load(path) -> Net | None:
         return None
     try:
         net = Net(np.load(path))
-        from .features import DENSE_DIM, N_EXTRA, N_XSLOT
+        from .features import DENSE_DIM, N_ATTR, N_EXTRA, N_XSLOT
         from .optfeat import KNOWN_OPT_DENSE
         emb = net.slot_emb.shape[1]
         base = (DENSE_DIM + 12 * emb + 3 * net.bag_emb.shape[1] + SEL_DENSE)
-        # Three legitimate state widths, exactly as with the option block: the
-        # v3 layout, + the appended v4 block, + the appended v5 pool. `n_pool`
-        # says which of the last two a net is, and it must AGREE with the width
-        # -- a net claiming a pool it was not trained with would silently read
-        # 170 columns of garbage.
+        # Four legitimate state widths now, exactly as with the option block:
+        # the v3 layout, + the appended v4 block, + the appended v5 pool, + the
+        # appended v6 attribute block. `n_pool` and `n_attr` say which one a net
+        # is, and they must AGREE with the width -- a net claiming a block it was
+        # not trained with would silently read hundreds of columns of garbage.
         v4 = base + N_EXTRA + N_XSLOT * emb
         v5 = v4 + pool_width(net.opt_in, emb)
         want = v5 if net.n_pool else v4
+        if net.n_attr:
+            want += N_ATTR
         if (net.state_in in (base, want) and net.opt_in in KNOWN_OPT_DENSE
-                and net.n_pool in (0, pool_width(net.opt_in, emb))):
+                and net.n_pool in (0, pool_width(net.opt_in, emb))
+                and net.n_attr in (0, N_ATTR)
+                and (net.a_mask is None or net.a_mask.shape == (N_ATTR,))):
             return net
     except Exception:
         pass
