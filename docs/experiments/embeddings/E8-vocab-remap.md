@@ -294,6 +294,87 @@ single seed is worth materially less than its printed interval claims. The
 mirror-derived seed floor (±0.019) is a *mirror* number and does not transfer
 to anchors played against a third party.
 
-## Results — decomposition (v7pad)
+## Results — decomposition (v7pad: `padding_idx=0` only, all 1300 rows kept)
 
-_Pending._
+| arm | opponent | weight | seed 0 | seed 1 | pooled |
+|---|---|---|---|---|---|
+| A | mirror, direct | 33.3% | 0.524 | 0.451 | **0.4875** [0.470, 0.506] |
+| B | crustle | 6.7% | −0.011 | −0.017 | **−0.014** |
+| C | v10 | 4.0% | **+0.034** | −0.005 | **+0.015** |
+
+⚠ **The log's "SUPPORTS the UNK mechanism" line is wrong for this run and the
+script has been fixed.** `v7pad` has **no UNK row** — it keeps all 1,300 rows,
+untrained garbage included, and changes only `padding_idx`. An
+out-of-vocab/in-vocab gap here cannot be evidence for UNK. The print was
+hardcoded to that interpretation regardless of the treatment net.
+
+**The decomposition separates nothing.** v7pad pools to 0.4875 on the mirror
+and v7 pools to 0.487 — indistinguishable. Whatever costs the mirror is not the
+92% capacity cut, because the net that does not cut capacity loses the same
+amount.
+
+**Arm C's UNK attribution does not survive.** v7pad seed 0 scored **+0.034** on
+v10 with no UNK row at all — higher than v7-with-UNK managed. Seed 1 then came
+back at −0.005, so v7pad's arm C is itself a null (+0.015 ± 0.025). ⇒ the +0.034
+is not evidence against UNK any more than +0.021 was evidence for it. **Both
+readings of arm C were single-seed artefacts.** The one arm whose seeds agreed
+in the v7 run is 4.0% of the field and cannot be attributed to the mechanism it
+was built to test.
+
+---
+
+# 🔴 VERDICT — E8 is a null, on both halves
+
+**v7 (remap + UNK + pad)**, over the 74.0% of field weight measured:
+
+| arm | opponent | weight | pooled Δ | seeds agree? |
+|---|---|---|---|---|
+| A | mirror | 33.3% | −0.013 | no (0.503 / 0.471) |
+| E | alakazam5 | 22.0% | −0.009 | no (+0.005 / −0.022) |
+| D | archaludon | 8.0% | −0.028 | no (+0.018 / −0.073) |
+| B | crustle | 6.7% | −0.003 | no (+0.004 / −0.010) |
+| C | v10 | 4.0% | +0.021 | yes (+0.018 / +0.023) |
+
+**Weighted: −0.0099.**
+
+**v7pad (pad only)**, over 44.0%: **weighted −0.0047.**
+
+Neither promotes. Neither is close.
+
+## What this experiment actually established
+
+1. **The two defects were real and the fixes are correct.** 90% of every table
+   shipped untrained; id 0 was overloaded across 25.5% of slot lookups. Both are
+   now fixed, verified (UNK fires 6/6 on v10, 2/4 on archaludon, 0/4 on crustle,
+   0/6 on the mirror), and both **buy nothing measurable**. ⇒ *a real defect is
+   not a lever.* Third demonstration on this axis after E6 → E7.
+
+2. **92% of the embedding parameters are free to delete.** 88,000 → 6,960 —
+   11.5% of the whole net — for 0.0018 of corpus fit on one seed and 0.0003 on
+   the other, and no anchor outside noise. With §8w (8.2× the parameters, −43
+   decisions) capacity is now bounded from **both** directions on the same net.
+
+3. 🔴 **Run-to-run seed variance is the dominant term in anchor measurements,
+   and the mirror-derived floor understates it.** Two arms swung further between
+   seeds than sampling can explain:
+
+   | arm | seed 0 → seed 1 | swing | 95% sampling |
+   |---|---|---|---|
+   | v7 D (archaludon) | +0.018 → −0.073 | **0.091** | ±0.051 |
+   | v7pad A (mirror, direct) | 0.524 → 0.451 | **0.073** | ±0.036 |
+
+   The standing ±0.019 seed floor is a **mirror** number from §8z and does not
+   transfer to anchors played against a third party. ⇒ **two seeds × 1500 games
+   is under-powered for any anchor except the mirror**, and single-seed anchor
+   readings elsewhere in this repo are worth less than their printed intervals.
+
+## Errors made and corrected inside this experiment
+
+- **Tier 1 (`mode="mean"` erases copy counts)** — retracted before building.
+  Mean over a duplicate-containing bag is a count-weighted average.
+- **Resolution understated by 41%** — the script printed one cell's width for a
+  two-cell delta. ±0.025 → ±0.036 per seed.
+- **The dose-response reading** — built from four single-seed cells each inside
+  its own interval, destroyed by the next data point.
+- **"SUPPORTS the UNK mechanism" printed for a net with no UNK row** — hardcoded
+  interpretation, now gated on the treatment.

@@ -148,11 +148,22 @@ def main() -> int:
     b, c, d = mean_delta("B"), mean_delta("C"), mean_delta("D")
     if b is not None and c is not None:
         oov = [x for x in (c, d) if x is not None]
-        print(f"pre-registered asymmetry: out-of-vocab "
-              f"{sum(oov) / len(oov):+.3f} vs in-vocab (B) {b:+.3f}  ->  "
-              f"{'SUPPORTS' if sum(oov) / len(oov) > b else 'DOES NOT SUPPORT'}"
-              " the UNK mechanism")
-        print("  (direction only -- per rule 4 the intervals must not overlap)")
+        # ⛔ This test is only meaningful for a treatment that HAS a UNK row.
+        # `--tag v7pad` has none -- it keeps all 1300 rows and changes only
+        # padding_idx -- so an out-of-vocab/in-vocab gap there is evidence about
+        # something else entirely. The first version of this line printed
+        # "SUPPORTS the UNK mechanism" under v7pad, which is unreadable nonsense
+        # sitting in a permanent log.
+        if "pad" in args.tag or not args.treat.count("v7_"):
+            print(f"asymmetry: out-of-vocab {sum(oov) / len(oov):+.3f} vs "
+                  f"in-vocab (B) {b:+.3f}  --  ⚠ NOT a UNK test: '{args.tag}' "
+                  "has no UNK row. Interpret as a plain arm contrast.")
+        else:
+            print(f"pre-registered asymmetry: out-of-vocab "
+                  f"{sum(oov) / len(oov):+.3f} vs in-vocab (B) {b:+.3f}  ->  "
+                  f"{'SUPPORTS' if sum(oov) / len(oov) > b else 'DOES NOT SUPPORT'}"
+                  " the UNK mechanism")
+            print("  (direction only -- per rule 4 intervals must not overlap)")
     # Two INDEPENDENT cells, so the delta's se is sqrt(2)x one cell's -- the
     # earlier form printed one cell's width and understated this by 41%.
     n_games = 2 * args.matches
