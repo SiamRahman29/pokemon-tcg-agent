@@ -4338,6 +4338,83 @@ second-least informative anchor in the set, and the opposite of the direction
 claimed. **Rule 1 exists for exactly this and it was violated by the person who
 maintains it.** The n=6 figure should never have been characterised at all.
 
+## 8ap. 🔴 THE IDENTITY CHANNEL IS WORTH A QUARTER OF THE WIN RATE — and against Mega Lucario it is ALREADY DEAD (2026-08-04, day 20)
+
+Full record: `docs/experiments/embeddings/E6-identity-channel.md`. No retraining
+anywhere in this section — every arm is the frozen `out/policy_v5.npz`
+(sha256 `26c681c4845a7eb0…`, byte-identical to the `sa/policy_net.npz` inside
+`dist/submission.tar.gz`) with **embedding rows permuted**.
+
+**Why permutation and not zeroing.** Zeroing a table moves the input
+distribution the downstream layers were trained against, so degradation from
+"identity destroyed" cannot be separated from degradation from "activations off
+their training scale". Permutation feeds the identical multiset of row vectors
+and scrambles only the card→row assignment. Row 0 is never touched:
+`slot_emb[0]` is the empty slot and training drove it to norm **0.835** against
+a 3.95 table mean, so it encodes "nothing here", not a card.
+
+**The vocabulary, per table** (`scripts/p53_emb_vocab.py`) — rows that ever
+received a gradient, out of the rows we ship:
+
+| table | rows | ever looked up | share |
+|---|---|---|---|
+| `slot_emb` | 1300 | 104 | 8.0% |
+| `bag_emb` | 1300 | 134 | 10.3% |
+| `card_emb` | 1300 | 135 | 10.4% |
+| `atk_emb` | 1600 | **57** | **3.6%** |
+
+**The gate.** Permuting all four tables, mirror, direct head-to-head:
+**0.997 [0.981, 0.999]**, W299/D0/L1, n=300. Not a broken net — the permuted
+policy still beats `random` at **0.867 [0.803, 0.912]**, and the `--mode copy`
+round-trip control is tensor-identical, so the serialisation path adds nothing.
+
+**The finding.** Holding our own 19 card ids fixed and scrambling only cards we
+can see but do not own (`atk_emb` excluded — `opt_attack` carries only *our*
+attacks, so permuting it is a self-inflicted wound):
+
+| opponent | opp **Pokémon** in vocabulary | v5 | identity scrambled | Δ |
+|---|---|---|---|---|
+| `rule:crustle` | **4 / 4** | 0.838 [0.792, 0.876] | 0.587 [0.530, 0.641] | **−0.251**, disjoint |
+| `rule:v10,noS` | **0 / 6** | 0.625 [0.569, 0.678] | 0.607 [0.550, 0.660] | **−0.018**, overlapping |
+
+Scoping control: the same net scores **0.550 [0.493, 0.605]** in the mirror,
+CI spanning 0.500, because both decks are our 19 and the permuted rows are
+never looked up.
+
+🔴 **Knowing which Pokémon the opponent has is worth roughly a quarter of the
+win rate where we can do it. Against Mega Lucario we cannot do it at all** —
+Makuhita, Hariyama, Lunatone, Solrock, Riolu and Mega Lucario ex are *all six*
+out of vocabulary, so scrambling that matchup costs nothing. There was nothing
+left to destroy. Both scrambled arms land at ~0.59–0.61 regardless of opponent,
+which is what "no opponent read" plays like: generic-good Pokémon, winning on
+raw deck strength alone.
+
+### ⚠ What this does NOT license
+
+**Not** a claim that a fix recovers the 0.251. Permutation measures *correct*
+identity against *scrambled* identity; an unseen card is neither — it is a
+fixed random vector that at least stays consistent within a game. 0.251 is an
+upper bound on a repair, not an estimate of one.
+
+**Not** an attribution of the Mega Lucario weakness to vocabulary alone. The
+corpus contains **no Lucario games at all**, and "never trained on the matchup"
+is a sufficient explanation by itself. The vocabulary gap and the data gap are
+the same absence seen twice, and no ablation separates them — only an
+intervention can (E7).
+
+### 🔧 A methods note this section nearly got wrong
+
+The first Crustle number came out **0.838** against a recorded **0.755** and
+briefly looked like an improvement. It is not: `83daa48` changed the Crustle
+anchor on 08-02, and the *same* net with the *same* flags reads **0.767 before
+/ 0.867 after** (n=2,000 / 4,000) — **+0.100 of apparent gain from changing
+nothing on our side**, reproducing §8an's `CRUSTLE_CALIB` pair to three
+decimals. `arena.build_agent` archives anchors as `rule:<name>` with **no
+version**, so all 49,320 Crustle games pool two different opponents under one
+identity, and `arena.py elo` fits over the whole archive. **Every Δ above is
+valid only because both arms ran back-to-back in one session against one build.
+A stored anchor score is not a control.**
+
 ## 8ao. 🔴 B8 FAILS ITS PRE-REGISTERED BAR — the RL fine-tune is a CLEAN NULL, and the control arm is what makes it clean (2026-08-02, day 17)
 
 **The pre-registration, written before any code** (ROADMAP §2.5 B8, HANDOFF day-17
