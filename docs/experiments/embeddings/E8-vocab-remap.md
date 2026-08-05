@@ -184,6 +184,78 @@ either way.
 
 ---
 
-## Results
+## Results — v7 (remap + UNK + pad), n=1500 games per cell per seed
 
-_Pending — nets training, arena not yet run._
+`out/emb/e8_v7.log`, archive `out/arena/p57_e8.jsonl`.
+
+| arm | opponent | seed 0 | seed 1 | pooled Δ |
+|---|---|---|---|---|
+| A | mirror, **direct** | 0.503 [0.478, 0.528] | 0.471 [0.446, 0.497] | **0.487** [0.469, 0.505] |
+| B | rule:crustle (in-vocab) | +0.004 | −0.010 | **−0.003** |
+| C | rule:v10 (0/6 out-of-vocab) | +0.018 | +0.023 | **+0.021** |
+
+### ⚠ A resolution error in this script's own output, corrected
+
+The first run printed `two-cell resolution +/-0.025` at n=1500. That is **one
+cell's** width. A treatment-minus-control delta is a difference of two
+INDEPENDENT cells, so its standard error is √2× a single cell's:
+
+| | per seed (n=1500) | pooled 2 seeds (n=3000) |
+|---|---|---|
+| arms B/C/D/E (two-cell) | **±0.036** | **±0.025** |
+| arm A (direct head-to-head) | ±0.025 | ±0.018 |
+
+Every delta below is read against the corrected figures. This is the same class
+of mistake EVIDENCE §8aq made and it was caught by recomputing rather than by
+trusting the printed number.
+
+### What the three arms say
+
+**Arm B is the null it had to be.** −0.003 pooled, against ±0.025. Crustle is
+4/4 and 24/24 in vocabulary, so UNK cannot fire, and it did not move. Without
+this the C arm would be uninterpretable.
+
+**Arm C is directionally consistent and NOT resolved.** +0.021 pooled with a
+±0.025 interval — [−0.004, +0.045], which includes zero. What it does have,
+and what E7 never had, is **agreement between seeds**: +0.018 and +0.023, same
+sign, near-identical magnitude, against a negative control at −0.003. The
+pre-registered asymmetry (C − B = **+0.024**) points the way the mechanism
+requires.
+
+⇒ **suggestive, unresolved, and not worth resolving.** Driving ±0.025 down to
+±0.010 needs ~18,000 games per cell. The sizing gate already priced what that
+would buy: v10 is **4.0%** of the field, so +0.021 there is **+0.0008
+weighted** — a hundred minutes of arena to confirm a thousandth of a win rate.
+
+**Arm A is a null that leans negative.** 0.487 pooled [0.469, 0.505] includes
+0.500, so v7 is not measurably worse in the mirror — but the seeds disagree
+(0.503 / 0.471) by about what the measured seed-only floor (0.482) produces on
+its own, and the point estimate is on the wrong side.
+
+### Weighted verdict
+
+Over the 44.0% of field weight actually measured:
+
+    mirror   0.333 x (-0.013)  = -0.0043
+    crustle  0.067 x (-0.003)  = -0.0002
+    v10      0.040 x (+0.021)  = +0.0008
+                                 -------
+                                 -0.0037
+
+**v7 does not promote.** Even taking arm A at face value as a null (Δ = 0), the
+total is **+0.0006** — indistinguishable from zero. The mirror carries 8.3× the
+weight of the one arm that gained, so the arithmetic was decided by the sizing
+gate before a game was played.
+
+### The one result here that is not a null
+
+**92% of the embedding parameters can be deleted for nothing.** 88,000 → 6,960
+(11.5% of the whole net) costs 0.0018 of corpus fit on seed 0 and 0.0003 on
+seed 1, and moves no anchor outside noise. Read against §8w — which *added*
+8.2× the parameters and lost 43 decisions — capacity is now bounded from both
+directions on the same net. Nothing in this project has ever been
+capacity-limited.
+
+## Results — decomposition (v7pad) and reach (arms D, E)
+
+_Pending._

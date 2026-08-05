@@ -45,6 +45,11 @@ ARMS = {
     "B": ("rule:crustle", "crustle", "4/4, 24/24 -- UNK cannot fire"),
     "C": ("rule:v10,noS", "lucario_v10", "0/6, 7/17 -- UNK fires hardest"),
     "D": ("rule:archaludon", "archaludon_ex", "2/4, 14/15"),
+    # 22.0% of the field -- 5.5x arm C's weight. Only 2 of 9 Pokemon are out of
+    # vocabulary, so if the C effect is real but does not appear here, the
+    # mechanism is confined to the one archetype the corpus never contained and
+    # is worth ~nothing weighted.
+    "E": ("rule:alakazam5", "alakazam5", "7/9, 21/23 -- UNK fires weakly"),
 }
 
 SCORE_RE = re.compile(
@@ -148,9 +153,14 @@ def main() -> int:
               f"{'SUPPORTS' if sum(oov) / len(oov) > b else 'DOES NOT SUPPORT'}"
               " the UNK mechanism")
         print("  (direction only -- per rule 4 the intervals must not overlap)")
-    print("\n⚠ two-cell resolution at this n is +/-"
-          f"{0.98 / (2 * args.matches) ** 0.5:.3f}; a delta inside it is "
-          "UNINFORMATIVE, not null. Seed floor is +/-0.019.")
+    # Two INDEPENDENT cells, so the delta's se is sqrt(2)x one cell's -- the
+    # earlier form printed one cell's width and understated this by 41%.
+    n_games = 2 * args.matches
+    per_seed = 1.96 * (2 * 0.25 / n_games) ** 0.5
+    print(f"\n⚠ two-cell 95% resolution: +/-{per_seed:.3f} per seed, "
+          f"+/-{per_seed / len(seeds) ** 0.5:.3f} pooled over {len(seeds)} "
+          "seeds. A delta inside it is UNINFORMATIVE, not null. Arm A is a "
+          "DIRECT head-to-head and is sqrt(2)x tighter. Seed floor +/-0.019.")
     return 0
 
 
