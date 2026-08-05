@@ -52,11 +52,17 @@ Corpus `artifacts/pds_v6`, 248,985 rows — the same count as `pds_v4`, with
 `dense`, `xdense` and `opt_dense[:, :37]` verified byte-identical to it. The
 control therefore trains on **identical rows**.
 
-⚠ The treatment differs from the control in **three** ways, not one: the 276
-state attribute columns, the 9 new option columns, and — because
-`pool_width` is a function of `opt_cols` — a v5 pool that is 190 wide instead
-of 172. So a positive result licenses "the v6 block pays", not "the attribute
-columns pay". Sub-attribution needs `--drop-a` and `--opt-cols 37`, below.
+⚠ The treatment differs from the control in **four** ways, not one: the 276
+state attribute columns, the 9 new option columns, — because `pool_width` is a
+function of `opt_cols` — a v5 pool that is 190 wide instead of 172, and
+consequently **more parameters: 855,745 against 702,913**. So a positive result
+licenses "the v6 block pays", not "the attribute columns pay". Sub-attribution
+needs `--drop-a` and `--opt-cols 37`, below.
+
+The capacity difference is worth naming rather than waving away, though EVIDENCE
+8w measured 8.2x the parameters buying **-43 decisions** on this corpus, so
+extra width is not a free win here and a +22% param count is unlikely to be the
+mechanism on its own.
 
 This does **not** weaken the mechanism test in rule 4. Arms B and C use the
 same treatment net, so the confound is constant across them and cancels out of
