@@ -18,6 +18,54 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
+> # ▶ START HERE — DAY 20: THE EMBEDDING VOCABULARY IS THE BLIND SPOT (2026-08-04/05)
+>
+> Full records: `docs/experiments/embeddings/E6-identity-channel.md` (settled,
+> also `EVIDENCE` §8ap) and `E7-card-attributes.md` (pre-registered, running).
+>
+> 🔴 **We ship 4 embedding tables of which 3.6–10.4% of rows ever saw a
+> gradient.** Per-table seen counts: `slot_emb` 104/1300, `bag_emb` 134/1300,
+> `card_emb` 135/1300, `atk_emb` **57/1600**. The rest ship at random N(0,1).
+>
+> 🔴 **Permuting only the OPPONENT's card ids on the frozen v5 net costs
+> 0.838 → 0.587 vs `rule:crustle` (4/4 of its Pokémon in vocabulary) and
+> 0.625 → 0.607 vs `rule:v10` (0/6).** Identifying the opponent's Pokémon is
+> worth ~a quarter of the win rate where we can do it — and **against Mega
+> Lucario we already cannot**, so there was nothing left to destroy. Mirror
+> scoping control 0.550 [0.493, 0.605], CI spanning 0.500. No retraining.
+>
+> ⚠ **Permutation, not zeroing.** Zeroing moves the input distribution the
+> downstream layers were trained against and cannot separate "identity
+> destroyed" from "activations off scale". `scripts/p54_emb_ablate.py`.
+>
+> ⛔ **A STORED ANCHOR SCORE IS NOT A CONTROL.** `arena.build_agent` archives
+> anchors as `rule:<name>` with **no version**, and `83daa48` changed Crustle on
+> 08-02: the *same net, same flags* reads **0.767 before / 0.867 after** —
+> +0.100 of apparent gain from changing nothing. 49,320 Crustle games pool both
+> eras under one identity and `arena.py elo` fits over all of them. **Every
+> strength claim must run its control back-to-back in the same session.**
+>
+> ✅ **The shipped bundle is v5.** `dist/submission.tar.gz` carries
+> `out/policy_v5.npz` byte-identical (md5 `dc1c9acc…`, width 708). The tracked
+> `agents/sa/policy_net.npz` is the old `policy_lw2` (width 496) and is **stale
+> in the tree but not what ships** — do not "fix" it by retraining.
+>
+> 🟡 **In flight (day 20):** v6 card-attribute block — `--attr` adds 276 state
+> columns (energyType / weakness / ability / resistance / weak-to-facing-type)
+> + a `cardType` one-hot on the option, all from the card DB, which covers all
+> 1,267 cards and therefore **transfers to cards the corpus never contained**.
+> Corpus `artifacts/pds_v6` is verified byte-identical to `pds_v4` on every v3/v4
+> column, so the control trains on identical rows. Sized first
+> (`p55_attr_sizing.py`): the gate **killed `aceSpec`** (one value corpus-wide)
+> and **`pokemonType`/`evolutionType`** (fully redundant with the six stage/ex
+> flags). Pre-registered prediction: **gain vs `rule:v10` > gain vs
+> `rule:crustle`**; a uniform gain falsifies the mechanism.
+>
+> ⚠ **Thin support, stated before the result:** `weakness=5` (Mega Lucario's)
+> appears on **one** trained card and `energyType=6` on **five**. A null is live.
+> And the corpus has **zero** Lucario games, so "never trained on the matchup"
+> remains a sufficient competing explanation that no ablation can remove.
+
 > # 🔴 READ THIS FIRST — B7 RAN ON DAY 11 AND IS CLOSED (2026-07-31 night)
 >
 > **Day 10 measured; day 11 trained, and both arms lost.** The pre-registered
