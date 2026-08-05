@@ -136,8 +136,96 @@ whole, and when it was finally decomposed its five leftover members measured
 
 ## Results
 
-_(empty — to be filled once the runs land)_
+Training: v6 855,745 params, control 702,913. Best `val_top1` — v6 0.7190 /
+0.7152, control 0.7163 / 0.7139 (seeds 0/1). **v6 fits the corpus marginally
+better on both seeds.** Rule 3 says that predicts nothing, and it did not.
+
+### Arm A — mirror, direct (n=300 per seed)
+
+| seed | v6 vs its own control |
+|---|---|
+| 0 | 0.533 [0.477, 0.589] |
+| 1 | 0.487 [0.431, 0.543] |
+| **pooled n=600** | **0.510 [0.470, 0.550]** |
+
+CI includes 0.500. **Rule 3 not met.**
+
+### Arms B / C / D — screen at n=300 per cell
+
+| arm | opponent | seed 0 | seed 1 | mean | seed spread |
+|---|---|---|---|---|---|
+| B | `rule:crustle` | −0.007 | −0.028 | −0.018 | 0.021 |
+| C | `rule:v10,noS` | −0.030 | **+0.073** | +0.021 | **0.103** |
+| D | `rule:alakazam5` | +0.023 | −0.027 | −0.002 | 0.050 |
+
+🔴 **A design error, and it is the most useful thing in this record.** B/C/D are
+a *difference of two independent cells*, so at n=300 the 95% half-width on each
+delta is **+/-0.080**. Every number in that table is inside it. These rows are
+not evidence of a null — **they are uninformative**, and arm C's 0.103 sign-
+flipping seed swing is exactly what that resolution predicts. Arm A's direct
+design is **2x tighter for the same number of games**, which is `p33`'s `direct`
+flag earning its keep.
+
+### Arm C — confirmed at n=2,000 per cell
+
+| seed | v6 | control | delta |
+|---|---|---|---|
+| 0 | 0.602 [0.580, 0.623] | 0.616 [0.595, 0.637] | −0.014 |
+| 1 | 0.595 [0.573, 0.616] | 0.571 [0.549, 0.592] | +0.024 |
+| **pooled** | **0.5985** | **0.5935** | **+0.005 [−0.017, +0.027]** |
+
+Includes zero.
 
 ## Verdict
 
-_(empty)_
+🔴 **E7 is a CLEAN NULL. v6 does not promote.** Arm A's confirmed CI includes
+0.500 (rule 3), and the hypothesis arm resolves to +0.005 [−0.017, +0.027] over
+4,000 games a side.
+
+🔴 **The mechanism is NOT confirmed, and per rule 4 the out-of-vocabulary story
+is retracted for this intervention.** It is *not* falsified either — the two
+seeds disagreed in sign at both sample sizes, so what E7 establishes is that
+**card attributes as implemented do not recover the identity channel**, not that
+identity is unimportant. E6 stands untouched: permuting opponent card ids still
+costs 0.838 → 0.587 against Crustle.
+
+### ⚠ A correction made inside this record
+
+After seed 0 alone this was written up mid-session as *"the pre-registered
+prediction is falsified... fails on direction"*. **Seed 1 reversed the sign
+(−0.030 → +0.073) and that characterisation was wrong.** It is the same rule-1
+error §8an documents from an n=6 smoke, committed by the same discipline that
+wrote the rule down. One seed of a two-cell delta at n=300 licenses nothing.
+
+### Why it probably failed, stated as hypothesis not fact
+
+The 18 per-slot dense features already carry HP, max HP, damage taken, stage,
+ex/megaEx/tera, energy count, retreat cost, prize value and estimated damage —
+all correct for *any* card in the DB. `energyType` and `weakness` add little on
+top of that, while 276 columns that are ~83% zero at any given decision add
+variance. That is the EVIDENCE 8ab failure mode, where five leftover v4 columns
+measured **−22 Elo against having no block at all**.
+
+And the support was named as thin before the run: `weakness=5` — Mega Lucario's
+— has **one** trained card behind it, `energyType=6` has **five**.
+
+### ⚡ A methods finding worth more than the null
+
+Against `rule:v10` at n=2,000, the two **control** seeds read 0.616 and 0.571 —
+a **0.045** spread — while the two treatment seeds read 0.602 and 0.595, a 0.007
+spread. §8z's seed-only floor of ±0.019 was measured **mirror-direct**, and this
+is a caution that it should not be assumed to carry to third-party anchors. Two
+seeds cannot characterise a variance, so this is a flag for the next design, not
+a number to quote.
+
+### What this leaves
+
+The corpus contains **zero** Lucario games. E7 tried to repair an unseen
+archetype by re-encoding cards; it did not work. The remaining untested
+explanation is the simpler one — that the fix for an archetype you have never
+observed is **training data containing it**, not a better encoding of its cards.
+That is a data question, not an embedding question, and it is where the E6
+diagnosis actually points.
+
+`--drop-a` sub-attribution is **not run**, per the pre-registration: five extra
+retrains against a block that measures null is wasted compute.
