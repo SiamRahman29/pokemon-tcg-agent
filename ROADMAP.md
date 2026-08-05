@@ -310,6 +310,24 @@ every kill** — every candidate is a report chapter regardless of outcome.
 
 | ~~**B7**~~ ⚡ **NEW day 10 — arm 1 KILLED day 11** | **Demonstrator selection: rating-weighted and single-expert cloning** | **The premise is measured, not assumed** (EVIDENCE §8q): top-1 agreement with a demonstrator **falls monotonically as the demonstrator improves** — 27.2% miss against ~1110 pilots, 34.4% against #3 (1152), **40.1% against #2 (1163)**, n≥10k per group. Every net we have trained targets the **modal action of a ~50-pilot mixture**, and the best players are furthest from that mode. **We have never cloned ONE policy.** Newly possible: 330 games from #2 and 227 from #3, both on our exact 60. ⚠ Distinct from the dead "more data" axis (§1) — this is demonstrator *selection*, not volume | ✅ **the measurement half is DONE.** Next, in order: (1) tag every corpus row with its demonstrator's LB rating (one `competition_leaderboard_download` + `info.TeamNames`); (2) **rating-weighted clone** on all 248,985 rows; (3) **single-expert fine-tune** of v3 on `artifacts/pds_ntum` (27,318 rows) | 🔴 **DAY 11 VERDICT — the bar was set before the run and arm 1 failed it outright.** (1) ✅ rating-tagging shipped (`--ratings`, 94–98% seat coverage). (2) 🔴 **rating-weighted clone: 0.421 [0.400, 0.443] n=2000 vs v3 in the mirror ≈ −55 Elo** — not a null, a loss (§8t). (3) ✅ **covariate shift RULED OUT** — policy-vs-policy disagreement is 26.7% on our states vs 31.9% on theirs, near-symmetric, with a 1.7% positive control (§8s). (4) ⚡ **§8q's headline NARROWED by a much harder test**: agreement **peaks at 1050–1100 and falls in BOTH directions** (66.7% below 900, 59.9% at 1163) over 87 same-deck, same-week, **zero-exposure** demonstrators — so agreement measures **distance from the fitted mode, not skill**, and familiarity is refuted with a real control (§8r). (5) 🔴 **arm 2, the single-expert fine-tune, loses HARDER: 0.370 [0.349, 0.391] ≈ −92 Elo** — and it imitated *successfully* (ntumlnoob agreement 59.9% → **67.2%** held out). **⇒ B7 CLOSED.** The two failures are ordered by how far each net moved from the field (miss 30.2% → 32.0% → 36.2%, Elo 0 → −55 → −92): **agreement with the FIELD predicts strength; agreement with the EXPERT anti-predicts it** (§8u) |
 
+**🔴 B1 INSTANCE 4 — RAN AND CLOSED 2026-08-05 (day 20). The defect is REAL and
+this repair for it is a CLEAN NULL.** Arm A (mirror, direct, pooled 2 seeds)
+**0.510 [0.470, 0.550]**; hypothesis arm vs `rule:v10` confirmed at n=2,000/cell
+**+0.005 [−0.017, +0.027]**. Per rule 4 the out-of-vocabulary story is retracted
+*for this intervention* — not falsified, since the two seeds disagreed in sign
+at both sample sizes. **§8ap's diagnosis is untouched; card attributes just do
+not recover it.** `EVIDENCE` §8aq. ⚡ **B1 has now measured +115 → +37 → +14 → 0
+across four instances. The feature axis — the only one that ever paid — is
+SPENT.** ⛔ Do not open instance 5 without a defect priced the way §8ap priced
+this one, and do not rebuild v6. 🟢 **Where §8ap actually points: the corpus
+contains ZERO Lucario games.** The untested lever is training data containing
+the archetype — a data question, not an encoding one. ⛔ **And a method rule
+that cost this experiment its screen: a two-cell anchor delta carries ±0.080 at
+n=300. Screen on the mirror's DIRECT arm (2× tighter for the same games) or take
+it to n≥2,000.**
+
+<details><summary>The original day-20 entry, kept for the report chapter</summary>
+
 **⚡ B1 INSTANCE 4 — REOPENED 2026-08-04 (day 20), and this time the defect was
 MEASURED before the build.** B1 was written down as "nearly spent, one variant
 left". E6 (`EVIDENCE` §8ap) found a different defect in the same family and
@@ -335,6 +353,8 @@ prediction is an **asymmetry** (gain vs `v10` > gain vs `crustle`), and a
 uniform gain falsifies the mechanism. ⚠ Support is thin — `weakness=5` appears
 on one trained card — and the corpus has zero Lucario games, so a null is live
 and "never trained on the matchup" remains a competing explanation.
+
+</details>
 
 **Sequencing (updated 2026-07-30 — B2 is dead, so the ladder shortened):** B1 is
 independent of the re-anchor and is now the **top-ranked unstarted candidate** —
