@@ -15,7 +15,8 @@ card -> row assignment. `perm_seen` restricts the shuffle to rows that ever
 received a gradient (the p53 census), holding *trainedness* constant too.
 
 Row 0 is never permuted in any mode. `slot_emb[0]` is the empty/unresolved
-slot and training drove it to norm 0.835 against a 3.95 table mean, so it
+slot and training drove it to norm 2.337 against a 3.96 table mean (the 11th
+smallest row of 1,300), so it
 encodes "nothing here" rather than a card; scrambling it would confound the
 result with board occupancy.
 

@@ -4427,7 +4427,7 @@ distribution the downstream layers were trained against, so degradation from
 "identity destroyed" cannot be separated from degradation from "activations off
 their training scale". Permutation feeds the identical multiset of row vectors
 and scrambles only the card→row assignment. Row 0 is never touched:
-`slot_emb[0]` is the empty slot and training drove it to norm **0.835** against
+`slot_emb[0]` is the empty slot and training drove it to norm **2.337** against
 a 3.95 table mean, so it encodes "nothing here", not a card.
 
 **The vocabulary, per table** (`scripts/p53_emb_vocab.py`) — rows that ever

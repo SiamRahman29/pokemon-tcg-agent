@@ -24,7 +24,7 @@ Modes:
                 effect. Must score ~0.500 against its own source net.
 
 Row 0 is never touched in any mode: `slot_emb[0]` is the empty/unresolved slot
-and the net drove it to near-zero on its own (norm 0.835 against a 3.95 table
+and the net drove it down on its own (norm 2.337 against a 3.96 table
 mean), so it encodes "nothing here", not a card identity. Scrambling it would
 confound the result with a board-occupancy signal.
 
