@@ -103,6 +103,15 @@ def main() -> int:
     if not src.exists():
         raise SystemExit(f"net not found: {src}")
     z = dict(np.load(src))
+    # A v7 net's rows are vocabulary indices, not card ids, so the p53 census
+    # this script permutes WITHIN would scramble the wrong rows -- and with a
+    # ~137-row table it would also touch UNK and PAD. Refuse rather than emit a
+    # net whose ablation means something other than what the arm claims.
+    if "vocab_slot_emb" in z:
+        raise SystemExit(f"{src.name} is a --vocab (v7) net: its rows are "
+                         "remapped indices, not card ids. p54's census-based "
+                         "permutation does not apply; regenerate the census "
+                         "against the remapped id space first.")
 
     which = TABLES if args.tables == "all" else tuple(
         t.strip() for t in args.tables.split(","))

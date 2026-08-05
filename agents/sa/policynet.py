@@ -64,6 +64,34 @@ class Net:
         self.n_attr = int(z["n_attr"][0]) if "n_attr" in z else 0
         # Which members of the v6 block this net was shown (features.A_GROUPS).
         self.a_mask = z["a_mask"] if "a_mask" in z else None
+        # The v7 vocabulary remap, absent on every net before day 21. Each table
+        # was collapsed to the rows the corpus trained: row 0 = PAD, row 1 = UNK,
+        # rows 2.. = `vocab_<table>` in order. Without it a card the corpus never
+        # contained reads an untrained N(0,1) row whose norm is indistinguishable
+        # from a trained one's, so the net cannot tell "unknown" from "known".
+        self.lut = None
+        if "vocab_slot_emb" in z:
+            from .features import N_CARD_IDS
+            from .optfeat import N_ATTACK_IDS
+            self.lut = {}
+            for t in ("slot_emb", "bag_emb", "card_emb", "atk_emb"):
+                ids = z[f"vocab_{t}"].astype(np.int64)
+                size = N_ATTACK_IDS if t == "atk_emb" else N_CARD_IDS
+                lut = np.full(max(size, int(ids[-1]) + 1 if ids.size else size),
+                              1, dtype=np.int64)      # 1 = UNK
+                lut[0] = 0                            # 0 = PAD
+                lut[ids] = np.arange(2, 2 + ids.size, dtype=np.int64)
+                self.lut[t] = lut
+
+    def _m(self, table: str, ids):
+        """Raw card/attack id -> this net's row. Identity on a pre-v7 net."""
+        if self.lut is None:
+            return ids
+        lut = self.lut[table]
+        a = np.asarray(ids)
+        # Out-of-range cannot happen -- features.py clamps to 0 -- but an id past
+        # the table falls to UNK rather than raising in the middle of a match.
+        return np.where(a < len(lut), lut[np.clip(a, 0, len(lut) - 1)], 1)
 
     @property
     def state_in(self) -> int:
@@ -109,15 +137,18 @@ class Net:
             # Slice to the width this net was trained at -- the v3 target block
             # is appended, so a v2 net simply does not see it.
             oenc[i, :ow] = od[:ow]
-            oenc[i, ow:ow + emb] = self.card_emb[cid]
-            oenc[i, ow + emb:ow + 2 * emb] = self.atk_emb[aid]
-            oenc[i, ow + 2 * emb:] = self.card_emb[tid]
+            oenc[i, ow:ow + emb] = self.card_emb[self._m("card_emb", cid)]
+            oenc[i, ow + emb:ow + 2 * emb] = self.atk_emb[
+                self._m("atk_emb", aid)]
+            oenc[i, ow + 2 * emb:] = self.card_emb[self._m("card_emb", tid)]
 
         dense, bags = featurize(state, me)
-        parts = [dense, self.slot_emb[bags["slots"]].reshape(-1)]
+        parts = [dense,
+                 self.slot_emb[self._m("slot_emb", bags["slots"])].reshape(-1)]
         for name in _BAGS:
             b = bags[name]
-            parts.append(self.bag_emb[b].mean(axis=0) if len(b)
+            parts.append(self.bag_emb[self._m("bag_emb", b)].mean(axis=0)
+                         if len(b)
                          else np.zeros(self.bag_emb.shape[1],
                                        dtype=np.float32))
         parts.append(_sel_features(sel))
@@ -130,7 +161,7 @@ class Net:
             xd = xd * self.x_mask[:N_EXTRA]
             xids = np.where(self.x_mask[N_EXTRA:] > 0, xids, 0)
         parts.append(xd)
-        parts.append(self.slot_emb[xids].reshape(-1))
+        parts.append(self.slot_emb[self._m("slot_emb", xids)].reshape(-1))
         # ...and the v5 pool goes after v4, same rule (optfeat.pool_width).
         if self.n_pool:
             parts += [oenc.mean(axis=0), oenc.max(axis=0), pool_scalars(n)]
@@ -211,6 +242,16 @@ def load(path) -> Net | None:
         want = v5 if net.n_pool else v4
         if net.n_attr:
             want += N_ATTR
+        # A v7 net's tables are sized BY the map that travels with them. If the
+        # two disagree, every lookup is off by however far they drifted and the
+        # agent plays a scrambled net at full confidence -- the exact failure
+        # E6 measured at -0.251. Check them against each other, not against a
+        # constant: the row count IS 2 + len(vocab), PAD and UNK.
+        if net.lut is not None:
+            for t, w in (("slot_emb", net.slot_emb), ("bag_emb", net.bag_emb),
+                         ("card_emb", net.card_emb), ("atk_emb", net.atk_emb)):
+                if w.shape[0] != int((net.lut[t] > 1).sum()) + 2:
+                    return None
         if (net.state_in in (base, want) and net.opt_in in KNOWN_OPT_DENSE
                 and net.n_pool in (0, pool_width(net.opt_in, emb))
                 and net.n_attr in (0, N_ATTR)
