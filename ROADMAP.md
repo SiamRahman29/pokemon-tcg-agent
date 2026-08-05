@@ -315,22 +315,39 @@ this repair for it is a CLEAN NULL.** Arm A (mirror, direct, pooled 2 seeds)
 **0.510 [0.470, 0.550]**; hypothesis arm vs `rule:v10` confirmed at n=2,000/cell
 **+0.005 [−0.017, +0.027]**. Per rule 4 the out-of-vocabulary story is retracted
 *for this intervention* — not falsified, since the two seeds disagreed in sign
-at both sample sizes. **§8ap's diagnosis is untouched; card attributes just do
-not recover it.** `EVIDENCE` §8aq. ⚡ **B1 has now measured +115 → +37 → +14 → 0
+at both sample sizes. **§8au's diagnosis is untouched; card attributes just do
+not recover it.** `EVIDENCE` §8av. ⚡ **B1 has now measured +115 → +37 → +14 → 0
 across four instances. The feature axis — the only one that ever paid — is
-SPENT.** ⛔ Do not open instance 5 without a defect priced the way §8ap priced
-this one, and do not rebuild v6. 🟢 **Where §8ap actually points: the corpus
+SPENT.** ⛔ Do not open instance 5 without a defect priced the way §8au priced
+this one, and do not rebuild v6. 🟢 **Where §8au actually points: the corpus
 contains ZERO Lucario games.** The untested lever is training data containing
 the archetype — a data question, not an encoding one. ⛔ **And a method rule
 that cost this experiment its screen: a two-cell anchor delta carries ±0.080 at
 n=300. Screen on the mirror's DIRECT arm (2× tighter for the same games) or take
 it to n≥2,000.**
 
+**⛔ B1 INSTANCE 5 WAS OPENED ANYWAY ON 2026-08-06 (day 21) — E8 — AND IT IS THE
+THIRD NULL IN A ROW. THE EMBEDDING COMPONENT IS CLOSED.** It cleared the bar the
+line above sets: two defects priced before the build (**90% of every table ships
+untrained and unseen cards read those rows as confident identities**; **row 0
+overloaded across 25.5% of slot lookups with no `padding_idx`**), a fix that
+verifiably fires (UNK hits 6/6 v10 Pokémon, 0/4 crustle, 0/6 mirror), a sizing
+gate run first, and a same-session control. **Weighted −0.0099 (v7, 74% of the
+field) and −0.0047 (v7pad, 44%).** The one arm whose seeds agreed (`rule:v10`
++0.021) **cannot be attributed to the mechanism** — the pad-only net, which has
+no UNK row at all, scored +0.034 on the same arm at seed 0. `EVIDENCE` §8aw.
+⇒ **a real, measured, correctly-repaired defect is still not a lever.** ⚡ The
+one non-null: **92% of the embedding parameters delete for free** (88,000 →
+6,960, 11.5% of the net, −0.0018 corpus fit) — with §8w that bounds capacity
+from **both** directions. 🔴 And the instrument got worse, not better: the
+*direct mirror* arm swung **0.073** between seeds against ±0.036 sampling, so
+**two seeds under-resolves every anchor we own, the mirror included.**
+
 <details><summary>The original day-20 entry, kept for the report chapter</summary>
 
 **⚡ B1 INSTANCE 4 — REOPENED 2026-08-04 (day 20), and this time the defect was
 MEASURED before the build.** B1 was written down as "nearly spent, one variant
-left". E6 (`EVIDENCE` §8ap) found a different defect in the same family and
+left". E6 (`EVIDENCE` §8au) found a different defect in the same family and
 priced it without retraining anything: **permuting only the opponent's card-id
 embedding rows on the frozen v5 net costs 0.838 → 0.587 against `rule:crustle`
 and 0.625 → 0.607 against `rule:v10`.** Identifying the opponent's Pokémon is

@@ -18,10 +18,52 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 20: THE EMBEDDING VOCABULARY IS THE BLIND SPOT (2026-08-04/05)
+> # ▶ START HERE — DAY 21: THE EMBEDDING COMPONENT IS SPENT (2026-08-06)
+>
+> Full record: `docs/experiments/embeddings/E8-vocab-remap.md`, `EVIDENCE` §8aw.
+>
+> ⛔ **DO NOT REOPEN THE EMBEDDING TABLES.** Three experiments, three nulls.
+> E6 measured that identity carries a quarter of the win rate; E7 tried to
+> recover it from card attributes (null); E8 fixed the two *real* defects — 90%
+> of rows shipping untrained, and row 0 overloaded across 25.5% of lookups — and
+> both fixes measure **weighted −0.0099 (v7) and −0.0047 (v7pad)** over 74% and
+> 44% of the field. **A real defect is not a lever.** Nets kept at
+> `out/policy_v7_s{0,1}.npz` / `out/policy_v7pad_s{0,1}.npz`; **v5 still ships**.
+>
+> ⚡ **CAPACITY IS BOUNDED FROM BOTH DIRECTIONS NOW.** 88,000 → 6,960 embedding
+> parameters (−92.1%, 11.5% of the whole net) costs **0.0018 / 0.0003** of
+> corpus fit and moves no anchor. With §8w (8.2× params, −43 decisions):
+> **nothing in this project has ever been capacity-limited.** Stop proposing
+> bigger or smaller nets.
+>
+> 🔴 **TWO SEEDS × 1,500 GAMES UNDER-RESOLVES EVERY ANCHOR — INCLUDING THE
+> MIRROR.** Day 20 warned §8z's ±0.019 floor was mirror-direct only. E8 found
+> the *direct mirror* arm swinging **0.073** between seeds against ±0.036
+> sampling, and archaludon swinging **0.091** against ±0.051. ⇒ **budget ≥3
+> seeds, or stop quoting anchor deltas under ~0.05.** This does not retract §8z
+> or §8aa (n=2,000, replicated) but their intervals were optimistic.
+>
+> ⛔ **A two-cell delta's resolution is √2× a single cell's.** The E8 driver
+> shipped printing one cell's width and understated it by 41%. At n=1500/cell:
+> **±0.036 per seed, ±0.025 pooled**. Arm A (direct) is √2× tighter.
+>
+> ⛔ **RULE 1 APPLIES TO PATTERNS ACROSS ARMS, NOT ONLY TO SINGLE ARMS.** E8
+> published a monotone dose-response across four arms built from single-seed
+> cells each inside its own interval; the next data point destroyed it. Knowing
+> the trap and restating it in the same message did not prevent it.
+>
+> 🟢 **The untested lever is still DATA, not encoding** (§8au): the corpus has
+> **zero** Lucario games and 40.7% of the field is under-represented >3×
+> (`PARKED-corpus-coverage.md`). E7 and E8 both tried to fix an unseen archetype
+> by re-encoding cards. Neither could. **The cheap probe is a sizing gate, not a
+> build:** do the replays we hold contain the missing archetypes at all?
+>
+> ---
+>
+> # ▶ DAY 20: THE EMBEDDING VOCABULARY IS THE BLIND SPOT (2026-08-04/05)
 >
 > Full records: `docs/experiments/embeddings/E6-identity-channel.md` (settled,
-> also `EVIDENCE` §8ap) and `E7-card-attributes.md` (pre-registered, running).
+> also `EVIDENCE` §8au) and `E7-card-attributes.md` (pre-registered, running).
 >
 > 🔴 **We ship 4 embedding tables of which 3.6–10.4% of rows ever saw a
 > gradient.** Per-table seen counts: `slot_emb` 104/1300, `bag_emb` 134/1300,
@@ -50,12 +92,12 @@ it lets any team name in a replay be joined to its rating.
 > `agents/sa/policy_net.npz` is the old `policy_lw2` (width 496) and is **stale
 > in the tree but not what ships** — do not "fix" it by retraining.
 >
-> 🔴 **v6 IS A CLEAN NULL — DO NOT REBUILD IT** (`EVIDENCE` §8aq). Arm A
+> 🔴 **v6 IS A CLEAN NULL — DO NOT REBUILD IT** (`EVIDENCE` §8av). Arm A
 > (mirror, direct, pooled 2 seeds, n=600) **0.510 [0.470, 0.550]**; the
 > hypothesis arm vs `rule:v10` confirmed at n=2,000/cell resolves to
 > **+0.005 [−0.017, +0.027]**. Card attributes **do not** recover the identity
 > channel, and per rule 4 the out-of-vocabulary story is retracted *for this
-> intervention*. §8ap's diagnosis is untouched. The nets are kept at
+> intervention*. §8au's diagnosis is untouched. The nets are kept at
 > `out/policy_v6_s{0,1}.npz`; **the shipped net is unchanged**.
 >
 > ⛔ **SCREEN ON THE DIRECT ARM.** A two-cell anchor delta (treatment vs control
@@ -67,7 +109,7 @@ it lets any team name in a replay be joined to its rating.
 > ⚠ **§8z's ±0.019 seed floor is MIRROR-DIRECT and may not carry.** Against
 > `rule:v10` at n=2,000 the two control seeds read 0.616 / 0.571 (spread 0.045).
 >
-> 🟢 **Where §8ap actually points:** the corpus has **zero** Lucario games. E7
+> 🟢 **Where §8au actually points:** the corpus has **zero** Lucario games. E7
 > tried to fix an unseen archetype by re-encoding cards and failed. The untested,
 > simpler lever is **training data containing the archetype** — a data question,
 > not an embedding one.

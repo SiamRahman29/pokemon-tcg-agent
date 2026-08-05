@@ -174,7 +174,7 @@ is not what any gain is, whatever the arm A number does.
 Against those: this arm **removes** noise rather than adding a channel that has
 to be learned, and the pad half is field-wide and independent of both priors.
 
-### Resolution, so nothing gets overread (EVIDENCE §8aq's error)
+### Resolution, so nothing gets overread (EVIDENCE §8av's error)
 
 Arms B/C/D are a difference of two independent cells: **±0.080 at n=300 games,
 ±0.057 at n=600, ±0.022 at n=2000**. Arm A is a direct head-to-head and is 2×
@@ -206,7 +206,7 @@ INDEPENDENT cells, so its standard error is √2× a single cell's:
 | arm A (direct head-to-head) | ±0.025 | ±0.018 |
 
 Every delta below is read against the corrected figures. This is the same class
-of mistake EVIDENCE §8aq made and it was caught by recomputing rather than by
+of mistake EVIDENCE §8av made and it was caught by recomputing rather than by
 trusting the printed number.
 
 ### What the three arms say
@@ -278,7 +278,7 @@ is gone.
 
 ⚠ The reading was constructed from **single-seed cells each inside its own
 ±0.036 interval** — in the same session that had already recorded that exact
-error as the reason E7 failed (EVIDENCE §8an, §8aq). Restating a known trap
+error as the reason E7 failed (EVIDENCE §8an, §8av). Restating a known trap
 does not confer immunity to it. **Rule 1 applies to patterns across arms, not
 only to individual arms.**
 

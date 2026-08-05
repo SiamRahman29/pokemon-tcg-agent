@@ -4338,7 +4338,115 @@ second-least informative anchor in the set, and the opposite of the direction
 claimed. **Rule 1 exists for exactly this and it was violated by the person who
 maintains it.** The n=6 figure should never have been characterised at all.
 
-## 8aq. 🔴 CARD ATTRIBUTES ARE A CLEAN NULL — the §8ap diagnosis survives, this repair for it does not (2026-08-05, day 20)
+## 8aw. 🔴 THE EMBEDDING DEFECTS WERE REAL, THE FIXES ARE CORRECT, AND BOTH ARE NULLS — plus 92% of the tables are free to delete (2026-08-06, day 21)
+
+Full record: `docs/experiments/embeddings/E8-vocab-remap.md`. Nets
+`out/policy_v7_s{0,1}.npz` (remap+UNK+pad) and `out/policy_v7pad_s{0,1}.npz`
+(pad only) against the same-session control `out/policy_v5c_s{0,1}.npz`.
+Driver `scripts/p57_e8_arena.py`; logs `out/emb/e8_v7.log`, `out/emb/e8_v7b.log`.
+
+### The two defects, measured
+
+1. **90% of every table ships untrained.** `slot_emb` 104/1300 rows ever got a
+   gradient, `bag_emb` 134/1300, `card_emb` 135/1300, `atk_emb` **57/1600**.
+   88,000 embedding parameters ship; ~6,880 (7.8%) were ever trained. The
+   untrained rows are **not** inert: their norms (3.908–3.953) are
+   indistinguishable from trained rows' (3.970–4.068), so a card the corpus
+   never contained arrives as a confident arbitrary identity rather than as
+   "unknown".
+2. **Row 0 is overloaded across 25.5% of all slot lookups** — empty slot, out of
+   range, no stadium, no effect, no `padding_idx`. The net drove
+   `|slot_emb[0]|` to **2.337** against a 3.958 table mean (11th smallest of
+   1,300) — it taught itself what `padding_idx=0` gives exactly and for free.
+
+### The fix and the sizing gate that priced it first
+
+`train_policy.py --vocab` collapses each table to row 0 = PAD (`padding_idx`),
+row 1 = a shared UNK, rows 2.. = the seen ids, per-table. **88,000 → 6,960
+parameters (−92.1%)**, every layer width unchanged (`state_in` 708 on both
+arms). Verified firing: UNK hits 6/6 v10 Pokémon, 2/4 archaludon, **0/4
+crustle, 0/6 mirror**.
+
+🔴 **Rule 14, run before the arena: UNK can only bite on ~12% of the weighted
+field** (v10 4.0% + archaludon 8.0%); everything else is ≥78% in vocabulary.
+Recorded in advance so a positive out-of-vocab arm could not later be quoted as
+a field-wide result.
+
+### Result — both interventions are nulls
+
+| arm | opponent | weight | v7 Δ | v7pad Δ |
+|---|---|---|---|---|
+| A | mirror, **direct** | 33.3% | 0.487 [0.470, 0.506] | 0.4875 [0.470, 0.506] |
+| E | rule:alakazam5 | 22.0% | −0.009 | — |
+| D | rule:archaludon | 8.0% | −0.028 | — |
+| B | rule:crustle | 6.7% | −0.003 | −0.014 |
+| C | rule:v10 | 4.0% | +0.021 | +0.015 |
+| | **weighted** | | **−0.0099** (74%) | **−0.0047** (44%) |
+
+n=1500 games/cell/seed, 2 seeds. Two-cell 95% resolution **±0.036 per seed,
+±0.025 pooled**; arm A direct is √2× tighter.
+
+⚡ **The one arm whose seeds agreed does not survive attribution.** v7's arm C
+(+0.018 / +0.023) was the entire case for UNK. But **`v7pad` has no UNK row** —
+it keeps all 1,300 rows including the untrained ones and changes only
+`padding_idx` — and it scored **+0.034** on that same arm at seed 0, *higher*
+than v7-with-UNK, then −0.005 at seed 1. ⇒ both readings of arm C were
+single-seed artefacts and the gain cannot be attributed to the mechanism it was
+built to test. The decomposition also separates nothing: v7 and v7pad pool to
+the same 0.487 on the mirror, so the mirror cost is not the capacity cut.
+
+### ⚡ What is NOT a null: capacity is now bounded from both directions
+
+**92% of the embedding parameters — 11.5% of the whole net — can be deleted for
+0.0018 of corpus fit on one seed and 0.0003 on the other**, with no anchor
+moving outside noise. Read with §8w (8.2× the parameters bought **−43
+decisions**), the same net has now been measured to be insensitive to capacity
+*added* and capacity *removed*. **Nothing in this project has ever been
+capacity-limited.**
+
+### 🔴 The seed floor does not carry to anchors, and now not even to the mirror
+
+The day-20 box already warned that §8z's ±0.019 floor is a mirror-direct number
+(`rule:v10` control seeds read 0.616 / 0.571). E8 adds two instances where the
+between-seed swing **exceeds what sampling can produce**:
+
+| arm | seed 0 → seed 1 | swing | 95% sampling |
+|---|---|---|---|
+| v7 D (archaludon) | +0.018 → −0.073 | **0.091** | ±0.051 |
+| v7pad A (**mirror, direct**) | 0.524 → 0.451 | **0.073** | ±0.036 |
+
+⇒ the escape hatch that the *direct* mirror arm is trustworthy at 2 seeds is
+now closed too. **Two seeds × 1,500 games under-resolves every anchor we own**,
+and single-seed anchor readings elsewhere in this repo are worth less than their
+printed intervals claim. ⚠ This does not retract §8z or §8aa — both ran at
+n=2,000 with replicated seeds — but it does say their intervals were optimistic.
+
+### Rule 15, third instance — and three errors caught inside this experiment
+
+A fourth candidate defect (*"`mode="mean"` erases copy counts on 57.4% of
+decisions"*) was **retracted before anything was built**: the bag flats keep
+duplicates and `EmbeddingBag(mode="mean")` divides by bag LENGTH, so the pool is
+a count-weighted average `Σ (count_c/n)·e_c` — multiplicity survives. The
+`--bagsum` arm was dropped; `sum = n·mean` and `n` is already dense.
+
+Also corrected in-flight: (i) the driver printed **one cell's** width for a
+two-cell delta, understating resolution by 41%; (ii) a **dose-response reading
+across four arms** was published from single-seed cells each inside its own
+interval and destroyed by the next data point — *rule 1 applies to patterns
+across arms, not only to individual arms*; (iii) the driver printed "SUPPORTS
+the UNK mechanism" for a net with no UNK row.
+
+⇒ **`dist/submission.tar.gz` is unchanged** (v5, md5 `dc1c9acc5ead16e5`).
+
+---
+
+## 8av. 🔴 CARD ATTRIBUTES ARE A CLEAN NULL — the §8au diagnosis survives, this repair for it does not (2026-08-05, day 20)
+
+> ⚠ **Renumbered 2026-08-06.** This section was filed as §8aq and §8aq was
+> already taken (*"an anchor changed after its last measurement"*, day 18), as
+> §8ap was by the E6 section below. Both originals are cross-referenced across
+> HANDOFF and EVIDENCE, so the NEW sections moved: E6 §8ap → **§8au**, E7 §8aq →
+> **§8av**. Letters in use through §8at; append from §8au.
 
 Full record and pre-registration:
 `docs/experiments/embeddings/E7-card-attributes.md`, written before any arena
@@ -4415,7 +4523,7 @@ containing it**. That is a data question, not an embedding question. `--drop-a`
 sub-attribution is deliberately **not run** — five retrains against a null block
 is wasted compute.
 
-## 8ap. 🔴 THE IDENTITY CHANNEL IS WORTH A QUARTER OF THE WIN RATE — and against Mega Lucario it is ALREADY DEAD (2026-08-04, day 20)
+## 8au. 🔴 THE IDENTITY CHANNEL IS WORTH A QUARTER OF THE WIN RATE — and against Mega Lucario it is ALREADY DEAD (2026-08-04, day 20)
 
 Full record: `docs/experiments/embeddings/E6-identity-channel.md`. No retraining
 anywhere in this section — every arm is the frozen `out/policy_v5.npz`
