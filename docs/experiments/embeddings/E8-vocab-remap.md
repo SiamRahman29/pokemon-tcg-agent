@@ -256,6 +256,44 @@ seed 1, and moves no anchor outside noise. Read against §8w — which *added*
 directions on the same net. Nothing in this project has ever been
 capacity-limited.
 
-## Results — decomposition (v7pad) and reach (arms D, E)
+## Results — reach (arms D, E)
+
+`out/emb/e8_v7b.log`. Arm E (alakazam5, 22.0% weight) was added AFTER seeing
+arm C, so it is corroborating, not pre-registered. Arm D was pre-registered.
+
+| arm | opponent | out-of-vocab Pokémon | seed 0 | seed 1 | pooled |
+|---|---|---|---|---|---|
+| B | crustle | 0/4 (0%) | +0.004 | −0.010 | −0.003 |
+| E | alakazam5 | 2/9 (22%) | +0.005 | _pending_ | — |
+| D | archaludon | 2/4 (50%) | +0.018 | **−0.073** | **−0.028** |
+| C | v10 | 6/6 (100%) | +0.018 | +0.023 | **+0.021** |
+
+### ❌ RETRACTED mid-run — the dose-response reading
+
+After seed 0 alone, the four arms ordered monotonically by out-of-vocabulary
+fraction (−0.003 / +0.005 / +0.018 / +0.021) and this was reported as evidence
+for the mechanism that no single unresolved arm could provide. **Seed 1 of arm
+D came back at −0.073 and destroyed it.** Pooled arm D is −0.028; the ordering
+is gone.
+
+⚠ The reading was constructed from **single-seed cells each inside its own
+±0.036 interval** — in the same session that had already recorded that exact
+error as the reason E7 failed (EVIDENCE §8an, §8aq). Restating a known trap
+does not confer immunity to it. **Rule 1 applies to patterns across arms, not
+only to individual arms.**
+
+### What arm D measured instead, and it is worth more than the arm was
+
+The **control** scored 0.686 (seed 0) and 0.738 (seed 1) against archaludon —
+a **0.052 swing with nothing changed but the training seed**, against a
+sampling interval of ±0.025 per cell. Treatment swung 0.704 → 0.665.
+
+⇒ **seed-to-seed NET variance dominates sampling error on this anchor.** Two
+seeds do not resolve it, and any archaludon reading in this repo taken at a
+single seed is worth materially less than its printed interval claims. The
+mirror-derived seed floor (±0.019) is a *mirror* number and does not transfer
+to anchors played against a third party.
+
+## Results — decomposition (v7pad)
 
 _Pending._
