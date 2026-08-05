@@ -50,7 +50,36 @@ it lets any team name in a replay be joined to its rating.
 > `agents/sa/policy_net.npz` is the old `policy_lw2` (width 496) and is **stale
 > in the tree but not what ships** — do not "fix" it by retraining.
 >
-> 🟡 **In flight (day 20):** v6 card-attribute block — `--attr` adds 276 state
+> 🔴 **v6 IS A CLEAN NULL — DO NOT REBUILD IT** (`EVIDENCE` §8aq). Arm A
+> (mirror, direct, pooled 2 seeds, n=600) **0.510 [0.470, 0.550]**; the
+> hypothesis arm vs `rule:v10` confirmed at n=2,000/cell resolves to
+> **+0.005 [−0.017, +0.027]**. Card attributes **do not** recover the identity
+> channel, and per rule 4 the out-of-vocabulary story is retracted *for this
+> intervention*. §8ap's diagnosis is untouched. The nets are kept at
+> `out/policy_v6_s{0,1}.npz`; **the shipped net is unchanged**.
+>
+> ⛔ **SCREEN ON THE DIRECT ARM.** A two-cell anchor delta (treatment vs control
+> against a third party) carries **±0.080** at n=300 — every screened delta in
+> E7 was inside it, and arm C's seed swing flipped sign. The mirror's direct
+> head-to-head is **2× tighter for the same games**. Take a two-cell delta to
+> n≥2,000 or do not quote it.
+>
+> ⚠ **§8z's ±0.019 seed floor is MIRROR-DIRECT and may not carry.** Against
+> `rule:v10` at n=2,000 the two control seeds read 0.616 / 0.571 (spread 0.045).
+>
+> 🟢 **Where §8ap actually points:** the corpus has **zero** Lucario games. E7
+> tried to fix an unseen archetype by re-encoding cards and failed. The untested,
+> simpler lever is **training data containing the archetype** — a data question,
+> not an embedding one.
+>
+> 🟡 **The v6 machinery is built and works if ever wanted:** `--attr`,
+> `--drop-a` + `features.A_GROUPS`, `artifacts/pds_v6`, and the dim guard
+> handles all four state widths (496 / 536 / 726 / 1002). `--drop-a`
+> sub-attribution was deliberately NOT run — five retrains against a null block.
+>
+> <details><summary>What v6 was (kept for the report chapter)</summary>
+>
+> `--attr` adds 276 state
 > columns (energyType / weakness / ability / resistance / weak-to-facing-type)
 > + a `cardType` one-hot on the option, all from the card DB, which covers all
 > 1,267 cards and therefore **transfers to cards the corpus never contained**.
@@ -62,9 +91,10 @@ it lets any team name in a replay be joined to its rating.
 > `rule:crustle`**; a uniform gain falsifies the mechanism.
 >
 > ⚠ **Thin support, stated before the result:** `weakness=5` (Mega Lucario's)
-> appears on **one** trained card and `energyType=6` on **five**. A null is live.
-> And the corpus has **zero** Lucario games, so "never trained on the matchup"
-> remains a sufficient competing explanation that no ablation can remove.
+> appears on **one** trained card and `energyType=6` on **five**. A null was
+> called live in advance, and a null is what it measured.
+>
+> </details>
 
 > # 🔴 READ THIS FIRST — B7 RAN ON DAY 11 AND IS CLOSED (2026-07-31 night)
 >

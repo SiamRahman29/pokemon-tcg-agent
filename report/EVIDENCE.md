@@ -4338,6 +4338,83 @@ second-least informative anchor in the set, and the opposite of the direction
 claimed. **Rule 1 exists for exactly this and it was violated by the person who
 maintains it.** The n=6 figure should never have been characterised at all.
 
+## 8aq. 🔴 CARD ATTRIBUTES ARE A CLEAN NULL — the §8ap diagnosis survives, this repair for it does not (2026-08-05, day 20)
+
+Full record and pre-registration:
+`docs/experiments/embeddings/E7-card-attributes.md`, written before any arena
+number existed.
+
+**The intervention.** `--attr` replaces identity-by-embedding-row with
+identity-by-attribute: 276 state columns (energyType, weakness, ability,
+resistance, weak-to-facing-type across 12 slots) plus a `cardType` one-hot and
+two target flags on the option vector, all read from the card DB, which covers
+**all 1,267 cards** and therefore describes cards the corpus never contained.
+Corpus `artifacts/pds_v6`, 248,985 rows, with `dense`/`xdense`/`opt_dense[:,:37]`
+verified byte-identical to `pds_v4` — the control trains on **identical rows**.
+
+**Sized before building** (`p55_attr_sizing.py`, rule 14): `cardType` at
+`opt_card` was the strongest thing found anywhere (7 distinct, modal 0.416,
+H/Hmax 0.780). The gate also **killed `aceSpec`** (one value corpus-wide) and
+**`pokemonType`/`evolutionType`** — the six stage/ex flags already encoded give
+12 distinct signatures and **none maps to more than one value of either**.
+
+**The pre-registered prediction was an ASYMMETRY:** gain against `rule:v10`
+(0/6 of its Pokémon in vocabulary) must exceed gain against `rule:crustle`
+(4/4), because a uniform gain would be a better feature block rather than
+evidence for the out-of-vocabulary mechanism.
+
+| arm | n | result |
+|---|---|---|
+| **A** mirror, direct, pooled 2 seeds | 600 | **0.510 [0.470, 0.550]** — includes 0.500 |
+| **C** `rule:v10,noS`, pooled 2 seeds | 2,000/cell | **+0.005 [−0.017, +0.027]** — includes 0 |
+
+🔴 **v6 does not promote, and per rule 4 the out-of-vocabulary story is
+RETRACTED for this intervention.** It is not falsified either: the two seeds
+disagreed in *sign* at both sample sizes (−0.030/+0.073 at n=300;
+−0.014/+0.024 at n=2,000). What is established is that **card attributes as
+implemented do not recover the identity channel** — not that identity is
+unimportant. §8ap stands untouched.
+
+⚡ **And the clone fit the corpus BETTER on both seeds** (`val_top1` 0.7190 vs
+0.7163, 0.7152 vs 0.7139) **while buying no strength** — rule 3's fourth
+independent confirmation.
+
+### 🔴 A DESIGN ERROR, and it is the most reusable thing here
+
+The screening arms B/C/D are a **difference of two independent cells**, so at
+n=300 each delta carries a 95% half-width of **±0.080**. Every screened delta
+was inside it. Those rows were **uninformative, not null** — and arm C's
+sign-flipping 0.103 seed swing is exactly what that resolution predicts.
+**Arm A's direct head-to-head is 2× tighter for the same number of games**
+(±0.040 at n=600), which is what `p33_anchor_resolution.py`'s `direct` flag has
+been saying about the mirror all along. Screen on the direct arm; take a
+two-cell anchor delta to n≥2,000 or do not quote it.
+
+### 🔧 A correction made inside the session that made the error
+
+After **seed 0 alone** this was written up mid-session as *"the pre-registered
+prediction is falsified… fails on direction."* **Seed 1 reversed the sign and
+that characterisation was wrong.** Same rule-1 failure §8an records from an n=6
+smoke, committed by the person applying the rule. One seed of a two-cell delta
+at n=300 licenses nothing.
+
+### ⚠ A seed-variance caution the next design must carry
+
+Against `rule:v10` at n=2,000 the two **control** seeds read **0.616 and 0.571**
+(spread 0.045) while the two treatment seeds read 0.602 and 0.595 (spread
+0.007). §8z's ±0.019 seed floor was measured **mirror-direct**; nothing licenses
+assuming it carries to a third-party anchor. Two seeds cannot characterise a
+variance — this is a flag, not a number to quote.
+
+### What it leaves
+
+The corpus contains **zero** Lucario games. E7 tried to repair an unseen
+archetype by re-encoding cards and it did not work. The untested and simpler
+explanation remains: the fix for an archetype never observed is **training data
+containing it**. That is a data question, not an embedding question. `--drop-a`
+sub-attribution is deliberately **not run** — five retrains against a null block
+is wasted compute.
+
 ## 8ap. 🔴 THE IDENTITY CHANNEL IS WORTH A QUARTER OF THE WIN RATE — and against Mega Lucario it is ALREADY DEAD (2026-08-04, day 20)
 
 Full record: `docs/experiments/embeddings/E6-identity-channel.md`. No retraining
