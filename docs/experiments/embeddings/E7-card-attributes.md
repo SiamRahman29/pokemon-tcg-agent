@@ -75,6 +75,19 @@ control:    --opt-cols 37          (opt_cols 37, state  726 == v5)
 Seeds 0 and 1 for both, because the measured seed-only floor is +/-13 Elo
 (~+/-0.019 win rate) and a single-seed result below that is claiming nothing.
 
+⚠ **Checkpoint selection is by best `val_top1`, not `--export-last`** — so the
+two arms may export different epochs, and part of any difference could be epoch
+count rather than the intervention. This matches how v4-vs-v4ctrl and v5 were
+compared, so it is the repo's standing precedent for two *pure clones* sharing
+one objective; EVIDENCE 8ao's demand for `--export-last` is specifically for
+arms whose objective departs from corpus fit (advantage weighting), which this
+is not. Recorded here rather than discovered later. v6 seed 0 exported **epoch
+10 of 12** (`val_top1` 0.7190).
+
+⚠ And rule 3 still binds: `val_top1` does **not** predict strength in either
+direction (8z moved it by 8 decisions for +37 Elo; 8aa by 214 for +14). No
+verdict below may cite it as evidence of anything.
+
 ## Instrument
 
 Every arm runs its own control **back to back in the same session**. No arm is
