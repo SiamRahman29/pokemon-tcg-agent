@@ -539,7 +539,14 @@ statement in here about "the meta" does not say **which score band** it describe
 distrust it: mined episodes are the top-1150 band, and
 `scripts/p9_field_census.py` on our own replays is ours (`EVIDENCE` §8i).
 
-### ▶ START HERE — DAY 19. THE USER'S CALL: RULE-BASED COUNTERS AGAINST THE TOP ARCHETYPES (B3). TWO THINGS ARE NEEDED FROM THE USER FIRST.
+### ⛔ SUPERSEDED — DAY 19's PLAN (B3, rule-based archetype counters). NOT the live plan; the live one is the DAY-23 PLAN at the top of this file.
+
+> ⚠ **Kept for its reasoning, not as a task list.** B3 never ran: day 19's
+> gating input (a fresh own-field census) was overtaken by the embedding
+> programme, and by day 22 the strategic picture had changed — every Elo axis is
+> closed and the report carries ~76% of the grade against the leaderboard's ~14%.
+> **Do not start B3 from this section.** The archetype-share table it depends on
+> is also pre-§8ay and therefore misweighted.
 
 > # 📥 WHAT THE USER IS BRINGING (asked for at the end of day 18)
 >
