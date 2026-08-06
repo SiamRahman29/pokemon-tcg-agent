@@ -24,7 +24,23 @@ STATS = {
     "net_missing": 0,    # net failed to load: also index-order, also silent
     "deck_returns": 0,   # the pre-battle deck handshake
     "first_error": None,  # the first traceback, verbatim, for the log
+    # E3 near-tie probe (day 23). An intervention whose firing rate is not
+    # printed cannot be distinguished from one that never fired -- rule 9, and
+    # the reason §8am reports "off-argmax selects" next to every score.
+    "flip_eligible": 0,
+    "flips": 0,
 }
+
+
+def _option_sig(obs: dict, option: dict) -> bytes:
+    """Bitwise identity of an option under the shipped encoding (§8x)."""
+    from .optfeat import option_features
+    import numpy as _np
+
+    dense, card_id, attack_id, target_id = option_features(obs, option)
+    return (_np.asarray(dense, dtype=_np.float32).tobytes()
+            + _np.asarray([card_id, attack_id, target_id],
+                          dtype=_np.int32).tobytes())
 
 
 def health_line() -> str:
@@ -38,6 +54,9 @@ def health_line() -> str:
     status = "OK" if bad == 0 else "DEGRADED"
     line = (f"[health] {status} calls={s['calls']} fallbacks={s['fallbacks']} "
             f"net_missing={s['net_missing']} deck={s['deck_returns']}")
+    if s["flip_eligible"]:
+        line += (f" flips={s['flips']}/{s['flip_eligible']}"
+                 f" ({s['flips'] / s['flip_eligible']:.1%})")
     if s["first_error"]:
         line += f" first_error={s['first_error'][:200]!r}"
     return line
@@ -45,7 +64,7 @@ def health_line() -> str:
 
 def reset_stats() -> None:
     STATS.update(calls=0, fallbacks=0, net_missing=0, deck_returns=0,
-                 first_error=None)
+                 first_error=None, flip_eligible=0, flips=0)
 
 
 class PolicyAgent:
@@ -56,8 +75,17 @@ class PolicyAgent:
                  counter_source: bool = True, chip_wall_defer: bool = True,
                  boss_prize_veto: bool = False,
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
-                 seq_budget: float = 0.35, seq_reply: bool = False):
+                 seq_budget: float = 0.35, seq_reply: bool = False,
+                 flip_margin: float | None = None):
         self.decklist = list(decklist)
+        # E3's teacher-free gate (day 23). Take the OTHER side of a near-tie:
+        # when the logit gap between the lowest-scored SELECTED option and the
+        # highest-scored UNSELECTED one is below this, swap them. This is not a
+        # candidate rule -- it is a probe that measures whether the band E3
+        # wants a human to relabel is indifferent, using no teacher at all.
+        # None = off, and `bc` with no flag is byte-identical in behaviour to
+        # what it was before this existed.
+        self.flip_margin = flip_margin
         # The FIFTH Boss's Orders rule: suppress the play when attacking
         # right now takes strictly more prizes than any drag can. The
         # other four picked a side in a trade and all measured null; this
@@ -154,6 +182,37 @@ class PolicyAgent:
         # 0.5. `bc:<label>,noWall` turns it off. See report/EVIDENCE.md §8c.
         self.chip_wall_defer = chip_wall_defer
 
+    def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
+        """Swap the boundary pair when their logit gap is under `flip_margin`.
+
+        The definition is `p43_dagger_queue.make_candidate`'s, deliberately and
+        exactly: same boundary pair (lowest selected vs highest unselected),
+        same exclusion of bitwise-equivalent options -- two copies of one card
+        in one role are a free tie by construction (§8x) and flipping them
+        would dilute the treatment with a known no-op. If the two scripts ever
+        disagree, the sizing no longer describes the intervention.
+
+        ⚠ Costs a second forward pass (~1.2 ms). `bc` has no time-budgeted
+        component and uses 1.12 s of a 1,800 s pool, so this is not a compute
+        confound the way E5's planner was -- but it IS an asymmetry between the
+        arms, and it is stated rather than assumed away.
+        """
+        options = (obs.get("select") or {}).get("option") or []
+        chosen = set(picked)
+        unchosen = set(range(len(options))) - chosen
+        if not chosen or not unchosen:
+            return picked
+        STATS["flip_eligible"] += 1
+        scores = net.scores(obs)
+        low = min(chosen, key=lambda i: float(scores[i]))
+        high = max(unchosen, key=lambda i: float(scores[i]))
+        if float(scores[low]) - float(scores[high]) >= self.flip_margin:
+            return picked
+        if _option_sig(obs, options[low]) == _option_sig(obs, options[high]):
+            return picked
+        STATS["flips"] += 1
+        return [high if i == low else i for i in picked]
+
     def __call__(self, obs: dict) -> list[int]:
         STATS["calls"] += 1
         try:
@@ -188,6 +247,8 @@ class PolicyAgent:
                 STATS["net_missing"] += 1
                 return list(range(mn))
             picked = net.choose(obs)
+            if self.flip_margin is not None:
+                picked = self._flip_near_tie(net, obs, picked)
             if self.boss_veto:
                 # lazy: the full ranking costs a second forward pass, and the
                 # veto fires only when the net's top pick is Boss's Orders

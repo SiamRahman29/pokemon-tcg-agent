@@ -218,6 +218,9 @@ def build_agent(spec: str, deck: list[int],
         sequencer = False
         seq_k, seq_dets, seq_budget = 8, 4, 0.35
         seq_reply = False
+        # E3 near-tie probe: None = off, and the agent is then byte-identical
+        # in behaviour to what it was before the probe existed.
+        flip_margin = None
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -259,6 +262,11 @@ def build_agent(spec: str, deck: list[int],
                 # opponent's reply turn instead of at the end of ours. Implies
                 # `seq` -- on its own it does nothing.
                 seq_reply = f == "reply"
+            elif f.startswith("flip"):
+                # E3's teacher-free gate: take the OTHER side of every
+                # boundary near-tie under this logit margin. `flip0` is a
+                # no-op control that still pays the second forward pass.
+                flip_margin = float(f[4:])
             elif f.startswith("sk"):
                 seq_k = int(f[2:])          # candidates per select
             elif f.startswith("sd"):
@@ -292,7 +300,8 @@ def build_agent(spec: str, deck: list[int],
                                 chip_wall_defer=wall, boss_prize_veto=bossprize,
                                 sequencer=sequencer,
                                 seq_k=seq_k, seq_dets=seq_dets,
-                                seq_budget=seq_budget, seq_reply=seq_reply)
+                                seq_budget=seq_budget, seq_reply=seq_reply,
+                                flip_margin=flip_margin)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

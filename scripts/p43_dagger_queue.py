@@ -37,6 +37,13 @@ from sa import cards, policynet  # noqa: E402
 from sa.optfeat import option_features  # noqa: E402
 
 
+# Why a decision never became a rankable candidate. Sizing the near-tie band
+# (the teacher-free E3 gate) needs the DENOMINATOR, and until day 23 every
+# ineligible decision was discarded without saying which filter took it -- so
+# "8,963 candidates" could not be turned into a per-game firing rate.
+REASONS: Counter = Counter()
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -176,36 +183,44 @@ def make_candidate(path: Path, replay: dict, visual_index: int, v: dict,
     sel = obs.get("select") or {}
     options = sel.get("option") or []
     if state.get("result") != -1 or len(options) < 2:
+        REASONS["not_a_live_multi_option_select"] += 1
         return None, False
     names = (replay.get("info") or {}).get("TeamNames") or []
     me = int(state.get("yourIndex", -1))
     if me not in (0, 1) or me >= len(names) or names[me] != player:
+        REASONS["not_our_seat"] += 1
         return None, False
     actual = selected(v, len(options))
     if actual is None:
+        REASONS["unparseable_action"] += 1
         return None, False
     mn = int(sel.get("minCount") or 0)
     mx = int(sel.get("maxCount") or 0)
     if mx == 0 or (mn == mx == len(options)):
+        REASONS["forced"] += 1
         return None, False
 
     scores = net.scores(obs)
     clone = net.choose(obs)
     faithful = set(actual) == set(clone)
     if not faithful:
+        REASONS["replay_clone_mismatch"] += 1
         return None, True
     chosen = set(clone)
     unchosen = set(range(len(options))) - chosen
     # The first E3 round targets ranking errors. If every option is selected,
     # the missing signal is a stop/count logit, which v5 does not have.
     if not chosen or not unchosen:
+        REASONS["no_boundary"] += 1
         return None, True
     low_chosen = min(chosen, key=lambda i: float(scores[i]))
     high_unchosen = max(unchosen, key=lambda i: float(scores[i]))
     if option_signature(obs, options[low_chosen]) == option_signature(
             obs, options[high_unchosen]):
         # Two copies of the same card in the same role are a free tie (§8x).
+        REASONS["bitwise_equivalent_tie"] += 1
         return None, True
+    REASONS["rankable"] += 1
     margin = float(scores[low_chosen] - scores[high_unchosen])
     probs, entropy = softmax_stats(scores)
     replay_id = str(replay.get("id") or path.stem)
@@ -276,6 +291,43 @@ def curate(candidates: list[dict], size: int, per_replay: int,
     return out
 
 
+def _dump_margins(path: Path, candidates: list[dict], n_games: int) -> None:
+    """Sizing report for a near-tie intervention (rule 14, day 23).
+
+    The queue shows the 160 smallest margins, which says nothing about how
+    OFTEN a `margin < tau` rule would fire in a real game. This prints the
+    whole distribution against the real denominator: every decision the clone
+    faced, including the ones no filter would ever reach.
+    """
+    margins = sorted(float(x["boundary_margin"]) for x in candidates)
+    n = len(margins)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"E3 near-tie sizing over {n_games} games "
+             f"({n} rankable candidates)", ""]
+    lines.append("eligibility funnel (every decision seen, by why it fell out):")
+    total = sum(REASONS.values())
+    for reason, count in REASONS.most_common():
+        lines.append(f"  {reason:<32} {count:>7}  {count / max(total, 1):6.1%}"
+                     f"  {count / max(n_games, 1):7.2f}/game")
+    lines.append(f"  {'TOTAL decisions considered':<32} {total:>7}")
+    lines.append("")
+    lines.append("boundary-margin distribution over rankable candidates:")
+    for q in (1, 5, 10, 25, 50, 75, 90, 99):
+        lines.append(f"  p{q:<3} {margins[min(n - 1, q * n // 100)]:10.4f}")
+    lines.append(f"  max  {margins[-1]:10.4f}")
+    lines.append("")
+    lines.append("if a rule flipped every decision with margin < tau:")
+    lines.append(f"  {'tau':>8} {'candidates':>11} {'% of rankable':>14} "
+                 f"{'fires/game':>11}")
+    for tau in (0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0):
+        below = sum(1 for m in margins if m < tau)
+        lines.append(f"  {tau:8.2f} {below:11d} {below / max(n, 1):13.1%} "
+                     f"{below / max(n_games, 1):11.2f}")
+    text = "\n".join(lines) + "\n"
+    path.write_text(text, encoding="utf-8")
+    print(text)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -288,6 +340,10 @@ def main() -> int:
     ap.add_argument("--per-bucket", type=int, default=24,
                     help="first-pass cap per (select type, context)")
     ap.add_argument("--out", default="out/e3/review_queue.jsonl")
+    ap.add_argument("--dump-margins", default=None,
+                    help="write EVERY rankable candidate's boundary margin "
+                         "(not just the queued 160) plus the eligibility "
+                         "denominator, for sizing a near-tie intervention")
     args = ap.parse_args()
 
     net_path = ROOT / args.net
@@ -326,6 +382,9 @@ def main() -> int:
             if errors <= 5:
                 print(f"{path.name}: {type(exc).__name__}: {exc}",
                       file=sys.stderr)
+
+    if args.dump_margins:
+        _dump_margins(Path(args.dump_margins), candidates, len(paths))
 
     fidelity = 1.0 - mismatched / max(eligible, 1)
     if fidelity < 0.95:

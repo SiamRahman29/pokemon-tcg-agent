@@ -1,0 +1,33 @@
+E3 near-tie sizing over 115 games (8963 rankable candidates)
+
+eligibility funnel (every decision seen, by why it fell out):
+  rankable                            8963   45.8%    77.94/game
+  not_our_seat                        7837   40.0%    68.15/game
+  not_a_live_multi_option_select      1824    9.3%    15.86/game
+  bitwise_equivalent_tie               799    4.1%     6.95/game
+  forced                                81    0.4%     0.70/game
+  no_boundary                           49    0.3%     0.43/game
+  replay_clone_mismatch                 20    0.1%     0.17/game
+  TOTAL decisions considered         19573
+
+boundary-margin distribution over rankable candidates:
+  p1       0.0111
+  p5       0.0567
+  p10      0.1316
+  p25      0.5126
+  p50      1.4792
+  p75      3.4552
+  p90      5.7999
+  p99      8.5368
+  max     12.7162
+
+if a rule flipped every decision with margin < tau:
+       tau  candidates  % of rankable  fires/game
+      0.01          85          0.9%        0.74
+      0.05         400          4.5%        3.48
+      0.10         733          8.2%        6.37
+      0.25        1382         15.4%       12.02
+      0.50        2207         24.6%       19.19
+      1.00        3479         38.8%       30.25
+      2.00        5251         58.6%       45.66
+      4.00        7118         79.4%       61.90
