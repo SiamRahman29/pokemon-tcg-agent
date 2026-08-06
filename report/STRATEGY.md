@@ -395,9 +395,10 @@ and found **three genuine defects**, each measured rather than asserted:
 
 All three are real. All three were repaired, and the repairs were verified to
 fire exactly where predicted. **All three measured nothing.** Weighted over the
-anchor set: **−0.0099** for the full repair and **−0.0047** for the isolated
+anchor set: **−0.0078** for the full repair and **−0.0047** for the isolated
 padding fix — both inside the run-to-run noise of simply retraining with a
-different seed.
+different seed. (Published as −0.0099 and corrected in a later audit of our own
+arithmetic; §8 records both figures and why they differ.)
 
 **Why they could not have paid, in hindsight and now in evidence:**
 

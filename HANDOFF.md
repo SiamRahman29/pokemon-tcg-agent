@@ -224,7 +224,7 @@ it lets any team name in a replay be joined to its rating.
 > corpus and a net's map is stale — that means retraining, not remapping.
 >
 > 🟡 **Shipping v7 is an open judgement call, deliberately not taken.** Default
-> is **v5 keeps shipping** — v7's −0.0099 is not resolved as a loss (every arm
+> is **v5 keeps shipping** — v7's −0.0078 is not resolved as a loss (every arm
 > spans zero) but the point estimate is on the wrong side, and the LB's
 > 63.2-point floor cannot adjudicate it. Correctness gain real, strength gain
 > measured zero. To change it, name the agent the submission would evict first.
@@ -234,7 +234,7 @@ it lets any team name in a replay be joined to its rating.
 > E6 measured that identity carries a quarter of the win rate; E7 tried to
 > recover it from card attributes (null); E8 fixed the two *real* defects — 90%
 > of rows shipping untrained, and row 0 overloaded across 25.5% of lookups — and
-> both fixes measure **weighted −0.0099 (v7) and −0.0047 (v7pad)** over 74% and
+> both fixes measure **weighted −0.0078 (v7) and −0.0047 (v7pad)** over 74% and
 > 44% of the field. **A real defect is not a lever.** Nets kept at
 > `out/policy_v7_s{0,1}.npz` / `out/policy_v7pad_s{0,1}.npz`; **v5 still ships**.
 >

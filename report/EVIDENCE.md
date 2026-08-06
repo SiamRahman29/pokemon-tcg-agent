@@ -3957,7 +3957,12 @@ confirmation is independent of the screen.
 | **WEIGHTED** | **86.0%** | | | | **−0.0140** |
 
 **ΔW = −0.0140 against a design resolution of ±0.0050 — 2.8× outside, and
-negative on every anchor.** ⛔ **The pre-registered kill line is not met. G dies,
+negative on every anchor.**
+⚠ **Restated day 22 (§8ay): at the corrected field shares this is −0.0155, and
+against the honestly combined resolution (game sampling ⊕ weight uncertainty,
+±0.0059) it is 2.6× outside — negative in 100% of bootstraps. The weights above
+are the ones published on the day; the verdict does not depend on which set is
+used.** ⛔ **The pre-registered kill line is not met. G dies,
 and per the pre-registration THE SEARCH IS OVER: no second candidate is
 promoted.** That clause is what makes this one test instead of eleven.
 
@@ -4520,7 +4525,14 @@ three documents kept quoting the calibration.** The commit verified it on **six
 recorded games** and said so honestly — but n=6 is rule 1, and nothing forced the
 n=2,000 re-read.
 
-### 🔴 The finding underneath it: the tie-break is worth more than the repair
+### ⛔ RETRACTED (§8ax) — ~~the finding underneath it: the tie-break is worth more than the repair~~
+
+⚠ **Everything in this subsection compares two cells that were run on different
+decks.** It is kept as written because the reasoning was sound given what the
+archive appeared to say, and because the way it failed is the point: the pilot
+column below is correct and complete, and the confound is in a column that was
+not printed at all. Same-deck, the tie-break is **+0.027** and the guard
+**−0.038**.
 
 v3 → v4 differ in **one term** — whether the empty-bench guard prefers Dwebble.
 Everything else, including the guard itself, is identical. That tie-break is
@@ -4779,7 +4791,8 @@ branch:
 - Nets: `out/policy_v7_s{0,1}.npz`, `out/policy_v7pad_s{0,1}.npz`.
 
 ⚠ **What shipping it would cost, stated so the decision is not made by
-accident.** v5 holds a settled ladder position; v7 measures **−0.0099 weighted**
+accident.** v5 holds a settled ladder position; v7 measures ~~−0.0099~~
+**−0.0078 weighted** (arithmetic corrected day 22, §8ay; the verdict is the same)
 — *not* resolved as a loss (every arm's interval spans zero, and the one arm
 outside it is the one where seed variance exceeds sampling variance), but the
 point estimate is on the wrong side and the LB's 63.2-point floor cannot
@@ -5202,6 +5215,13 @@ It simply was not what moved the number.
 > actually ship**: v4 resolves better than the broken v1 (0.768) *and* keeps the
 > guard. **WHICH Pokémon it benches matters more than WHETHER it benches.**
 > `EVIDENCE` §8aq.
+>
+> ⛔ **AND THE ANSWER WAS ITSELF WRONG — RETRACTED BY §8ax (day 22).** The 0.866
+> and the 0.755 are two different **decks**, 20 of 60 slots apart, worth
+> **+0.140**. Same-deck the tie-break is **+0.027** and the guard **−0.038**, so
+> the last sentence above is reversed and this section's *original* Result 2 —
+> the one the box was written to overturn — is closer to right than its
+> correction was. ⚠ **Two successive corrections, each confident, on one anchor.**
 
 `return 90000` **dominates every other option in the set** — Dwebble as a wanted
 card is 25000 and nothing else comes close. So whenever the bench is empty the

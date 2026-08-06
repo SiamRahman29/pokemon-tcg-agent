@@ -335,7 +335,12 @@ was built to test.
 | B | crustle | 6.7% | −0.003 | no (+0.004 / −0.010) |
 | C | v10 | 4.0% | +0.021 | yes (+0.018 / +0.023) |
 
-**Weighted: −0.0099.**
+**Weighted: ~~−0.0099~~ −0.0078.** 🔴 The published −0.0099 was an arithmetic
+error, found in the day-22 audit (`EVIDENCE` §8ay) and corrected here: summing
+the Δ column above with the weights above gives **−0.0078**, and the archive
+confirms the mirror cell at 0.4872 over 3,000 games. The −0.0099 total implied a
+mirror Δ of −0.019 that appears nowhere. **The verdict is unchanged** — both
+figures are unresolved nulls with the point estimate on the wrong side.
 
 **v7pad (pad only)**, over 44.0%: **weighted −0.0047.**
 
