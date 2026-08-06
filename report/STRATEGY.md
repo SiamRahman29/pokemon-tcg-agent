@@ -75,11 +75,21 @@ primary record; this report cites it rather than restating it.
 | training scale/objective | 5 | all negative (§1) |
 | demonstrator selection | 2 (B7) | both negative, −55 and −92 Elo (§7b.3) |
 | search | 2 | both negative (§2) |
-| self-play RL | **0 — never run** | not a result; a decision misfiled as one (§1, §8) |
+| turn-level sequencing | 3 builds + a 4-arm compute sweep | negative; harmful in proportion to how often it fires (§8) |
+| **league self-play from scratch** | **0 — never run** | not a result; a decision misfiled as one (§1, §8) |
+| **RL fine-tune on our own outcomes (B8)** | 2, 20,000 self-play games | both null against a pre-registered bar; closed by a rule written before the second (§8) |
 | targeting rules | 7 A/B'd at n≥2000 | 3 win, 4 null (§3) |
-| feature representation | 1 (B1) | large win (§8f) |
+| feature representation | **5 (B1, four generations + embeddings)** | **+115 → +37 → +14 → 0 → 0 Elo** (§4, §4g) |
+| auxiliary / adapter / attribute variants (E1, E2, E6, E7) | 4 programmes, 9 arms | all null (§4g, §8) |
 | matchup branches | 1 shipped | +0.104 recovered (§8c) |
+| decklist search | 11 pre-registered variants + 1 confirmation | all ≤ 0; the consensus 60 survived (§7c.4) |
 | sized and closed without an A/B | 6 | (§8, §8e) |
+
+⚠ **The two rows about reinforcement learning are deliberately separate.** We
+never ran league self-play from scratch, and for one day this report described
+that *decision* as though it were a *measurement*; B8 is the experiment that did
+run, and it is a measured null. Conflating them would let a decision borrow the
+authority of an experiment, which is the error §5 exists to record.
 
 ---
 
@@ -1331,6 +1341,33 @@ Honest nulls at n≥2000 are the section we are most confident in.
   repair also removed **11.5% of the network** for 0.0018 of held-out fit,
   which with the opposite experiment (8.2× parameters, −43 decisions) bounds
   capacity from both directions.
+- **Reinforcement learning on our own outcomes (B8)** — the largest negative
+  here, and the one with the strictest pre-registration. The clone was fine-tuned
+  on games it had played itself, weighting each decision by the advantage of the
+  result that followed it: **17.2% of the parameters trainable (the head), the
+  imitation corpus retained as an anchor, and a numeric bar of ≥0.541 at n=2,000
+  computed and written down before the A/B ran** (the bar is the measured
+  seed-only null, 0.482, reflected about 0.5 — so "beats a retrain with a
+  different seed" and nothing less). Two runs:
+
+  | self-play corpus | treatment vs its control | control vs v5 |
+  |---|---|---|
+  | 4,000 games (702,138 rows) | **0.512** [0.491, 0.534] | 0.480 [0.458, 0.502] |
+  | **16,000 games** (1,211,887 rows) | **0.506** [0.484, 0.528] | 0.491 [0.469, 0.513] |
+
+  Both fail the bar, and **both controls sit on v5** — which is what makes this a
+  null rather than two damaged nets compared to each other. ⚡ **The part worth
+  copying is how it closed.** Before the second run reported, we committed a
+  decision rule: *if 4× the data moves the estimate materially up, the axis is
+  data-limited and a 40,000-game run is justified; if it moves at or below the
+  first estimate, the axis closes on the method.* It went **0.512 → 0.506**. **The
+  10× run was feasible and was not run**, because the rule said so and the rule
+  existed before the number did. ⚠ Two honest limits, both stated at the time:
+  the AWR temperature β was 1.0 in both runs and a sweep was declined by our own
+  no-shopping rule, so "a stronger reweighting might work" is *unfalsified*, not
+  refuted; and a parameter diagnostic taken before the result showed the advantage
+  weighting moved the head by **34% of the distance the fine-tune itself moved it
+  from v5** — so the parameters moved substantially and the win rate did not.
 - **Demonstrator weighting** — a fourth axis, and the one we most expected to
   work. Weighting every training row by its demonstrator's leaderboard rating
   (effective sample size held at 41% of the corpus, everything else identical)
