@@ -1054,7 +1054,73 @@ mode of your demonstrator mixture, and moving the target off that mode costs
 more than the better target gains — even when the better target is measurably,
 symmetrically better and you successfully imitate it.*
 
-## 7c. The deck: we tried to improve a netdecked list and measured ourselves failing
+## 7c. The deck
+
+### 7c.1 The concept: a 320 HP attacker that refuels itself, behind chip damage the opponent cannot block
+
+`Marnie's Grimmsnarl ex / Munkidori`, {D}-type. The plan is not a damage race —
+it is to field a body nothing removes cleanly, then win on arithmetic the
+opponent cannot interact with.
+
+**The win condition.** *Marnie's Grimmsnarl ex* (×3) has **320 HP** and attacks
+for **180, plus 30 to a benched Pokémon** (Shadow Bullet). The bench 30 is the
+part that matters: it is not a bonus, it is the deck's clock.
+
+**Why the deck can afford it.** Grimmsnarl ex's ability **Punk Up** fires *when
+you evolve into it* and searches **up to 5 Basic {D} Energy out of the deck**,
+attaching them to any Marnie's Pokémon. Energy acceleration is welded to the
+evolution itself, which is why a deck that attacks with a 320 HP ex runs **10
+energy and zero manual acceleration**. *Rare Candy* (×3) skips Morgrem so the
+trigger lands a turn early.
+
+**Two damage sources the opponent cannot block.**
+
+* ***Munkidori* ×4 — Adrena-Brain**: once per turn, move up to **3 damage
+  counters** from one of your Pokémon to one of theirs. It does two jobs in one
+  activation — it *repairs the 320 HP wall* and *adds reach* — which is why the
+  deck runs the full four rather than treating it as tech.
+* ***Froslass* ×2 (behind *Snorunt* ×2) — Freezing Shroud**: during every
+  Pokémon Checkup, put 1 damage counter on **every Pokémon with an Ability, on
+  both sides**, except Froslass. Unblockable, symmetric, and asymmetric in
+  practice — our attacker is being healed by Munkidori while theirs is not.
+
+**The consistency package exists to make one line happen on schedule.**
+*Spikemuth Gym* (×4, Stadium) lets each player tutor a **Marnie's** Pokémon once
+per turn — our entire evolution line is Marnie's, so it is a repeatable engine
+tutor for us and much weaker for most opponents. *Buddy-Buddy Poffin* (×4) puts
+the basics down, *Team Rocket's Petrel* (×4) tutors **any Trainer**, and
+*Lillie's Determination* (×4) shuffle-draws 6 (8 while we still hold 6 prizes).
+*Boss's Orders* (×2) drags the prize we need; *Unfair Stamp* (×1) is the comeback
+card, playable only after we lose a Pokémon.
+
+⇒ **How the win actually arrives.** Rarely by one big attack. Shadow Bullet's
+bench 30, plus Adrena-Brain's up-to-3 counters, plus Froslass's per-Checkup
+counter, mean the opponent's whole board accumulates damage it cannot heal, until
+everything on it dies to a number *smaller than a full attack*. **The deck wins
+by making the opponent's board fragile, not by making our attacker bigger.**
+
+### 7c.2 How the deck and the agent line up — and the twist
+
+This engine demands arithmetic: *which* target dies to exactly 30, *which*
+Munkidori still needs a {D}, *which* Pokémon has 3 counters available to move.
+We first supplied that as three hand-written rules — `chip_target`,
+`energy_spread`, `counter_source` — precisely because the network's option
+encoding showed neither HP nor attached-energy counts, so the clone was aiming
+chip damage at chance. Each cleared its own A/B.
+
+🔴 **And the shipped agent runs all three turned OFF.** Once the option encoding
+was extended to carry that same information as *features*, the three rules
+measured **0.427** against the resulting net — actively harmful, because they
+were now overriding a network that could finally see what they were computing.
+`build_submission.py` pins them off at build time.
+
+⚡ **That is this project's whole thesis, told through the deck.** The deck's
+game plan defined what information the agent needed; we supplied it twice, once
+as rules and once as representation, and **the representation won and made the
+rules redundant.** The alignment between deck and agent is real — it just lives
+in the feature vector rather than in an `if` statement.
+
+### 7c.3 Can we do better than the list we copied?
 
 We did not design our 60. We mined it — it is card-for-card the most common exact
 list among top episodes, seen **353 times in a single day's data**. That is an
@@ -1129,7 +1195,56 @@ is worse anyway. **This is not an execution failure — the plan loses.**
 > significant losses, which is what an unstructured search over a
 > near-optimal 60 should produce. A serious deck programme needs a
 > matchup-stratified design over the whole slot ranking, not a sequence of
-> hunches — and we ran out of days before building one.
+> hunches.
+
+### 7c.4 So we built the search, pre-registered it, and it found nothing
+
+Guessing was retired as a method and replaced with a design. **The candidate list
+— 11 variants — was frozen in a file committed *before* any variant deck
+existed**, because a search over *k* variants at α=0.05 manufactures a winner at
+k≈20, and the whole point was to be unable to shop for one.
+
+**Two stages, with the multiplicity rule doing the work.** Stage 1 *ranks* all 11
+cheaply in the mirror against the same-deck control; it computes no p-values by
+design. **Only the top-1 is promoted**, and the pre-registration said in advance
+that if it fails, the search is over and no second candidate is tried. Stage 2
+confirms that one variant across all seven anchors at a Neyman-allocated
+**57,600 games** — an allocation chosen because it reaches the same precision as
+equal-n for 55% of the cost.
+
+| stage | result |
+|---|---|
+| stage 1, 11 variants | 🔴 **all 11 at or below the control.** Six of eight mirror candidates lost significantly |
+| stage 2, candidate G, 7 anchors | **ΔW = −0.0155** against a design resolution of ±0.0059 — **negative on 7 of 7** |
+
+⛔ **The kill line was not met, so the search is over and the consensus 60
+stands.** That clause is what made this one test instead of eleven.
+
+⚡ **Three things this bought that a single A/B could not.** First, **Ultra Ball
+was held fixed as the added card across six different cut slots and lost in all
+six** (0.439–0.488) — which separates *"we cut six good slots"* from *"the added
+card is wrong"*, and only the second explains six losses. Second, the cheap
+screen predicted the expensive confirmation almost exactly: stage 1 called the
+mirror at **0.501** on 4,000 games, stage 2 at **0.500** on 15,800 — the
+two-stage design's central bet, confirmed on first use. Third, a separate
+isolation run showed a five-card bundle's −0.073 splitting into **−0.040 for one
+2-card change and −0.033 for the other three**, which is why bundled changes are
+not attributable and are no longer run.
+
+🔴 **We also learned the exposure filter is necessary but not sufficient**, and
+it is the most reusable finding here. Ultra Ball sits at **5.59×** the training
+exposure of our weakest card and lost every slot; Energy Switch sits at 3.61× and
+the net played it **once in 28 offers**. **Card-level exposure is not the binding
+constraint — card × deck-context is**, and nothing we built measures that.
+
+> **The honest summary for Deck Score.** We netdecked a list, built an instrument
+> to judge changes to it, pre-registered a search over the whole slot ranking,
+> ran 57,600 confirmation games, and **kept the list we started with**. The
+> expected outcome was written down as a null *before the run* — §7c.3 had
+> already measured strength falling monotonically with distance from the
+> consensus 60 — and a null is what it returned. **"A proper search over the slot
+> space, and the list survived it" is a deck result.** It is not an Elo lever,
+> and we do not present it as one.
 
 ## 8. Negative results
 

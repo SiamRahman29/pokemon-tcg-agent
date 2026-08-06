@@ -5418,6 +5418,32 @@ Record: `docs/experiments/beyond-bc/E5-planning.md`. Archives:
 - ⛔ **Single-card guesses are retired as a method.** Three user-proposed edits
   produced one null and two significant losses; the next deck work needs a
   systematic search design, not another suggestion.
+- ✅ **AND THAT SEARCH WAS THEN BUILT AND RUN — the entry above is closed**
+  (§8ar, §8as, §8at). 11 candidates **frozen in a committed file before any
+  variant deck existed**; two-stage, top-1-only promotion, so k variants could
+  not manufacture a winner. **Stage 1: all 11 at or below the same-deck control**,
+  six of eight mirror candidates losing significantly. **Stage 2: candidate G
+  over all seven anchors, 57,600 games, ΔW = −0.0155** (§8ay's corrected weights;
+  −0.0140 at the weights published on the day) against a design resolution of
+  ±0.0059 — **negative on 7 of 7**. ⇒ **The kill line was not met, the search is
+  over per its own pre-registration, and the consensus 60 stands.**
+- ⚡ **What the design bought that a single A/B could not:** Ultra Ball held fixed
+  across **six** different cut slots lost in all six (0.439–0.488), which
+  separates "we cut six good slots" from "the added card is wrong"; and the cheap
+  stage-1 screen predicted the expensive confirmation almost exactly (mirror
+  **0.501** on 4,000 games → **0.500** on 15,800).
+- 🔴 **§8af's exposure filter is NECESSARY BUT NOT SUFFICIENT, and this is the
+  most reusable finding of the deck programme.** Ultra Ball sits at **5.59×** the
+  training exposure of our weakest card and lost every slot; Energy Switch sits at
+  3.61× and the net played it **1 time in 28 offers**. **Card-level exposure is
+  not the binding constraint; card × DECK-CONTEXT is**, and nothing in this repo
+  measures that.
+- ⚠ **A five-card bundle is not attributable**: the community-list revision's
+  −0.073 splits into **−0.040** for Xerosic ×2 alone and −0.033 for the other
+  three (§8at). Bundled deck changes are no longer run. 🔴 And even the isolated
+  −0.040 does **not** convict the card — "the card is wrong here" and "our clone
+  misplays it" predict the same number, and the replays show the net firing
+  Xerosic at opponent hand size 4 while nine offers at 7 went by.
 - ✅ **The same-deck variance floor for deck A/Bs is 0.4980 [0.483, 0.513]** —
   the deck-side analogue of the seed-only null for nets. Any future decklist
   claim must clear it, and it sits essentially on 0.500, so the harness is
