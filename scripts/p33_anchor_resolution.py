@@ -49,12 +49,20 @@ import math
 # the 0.866 run's last game at 17:22) that had never been measured above n=6.
 # Measured at n=2,000 on day 18: **0.755 [0.735, 0.773]** (`p35`,
 # out/arena/p35_v5_vs_crustle_v4.jsonl).  See §8aq.
+# 🔴 AND THE 0.866 WAS A DIFFERENT DECK, not only a different pilot (§8ax, day
+# 22).  The row below is `rule:crustle@crustle_v1` -- the pilot on its own 60.
+# The same pilot on `decks/crustle.py` (the field-consensus 60) scores **0.893**,
+# a **+0.140** deck term measured with the pilot held fixed.  Which one belongs
+# here is a live question this script does NOT settle: 0.755 is the harder,
+# better-resolving instrument, and 0.893 is the deck we are more likely to face.
+# §8ac's 6.7% share was assigned before anyone noticed there were two.
 # Shares: EVIDENCE §8ac, the band-aware census of our own ladder replays.
 # `direct`: the mirror is the one anchor where variant-vs-control is a single
 # head-to-head run (§8aj), so it costs n games instead of 2n AND its estimate is
 # a difference measured within one experiment rather than between two.
 ANCHORS = [
     ("mirror (grimmsnarl)", 0.500, 0.333, True),
+    # ⚠ every non-mirror row is `rule:<name>@<its own tuned deck>`
     ("rule:v10 (M Lucario)", 0.569, 0.040, False),
     ("rule:archaludon",      0.671, 0.080, False),
     ("rule:alakazam5",       0.789, 0.220, False),
@@ -64,9 +72,12 @@ ANCHORS = [
 ]
 
 # EVIDENCE §8an: three nets measured against two pilot versions of ONE anchor.
-# The pilots differ only in bench logic, so this is the same three agents read
-# through two instruments of different difficulty -- the only empirical handle
-# this repo has on how a real difference compresses near the ceiling.
+# 🔴 THE TWO COLUMNS ARE ALSO TWO DIFFERENT DECKS (§8ax, day 22): the left is
+# `crustle_v1`, the right is `crustle`, and the deck term alone is +0.140. So
+# this is still "the same three nets read through two instruments of different
+# difficulty" -- which is all the compression calibration below needs, and the
+# calibration is reported as UNDERPOWERED either way -- but it is NOT "two pilot
+# versions", and nothing here may be quoted as a pilot effect.
 CRUSTLE_CALIB = {
     #        v1 (broken)  v3 (guard only)
     "v3": (0.7700, 0.8670),

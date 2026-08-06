@@ -4180,7 +4180,119 @@ python -X utf8 scripts/p33_anchor_resolution.py
 python -X utf8 scripts/p34_matchup_liveness.py --games 400
 ```
 
+## 8ax. 🔴 THE CRUSTLE ANCHOR CHANGED **DECK** AS WELL AS PILOT, AND THE DECK IS THE BIGGER TERM — §8an and §8aq both attribute it to the wrong thing (2026-08-06, day 22)
+
+**How it surfaced.** An audit of the local validation flow, not a new
+experiment. `arena.build_agent` archived a rule pilot as `rule:<name>` with **no
+deck**, so `out/arena/*.jsonl` was asked which 60 the Crustle anchor was actually
+piloting in each published run. The answer splits perfectly, and not by pilot
+version:
+
+| deck played | runs | our score |
+|---|---|---|
+| `crustle_v1` (the pilot's own list) | p10, p19, p20, p34, p35, p37 ctrl | 0.768 / 0.7885 / 0.768 / 0.748 / 0.755 / 0.764 |
+| 🔴 `crustle` (field consensus) | **p27, p28** — §8an's and §8aq's own v2/v3 rows — plus p54, p56, p57 | **0.870 / 0.866** |
+
+The two decks differ in **20 of 60 slots**. `decks/crustle_v1.py`'s own docstring
+already said what that does: *"A pilot run on the other list scores ~20 of its
+cards through a generic fallback, so it plays them legally but badly."* HANDOFF
+§3.2 even carries an n=20 probe reading **0.620 on its own list vs 0.700 on the
+consensus one** — the right sign, and most of the magnitude, sitting in the repo
+the whole time.
+
+**The measurement** (`p58_crustle_deck.py`, `out/arena/p58_crustle_deck.jsonl`).
+One net (`policy_v5`), **one pilot — the v4 in the repo today** — two decks,
+back-to-back in one session, n=2,000 per cell:
+
+| deck | our score | 95% CI |
+|---|---|---|
+| `crustle_v1` | **0.7530** | [0.734, 0.772] |
+| `crustle` | **0.8930** | [0.879, 0.906] |
+| **DECK TERM** | 🔴 **+0.1400** | two-cell resolution ±0.031 |
+
+✅ **Positive control:** the `crustle_v1` cell reproduces §8aq's p35 (0.755) at
+0.753, so this is the same instrument §8aq measured, not a drifted one.
+
+🔴 **+0.140 is larger than either effect the two sections published** — §8an's
++0.087…+0.102 "empty-bench guard" and §8aq's −0.111 "Dwebble tie-break". Both
+comparisons straddle a deck swap: §8an's v1 row is `crustle_v1` and its v2/v3
+rows are `crustle`; §8aq's 0.866 is `crustle` and its 0.755 is `crustle_v1`.
+**Neither isolates the pilot.** That statement needs no model — it is what the
+archives say.
+
+### What the pilot terms actually are
+
+Every *same-deck* pilot comparison available, which is the part that needs no
+assumption:
+
+| held fixed | pilot change | our score | Δ |
+|---|---|---|---|
+| deck `crustle_v1` | v1 (no guard) → v4 (shipped) | 0.768 → 0.753 | **−0.015** |
+| deck `crustle` | v4 → v2 (guard + bench-anything) | 0.893 → 0.870 | **−0.023** |
+| deck `crustle` | v4 → v3 (guard only) | 0.893 → 0.866 | **−0.027** |
+
+⚠ **Every pilot term is ≤ 0.027 — a fifth of the deck term.**
+
+**Under additivity** (stated as an assumption; no cell exists for v1/v2/v3 on the
+other deck), §8an's observed +0.102 decomposes into deck **+0.140** and pilot
+**−0.038**, and §8aq's observed −0.111 into deck **−0.140** and pilot **+0.027**.
+Two consequences:
+
+1. ⚡ **§8ah's originally EXPECTED sign is restored.** §8ah predicted the broken
+   pilot was flattering us and that repairing it would *lower* our score. §8an
+   found the opposite and called it out in bold — *"the expected sign was the
+   other one"*. With the deck term removed the repair is worth **≈ −0.04 to
+   us**, i.e. the repaired pilot is stronger, exactly as predicted. **The
+   surprise was the confound.**
+2. 🔴 **§8aq's headline reverses.** *"WHICH Pokémon a pilot benches matters more
+   than WHETHER it benches"* compared a tie-break at −0.111 against a repair at
+   +0.09. The same-deck numbers are **+0.027** and **−0.038**: comparable, both
+   small, and if anything *whether* is the larger. The "one line worth more than
+   the whole repair it was a footnote to" is a deck swap.
+
+### What does NOT move
+
+✅ **No net-vs-net verdict changes, for the reason §8an already gave** — both
+arms of every published difference faced the same pilot *and* the same deck, so
+a level shift on one anchor cancels in the difference. §8an's Result 1 (the §8ah
+alarm is retired) stands on that argument, which was never the confounded one.
+✅ **E6/E7/E8 are internally clean** for the same reason: `p54`/`p56`/`p57` ran
+treatment and control against `crustle` back-to-back.
+⚠ **But the E-series' Crustle cell is not the anchor table's Crustle cell.**
+`p33.ANCHORS` weights Crustle at 0.755 (`crustle_v1`); E8 measured its 6.7% term
+against `crustle`, where we score 0.893. The weight was calibrated on a different
+instrument from the one the experiment used.
+
+### The fix
+
+`arena.build_agent` now archives a rule pilot as **`rule:<name>@<deck>`** and
+prints a loud warning when the deck is not the one `DECK_MODULE` says the pilot
+was tuned for. The two Crustles can no longer pool under one identity.
+
+⇒ **HANDOFF rule 20.** Rule 19 said *an anchor is a file*. It is a file **and an
+argument**, and rule 19's timestamp check cannot see the argument.
+
+```powershell
+python -X utf8 scripts/p58_crustle_deck.py --matches 1000
+```
+
+⚠ **The open piece, named rather than buried:** the decomposition assumes the
+deck and pilot terms add. Confirming it directly needs the v1/v2/v3 pilots run
+on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
+`b7869d2` / `83daa48`. **Not run.** The two model-free facts above — a +0.140
+deck term, and both published comparisons straddling a deck change — are enough
+to retract the attributions without it.
+
 ## 8aq. 🔴 AN ANCHOR CHANGED AFTER ITS LAST MEASUREMENT, AND EVERY DOC QUOTED THE OLD NUMBER — the shipped Crustle pilot is 0.755, not 0.866 (2026-08-02, day 18)
+
+> 🔴 **CORRECTED BY §8ax (day 22). The 0.866 and the 0.755 were measured on
+> DIFFERENT DECKS**, and the deck term is **+0.140** against the −0.111 this
+> section attributes to the tie-break. The "which Pokémon it benches matters more
+> than whether it benches" headline below is **retracted**; same-deck, the
+> tie-break is +0.027 and the guard −0.038. ✅ The section's *method* finding —
+> an instrument modified 26 minutes after its calibration, and rule 19 — stands
+> and is if anything strengthened: the same audit missed a second axis of drift
+> sitting in the same runs.
 
 **How it surfaced.** `p34_matchup_liveness.py` (built today for the deck design)
 prints each anchor's arena score beside the liveness table as a **cross-check** —
@@ -4776,6 +4888,17 @@ played on an empty bench and lost to the first KO. It filed the consequence as
 against a 57.1% real win rate — this is a mechanism for part of it"*, i.e. **the
 expectation was that our numbers were OPTIMISTIC.** The re-run was left
 unauthorised for a day and is authorised now.
+
+> 🔴 **THE SENTENCE BELOW IS FALSE FOR HALF THIS SECTION'S OWN TABLE, and it is
+> the load-bearing one. CORRECTED BY §8ax (day 22).** The v1 column ran on
+> `crustle_v1` (`p10`/`p19`/`p20`); the v2 and v3 columns ran on `crustle`
+> (`p27`/`p28`) — a **20-of-60-slot** different deck, worth **+0.140** measured
+> with the pilot held fixed. The +0.087…+0.102 attributed here to the
+> empty-bench guard is mostly that. Same-deck, the repair is worth **≈ −0.04**,
+> which is the sign §8ah predicted and this section reports as a surprise.
+> ✅ **Result 1 (the §8ah alarm is retired) survives** — it rests on differences
+> cancelling, not on this attribution. **Result 2 and the mechanism narrowing
+> below are about a term five times smaller than the one nobody controlled.**
 
 **The instrument.** Identical agent specs, identical decks (`grimmsnarl` vs
 `crustle_v1`), n=2,000 each, seats alternating. **Only the pilot's bench logic

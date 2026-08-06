@@ -2,10 +2,18 @@
 
 Every treatment cell runs its control back to back in the same session against
 the same opponent build. No cell is ever compared against a stored number --
-`rule:crustle`'s code changed on 08-02 and moved a FIXED net's score by +0.100
-with no change on our side, and the archive records both eras under one
-unversioned name (`arena.build_agent` writes `rule:<name>` with no version). A
-stored anchor score is therefore not a control, and this repo has the receipts.
+`rule:crustle`'s score moved by +0.100 between two 08-02 runs with no change on
+our side, and the archive recorded both under one unversioned name
+(`arena.build_agent` used to write `rule:<name>` with no version). A stored
+anchor score is therefore not a control, and this repo has the receipts.
+
+🔴 **And day 22 found the +0.100 was mostly the DECK, not the code** (§8ax): the
+two runs also swapped `crustle_v1` for `crustle`, a 20-of-60-slot change worth
+**+0.140** measured with the pilot held fixed. Arm B below runs `crustle`. That
+does not touch E7's delta -- both arms ran against this cell back-to-back, which
+is exactly what this docstring is about -- but arm B is **not** the 0.755 cell
+`p33.ANCHORS` weights. `arena` now archives `rule:<name>@<deck>` and warns on a
+mismatch; the warning goes to stderr and `run()` below echoes it.
 
 Arms (docs/experiments/embeddings/E7-card-attributes.md):
 
@@ -54,11 +62,23 @@ def run(a: str, b: str, deck_a: str, deck_b: str, matches: int,
         print(out.stdout[-2000:])
         print(out.stderr[-2000:])
         raise SystemExit(f"arena failed: {' '.join(cmd)}")
+    # ⚠ stderr is read on SUCCESS too -- see the same block in p57. A cell whose
+    # agent fell back to index order still exits 0 and still prints a score.
+    if out.stderr.strip():
+        print("  ⚠ arena wrote to stderr:")
+        print("   ", out.stderr.strip()[-1500:].replace("\n", "\n    "))
     m = None
     for line in out.stdout.splitlines():
         hit = SCORE_RE.search(line)
         if hit:
             m = hit
+        if "[health]" in line:
+            print(f"  {line.strip()}")
+            if "DEGRADED" in line:
+                raise SystemExit(
+                    "🔴 the agent ran its index-order fallback during this "
+                    f"cell. The score is not a measurement of the net. "
+                    f"Cell: {' '.join(cmd)}")
     if m is None:
         print(out.stdout[-2000:])
         raise SystemExit("could not parse an arena score line")

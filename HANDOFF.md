@@ -18,7 +18,79 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 21: THE EMBEDDING COMPONENT IS SPENT (2026-08-06)
+> # ▶ START HERE — DAY 22: THE VALIDATION FLOW WAS AUDITED AND SIX THINGS WERE WRONG (2026-08-06)
+>
+> Full record: `EVIDENCE` §8ax; the tool changes are in `scripts/arena.py`,
+> `agents/sa/bcagent.py`, `scripts/p56_e7_arena.py`, `scripts/p57_e8_arena.py`.
+> **No net-vs-net verdict in this repo changes.** Every published difference ran
+> both arms back-to-back against one instrument, and that is what saved them.
+>
+> 🔴 **1. THE CRUSTLE ANCHOR CHANGED DECK AS WELL AS PILOT, AND THE DECK IS THE
+> BIGGER TERM.** `rule:crustle` ran on `crustle_v1` in p10/p19/p20/p34/p35/p37
+> and on `crustle` in p27/p28/p54/p56/p57 — **20 of 60 slots different**,
+> archived under one identity. Measured with the pilot held fixed at the repo's
+> v4, n=2,000/cell: **0.753 [0.734, 0.772] vs 0.893 [0.879, 0.906] = +0.140**
+> against a ±0.031 resolution. ⇒ **§8an's "+0.09 from the empty-bench guard" and
+> §8aq's "−0.111 from the Dwebble tie-break" both straddle a deck swap and
+> neither isolates the pilot.** Same-deck, every pilot term is **≤0.027**.
+> ⚡ **§8ah's originally expected sign is restored** — the repair made the pilot
+> *stronger* (≈ −0.04 to us), which is what §8ah predicted and §8an reported as a
+> surprise. 🔴 **§8aq's "WHICH Pokémon it benches matters more than WHETHER" is
+> retracted.** ⇒ **RULE 20.**
+>
+> 🔴 **2. `arena.py elo` WAS NUMERICALLY DIVERGENT FOR FIFTEEN DAYS.** Fixed
+> `lr=8.0` on an unnormalised batch gradient: past ~175 games per player the
+> iteration oscillates. `rule:crustle` swung **8,586 Elo** between consecutive
+> passes and read −3632 / +258 / +3397 / −3275 at iterations 499/500/501/502.
+> **Every rating it ever printed was an arbitrary sample of an oscillation.**
+> Nothing published rests on it — every Elo figure in `EVIDENCE` is a win-rate
+> conversion — **which is exactly why it survived: an unused instrument is never
+> checked.** Now a damped diagonal-Newton fit that converges to 1e-4 and
+> reproduces the bc-vs-crustle head-to-head **0.652 → 0.652**; it refuses to
+> print an unconverged fit, and flags the **12 agents that never played a game
+> connected to the anchor** (their level is prior, not evidence).
+>
+> 🔴 **3. A `net=` THAT FAILED THE LOAD GUARD SILENTLY PLAYED `sa/policy_net.npz`.**
+> `policynet.load` returns None rather than raising, and `__call__` falls back to
+> the singleton — the old width-496 `policy_lw2`. Demonstrated with a v7 net
+> whose vocab map was one entry short (§8aw's exact "stale map" hazard): accepted
+> by `build_agent`, archived under the requested net's name, would have played
+> 496-wide lw2 against a 708-wide control and printed an ordinary score.
+> ✅ **All 32 nets on disk load, so no past result is affected.** Now refuses.
+>
+> 🟠 **4. THE DEGRADATION COUNTERS WERE WIRED ONLY INTO THE SUBMISSION.** Day 15
+> built `bcagent.STATS` + `health_line()` to catch the index-order fallback and
+> called it *"the highest value-per-byte thing to log"* — then wired it into
+> Kaggle's `main.py` and **not into the arena**, the instrument day 17 calls *"the
+> ONLY instrument"*. Worse, `p57` ran arena with `capture_output=True` and printed
+> stderr **only on non-zero exit**, so the tracebacks were discarded on every
+> successful run. `arena.py play` now prints `[health]`; p56/p57/p58 surface
+> stderr on success and **hard-stop on DEGRADED**.
+>
+> 🟠 **5. `bc` WITH NO `net=` IS AN UNVERSIONED IDENTITY** — 1,226 games in
+> `games.jsonl` under the bare name `bc`, spanning 07-28 → 07-31, across which
+> `sa/policy_net.npz` was a moving target. Rule 19 one seat over. Agent names now
+> carry `#<md5-8>` **of the weight bytes**, so a retrain that reuses a path
+> archives as a new agent instead of pooling. (Shipped v5 fingerprints
+> `#dc1c9acc`, matching the bundle md5 already recorded below.)
+>
+> 🟡 **6. ARCHIVES APPEND AND A RE-RUN WAS INVISIBLE.** `p57_e8.jsonl` holds
+> **3,000 games per v5c control cell against 1,500 per treatment cell** — the
+> control was re-run for the v7pad pass into the same file. Published numbers are
+> safe (drivers parse the printed score line), but re-deriving from that archive
+> gives a control that was never the published one. Rows now carry `run`
+> (schema 2) and `play` announces when the target already holds that exact cell.
+>
+> ⛔ **NOT FIXABLE, so nobody should propose it:** the arena has no common random
+> numbers. `cg.game.battle_start` takes only the two decklists, `StartData`
+> carries no seed, and the RNG lives inside `cg.dll` — verified, two fresh
+> processes running an identical 5-game script diverge. **`evaluate_paired` is
+> seat-balanced, not variance-reduced.** The ±0.036/cell floor is structural;
+> more games or more seeds are the only levers.
+>
+> ---
+>
+> # ▶ DAY 21: THE EMBEDDING COMPONENT IS SPENT (2026-08-06)
 >
 > Full record: `docs/experiments/embeddings/E8-vocab-remap.md`, `EVIDENCE` §8aw.
 >
@@ -2558,6 +2630,39 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     that plays an anchor should **print that anchor's arena score beside its own
     output**, so a changed instrument announces itself on the next run instead
     of on the next audit.
+
+    ⚠ **This rule's own example turned out to be mostly rule 20.** The 0.866 and
+    the 0.755 were also two different DECKS, and the deck is the bigger term
+    (§8ax). The rule is right; the story attached to it was half wrong, which is
+    itself the lesson — a timestamp check answers the question it was designed
+    for and reports nothing about the one nobody asked.
+
+20. **🔴 AN ANCHOR IS A FILE *AND AN ARGUMENT*. Check the DECK a pilot was run
+    on before comparing two of its scores.** A `rule:<name>` pilot is tuned for
+    exactly one 60 and plays any other through a generic fallback —
+    `decks/crustle_v1.py` says so in its own docstring, and HANDOFF §3.2 carried
+    an n=20 probe measuring it at **+0.08**. `rule:crustle` was nonetheless run
+    on `crustle_v1` in `p10/p19/p20/p34/p35/p37` and on `crustle` in
+    `p27/p28/p54/p56/p57`, **archived under one identity both times**, and the
+    published score tracks the deck (0.748–0.768 vs 0.866–0.870) and not the
+    pilot version. Measured directly with the pilot held fixed: **+0.140**
+    [±0.031, n=2,000/cell] — larger than either pilot effect §8an and §8aq
+    published. §8ax.
+
+    ⛔ **Rule 19's timestamp check cannot see this.** Both scripts were correct,
+    both source files were older than their archives, and the *call site*
+    differed. The only thing that catches it is the identity carrying the deck.
+
+    ✅ **Fixed in the tool, not just in the rule:** `arena.build_agent` now
+    archives `rule:<name>@<deck>` and prints a loud warning when the deck is not
+    the one `agentkit.rulebased.DECK_MODULE` names for that pilot.
+
+    ⚡ **The general form, and it is the fourth instance:** *the identity a
+    result is filed under must contain everything that can change the result.*
+    §8aq was the pilot source; §8ax is the deck; day 22 also found `bc` archived
+    with **no net** (1,226 games over four days of a moving `sa/policy_net.npz`)
+    and a `net=` **path** that a retrain can silently repoint. All four now
+    carry their content in the archived name.
 
 ---
 

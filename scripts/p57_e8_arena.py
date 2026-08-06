@@ -42,6 +42,13 @@ ROOT = Path(__file__).resolve().parents[1]
 # bag_emb against out/emb/vocab.json.
 ARMS = {
     "A": (None, "grimmsnarl", "mirror direct; 6/6, 19/19 -- pad only"),
+    # ⚠ `crustle`, the FIELD-CONSENSUS 60 -- not `crustle_v1`, the 60 this pilot
+    # was tuned for and the one `p33.ANCHORS`/`p35`/`p37` weight at 0.755. We
+    # score 0.893 here and 0.753 there: a +0.140 deck term (§8ax). E8's own
+    # delta is unaffected -- both arms ran against this same cell back-to-back --
+    # but this cell is NOT the anchor table's Crustle, and the 6.7% weight it
+    # borrows was calibrated on the other one. Left as it ran; do not "fix" it
+    # retroactively, and pick deliberately in the next experiment.
     "B": ("rule:crustle", "crustle", "4/4, 24/24 -- UNK cannot fire"),
     "C": ("rule:v10,noS", "lucario_v10", "0/6, 7/17 -- UNK fires hardest"),
     "D": ("rule:archaludon", "archaludon_ex", "2/4, 14/15"),
@@ -67,11 +74,26 @@ def run(a: str, b: str, deck_a: str, deck_b: str, matches: int,
         print(out.stdout[-2000:])
         print(out.stderr[-2000:])
         raise SystemExit(f"arena failed: {' '.join(cmd)}")
+    # ⚠ stderr is read on SUCCESS too. `bcagent.__call__`'s catch-all prints a
+    # traceback there and returns index order, and the run still exits 0 with an
+    # ordinary-looking score line -- so discarding stderr unless the process
+    # crashed is exactly how a degraded arm gets published. Same for the
+    # [health] line arena now prints: DEGRADED is a hard stop, not a warning.
+    if out.stderr.strip():
+        print("  ⚠ arena wrote to stderr:")
+        print("   ", out.stderr.strip()[-1500:].replace("\n", "\n    "))
     m = None
     for line in out.stdout.splitlines():
         hit = SCORE_RE.search(line)
         if hit:
             m = hit
+        if "[health]" in line:
+            print(f"  {line.strip()}")
+            if "DEGRADED" in line:
+                raise SystemExit(
+                    "🔴 the agent ran its index-order fallback during this "
+                    "cell. The score is not a measurement of the net. "
+                    f"Cell: {' '.join(cmd)}")
     if m is None:
         print(out.stdout[-2000:])
         raise SystemExit("could not parse an arena score line")
