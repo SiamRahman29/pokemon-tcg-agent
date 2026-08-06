@@ -106,12 +106,96 @@ it lets any team name in a replay be joined to its rating.
 > table's mirror row is a **score** in a column of **Δ**s; 0.487 − 0.5 = −0.0128,
 > confirmed from the archive at 0.4872 over 3,000 games. Still a null.
 >
+> ✅ **8. THE BRANCH IS RECONCILED.** `experiments/beyond-bc` merged into `main`
+> (`ba32c45`); both are the same commit. **No beyond-BC experiment needed
+> re-running** — every run there is mirror-direct or vs `rule:alakazam5` on its
+> own deck, so it has zero exposure to §8ax or §8ay. Two corrections landed:
+> **E5's "compute curve" never scaled** (realized compute 652→616→606 s across
+> the three arms that opened the gate; the real dose-response is on the planner's
+> FIRING RATE, monotone 4/4) and **E2's Alakazam arm is uninformative, not null**
+> (−0.010 against ±0.036). Sections renumbered **8au/8av/8aw → 8az/8ba/8bb** to
+> clear a collision with E6/E7/E8.
+> 🔴 **Two integration breaks the smokes caught, neither of them a git conflict:**
+> `p45_dagger_export.py` was writing unloadable shards (`main`'s `Writer` gained
+> an `attr` column it never passed), and **`optfeat.OPT_DENSE` grew 37 → 46**, so
+> anything warm-starting from `policy_v5.npz` must now pin `--opt-cols 37`.
+> ⚠ **`git` merged `EVIDENCE.md` and `STRATEGY.md` CLEANLY and silently produced
+> duplicates** — six sections under three numbers, and a duplicated E1 entry in
+> STRATEGY §8. The conflicts were the easy part. Check prose after a doc merge.
+>
+> ✅ **9. THE REPORT: §6 AND §7c ARE WRITTEN.** `STRATEGY.md` now has **no
+> section marked in progress**.
+> **§6 Robustness and consistency** answers two Model Score bullets that had no
+> answer: consistency is measured (dispersion **0.984 ± 0.023** over 163 cells /
+> 3,811 blocks — the arena's intervals are honest), matchup-dependence is stated
+> with its own unflattering finding (in variance terms the mirror *is* the anchor
+> set; 45.3% of every weighted verdict sits near the ceiling), and §6.3 lists
+> **four separate ways the anchor table has been wrong**.
+> **§7c The deck** gained the thing Deck Score literally asks for and did not
+> have: the concept, the key cards, and the game plan — Punk Up welding energy
+> acceleration to the evolution, Adrena-Brain repairing the wall while adding
+> reach, Froslass chipping through it. ⚡ **And the alignment has a twist worth
+> keeping:** the three hand-written rules that encode this deck's arithmetic
+> **ship turned OFF**, because once the encoding carried the same information as
+> features they measured 0.427. *The representation won and made the rules
+> redundant* — the project's thesis told through the deck. §7c.4 adds the
+> pre-registered 11-variant search that the old text said we never built.
+>
 > ⛔ **NOT FIXABLE, so nobody should propose it:** the arena has no common random
 > numbers. `cg.game.battle_start` takes only the two decklists, `StartData`
 > carries no seed, and the RNG lives inside `cg.dll` — verified, two fresh
 > processes running an identical 5-game script diverge. **`evaluate_paired` is
 > seat-balanced, not variance-reduced.** The ±0.036/cell floor is structural;
 > more games or more seeds are the only levers.
+>
+> # ▶ THE DAY-23 PLAN — THE REPORT IS THE ONLY LEVER LEFT, AND THE ARITHMETIC SAYS SO
+>
+> 🔴 **Read the rubric before planning anything.** Model Score is **70% across
+> five bullets**, and *"performance within the competition track"* is **one of
+> them** — so the leaderboard is **~14% of the grade**. Deck Score is 20%.
+> **Roughly three quarters of the grade is analysis and writing.** §8ak already
+> measured that the LB cannot resolve any change we would make (63.2-point floor
+> against a largest-ever measured effect of +40). ⇒ **Stop buying Elo we cannot
+> measure with 14% of the marks, and finish the 76%.** The only date that still
+> matters is the report deadline, **2026-09-14**; we are not shipping a new agent,
+> so **08-17 is not a deadline for us**.
+>
+> 1. 📝 **STRATEGY.md is the work.** §6 and §7c are done and nothing is marked
+>    *in progress*. What is thin: **§8's newer entries** (E6/E7/E8 and the E2/E5
+>    corrections just landed — check each against `EVIDENCE` rather than
+>    trusting the prose), and there is still no chapter on the **day-22
+>    validation audit as a story in its own right** — six defects found in our
+>    own instrument, quantified, fixed, **and no verdict changed**. That is the
+>    single strongest "technically sound" exhibit this project owns.
+> 2. 🔬 **The one experiment still worth running: the teacher-free E3 gate**
+>    (~1 h). E3 is parked on "no qualified reviewer", but *"is there anything to
+>    learn in the near-ties?"* needs no teacher. On decisions with boundary
+>    margin < τ, take the other boundary option; A/B vs v5 in the mirror at
+>    n=2,000. **A null kills E3 without a reviewer and is a good report chapter**
+>    ("we built a DAgger pipeline, then proved the states it targets are
+>    indifferent"). ⚠ A loss does **not** prove a teacher would help — say so.
+>    Rule 14 first: dump the margin histogram over all 8,963 candidates
+>    (`p43` already computes them) so you know what fraction τ covers.
+> 3. ⛔ **Do NOT reopen a closed axis.** Search, data, demonstrators, capacity,
+>    sequencing, RL, deck, encoding, embeddings, multitask, routing, planning.
+>    Twelve. The absence of leads is not a problem to solve — **it is the best
+>    Model Score narrative we have**, and the rubric explicitly rewards it.
+> 4. ⛔ **Do NOT submit**, and do not push without asking (20+ commits are local
+>    by design).
+>
+> #### 🟡 Open judgement calls, none of them urgent, all of them the user's
+>
+> - **Ship v7 or keep v5?** Unresolved by design (day 21). Default: v5 ships.
+> - **Which Crustle cell belongs in the anchor table?** The field plays ~the
+>   consensus list (47% card overlap vs 27% for `crustle_v1`), but the anchor
+>   set pairs the pilot with `crustle_v1`. `@crustle_v1` is a strong pilot on the
+>   wrong deck (0.755); `@crustle` is a weak pilot on the right one (0.893).
+>   **Neither is "the field's Crustle played well"** — a real fix is a pilot for
+>   the consensus list, not a choice between these two.
+> - **Confirm §8ax's additivity assumption?** ~20 min: run the v1/v2/v3 pilots
+>   on the *other* deck. The retraction does not depend on it; the sizes do.
+> - **Keep `experiments/beyond-bc` pointing at `main`, or reset it to `eff71fd`**
+>   as a historical marker? It currently tracks `main`.
 >
 > ---
 >

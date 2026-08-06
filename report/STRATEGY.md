@@ -1264,8 +1264,10 @@ Honest nulls at n≥2000 are the section we are most confident in.
 - **Data scaling** — three axes, all negative.
 - **Embedding repair** — the terminal chapter of the feature axis (§4g). Three
   *genuine* defects in the card-identity tables, all repaired and all null:
-  weighted **−0.0099** for the full repair, **−0.0047** for the isolated padding
-  fix, both inside the noise of a seed change. The reason is the finding: the
+  weighted **−0.0078** for the full repair, **−0.0047** for the isolated padding
+  fix, both inside the noise of a seed change. (The full-repair figure was
+  published as −0.0099; recomputing it from its own table during a later audit
+  gave −0.0078. Same verdict, and we corrected it rather than leave it.) The reason is the finding: the
   optimiser had already routed around every one of them. ⚡ Not wasted — the
   repair also removed **11.5% of the network** for 0.0018 of held-out fit,
   which with the opposite experiment (8.2× parameters, −43 decisions) bounds
@@ -1291,23 +1293,32 @@ Honest nulls at n≥2000 are the section we are most confident in.
   statement is narrower and more useful: *summarising the option set into the
   shared state vector improves imitation of the mixture and barely improves
   play*, which is the same lesson as §7b arriving by a different road.
-- **Multi-task representation learning** — terminal-outcome, selected-count,
-  and combined auxiliary heads scored **0.505, 0.507, and exactly 0.500**
-  against their seed-matched control (`n=2,000` each). The combined model raised
-  held-out top-1 from **0.7134 to 0.7199** and won exactly 1,000 of 2,000 games.
-  This is the same lesson under a cleaner intervention: a supervised metric can
-  improve while playing strength does not move.
 - **Observable matchup adapters (E2)** — hard-routed residual adapters on
   visible opponent Grimmsnarl / Alakazam lines left general-route agreement
   exactly at **0.7137**, raised mirror-route fit **0.7300 → 0.7340**, then
   scored **0.521 [0.490, 0.552]** against the seed-matched control in the
-  mirror and **0.782** versus **0.792** against `rule:alakazam5`. A correct
-  observable router that protects the base path is still not a strength win.
-- **Planning scale (E5)** — repaired `seq,reply` vs frozen v5: point estimates
-  rose **0.380 → 0.420 → 0.515** as determinizations went 4 → 8 → 16, then the
-  preregistered confirmation cell at 32 / 8.0 s scored **0.230 [0.177, 0.293]**.
-  The local scale curve is not monotone through confirmation; no planner is
-  promoted and distillation is not opened.
+  mirror. A correct observable router that protects the base path is still not a
+  strength win. ⚠ We previously also cited "0.782 versus 0.792 against
+  `rule:alakazam5`" as evidence; **that arm is two independent cells and its
+  −0.010 sits 3.6× inside its own ±0.036 resolution.** It is uninformative, not
+  a null, and the mirror arm carries this verdict alone.
+- **Planning scale (E5)** — the most instructive negative on this list, because
+  the first way we read it was wrong. Repaired `seq,reply` vs frozen v5 scored
+  **0.380 → 0.420 → 0.515** as determinizations went 4 → 8 → 16, and the
+  preregistered confirmation cell at 32 scored **0.230 [0.177, 0.293]**. We filed
+  that as "more compute collapses the curve." 🔴 **But realized compute across
+  those first three arms was 652 → 616 → 606 seconds — flat.** The nominal budget
+  quadrupled and the work did not, so the three cells that opened the
+  confirmation gate are three draws at constant compute (pooled **0.4383
+  [0.399, 0.478]**, n=600 — already a loss). The variable that actually moved is
+  **how often the planner fires**, and score falls monotonically with it across
+  all four arms over an 8× range: 4.2% → 0.515, 7.4% → 0.420, 10.8% → 0.380,
+  35.0% → 0.230, while it overrules the clone at a near-constant 58–61%
+  throughout. **The planner is harmful in proportion to how often it engages** —
+  which is the §4 encoding argument arriving from a third direction, since the
+  sequencer reads the same feature vectors the clone does and can only overrule a
+  better-calibrated prior with a worse one. No planner is promoted and
+  distillation is not opened.
 - **The five unsized state features** (§4c) — worse than nothing, at −22 Elo
   against a net with no block at all. A negative result about *our own process*:
   they were bundled in because they were cheap, and cheap was the only argument.
@@ -1339,7 +1350,11 @@ Honest nulls at n≥2000 are the section we are most confident in.
   design fix is worth ≈ +0.21 on its own.** So the explanation was confirmed by
   controlled experiment — and the agent died anyway. **A correct explanation of a
   failure does not entitle you to a fix.**
-- **Decklist variants** — 0.490.
+- **Decklist variants** — a pre-registered two-stage search over the whole slot
+  ranking: **11 candidates frozen before any variant deck existed**, all 11 at
+  or below the same-deck control in stage 1, and the single promoted candidate
+  confirmed negative on **7 anchors of 7** over 57,600 games (ΔW **−0.0155**
+  against ±0.0059). The consensus 60 survived a proper search. §7c.4.
 - **Six candidates closed by sizing before an A/B was spent.**
 
 ---
