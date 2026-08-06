@@ -9,6 +9,10 @@ Future sessions should start here instead of using the repository-wide
 
 ## Branch and safety
 
+- ✅ **Merged into `main` on day 22 (`ba32c45`).** This program's code and
+  records now live on `main`; the branch is retained but is no longer ahead.
+  ⚠ **Nothing has been pushed** — the no-push / no-submit rule below still
+  stands and needs user approval.
 - Active branch: `experiments/beyond-bc`
 - Do not commit or push to `main`.
 - Do not push this branch, submit to Kaggle, or merge without user approval.
@@ -63,8 +67,25 @@ No planner promotion. No distillation. No fifth compute point.
   §8ay (corrected field-share weights), and nothing here computes a weighted
   `W = Σ wᵢΔᵢ`. All six checkpoints under `out/e1/results/` and `out/e2/` load
   under `main`'s hardened `policynet.load()`.
-- ⛔ Still to do before merging: the five code conflicts, with known resolutions
-  for four of them:
+- ✅ **MERGED INTO `main` ON DAY 22** (`ba32c45`, fast-forward). `main` and this
+  branch are now the same commit. Both instrument sets are live in `arena.py`:
+  `[health]` says whether the AGENT degraded, the sequencer line says whether
+  the PLANNER did. All four smokes pass (`p39`, `p48`, `p46`) and 38/38
+  checkpoints load.
+- 🔴 **TWO INTEGRATION BREAKS THAT WERE NOT CONFLICTS**, both found by the
+  smokes rather than by git — this is the merge's real lesson:
+  1. **`p45_dagger_export.py` was writing unloadable shards.** `main`'s day-20
+     `Writer` gained an `attr` column; the E3 export never passed it, so
+     `np.stack([None, ...])` produced an OBJECT array and every DAgger shard
+     failed `allow_pickle=False`. Beyond loading, it broke E3's core invariant:
+     treatment and control must differ ONLY in the reviewed label, so the shard
+     has to be column-identical to a `build_policy_dataset.py` one.
+  2. **`optfeat.OPT_DENSE` grew 37 → 46 on `main`** (day 21) and `--opt-cols`
+     defaults to it, so anything warm-starting from `policy_v5.npz` (708 wide)
+     now builds a 726-wide state and is refused. `--opt-cols 37` is pinned in
+     `p46_dagger_smoke.py` and `p49_e2_sweep.py`. ⚠ **Any future script that
+     `--init`s from a pre-day-21 net must pin it too.**
+- The five code conflicts and how they were resolved, for the record:
   - **`.gitignore` — take the UNION.** This branch added `out/e1/ out/e2/
     out/e3/ out/e5/`; `main` added `out/emb/` during E8. Neither side ignores
     the other's scratch, which is how a `git add -A` on this branch swept 11 MB
