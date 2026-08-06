@@ -658,15 +658,90 @@ cell's. Our own driver printed the single-cell width, understating resolution by
 
 ---
 
-## 6. Robustness and consistency *(in progress)*
+## 6. Robustness and consistency
 
-The exhibit is the **weighted multi-anchor A/B table** — five anchor decks
-covering 71.5% of the measured field, n=2000 per cell, every anchor a real pilot
-rather than a self-play stand-in.
+Two questions, and they are not the same one:
 
-🔴 **Both columns of the obvious version of this table are wrong, and finding out
-why is the chapter.** Here it is as we first wrote it, measured over 109 games
-while we sat at ~820 rating:
+* **Does the agent perform consistently under repeated matches?** That is a
+  question about the *instrument's* noise, and we measured it rather than
+  assuming it (§6.1).
+* **Does any result depend on a particular matchup or starting position?** That
+  is a question about the *design*, and it is the harder one (§6.2).
+
+The exhibit for both is the **weighted multi-anchor A/B table** — seven anchor
+decks covering 90.6% of the measured field, n≥2000 per cell, every anchor a real
+pilot rather than a self-play stand-in. **That table has now been caught wrong
+four separate times** (§6.3), which is the most useful thing we can say about it.
+
+### 6.1 Consistency under repeated matches, measured
+
+Every interval in this report assumes games are independent Bernoulli trials.
+That assumption is testable and had never been tested: the engine's RNG is a
+single continuous stream inside a compiled library, so correlation between
+consecutive games is a live possibility rather than a pedantic one.
+
+We split every archived cell with n≥1000 into blocks of 100 consecutive games
+and compared the observed between-block variance to the binomial expectation:
+
+| | |
+|---|---|
+| cells tested | **163** |
+| blocks | **3,811** |
+| mean dispersion ratio | **0.984** |
+| median | **0.987** |
+| pooled standard error | **±0.023** |
+
+**1.00 is exactly binomial.** The arena sits 0.7 standard errors from it. There
+is no over-dispersion, no hidden correlation from the shared RNG stream, and a
+Wilson interval at *n* games means what it says.
+
+⚡ **Read this together with §5.6 and the pair is the honest picture.** The
+*game-sampling* term is exactly as wide as we print it; the *training-seed* term
+is wider than we printed it. Our published intervals were correct about the part
+they modelled and silent about the part they did not.
+
+✅ A second consistency check fell out of the same audit: re-deriving ~15
+published scores directly from the raw game archives, with an independently
+written seat-correction, reproduced them to 3–4 decimal places. That is the check
+which would have caught the seat-indexing bug that once turned an 0.888 into an
+0.510.
+
+### 6.2 Dependence on specific matchups
+
+The anchor set is chosen to make this answerable rather than arguable:
+
+* **Seven anchors spanning 90.6% of the measured field**, each weighted by its
+  observed share, so no single matchup can carry a verdict by itself.
+* **Seats alternate every game** and each match plays both, so first-player
+  advantage cancels by construction rather than by correction.
+* **Every anchor is a real opponent pilot**, not our own net holding someone
+  else's deck — the one exception (`bc:garchomp`) is labelled an upper bound
+  wherever it appears, because our net piloting a foreign 60 measures *deck ×
+  how well we pilot it*.
+* **A per-card liveness instrument** (`p34`) asks, for each of the 19 slots a
+  deck change might touch, how often it is live in each matchup. **17 of 19 are
+  mirror-safe.** The two that are not are exactly the two a mirror-only test
+  would have judged wrongly: Tool Scrapper is played **0.00 times per mirror
+  game** while being drawn in 81% of real games, and the Froslass line sees under
+  a quarter of its real use in the mirror.
+
+🔴 **The uncomfortable finding is that breadth is not the same as sensitivity.**
+Decomposing the weighted variance shows the mirror does not merely dominate the
+anchor set — *in variance terms it essentially **is** the set*, and the anchors
+we added for representativeness are cheap to carry but contribute almost nothing
+to resolution. Sorting anchors by how well they separate two of our nets also
+sorts them, inversely, by how representative they are: the only two near 0.5 are
+`rule:v10` (5.3% of the field) and `rule:archaludon` (8.0%), both measured at
+**0 of 47 games above opponent rating 900**, while every anchor that represents
+the field we actually play is one we already beat 75–89% of the time. **45.3% of
+every weighted verdict now sits on anchors near the ceiling.** Adding them bought
+honesty, not statistical power, and we report both facts because only reporting
+the first would be flattering.
+
+### 6.3 Four ways this exhibit has been wrong
+
+Here is the table as we first wrote it, over 109 games while we sat at ~820
+rating:
 
 | anchor | share of field | our WR (real games) |
 |---|---|---|
@@ -687,26 +762,78 @@ while we sat at ~820 rating:
 | Crustle | 12.8% | 6.7% | 9.1% |
 | Mega Lucario ex | 12.8% | **4.0%** | **0 of 47 games** |
 
-**Failure two — one of the five anchors was throwing games** (§8ah). The Crustle
+**Failure two — one of the anchors was throwing games** (§8ah). The Crustle
 pilot scored every Pokémon except Dwebble at −5000 for a bench play, so once its
 Dwebbles were gone it played on an empty bench until the first KO ended the
 match; it **ended its turn exposed 0.667 times per game and lost 2 of 2 that
-way.** Our arena number against it was **0.663** against a **57.1%** real win
-rate. **An anchor that loses games does not add noise — it biases every A/B that
-uses it in our favour, in the direction that looks like progress.** It was found
-by a human watching a replay, in a project that had run arena A/Bs at n=2000 for
-fifteen days, because *an anchor that throws games still returns a number.*
+way.** **An anchor that loses games does not add noise — it biases every A/B
+that uses it in our favour, in the direction that looks like progress.** It was
+found by a human watching a replay, in a project that had run arena A/Bs at
+n=2000 for fifteen days, because *an anchor that throws games still returns a
+number.*
+
+**Failure three — the anchor was a file *and an argument*, and we only checked
+the file** (§8ax). Repairing that pilot moved our score against it by +0.09, and
+we wrote that down as the value of the repair. It was not. A rule-based pilot is
+tuned for exactly one 60-card list and plays any other through a generic
+fallback, and the runs before and after the repair had *also been given different
+decks* — 20 of 60 cards apart. Measured directly with the pilot held fixed, **the
+deck alone is worth +0.140** [n=2,000/cell], larger than the repair it was
+credited to. The archive recorded the pilot under one name for both decks, so
+nothing announced the change.
+
+⇒ Two consequences we would rather state than bury. First, the size of the pilot
+repair is **≈ −0.04**, not +0.09 — which restores the sign we originally
+*predicted* and then talked ourselves out of when the data appeared to disagree.
+Second, a later "one-line tie-break is worth more than the whole repair" finding
+was the same confound read backwards, and is **retracted**.
+
+**Failure four — the weights themselves were an unaudited estimate** (§8ay).
+Every headline here is `W = Σ wᵢΔᵢ`. We had audited the Δ exhaustively and never
+once audited the **w**. They come from classifying our own ladder replays by
+archetype, and that classifier keyed evolution lines by *card id* when the game's
+data keys them by *name* — so of 106 basic printings that share a name, only one
+kept its evolutions, breaking **228 links**. One archetype split according to
+which reprint the opponent happened to draw. Hand-checking all 75 games:
+**69/75 correct before, 74/75 after.**
+
+🔴 **And the bug is not the headline — the sample size is.** These weights come
+from **75 games**, so the mirror's 33.3% share is really **[22.5%, 43.2%]**.
+*Every correction above lands inside the interval of the estimate it corrects.*
 
 **The key methodological point: an arena result is a weighted average over your
-anchor set and nothing else** — and both the weights and the members have now
-been caught wrong. "Wins two anchors, loses one" is not a verdict.
+anchor set and nothing else** — and the weights, the members, the members'
+*arguments*, and the census that produced the weights have each now been caught
+wrong. "Wins two anchors, loses one" is not a verdict.
 
-**Calibration — how much to trust it.** Comparing each anchor's arena score to
-the *same agent's* real win rate on that archetype: **the ordering is correct 4
-for 4, and the level reads ~13–27 pp optimistic.** So the arena is sound for A/B
-deltas and matchup ranking, and must not be read as a predicted win rate.
+### 6.4 What we could not make robust, and the honest interval
 
-*To add: the completed rules-on sweep; the P6a sweep; seat-balance tables.*
+**Runs are not reproducible, and this is a property of the engine.** The
+simulator owns its RNG inside a compiled library; `battle_start` accepts only the
+two decklists and returns no seed. We verified that two fresh processes running
+an identical five-game script diverge. **Common random numbers are therefore
+unavailable**, seat-swapped pairing balances seats but buys no variance
+reduction, and no measurement here can be repeated — only spent again. The
+±0.036-per-cell floor is structural.
+
+**Propagating the weight uncertainty.** Bootstrapping the 75 census labels
+through a completed verdict adds **±0.0031** to a weighted ΔW. Our design
+resolution was quoted as ±0.0050, which treated the weights as exact; combined,
+the honest figure is **±0.0059** — an 18% widening. It does not overturn that
+verdict (still 2.6× outside its kill line, negative in 100% of bootstraps), and
+we report it because a conclusion that survives a wider interval is worth more
+than one quoted against a narrower one.
+
+⚡ **Weight error bites in proportion to how much the per-anchor deltas differ.**
+Where every anchor moves the same way, reweighting barely moves the sum. Where
+they disagree in sign, the weight is doing real work and its interval belongs in
+the answer.
+
+**Calibration — how much to trust the whole apparatus.** Comparing each anchor's
+arena score to the *same agent's* real win rate on that archetype: **the ordering
+is correct 4 for 4, and the level reads ~13–27 pp optimistic.** So the arena is
+sound for A/B deltas and matchup ranking, and must never be read as a predicted
+win rate.
 
 ## 7. Opponent modelling: arithmetic rules are matchup-conditional
 
