@@ -1,7 +1,10 @@
 # E5 — Round-2 planning scale probe
 
-Status: settled null / local near-miss; planner not promoted; distillation not
-opened.
+Status: closed; planner not promoted; distillation not opened. ⚠ The "scaling
+curve" framing is **corrected** — realized compute was flat across low/medium/
+high and the real dose-response is on the planner's FIRING RATE. See the
+day-22 correction under "Settled verdict". EVIDENCE §8bb (renumbered from
+§8aw to avoid a collision with `main`'s E8 section).
 
 ## Hypothesis
 
@@ -63,16 +66,45 @@ Gate readings:
    (`0.230 < 0.515`), and the 95% upper bound stayed at or below 0.5
    (`0.293`).
 
-E5 is closed as a local near-miss. The apparent high-arm recovery did not
-survive the preregistered higher-compute check. Do not invent a fifth compute
-point. Do not promote any sequencer configuration. Do not distill planner
-labels. `out/policy_v5.npz` remains the frozen shipping baseline.
+E5 is closed. The apparent high-arm recovery did not survive the preregistered
+higher-compute check. Do not invent a fifth compute point. Do not promote any
+sequencer configuration. Do not distill planner labels. `out/policy_v5.npz`
+remains the frozen shipping baseline.
 
-Confirm also completed far more plans and overrules than high
-(`6228` / `3647` vs `837` / `503`) while spending `1.331` s per completed plan.
-More override of the clone at higher compute correlated with a large loss, which
-is consistent with the search-selects-noise failure mode rather than a monotone
-compute curve.
+## 🔴 Corrected day 22: the scale axis never scaled
+
+Total planning time per arm, from this manifest's own `sim_s`:
+
+```text
+arm      nominal cap   total planning s   plans/game   firing rate   score
+low          1.0 s            652            10.2         10.8%      0.380
+medium       2.0 s            616             7.2          7.4%      0.420
+high         4.0 s            606             4.2          4.2%      0.515
+confirm      8.0 s          8,288            31.1         35.0%      0.230
+```
+
+The cap went 1 → 2 → 4 s and realized compute went **652 → 616 → 606 s**. The
+three cells that opened the confirmation gate are three draws at essentially
+constant compute (n=200 each, two-cell resolution ±0.098); pooled they are
+**0.4383 [0.399, 0.478] over 600 games**, already a clean loss. "Higher compute
+collapses the curve" attributes the result to a variable that did not vary —
+the same shape as the Crustle deck confound (`main` §8ax).
+
+**What actually varied is the firing rate, and it is monotone across all four
+arms:** 4.2% → 0.515, 7.4% → 0.420, 10.8% → 0.380, 35.0% → 0.230. The planner
+plays worse the more it engages, over an 8× range, while overruling the clone at
+a near-constant 58–61%. ⚠ Four cells at n=200 with no repeat: the ordering is
+4/4 and the extremes separate, but adjacent steps are inside ±0.098. Direction,
+not slope.
+
+✅ `errors: 0` and `budget_aborts: 0` in **all four** arms, so confirm's 0.230 is
+a healthy cell, not a degraded agent. Recorded here because a day-22 pass looked
+for these counters in `out/logs/`, did not find them, and nearly filed confirm as
+unauditable — they live in `out/e5/manifest.json`.
+
+⇒ The verdict is unchanged and now rests on 600 pooled games plus a 4-for-4
+ordering rather than on a three-point pattern. A fifth compute point would be
+the same mistake with a larger budget.
 
 ## Memory note
 

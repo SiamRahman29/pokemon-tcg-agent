@@ -1,6 +1,9 @@
 # E2 — observable matchup routing and residual adapters
 
-Status: settled null; adapters not promoted.
+Status: closed on the mirror screen; adapters not promoted. ⚠ "Settled null" is
+**corrected** — the mirror arm decides it, and the Alakazam arm is uninformative
+at n=1,000/cell, not null. EVIDENCE §8ba (renumbered from §8av to avoid a
+collision with `main`'s E7 section).
 
 ## Hypothesis
 
@@ -203,10 +206,25 @@ control    0.792 [0.766, 0.816]  W792/D1/L207
 
 Treatment is 1.0 pp worse than the seed-matched control on the Alakazam cell.
 
+🔴 **Corrected day 22: that 1.0 pp is UNINFORMATIVE, not a result.** The
+Alakazam screen is **two independent cells against a third party**, so the
+delta's resolution is √2× a single cell's: **Δ = −0.0100 against ±0.0359 at
+n=1,000/cell.** The observed gap is 3.6× inside the interval. Reading it as
+"worse than control" is reading noise — the same error `main` §8aq made and the
+day-21 E8 box names by number. Resolving it needs n≈2,000/cell and is **not
+worth buying**, because the mirror arm already decides the promotion.
+
 ## Settled verdict
 
-E2 is closed as a null. Observable hard-routed residual adapters improved
-mirror-route supervised fit slightly and left general-route agreement untouched,
-but neither the paired mirror screen nor the Alakazam common-opponent screen
-cleared the preregistered strength gate. `out/policy_v5.npz` remains the frozen
-shipping baseline. Do not promote adapters into the weighted anchors.
+E2 is closed: the adapters **fail their mirror screen** and are not promoted.
+The mirror arm is a **direct** head-to-head and carries the verdict on its own —
+`0.521 [0.490, 0.552]` includes 0.5, so three epochs of specialist residual
+bought nothing where the router fires most. ⚠ The Alakazam arm is uninformative
+(above) and supports neither direction; the earlier "settled null" claimed more
+from it than n=1,000/cell can give.
+
+Observable hard-routed residual adapters improved mirror-route supervised fit
+slightly and left general-route agreement untouched at 0.7137, but the paired
+mirror screen did not clear the preregistered strength gate.
+`out/policy_v5.npz` remains the frozen shipping baseline. Do not promote
+adapters into the weighted anchors.

@@ -4682,7 +4682,26 @@ python -X utf8 scripts/p26_selfplay_gen.py --probe --games 200 --taus 0.25,0.5,1
 ```
 Log: `out/logs/p26_tau_probe.txt`.
 
-## 8au. 🔴 E1 MULTI-TASK REPRESENTATION LEARNING IS A THREE-ARM NULL (2026-08-03, day 19)
+## 8az. 🔴 E1 MULTI-TASK REPRESENTATION LEARNING IS A THREE-ARM NULL (2026-08-03, day 19)
+
+> ⚠ **Renumbered from §8au before merging to `main` (day 22).** `main` used
+> 8au/8av/8aw for E6/E7/E8 while this branch used them for E1/E2/E5, and the two
+> files auto-merge **cleanly** into six sections under three numbers with no
+> conflict marker. `main` carried 22 cross-references to those numbers and this
+> branch carried none, so the branch renumbers: **8au→8az, 8av→8ba, 8aw→8bb.**
+>
+> ✅ **AND THE WHOLE E-PROGRAM IS UNAFFECTED BY `main`'s DAY-22 VALIDATION
+> AUDIT — checked, not assumed.** Every beyond-BC arena run is either a
+> **mirror direct head-to-head** (E1 ×3, E2 mirror, E5 ×4) or
+> **vs `rule:alakazam5` on `alakazam5`, its own tuned deck** (E2 ×2). So:
+> **no `rule:crustle` anywhere ⇒ no exposure to §8ax's deck confound**; **no
+> weighted `W = Σ wᵢΔᵢ` anywhere ⇒ no exposure to §8ay's corrected field
+> shares**; and `arena.py elo` was never used. All six branch checkpoints in
+> `out/e1/results/` and `out/e2/` load under `main`'s hardened
+> `policynet.load()`, so the strict `net=` guard rejects none of them.
+> ⇒ **No experiment on this branch needs re-running.** Two needed their
+> write-ups corrected (§8ba's Alakazam arm, §8bb's mechanism) and that is a
+> documentation fix, not arena time.
 
 **Hypothesis.** The v5 policy encoder might learn a stronger state
 representation if it also predicted terminal outcome and the fraction of legal
@@ -4717,7 +4736,7 @@ Record: `docs/experiments/beyond-bc/E1-multitask.md`. Archives:
 `out/arena/e1_count_vs_control_seed0.jsonl`, and
 `out/arena/e1_both_vs_control_seed0.jsonl`.
 
-## 8av. 🔴 E2 OBSERVABLE MATCHUP ADAPTERS ARE A NULL (2026-08-03, day 19)
+## 8ba. 🔴 E2 OBSERVABLE MATCHUP ADAPTERS FAIL THEIR MIRROR SCREEN — and the Alakazam arm is UNINFORMATIVE, not null (2026-08-03, day 19; corrected day 22)
 
 **Hypothesis.** Hard-routing residual adapters on visible opponent Grimmsnarl
 and Alakazam lines could improve those matchups without moving the frozen v5
@@ -4737,18 +4756,31 @@ rose **0.7300 → 0.7340**, overall top-1 rose **0.7201 → 0.7221**. Strength:
 | treatment vs `rule:alakazam5`, n=1,000 | **0.782** | [0.756, 0.807] |
 | control vs `rule:alakazam5`, n=1,000 | **0.792** | [0.766, 0.816] |
 
-**Verdict: null.** The mirror interval includes 0.5, and the Alakazam cell is
-1.0 pp worse than the seed-matched control. Adapters are not promoted; v5
-remains the shipping baseline. The useful negative is architectural: a correct
-observable router that protects the general path is still not enough when the
-specialist residual cannot buy a clear arena delta.
+**Verdict: the adapters fail their screen and are not promoted; v5 remains the
+shipping baseline.** The mirror arm is a **direct** head-to-head and carries the
+verdict on its own: 0.521 [0.490, 0.552] includes 0.5, so three epochs of
+specialist residual bought nothing where the router fires most.
+
+🔴 **But "null" was too strong for the Alakazam arm, and this is corrected on day
+22.** Treatment 0.782 and control 0.792 are **two independent cells against a
+third party**, so the delta's resolution is √2× a single cell's:
+**Δ = −0.0100 against ±0.0359 at n=1,000/cell.** The observed gap is 3.6× inside
+the interval. ⇒ **uninformative, not null** — the same error `main`'s §8aq made
+and the day-21 E8 box names by number. Reading "1.0 pp worse than control" as
+evidence of anything is reading noise. Resolving it would need n≈2,000/cell, and
+it is **not worth buying**: the mirror arm already decides the promotion, and no
+value of the Alakazam delta changes it.
+
+The useful negative is architectural and survives intact: a correct observable
+router that provably protects the general path (agreement unmoved at 0.7137) is
+still not enough when the specialist residual cannot buy a clear arena delta.
 
 Record: `docs/experiments/beyond-bc/E2-routing.md`. Archives:
 `out/arena/e2_mirror.jsonl`,
 `out/arena/e2_vs_alakazam5_treatment.jsonl`,
 `out/arena/e2_vs_alakazam5_control.jsonl`.
 
-## 8aw. 🔴 E5 PLANNING SCALE CONFIRMATION FAILS — higher compute collapses the curve (2026-08-04, day 21)
+## 8bb. 🔴 E5 PLANNING IS CLOSED — and the "scaling curve" never scaled: realized compute was FLAT across the three arms that opened the gate (2026-08-04, day 20; corrected day 22)
 
 **Hypothesis.** The repaired B4 turn sequencer (`seq,reply`) might recover with
 more hidden-state averaging under Round-2-scale budgets. B4 had lost at
@@ -4769,13 +4801,70 @@ The first three point estimates were non-decreasing and realized work per plan
 rose, so the continue gate opened one preregistered confirmation cell. Confirm
 then failed both fail rules: score below high, and upper bound below 0.5.
 
-**Verdict: E5 is closed as a local near-miss.** Do not promote a sequencer
-configuration, do not invent a fifth compute point, and do not distill planner
-labels. The low cell matches B4's repaired loss against v5 (`0.380` vs the
-older `0.375`). High's glance above 0.5 did not survive confirmation; more
-compute produced more completed plans and more clone overrules
-(`6228` / `3647` vs high's `837` / `503`) and a large loss. That is the
-search-selects-noise shape, not a monotone scaling curve.
+**Verdict: E5 is closed.** Do not promote a sequencer configuration, do not
+invent a fifth compute point, and do not distill planner labels. The low cell
+matches B4's repaired loss against v5 (`0.380` vs the older `0.375`).
+
+### 🔴 Corrected day 22: the independent variable did not move across low/medium/high
+
+Read back from the archives' own latency summaries, the **realized** cost per
+decision was:
+
+From `out/e5/manifest.json` and the archives' own latency summaries:
+
+| arm | nominal cap | **total planning s** | mean ms/decision | plans/game | **firing rate** | overrule | score |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| low | 1.0 s | **652** | 37 | 10.2 | **10.8%** | 58% | 0.380 |
+| medium | 2.0 s | **616** | 36 | 7.2 | **7.4%** | 61% | 0.420 |
+| high | 4.0 s | **606** | 32 | 4.2 | **4.2%** | 60% | 0.515 |
+| confirm | 8.0 s | **8,288** | 471 | 31.1 | **35.0%** | 59% | 0.230 |
+
+**The nominal budget went 1 → 2 → 4 s and total planning compute went
+652 → 616 → 606 s — flat, slightly falling.** ⇒ **The three cells that opened the
+pre-registered confirmation gate are three draws at essentially constant realized
+compute**, n=200 each against a two-cell resolution of ±0.098. Pooled they are
+**0.4383 [0.399, 0.478] over 600 games** — already a clean loss.
+
+⇒ 🔴 **"Higher compute collapses the curve" attributes an effect to a variable
+that did not vary.** This is `main`'s day-21 rule verbatim — *rule 1 applies to
+patterns across arms, not only to single arms* — and it is the same shape as the
+Crustle deck confound (§8ax on `main`): right conclusion, wrong cause.
+
+### ⚡ What E5 actually measured: an ENGAGEMENT dose-response, monotone 4 for 4
+
+The variable that genuinely moved is **how often the planner fires**, and
+sorting the same four cells by it is monotone:
+
+| firing rate | 4.2% | 7.4% | 10.8% | 35.0% |
+|---|---:|---:|---:|---:|
+| **score** | **0.515** | 0.420 | 0.380 | **0.230** |
+
+**Every time the sequencer engages more, it plays worse — 4 arms out of 4, over
+an 8× range**, while overruling the clone at a near-constant **58–61%** in every
+regime. The arm that fires least is the only one indistinguishable from not
+planning at all.
+
+⚠ **Honest limit:** four cells at n=200, no repeat, adjacent pairs inside
+±0.098. The **ordering** is 4/4 and the extremes (0.515 vs 0.230) are far
+outside it; the adjacent steps individually are not resolved. This is a
+direction, not a fitted slope.
+
+⇒ This corroborates `main`'s §8w gate for RL from a new angle: the sequencer
+reads the **same feature vectors** as the clone, so it cannot break a tie the
+representation cannot express — it can only overrule a better-calibrated prior
+with a worse one, and the damage scales with how often it does so.
+
+✅ **All four cells were HEALTHY** — `errors: 0` and `budget_aborts: 0` in every
+arm, including confirm, so the 0.230 is a real result and not a degraded agent.
+⚠ **This was nearly recorded the other way.** A day-22 pass looked for the
+sequencer counters in `out/logs/`, did not find them, and was about to file
+confirm as unauditable — they are in `out/e5/manifest.json`, which is the better
+place for them. **A counter you cannot find is one you will assume the worst
+about**; the manifest is what made the defence possible.
+
+⛔ **Do not re-run E5 to recover the curve.** The verdict is unchanged and now
+rests on 600 pooled games rather than a three-point pattern; a fifth compute
+point would be the same mistake with more budget.
 
 Record: `docs/experiments/beyond-bc/E5-planning.md`. Archives:
 `out/arena/e5_low_vs_control.jsonl`,
