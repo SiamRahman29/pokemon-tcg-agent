@@ -4430,8 +4430,11 @@ the requested net's name**, and would have played 496-wide lw2 against a 708-wid
 control while printing an ordinary score.
 
 Demonstrated deliberately, with a v7 net whose vocab map was one entry short —
-§8aw's exact "stale map" hazard. ✅ **All 32 nets on disk load, so no past result
-is affected.** Now an explicit `net=` that does not load is a hard error.
+§8aw's exact "stale map" hazard. ✅ **No past result is affected** — re-checked on
+day 23 by loading every `*net*.npz` in the tree through the hardened loader:
+**35 of 35 policy nets load**, and the single rejection is `sa/value_net.npz`, a
+*value* net that `policynet.load` is right to refuse. Now an explicit `net=` that
+does not load is a hard error.
 
 ### Defect 3 — the degradation counters were wired into the submission only
 

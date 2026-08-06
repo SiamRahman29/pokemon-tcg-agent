@@ -673,7 +673,7 @@ pattern across them is worth more than any one of them.
 | 1 | The Crustle anchor changed **deck** as well as pilot, under one archived name | **+0.140** deck term vs ≤0.027 for every pilot term | 🔴 **two attributions retracted** (§6.3) |
 | 2 | The census keyed evolution lines by card **id**; `evolvesFrom` is a **name** | 228 broken links; 69/75 → **74/75** correct | 🟡 **weights restated**, no verdict changed (§6.3) |
 | 3 | The Elo fitter was **numerically divergent** for fifteen days | `rule:crustle` swung **8,586 Elo** between consecutive iterations | ✅ **no** — every published Elo is a win-rate conversion |
-| 4 | A pinned net that failed its load guard **silently played a different net** | would have run a 496-wide net against a 708-wide control | ✅ **no** — all 32 nets on disk load |
+| 4 | A pinned net that failed its load guard **silently played a different net** | would have run a 496-wide net against a 708-wide control | ✅ **no** — re-checked: every policy net on disk still loads (35 of 35) |
 | 5 | The degradation counters were wired into the submission, **not the arena** | an arm falling back on every decision returned a score and no complaint | ✅ **no** — measured separately, and never fired |
 | 6 | `bc` with no explicit net is an **unversioned identity** | **1,218 games** pooled under one name over four days of a moving checkpoint | ✅ **no** — no cross-era comparison was published |
 | 7 | Archives **append**, so a silent re-run left a control that was never published | 3,000 control games against 1,500 treatment games in one file | ✅ **no** — scores are parsed from the run, not the file |
