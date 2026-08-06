@@ -4375,6 +4375,118 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bc. 🔴 THE REST OF THE VALIDATION FLOW, AUDITED: five more instrument defects, none of which ever touched a published number (2026-08-06, day 22)
+
+**Why this exists.** §8ax and §8ay are two findings of one audit; this is the
+other five, logged here because they were previously recorded only in `HANDOFF`
+and the report chapter (§5.7) has to trace somewhere. **The audit was not
+prompted by a wrong result.** Nothing looked broken. The question asked was the
+one nobody had asked in twenty-two days: *what does the local validation flow do
+that no one has ever checked?*
+
+⇒ **The answer, and it is the finding rather than any single defect: every one
+of the five lives in a part of the flow that produces no number a human reads.**
+An instrument nobody quotes is an instrument nobody checks.
+
+### Defect 1 — `arena.py elo` was numerically divergent for fifteen days
+
+`fit_elo` took a **fixed `lr=8.0` step on an unnormalised batch gradient**. The
+gradient sums over a player's games, so its curvature grows with *n* while the
+step did not: past **~175 games per player the iteration is divergent** and
+oscillates instead of converging.
+
+| player | games | behaviour |
+|---|---|---|
+| `rule:crustle` | 1,320 | **8,586 Elo** swing between consecutive iterations |
+| " | " | −3632 / +258 / +3397 / −3275 at iterations 499 / 500 / 501 / 502 |
+| a 30-game anchor | 30 | still swung 200+ |
+
+**Every rating it ever printed was an arbitrary sample of an oscillation**, and
+which sample you got depended on the iteration cap. ✅ **Nothing published rests
+on it** — every Elo figure in this file is a win-rate conversion — **which is
+exactly why it survived: an unused instrument is never checked.** (Rule 9, one
+level up: a metric that never prints is not a metric that passed.)
+
+**Fix:** damped diagonal-Newton step (gradient over the summed per-game
+curvature `p(1-p)·ln10/400`, damping 0.8), converging to `1e-4`; a 2-game prior
+against a phantom at the anchor rating so an unbeaten player's rating cannot run
+away; the anchor shift applied **once after** convergence rather than every pass.
+✅ **Positive control:** it reproduces the bc-vs-crustle head-to-head **0.652 →
+0.652**. `cmd_elo` now **refuses to print** a fit whose final step exceeds 0.5
+Elo, and flags the **12 agents with no game path to the anchor** — their
+*difference* is identified, their *level* is prior, not evidence.
+
+### Defect 2 — a `net=` that failed the load guard silently played the singleton
+
+`policynet.load` returns **None** rather than raising, and `PolicyAgent.__call__`
+fell back to the module singleton — the old width-496 `policy_lw2`. So a net that
+failed its own dimension guard was accepted by `build_agent`, **archived under
+the requested net's name**, and would have played 496-wide lw2 against a 708-wide
+control while printing an ordinary score.
+
+Demonstrated deliberately, with a v7 net whose vocab map was one entry short —
+§8aw's exact "stale map" hazard. ✅ **All 32 nets on disk load, so no past result
+is affected.** Now an explicit `net=` that does not load is a hard error.
+
+### Defect 3 — the degradation counters were wired into the submission only
+
+Day 15 built `bcagent.STATS` + `health_line()` to catch the silent index-order
+fallback (§8g had to infer it indirectly from a 40.7% index-0 rate) and called it
+*"the highest value-per-byte thing to log"* — then wired it into Kaggle's
+`main.py` and **not into the arena**, the instrument day 17 called *"the ONLY
+instrument"*. Worse: `p57` ran arena with `capture_output=True` and printed
+stderr **only on non-zero exit**, so tracebacks from every *successful* run were
+discarded — a run in which one arm fell back on every decision would have
+returned a score and no complaint.
+
+**Fix:** `arena.py play` prints `[health]` per invocation (counters zeroed per
+run); p56/p57/p58 surface stderr on success and **hard-stop on DEGRADED**.
+
+### Defect 4 — `bc` with no `net=` is an unversioned identity
+
+**1,218 games in `out/arena/games.jsonl` under the bare name `bc`, spanning
+2026-07-28 → 07-31** (rows where either seat is exactly `bc`), across which
+`agents/sa/policy_net.npz` was a moving target. That is rule 19 — *an anchor is a
+file* — one seat over: the same defect on **our own** side of the board.
+
+**Fix:** agent names carry `#<md5-8 of the weight bytes>`, so a retrain that
+reuses a path archives as a **new agent** instead of pooling into the old one.
+The shipped v5 fingerprints `#dc1c9acc`, matching the bundle md5 already on
+record.
+
+### Defect 5 — archives append, and a re-run was invisible
+
+`out/arena/p57_e8.jsonl` holds **3,000 games per v5c control cell against 1,500
+per treatment cell**: the control was re-run for the v7pad pass into the same
+file. ✅ **Published numbers are safe** — the drivers parse the printed score
+line, not the archive — but anyone re-deriving E8 from that file gets a control
+that was never the published one, and nothing in the file said so.
+
+**Fix:** rows carry `run` (a per-invocation id, `SCHEMA = 2`) and `play`
+announces out loud when the target file already holds that exact cell. ⚠ Rows
+written before the bump have no `run` key and are one undifferentiated pool.
+
+### What the five have in common
+
+| defect | what it printed | who read it |
+|---|---|---|
+| divergent Elo fit | ratings | **nobody** — every published Elo is a win-rate conversion |
+| silent net fallback | an ordinary score | drivers, which cannot tell |
+| health counters | nothing (arena), stderr-on-failure (p57) | **nobody** |
+| bare `bc` identity | a name | the archive, which pooled it |
+| append-only archives | more rows | re-derivations, of which there had been none until §6.1's |
+
+⇒ **Four of the five are invisible by construction, and the fifth is visible only
+to a reader who was not there.** ✅ **No verdict in this repo changes** — every
+published difference ran both arms back-to-back against one instrument, which is
+the property that saved them, and it was adopted (§8ai's "a stored anchor score
+is not a control") for an unrelated reason.
+
+```powershell
+python -X utf8 scripts/arena.py elo                 # refuses an unconverged fit
+python -X utf8 scripts/arena.py play --help         # `[health]`, run ids, @deck
+```
+
 ## 8aq. 🔴 AN ANCHOR CHANGED AFTER ITS LAST MEASUREMENT, AND EVERY DOC QUOTED THE OLD NUMBER — the shipped Crustle pilot is 0.755, not 0.866 (2026-08-02, day 18)
 
 > 🔴 **CORRECTED BY §8ax (day 22). The 0.866 and the 0.755 were measured on

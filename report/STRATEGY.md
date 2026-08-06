@@ -437,9 +437,9 @@ rather than from suspicion.
 
 ---
 
-## 5. Measurement discipline, and two failures of our own process
+## 5. Measurement discipline, and six failures of our own process
 
-The full codex is 18 rules, each paid for by invalidated work (`HANDOFF.md` §2).
+The full codex is 20 rules, each paid for by invalidated work (`HANDOFF.md` §2).
 The load-bearing ones:
 
 1. **n=24 is noise.** ~2 pp effects need n≈2000.
@@ -655,6 +655,64 @@ Related, and caught in the same session: a treatment-minus-control delta is a
 difference of **two independent cells**, so its standard error is √2× a single
 cell's. Our own driver printed the single-cell width, understating resolution by
 **41%**, until it was recomputed by hand rather than read off the log.
+
+### 5.7 Failure six: we had audited every result and never once audited the apparatus
+
+The five failures above were each found by a result that looked wrong. On the
+twenty-second day we ran the opposite exercise: **nothing looked wrong, and we
+audited the validation flow anyway** — the arena, the agent constructor, the
+archive format, the rating fitter and the census that supplies the weights —
+asking of each part only *what does this do that nobody has ever checked?*
+
+It found **seven defects**. This section reports them together because the
+pattern across them is worth more than any one of them.
+
+| # | defect | size | did a published number move? |
+|---|---|---|---|
+| 1 | The Crustle anchor changed **deck** as well as pilot, under one archived name | **+0.140** deck term vs ≤0.027 for every pilot term | 🔴 **two attributions retracted** (§6.3) |
+| 2 | The census keyed evolution lines by card **id**; `evolvesFrom` is a **name** | 228 broken links; 69/75 → **74/75** correct | 🟡 **weights restated**, no verdict changed (§6.3) |
+| 3 | The Elo fitter was **numerically divergent** for fifteen days | `rule:crustle` swung **8,586 Elo** between consecutive iterations | ✅ **no** — every published Elo is a win-rate conversion |
+| 4 | A pinned net that failed its load guard **silently played a different net** | would have run a 496-wide net against a 708-wide control | ✅ **no** — all 32 nets on disk load |
+| 5 | The degradation counters were wired into the submission, **not the arena** | an arm falling back on every decision returned a score and no complaint | ✅ **no** — measured separately, and never fired |
+| 6 | `bc` with no explicit net is an **unversioned identity** | **1,218 games** pooled under one name over four days of a moving checkpoint | ✅ **no** — no cross-era comparison was published |
+| 7 | Archives **append**, so a silent re-run left a control that was never published | 3,000 control games against 1,500 treatment games in one file | ✅ **no** — scores are parsed from the run, not the file |
+
+**Two of the seven changed something we had written; five could not have.** The
+arithmetic of *why* is the finding, and it is not luck in the way it first looks.
+
+🔴 **Defects 3–7 all live in parts of the flow that produce no number a human
+reads.** The rating fitter's output is never quoted — every Elo figure in this
+report is converted from a win rate — so fifteen days of divergence cost nothing
+and, for exactly the same reason, went unnoticed. The health counters print
+nowhere. The archive's redundancy is visible only to a reader re-deriving a
+result, and until §6.1 nobody had. ⇒ **An instrument nobody quotes is an
+instrument nobody checks, and the two facts have the same cause.** Our own codex
+already contained the rule — *a metric that never prints is not a metric that
+passed* — and we had applied it to the agent's diagnostics and never to our own
+tooling.
+
+✅ **And the reason the published verdicts survived is a discipline adopted for an
+unrelated reason.** After an anchor was found to have drifted between two
+sessions, we made it a rule that **every strength claim runs its control
+back-to-back in the same session against the same instrument.** That rule was
+written to defeat drift. What it actually buys is much broader: **any defect that
+shifts an instrument's level cancels in a difference measured through it.** A
+divergent fitter, a mis-specified anchor, a stale weight — none of them can move
+a treatment-minus-control delta whose two arms met the identical apparatus
+minutes apart.
+
+🔴 **Which is precisely why defect 1 was the one that bit.** It is the single
+defect where the two arms did *not* share an instrument: the runs before and
+after the pilot repair were separated by days and were handed different decks,
+and the archive recorded both under one name, so nothing announced that the
+comparison had stopped being back-to-back. **The exception proves the mechanism
+rather than the discipline's luck.**
+
+⚠ **What we are not claiming.** "No verdict changed" is a statement about the
+seven defects we found, not about the ones we did not. The audit was a day of
+reading our own code with a specific question, not a proof of correctness, and
+the fact that its two real findings were both in the *oldest and most reused*
+component of the flow — the anchor set — is the part we would extrapolate from.
 
 ---
 
