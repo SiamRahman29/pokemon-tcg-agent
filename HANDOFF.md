@@ -81,6 +81,31 @@ it lets any team name in a replay be joined to its rating.
 > gives a control that was never the published one. Rows now carry `run`
 > (schema 2) and `play` announces when the target already holds that exact cell.
 >
+> 🔴 **7. AND THEN THE WEIGHTING LAYER — the `w` in every `W = Σ wᵢΔᵢ` headline**
+> (§8ay). `p9_field_census.py` keyed evolution lines by card **id**, but
+> `evolvesFrom` is a **name** and a name has many printings: **228 broken links
+> over 106 basic printings**, so one archetype split by which reprint the
+> opponent happened to draw. **Riolu #677 and #974 both lost Mega Lucario ex**,
+> and `rule:v10`'s share is a published weight. Fixing it exposed a second bug it
+> had masked (`ex` outranked copy count, so a 2-of tech beat a 4/3/3 engine).
+> Hand-checked against all 75 games: **69/75 → 74/75 correct**. Shares: mirror
+> 33.3 → **32.0**, alakazam5 22.0 → **25.3**, crustle 6.7 → **8.0**, v10 4.0 →
+> **5.3**.
+>
+> ⚡ **AND THE BUG IS NOT THE PROBLEM — n=75 IS.** The mirror weight, which
+> carries a third of every weighted verdict, has a 95% interval of **[22.5%,
+> 43.2%]**. *Every correction above sits inside the interval of the estimate it
+> corrects.* Bootstrapped through: weight uncertainty adds **±0.0031** to p37's
+> ΔW and **±0.0023** to E8's. ⇒ **Weight error bites in proportion to how much
+> the per-anchor deltas DIFFER.** p37's quoted ±0.0050 treats the weights as
+> exact; honestly combined it is **±0.0059**. For E8 the ±0.025 game noise
+> swamps it — **the weighting layer is not E8's problem, the 2-seed budget is.**
+> ✅ **No verdict changes** (p37 −0.0140 → −0.0155, still 2.6× outside its kill
+> line, negative in 100% of bootstraps).
+> 🔴 **Separately, E8's −0.0099 was an arithmetic error: it is −0.0078.** Its own
+> table's mirror row is a **score** in a column of **Δ**s; 0.487 − 0.5 = −0.0128,
+> confirmed from the archive at 0.4872 over 3,000 games. Still a null.
+>
 > ⛔ **NOT FIXABLE, so nobody should propose it:** the arena has no common random
 > numbers. `cg.game.battle_start` takes only the two decklists, `StartData`
 > carries no seed, and the RNG lives inside `cg.dll` — verified, two fresh
@@ -2518,6 +2543,20 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     - **Weight every anchor by its measured share before concluding anything.**
       "Wins 2 anchors, loses 1" is not a verdict; "+0.16 on 13.8% and −0.07 on
       12.8%" is the start of one. `p9_field_census.py` supplies the shares.
+
+    🔴 **AND THE SHARES ARE AN ESTIMATE WITH AN INTERVAL — quote it (day 22,
+    §8ay).** They come from **75 replays**, so the mirror's 33.3% is really
+    **[22.5%, 43.2%]**. Every published `±` on a weighted ΔW — p33's ±0.0050,
+    E8's ±0.025 — is **game-sampling noise only and treats the weights as
+    exact**. Bootstrapped, weight uncertainty adds ±0.0023–0.0031, so p37's
+    honest interval is **±0.0059, not ±0.0050**.
+    ⚡ **It bites in proportion to how much the per-anchor deltas DIFFER.** All
+    same sign ⇒ reweighting barely moves the sum. Mixed signs, or one anchor
+    carrying the result ⇒ the weight is doing real work and its interval belongs
+    in the answer.
+    ⚠ The census itself was also **wrong** until day 22 (evolution lines keyed by
+    card id, 228 broken links, 6 of 75 games mislabelled) — but every correction
+    landed *inside* the n=75 interval, which is the point.
 
     ⚠ **And the deeper trap, which is the one to actually carry forward:**
     **CHECK WHERE YOUR POPULATION DATA COMES FROM BEFORE YOU LET IT RETIRE AN

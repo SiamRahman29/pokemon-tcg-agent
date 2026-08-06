@@ -61,48 +61,68 @@ def _evolution_index() -> tuple[dict[int, int], dict[int, list[int]]]:
     Needed because a short game may only ever show us the Kadabra -- naming
     that deck "Kadabra" and the next one "Alakazam" splits one archetype in
     two, which is exactly how a field census lies about concentration.
+
+    🔴 **INDEXED BY NAME, NOT BY ID, AND THAT IS THE WHOLE POINT (day 22).**
+    Until day 22 this resolved `evolvesFrom` to a single card id and `break`ed on
+    the first match, so of the **106 basic printings that share a name with
+    another**, only one got its evolutions attached -- **228 broken links**. A
+    deck seen through Abra #741 was labelled "Abra" while the identical deck seen
+    through Abra #109 was labelled "Alakazam": ONE archetype split by which
+    reprint the opponent happened to draw. That is the precise failure this
+    function exists to prevent, one level down, and it reached the anchors --
+    **Riolu #677 and #974 both lost Mega Lucario ex**, and `rule:v10`'s field
+    share is a published weight (§8ac, `p33.ANCHORS`).
+
+    ⚠ **Linking every printing is not enough on its own.** `_signature` groups
+    observed cards into lines by ROOT, and two printings of one basic are two
+    roots, so a Riolu #974 in play still would not join its own Mega Lucario ex
+    -- three Lucario games label as "Hariyama" that way. Names are the only
+    stable key, so the index is names end to end.
     """
-    by_name: dict[str, list[int]] = defaultdict(list)
-    for cid in cdb.cards():
-        if cdb.is_pokemon(cid):
-            by_name[str(cdb.card(cid).get("name") or "")].append(cid)
-    parent: dict[int, int] = {}
-    children: dict[int, list[int]] = defaultdict(list)
+    parent: dict[str, str] = {}
+    children: dict[str, set[str]] = defaultdict(set)
     for cid in cdb.cards():
         if not cdb.is_pokemon(cid):
             continue
         pre = cdb.card(cid).get("evolvesFrom")
         if not pre:
             continue
-        for pid in by_name.get(str(pre), []):
-            parent[cid] = pid
-            children[pid].append(cid)
-            break
+        parent.setdefault(_name(cid), str(pre))
+        children[str(pre)].add(_name(cid))
     return parent, children
 
 
 _PARENT, _CHILDREN = _evolution_index()
+# one representative id per name, for prize_value / is_basic
+_ID_BY_NAME: dict[str, int] = {}
+for _c in cdb.cards():
+    if cdb.is_pokemon(_c):
+        _ID_BY_NAME.setdefault(_name(_c), _c)
 
 
-def _root(cid: int) -> int:
+def _root(name: str) -> str:
     seen = set()
-    while cid in _PARENT and cid not in seen:
-        seen.add(cid)
-        cid = _PARENT[cid]
-    return cid
+    while name in _PARENT and name not in seen:
+        seen.add(name)
+        name = _PARENT[name]
+    return name
 
 
-def _deepest(root: int, observed: set[int]) -> int:
-    """The card that NAMES this line: its deepest stage, preferring one we saw."""
-    best, best_key = root, (0, root in observed, cdb.prize_value(root), -root)
+def _deepest(root: str, observed: set[str]) -> str:
+    """The stage that NAMES this line: the deepest one, preferring one we saw."""
+    def key(n: str, d: int) -> tuple:
+        rid = _ID_BY_NAME.get(n, 0)
+        return (d, n in observed, cdb.prize_value(rid) if rid else 0, n)
+
+    best, best_key = root, key(root, 0)
     stack = [(root, 0)]
     seen = {root}
     while stack:
-        cid, d = stack.pop()
-        key = (d, cid in observed, cdb.prize_value(cid), -cid)
-        if key > best_key:
-            best, best_key = cid, key
-        for ch in _CHILDREN.get(cid, []):
+        nm, d = stack.pop()
+        k = key(nm, d)
+        if k > best_key:
+            best, best_key = nm, k
+        for ch in _CHILDREN.get(nm, ()):
             if ch not in seen:
                 seen.add(ch)
                 stack.append((ch, d + 1))
@@ -117,37 +137,55 @@ def _signature(poke: Counter, copies: dict[int, int]) -> str:
     Fezandipiti ex as a draw tech got labelled "Fezandipiti ex", which split
     the field's largest archetype across four names. So: **ignore 1-ofs.**
     A card the deck runs one copy of is a tech, not an identity.
+
+    🔴 **AND THE 1-OF GUARD WAS NOT ENOUGH, because `ex` outranked COPIES.** The
+    old order tried every `ex` line first and only fell back to copy count within
+    that group, so a **2-of** tech beat a 4/3/3 engine: five Abra/Kadabra/Alakazam
+    games running 2x Dunsparce as tech label as "Dudunsparce ex" the moment the
+    evolution index is repaired. The same trap as the Fezandipiti one, one copy
+    higher, and it was masked by the orphan bug rather than fixed. **Copies now
+    dominate and `ex`/evolved only break ties** -- which is what "a deck's engine
+    is played in multiples" actually means. ⚠ A deck whose engine and its tech
+    run the SAME count is still decided by ex-ness, and that is a real remaining
+    ambiguity, not a solved case.
     """
     if not poke:
         return "(no Pokemon seen)"
-    observed = set(poke)
+    observed = {_name(cid) for cid in poke}
 
-    # Collapse every observed Pokemon into its evolution LINE, and score the
-    # line by the most copies any of its stages showed.
-    lines: dict[int, dict] = {}
+    # Collapse every observed Pokemon into its evolution LINE -- keyed by the
+    # root's NAME, so two printings of one basic are one line -- and score the
+    # line by the most copies any stage showed, the total copies across its
+    # stages, and whether the deck ever actually EVOLVED it.
+    lines: dict[str, dict] = {}
     for cid in poke:
-        r = _root(cid)
-        e = lines.setdefault(r, {"copies": 0, "obs": 0})
+        r = _root(_name(cid))
+        e = lines.setdefault(r, {"copies": 0, "obs": 0, "mass": 0, "evo": 0})
         e["copies"] = max(e["copies"], copies.get(cid, 0))
+        e["mass"] += copies.get(cid, 0)
         e["obs"] += poke[cid]
+        if not _is_basic(cid):
+            e["evo"] = 1
     for r, e in lines.items():
-        e["name_id"] = _deepest(r, observed)
+        e["label"] = _deepest(r, observed)
 
     # A deck's engine is played in multiples; a 1-of is a tech, not an
     # identity. (This is what mislabelled an Alakazam deck "Fezandipiti ex".)
     cand = [r for r, e in lines.items() if e["copies"] >= 2] or list(lines)
 
-    def best(pool: list[int]) -> str:
-        pool.sort(key=lambda r: (-lines[r]["copies"], -lines[r]["obs"], r))
-        return _name(lines[pool[0]]["name_id"])
+    def rank(r: str) -> tuple:
+        e = lines[r]
+        rid = _ID_BY_NAME.get(e["label"], 0)
+        # A deck EVOLVES its engine and merely plays its support basics. That
+        # separates 2x Mega Lucario ex (behind 3x Solrock) from the Solrock, and
+        # it is the only signal here about deck ROLE rather than count. Then
+        # total copies across the line -- a 4/3/3 Abra line outweighs a 3/2
+        # Dunsparce tech even where their single largest stage ties.
+        return (e["evo"], e["mass"], e["copies"],
+                1 if rid and cdb.prize_value(rid) >= 2 else 0,
+                e["obs"], r)
 
-    exs = [r for r in cand if cdb.prize_value(lines[r]["name_id"]) >= 2]
-    if exs:
-        return best(exs)
-    evo = [r for r in cand if not _is_basic(lines[r]["name_id"])]
-    if evo:
-        return best(evo)
-    return best(cand)
+    return lines[max(cand, key=rank)]["label"]
 
 
 class Game:

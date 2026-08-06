@@ -4180,6 +4180,98 @@ python -X utf8 scripts/p33_anchor_resolution.py
 python -X utf8 scripts/p34_matchup_liveness.py --games 400
 ```
 
+## 8ay. 🔴 THE WEIGHTING LAYER AUDITED: the field census split archetypes by CARD PRINTING, and the weights it feeds come from 75 games (2026-08-06, day 22)
+
+**Why this exists.** §8ax audited the arena — the **Δ** in every headline. Every
+headline is **W = Σ wᵢ Δᵢ**, and nobody had ever audited the **w**. They come
+from `p9_field_census.py` over our own ladder replays (§8ac), and they set the
+weight on every anchor in `p33.ANCHORS`, `p37`, E7 and E8.
+
+### Defect 1 — evolution lines were keyed by card ID, and a name has many
+
+`_evolution_index` resolved `evolvesFrom` (a **name**) to a single card id and
+took the first match. **106 basic printings share a name with another, and 228
+links were broken.** A deck seen through Abra #741 was labelled "Abra"; the
+identical deck seen through Abra #109 was labelled "Alakazam". The function's own
+docstring says it exists to stop exactly this ("naming that deck 'Kadabra' and
+the next one 'Alakazam' splits one archetype in two") — one level down.
+
+It reached the anchors: **Riolu #677 and #974 both lost Mega Lucario ex**, so
+three `lucario_v10` games labelled as "Hariyama", and `rule:v10`'s share is a
+published weight. Fixed by indexing the whole line graph **by name**; linking
+every printing is not enough on its own, because `_signature` groups by ROOT and
+two printings of one basic are two roots.
+
+### Defect 2 — `ex` outranked copy count, and the 1-of guard did not reach it
+
+Repairing defect 1 exposed a second one it had been masking: the ranking tried
+every `ex` line before considering copies, so a **2-of** tech beat a 4/3/3
+engine and five Abra/Kadabra/Alakazam games labelled "Dudunsparce ex". Same trap
+as the Fezandipiti one the docstring already records, one copy higher. Ranking is
+now **evolved-line first** (a deck evolves its engine and merely plays its
+support basics — the only signal here about deck ROLE), then total copies across
+the line, with `ex` as a tie-break.
+
+### Measured against a hand-check of all 75 games
+
+| | old | corrected |
+|---|---|---|
+| correctly labelled | **69 / 75** | **74 / 75** |
+| mirror | 33.3% | **32.0%** |
+| alakazam5 | 21.3% (`p33` used 22.0%) | **25.3%** |
+| crustle | 6.7% | **8.0%** |
+| `rule:v10` | 4.0% | **5.3%** |
+| archaludon / garchomp / dragapult | 8.0 / 6.7 / 5.3% | unchanged |
+
+⚠ **The one remaining error is a mirror game** (`4xMunkidori, 2xSnorunt,
+2xMarnie's Impidimp, 2xFroslass, 1xMarnie's Morgrem`) where the opponent's
+Grimmsnarl ex never reached play, so the Snorunt/Froslass support line outweighed
+the Impidimp line and it labels "Froslass". **Partial observation is the limit
+here, not the tie-break order** — no ordering of these features fixes it without
+breaking the Alakazam-vs-Dunsparce cases. A real fix is matching observed cards
+against the known `decks/*.py` 60s; that is a build, and it is not done.
+
+### 🔴 The finding that dominates both defects: n = 75
+
+| anchor | share | 95% Wilson |
+|---|---|---|
+| **mirror** | 32.0% | **[22.5%, 43.2%]** — 20.7pp wide |
+| alakazam5 | 25.3% | [16.9%, 36.2%] |
+| crustle / archaludon | 8.0% | [3.7%, 16.4%] |
+| `rule:v10` | 5.3% | [2.1%, 12.9%] |
+
+**Every correction above is inside the interval of the estimate it corrects.**
+
+### What it does to the published verdicts — bootstrap over the 75 labels
+
+| verdict | published | corrected | weight-only 95% | sign stable |
+|---|---|---|---|---|
+| `p37` deck search (§8as) | −0.0140 | **−0.0155** | ±0.0031 | 100% |
+| E8 v7 (§8aw) | −0.0099 | **−0.0078** | ±0.0023 | 100% |
+
+⚡ **Weight error bites in proportion to how much the per-anchor deltas DIFFER.**
+p37's deltas are all the same sign, so ±20pp on a share moves ΔW by ±0.0031;
+against p37's ±0.0050 game-sampling resolution that is not negligible — combined
+**±0.0059**, an 18% widening of an interval that was quoted as if the weights
+were exact. For E8 the ±0.025 game noise swamps it entirely: **the weighting
+layer is not E8's problem, the 2-seed budget is**, exactly as day 21 said.
+
+✅ **No verdict changes.** p37's ΔW is still 2.6× outside its kill line and
+negative in 100% of bootstraps; E8 is still an unresolved null with the point
+estimate on the wrong side.
+
+🔴 **But E8's −0.0099 was ALSO an arithmetic error, independent of the weights.**
+Its own table gives mirror Δ = 0.487 − 0.5 = −0.0128, and the archive confirms
+0.4872 pooled over 3,000 games. Recomputed from the published table with the
+published weights: **−0.0078**, not −0.0099. The total implies a mirror Δ of
+−0.019 that appears nowhere. ⚠ The table also prints a **score** in a column
+headed **Δ** for the mirror row and deltas everywhere else, which is how it
+happened.
+
+```powershell
+python -X utf8 scripts/p9_field_census.py --dir replays/submission_v4 replays/submission_v5
+```
+
 ## 8ax. 🔴 THE CRUSTLE ANCHOR CHANGED **DECK** AS WELL AS PILOT, AND THE DECK IS THE BIGGER TERM — §8an and §8aq both attribute it to the wrong thing (2026-08-06, day 22)
 
 **How it surfaced.** An audit of the local validation flow, not a new
@@ -4493,7 +4585,16 @@ a field-wide result.
 | D | rule:archaludon | 8.0% | −0.028 | — |
 | B | rule:crustle | 6.7% | −0.003 | −0.014 |
 | C | rule:v10 | 4.0% | +0.021 | +0.015 |
-| | **weighted** | | **−0.0099** (74%) | **−0.0047** (44%) |
+| | **weighted** | | ~~−0.0099~~ **−0.0078** (74%) | **−0.0047** (44%) |
+
+> 🔴 **−0.0099 was an arithmetic error, corrected day 22 (§8ay).** The mirror row
+> is a **score**, not a Δ, and the rest of the column is Δs: 0.487 − 0.5 =
+> **−0.0128**, which the archive confirms at 0.4872 pooled over 3,000 games.
+> Recomputing this table with its own weights gives **−0.0078**; the published
+> total implies a mirror Δ of −0.019 that appears nowhere. With §8ay's corrected
+> field shares it is −0.0078 as well — the weight changes cancel here.
+> ✅ **The verdict is unchanged**: still inside ±0.025, still an unresolved null
+> with the point estimate on the wrong side.
 
 n=1500 games/cell/seed, 2 seeds. Two-cell 95% resolution **±0.036 per seed,
 ±0.025 pooled**; arm A direct is √2× tighter.

@@ -60,15 +60,25 @@ import math
 # `direct`: the mirror is the one anchor where variant-vs-control is a single
 # head-to-head run (§8aj), so it costs n games instead of 2n AND its estimate is
 # a difference measured within one experiment rather than between two.
+# 🔴 SHARES CORRECTED ON DAY 22 (§8ay). `p9_field_census.py` indexed evolution
+# lines by card ID, and a name resolves to several printings, so **228 links were
+# broken** and one archetype split by which reprint the opponent drew. 6 of 75
+# games were mislabelled. Old -> new: mirror 33.3 -> 32.0, alakazam5 22.0 -> 25.3,
+# crustle 6.7 -> 8.0, v10 4.0 -> 5.3; archaludon/garchomp/dragapult unchanged.
+# ⚠ AND THE BIGGER PROBLEM IS NOT THE BUG: these come from **75 games**, so the
+# mirror's own 95% interval is **[22.5%, 43.2%]** -- a 20.7pp span that dwarfs
+# every correction above. Propagated by bootstrap, weight uncertainty adds only
+# ±0.0023-0.0031 to a weighted ΔW, because it bites in proportion to how much the
+# per-anchor deltas DIFFER; it is not negligible next to the ±0.0050 below.
 ANCHORS = [
-    ("mirror (grimmsnarl)", 0.500, 0.333, True),
+    ("mirror (grimmsnarl)", 0.500, 0.320, True),
     # ⚠ every non-mirror row is `rule:<name>@<its own tuned deck>`
-    ("rule:v10 (M Lucario)", 0.569, 0.040, False),
+    ("rule:v10 (M Lucario)", 0.569, 0.053, False),
     ("rule:archaludon",      0.671, 0.080, False),
-    ("rule:alakazam5",       0.789, 0.220, False),
+    ("rule:alakazam5",       0.789, 0.253, False),
     ("rule:dragapult",       0.809, 0.053, False),
     ("bc:garchomp",          0.857, 0.067, False),
-    ("rule:crustle (v4)",    0.755, 0.067, False),
+    ("rule:crustle (v4)",    0.755, 0.080, False),
 ]
 
 # EVIDENCE §8an: three nets measured against two pilot versions of ONE anchor.
