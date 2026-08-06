@@ -80,6 +80,26 @@ def run(tau: float, matches: int, net: str, archive: Path
             int(score.group(7)), flips or 0, eligible or 0)
 
 
+def _write_log(log: Path, rows: list, args, t0: float) -> str:
+    out = ["E3b near-tie gate -- flip the boundary pair under tau, mirror, "
+           f"direct, one net both sides ({args.net})",
+           f"{args.matches} paired matches per arm, "
+           f"{time.time() - t0:.0f}s so far", "",
+           f"{'tau':>6} {'flipped':>8} {'score':>7} {'95% CI':>18} "
+           f"{'W/D/L':>16} {'n':>6}"]
+    for tau, rate, sc, lo, hi, w, d, ell, n in rows:
+        out.append(f"{tau:6g} {rate:7.1f}% {sc:7.3f}  [{lo:.3f}, {hi:.3f}]  "
+                   f"{f'{w}/{d}/{ell}':>16} {n:6d}")
+    out += ["", "for comparison, §8am measured the same axis by TEMPERATURE "
+            "(n=200/arm, sampling vs argmax):",
+            f"{'tau':>6} {'off-argmax':>11} {'score':>7}"]
+    for tau, dev, sc in P26_TAU_PROBE:
+        out.append(f"{tau:6g} {dev:10.1f}% {sc:7.3f}")
+    text = "\n".join(out) + "\n"
+    log.write_text(text, encoding="utf-8")
+    return text
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--matches", type=int, default=1000,
@@ -95,6 +115,8 @@ def main() -> int:
     archive = ROOT / "out" / "arena" / "p59_e3_flip.jsonl"
     rows = []
     t0 = time.time()
+    log = ROOT / args.log
+    log.parent.mkdir(parents=True, exist_ok=True)
     for tau in taus:
         sc, lo, hi, w, d, ell, n, flips, elig = run(
             tau, args.matches, args.net, archive)
@@ -103,25 +125,13 @@ def main() -> int:
         print(f"tau={tau:<5g} flipped {rate:5.1f}% of decisions  "
               f"score={sc:.3f} [{lo:.3f}, {hi:.3f}] W{w}/D{d}/L{ell} n={n}",
               flush=True)
+        # ⚠ Write after EVERY arm, not at the end. The first attempt at this
+        # sweep was killed inside its first cell and took the whole log with
+        # it; an arm that finished and was not recorded is an arm that has to
+        # be paid for twice.
+        _write_log(log, rows, args, t0)
 
-    out = ["E3b near-tie gate -- flip the boundary pair under tau, mirror, "
-           f"direct, one net both sides ({args.net})",
-           f"{args.matches} paired matches per arm, "
-           f"{time.time() - t0:.0f}s total", "",
-           f"{'tau':>6} {'flipped':>8} {'score':>7} {'95% CI':>18} "
-           f"{'W/D/L':>16} {'n':>6}"]
-    for tau, rate, sc, lo, hi, w, d, ell, n in rows:
-        out.append(f"{tau:6g} {rate:7.1f}% {sc:7.3f}  [{lo:.3f}, {hi:.3f}]  "
-                   f"{f'{w}/{d}/{ell}':>16} {n:6d}")
-    out += ["", "for comparison, §8am measured the same axis by TEMPERATURE "
-            "(n=200/arm, sampling vs argmax):",
-            f"{'tau':>6} {'off-argmax':>11} {'score':>7}"]
-    for tau, dev, sc in P26_TAU_PROBE:
-        out.append(f"{tau:6g} {dev:10.1f}% {sc:7.3f}")
-    text = "\n".join(out) + "\n"
-    log = ROOT / args.log
-    log.parent.mkdir(parents=True, exist_ok=True)
-    log.write_text(text, encoding="utf-8")
+    text = _write_log(log, rows, args, t0)
     print("\n" + text)
     print("Pre-registered: tau=0 -> 0.500 (harness control); 0.10 and 0.50 "
           "null; 1.00 <=0.40; 2.00 <=0.20.")
