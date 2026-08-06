@@ -379,6 +379,64 @@ curve, and we had been walking up it.
 
 ---
 
+### 4g. Where the feature axis ended: three real defects that were not levers
+
+The audit method of §4c kept working right up to the point where it stopped
+paying, and the way it stopped is the most transferable thing in this section.
+
+Over three days we examined the four embedding tables that carry card identity
+and found **three genuine defects**, each measured rather than asserted:
+
+| defect | measurement |
+|---|---|
+| Most of every table ships untrained | 104/1300, 134/1300, 135/1300, **57/1600** rows ever received a gradient. 88,000 parameters ship; ~6,880 were trained. |
+| Untrained rows are not inert | Their norms (3.908–3.953) are indistinguishable from trained rows' (3.970–4.068), so an unseen card arrives as a *confident arbitrary identity*, not as "unknown". |
+| One row is overloaded | Row 0 means empty slot / out-of-range / no stadium / no effect at once, across **25.5% of all slot lookups**, with no `padding_idx`. |
+
+All three are real. All three were repaired, and the repairs were verified to
+fire exactly where predicted. **All three measured nothing.** Weighted over the
+anchor set: **−0.0099** for the full repair and **−0.0047** for the isolated
+padding fix — both inside the run-to-run noise of simply retraining with a
+different seed.
+
+**Why they could not have paid, in hindsight and now in evidence:**
+
+1. **The optimiser had already routed around each one.** The net drove row 0's
+   magnitude to the 11th-smallest of 1,300 rows entirely on its own — it had
+   *learned* that row means "nothing", and pinning it to zero only formalised a
+   conclusion it had already reached.
+2. **The channel was not load-bearing where the defect fired.** An ablation
+   measured that scrambling opponent identity costs **0.838 → 0.587** against an
+   opponent whose cards are in vocabulary, and **−0.018 (nothing)** against the
+   one whose cards are not. Against exactly the opponents the repair targets,
+   the net had already stopped deciding on identity and was deciding on hit
+   points, energy and damage. There was no signal to clean up.
+3. **The blast radius was priced before the build and it was small.** A sizing
+   gate showed the unknown-card repair could only fire against ~12% of the
+   weighted field; every other opponent is ≥78% in vocabulary, making the change
+   a no-op there by construction.
+
+⇒ **The question that predicts a win is not "is this wrong?" but "is the
+network's behaviour currently constrained by this being wrong?"** Gradient
+descent compensates for a great deal. A defect the optimiser can route around is
+a defect in the code, not a limit on the agent — and only the second kind is a
+lever. We did not have this distinction when the section began; §4c–4f's wins
+all happened to be of the second kind, which is why the method appeared general.
+
+The returns curve makes the same point without any theory. Across five
+generations of feature work: **+115 → +37 → +14 → 0 → 0 Elo.**
+
+**We repaired them anyway, and would again.** Shipping 88,000 parameters of
+which 92% are untrained noise is indefensible on its own terms whatever the
+scoreboard says, and the repair paid a dividend the Elo column does not show:
+it removed **11.5% of the entire network** for 0.0018 of held-out fit. Set
+beside the opposite experiment — 8.2× the parameters for **−43 decisions** —
+capacity is now bounded from both directions on the same network. Nothing in
+this project was ever capacity-limited, and we can now say so from measurement
+rather than from suspicion.
+
+---
+
 ## 5. Measurement discipline, and two failures of our own process
 
 The full codex is 18 rules, each paid for by invalidated work (`HANDOFF.md` §2).
@@ -563,6 +621,40 @@ they were measured.
 > measurement taken on a ladder is conditioned on your position in it. If your
 > agent improves, your evaluation set changes underneath you, and every weight
 > derived from it silently expires.
+
+### 5.6 Failure five: our A/Bs measured two networks, not one intervention
+
+Every net-vs-net verdict in this project was built the same way: train the
+treatment and its control at two seeds, play n≈1500–2000 games per cell, pool.
+The interval we printed was the **sampling** interval — how much the games
+wobble. It silently assumed the two nets were the intervention.
+
+They are not. Retraining with a different seed produces a *different network*,
+and on the final experiment we caught that term exceeding the one we were
+quoting:
+
+| arm | seed 0 → seed 1 | swing | 95% sampling interval |
+|---|---|---|---|
+| vs `rule:archaludon` | +0.018 → −0.073 | **0.091** | ±0.051 |
+| **mirror, direct head-to-head** | 0.524 → 0.451 | **0.073** | ±0.036 |
+
+The second row is the damaging one. The direct mirror match-up is our *tightest*
+instrument — treatment against control in a single head-to-head, no third party,
+√2× the resolution of any anchor — and it still moved twice as far between seeds
+as the games alone can explain. Four of five arms flipped sign between seeds.
+
+⇒ **two seeds under-resolves every anchor we own, the mirror included.** A
+verdict at two seeds is a statement about two particular trained networks; to
+make it a statement about an *intervention* takes 3–5 seeds and a comparison of
+distributions. This does not retract the results that ran at n=2000 with
+replicated seeds — their point estimates stand and their signs replicated — but
+their published intervals were optimistic, and every single-seed anchor reading
+elsewhere in this work is worth less than its stated interval.
+
+Related, and caught in the same session: a treatment-minus-control delta is a
+difference of **two independent cells**, so its standard error is √2× a single
+cell's. Our own driver printed the single-cell width, understating resolution by
+**41%**, until it was recomputed by hand rather than read off the log.
 
 ---
 
@@ -924,6 +1016,14 @@ Honest nulls at n≥2000 are the section we are most confident in.
   measured. It belongs in §5's failures-of-our-own-process, not here, and it is
   the third instance of the same error the rest of §5 describes.
 - **Data scaling** — three axes, all negative.
+- **Embedding repair** — the terminal chapter of the feature axis (§4g). Three
+  *genuine* defects in the card-identity tables, all repaired and all null:
+  weighted **−0.0099** for the full repair, **−0.0047** for the isolated padding
+  fix, both inside the noise of a seed change. The reason is the finding: the
+  optimiser had already routed around every one of them. ⚡ Not wasted — the
+  repair also removed **11.5% of the network** for 0.0018 of held-out fit,
+  which with the opposite experiment (8.2× parameters, −43 decisions) bounds
+  capacity from both directions.
 - **Demonstrator weighting** — a fourth axis, and the one we most expected to
   work. Weighting every training row by its demonstrator's leaderboard rating
   (effective sample size held at 41% of the corpus, everything else identical)

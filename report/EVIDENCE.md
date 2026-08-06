@@ -4436,6 +4436,39 @@ interval and destroyed by the next data point — *rule 1 applies to patterns
 across arms, not only to individual arms*; (iii) the driver printed "SUPPORTS
 the UNK mechanism" for a net with no UNK row.
 
+### ✅ The repair is KEPT, not shelved — user decision 2026-08-06
+
+The user's call, recorded verbatim in intent: *the embeddings should be fixed
+regardless of their impact on Elo.* Shipping 88,000 parameters of which 92% are
+untrained noise is indefensible on its own terms whatever the scoreboard says.
+So `--vocab` is **permanent, supported machinery on `main`**, not an experiment
+branch:
+
+- `train_policy.py --vocab out/emb/vocab.json` (implies `--pad`) and
+  `--pad` alone; census from `scripts/p53_emb_vocab.py`.
+- The map travels inside the npz as `vocab_<table>`; `policynet.load` refuses
+  any net whose row count ≠ `2 + len(vocab)`, so tables and map cannot drift.
+- Guards added where raw ids are fed straight to the tables:
+  `scripts/context_accuracy.py` and `scripts/p54_emb_ablate.py` both refuse a
+  v7 net by name rather than mis-index it.
+- Nets: `out/policy_v7_s{0,1}.npz`, `out/policy_v7pad_s{0,1}.npz`.
+
+⚠ **What shipping it would cost, stated so the decision is not made by
+accident.** v5 holds a settled ladder position; v7 measures **−0.0099 weighted**
+— *not* resolved as a loss (every arm's interval spans zero, and the one arm
+outside it is the one where seed variance exceeds sampling variance), but the
+point estimate is on the wrong side and the LB's 63.2-point floor cannot
+adjudicate the difference. **The correctness gain is real and the strength gain
+is measured to be zero**, so this is a judgement call, not an optimisation.
+⇒ **Default: v5 keeps shipping.** To ship v7 instead, the honest framing is the
+standing rule — *name the agent the submission would evict first*.
+
+⚠ **Maintenance note the remap introduces:** the vocabulary is derived from a
+specific corpus. Rebuild the corpus and the census changes, so a net's map is
+only valid for the census it was trained under. It travels in the npz precisely
+so this cannot go wrong silently, but a corpus change means retraining, not
+remapping.
+
 ⇒ **`dist/submission.tar.gz` is unchanged** (v5, md5 `dc1c9acc5ead16e5`).
 
 ---

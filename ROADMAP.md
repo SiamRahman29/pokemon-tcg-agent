@@ -343,6 +343,19 @@ from **both** directions. 🔴 And the instrument got worse, not better: the
 *direct mirror* arm swung **0.073** between seeds against ±0.036 sampling, so
 **two seeds under-resolves every anchor we own, the mirror included.**
 
+✅ **THE REPAIR IS RETAINED — user decision 2026-08-06, on correctness grounds
+rather than Elo.** `train_policy.py --vocab` / `--pad` are permanent supported
+machinery on `main`, guarded at both the loader (`policynet.load` refuses a
+row-count/map mismatch) and at the two consumers that feed raw ids
+(`context_accuracy.py`, `p54_emb_ablate.py`). ⛔ **This closes the axis as a
+source of Elo; it does not deprecate the code.** 🟡 **Whether v7 SHIPS is an
+open call, deliberately left to the user** — default is v5, because −0.0099 is
+unresolved-but-wrong-signed and the ladder cannot adjudicate it. `EVIDENCE`
+§8aw. ⚠ **Method changes this forces on everything downstream: budget ≥3 seeds
+per arm** (2 measures two networks, not an intervention) **and remember a
+two-cell delta's interval is √2× a single cell's** — our own driver printed the
+single-cell width and understated resolution by 41%.
+
 <details><summary>The original day-20 entry, kept for the report chapter</summary>
 
 **⚡ B1 INSTANCE 4 — REOPENED 2026-08-04 (day 20), and this time the defect was

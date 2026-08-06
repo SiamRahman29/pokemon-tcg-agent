@@ -22,7 +22,34 @@ it lets any team name in a replay be joined to its rating.
 >
 > Full record: `docs/experiments/embeddings/E8-vocab-remap.md`, `EVIDENCE` §8aw.
 >
-> ⛔ **DO NOT REOPEN THE EMBEDDING TABLES.** Three experiments, three nulls.
+> ✅ **THE FIX IS KEPT AND SUPPORTED — this is a user decision, not a leftover.**
+> *"I would have liked embeddings to be fixed regardless of their impact on
+> Elo."* Shipping 88,000 parameters of which 92% are untrained noise is
+> indefensible on its own terms whatever the scoreboard says. So:
+>
+> ```
+> python -X utf8 scripts/p53_emb_vocab.py --pds artifacts/pds_v4
+> python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 \
+>     --bs 1024 --loss listwise --state-h 512,256 --head-h 256,128 --pool \
+>     --opt-cols 37 --seed 0 --vocab out/emb/vocab.json --out out/policy_v7_s0.npz
+> ```
+>
+> `--vocab` implies `--pad`; `--pad` alone is the isolated padding fix. The map
+> ships inside the npz as `vocab_<table>` and `policynet.load` refuses any net
+> whose row count ≠ `2 + len(vocab)`. ⛔ **Two scripts feed RAW ids straight to
+> the tables and both now refuse a v7 net by name** — `context_accuracy.py` and
+> `p54_emb_ablate.py`. If you add a third consumer, guard it or map through
+> `vocab_<table>` first. ⚠ **The vocabulary is corpus-derived**: rebuild the
+> corpus and a net's map is stale — that means retraining, not remapping.
+>
+> 🟡 **Shipping v7 is an open judgement call, deliberately not taken.** Default
+> is **v5 keeps shipping** — v7's −0.0099 is not resolved as a loss (every arm
+> spans zero) but the point estimate is on the wrong side, and the LB's
+> 63.2-point floor cannot adjudicate it. Correctness gain real, strength gain
+> measured zero. To change it, name the agent the submission would evict first.
+>
+> ⛔ **DO NOT REOPEN THE EMBEDDING TABLES** *(as a source of Elo — the code
+> stands).* Three experiments, three nulls.
 > E6 measured that identity carries a quarter of the win rate; E7 tried to
 > recover it from card attributes (null); E8 fixed the two *real* defects — 90%
 > of rows shipping untrained, and row 0 overloaded across 25.5% of lookups — and
