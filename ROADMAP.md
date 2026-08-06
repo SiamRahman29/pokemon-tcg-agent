@@ -310,6 +310,82 @@ every kill** — every candidate is a report chapter regardless of outcome.
 
 | ~~**B7**~~ ⚡ **NEW day 10 — arm 1 KILLED day 11** | **Demonstrator selection: rating-weighted and single-expert cloning** | **The premise is measured, not assumed** (EVIDENCE §8q): top-1 agreement with a demonstrator **falls monotonically as the demonstrator improves** — 27.2% miss against ~1110 pilots, 34.4% against #3 (1152), **40.1% against #2 (1163)**, n≥10k per group. Every net we have trained targets the **modal action of a ~50-pilot mixture**, and the best players are furthest from that mode. **We have never cloned ONE policy.** Newly possible: 330 games from #2 and 227 from #3, both on our exact 60. ⚠ Distinct from the dead "more data" axis (§1) — this is demonstrator *selection*, not volume | ✅ **the measurement half is DONE.** Next, in order: (1) tag every corpus row with its demonstrator's LB rating (one `competition_leaderboard_download` + `info.TeamNames`); (2) **rating-weighted clone** on all 248,985 rows; (3) **single-expert fine-tune** of v3 on `artifacts/pds_ntum` (27,318 rows) | 🔴 **DAY 11 VERDICT — the bar was set before the run and arm 1 failed it outright.** (1) ✅ rating-tagging shipped (`--ratings`, 94–98% seat coverage). (2) 🔴 **rating-weighted clone: 0.421 [0.400, 0.443] n=2000 vs v3 in the mirror ≈ −55 Elo** — not a null, a loss (§8t). (3) ✅ **covariate shift RULED OUT** — policy-vs-policy disagreement is 26.7% on our states vs 31.9% on theirs, near-symmetric, with a 1.7% positive control (§8s). (4) ⚡ **§8q's headline NARROWED by a much harder test**: agreement **peaks at 1050–1100 and falls in BOTH directions** (66.7% below 900, 59.9% at 1163) over 87 same-deck, same-week, **zero-exposure** demonstrators — so agreement measures **distance from the fitted mode, not skill**, and familiarity is refuted with a real control (§8r). (5) 🔴 **arm 2, the single-expert fine-tune, loses HARDER: 0.370 [0.349, 0.391] ≈ −92 Elo** — and it imitated *successfully* (ntumlnoob agreement 59.9% → **67.2%** held out). **⇒ B7 CLOSED.** The two failures are ordered by how far each net moved from the field (miss 30.2% → 32.0% → 36.2%, Elo 0 → −55 → −92): **agreement with the FIELD predicts strength; agreement with the EXPERT anti-predicts it** (§8u) |
 
+**🔴 B1 INSTANCE 4 — RAN AND CLOSED 2026-08-05 (day 20). The defect is REAL and
+this repair for it is a CLEAN NULL.** Arm A (mirror, direct, pooled 2 seeds)
+**0.510 [0.470, 0.550]**; hypothesis arm vs `rule:v10` confirmed at n=2,000/cell
+**+0.005 [−0.017, +0.027]**. Per rule 4 the out-of-vocabulary story is retracted
+*for this intervention* — not falsified, since the two seeds disagreed in sign
+at both sample sizes. **§8au's diagnosis is untouched; card attributes just do
+not recover it.** `EVIDENCE` §8av. ⚡ **B1 has now measured +115 → +37 → +14 → 0
+across four instances. The feature axis — the only one that ever paid — is
+SPENT.** ⛔ Do not open instance 5 without a defect priced the way §8au priced
+this one, and do not rebuild v6. 🟢 **Where §8au actually points: the corpus
+contains ZERO Lucario games.** The untested lever is training data containing
+the archetype — a data question, not an encoding one. ⛔ **And a method rule
+that cost this experiment its screen: a two-cell anchor delta carries ±0.080 at
+n=300. Screen on the mirror's DIRECT arm (2× tighter for the same games) or take
+it to n≥2,000.**
+
+**⛔ B1 INSTANCE 5 WAS OPENED ANYWAY ON 2026-08-06 (day 21) — E8 — AND IT IS THE
+THIRD NULL IN A ROW. THE EMBEDDING COMPONENT IS CLOSED.** It cleared the bar the
+line above sets: two defects priced before the build (**90% of every table ships
+untrained and unseen cards read those rows as confident identities**; **row 0
+overloaded across 25.5% of slot lookups with no `padding_idx`**), a fix that
+verifiably fires (UNK hits 6/6 v10 Pokémon, 0/4 crustle, 0/6 mirror), a sizing
+gate run first, and a same-session control. **Weighted −0.0099 (v7, 74% of the
+field) and −0.0047 (v7pad, 44%).** The one arm whose seeds agreed (`rule:v10`
++0.021) **cannot be attributed to the mechanism** — the pad-only net, which has
+no UNK row at all, scored +0.034 on the same arm at seed 0. `EVIDENCE` §8aw.
+⇒ **a real, measured, correctly-repaired defect is still not a lever.** ⚡ The
+one non-null: **92% of the embedding parameters delete for free** (88,000 →
+6,960, 11.5% of the net, −0.0018 corpus fit) — with §8w that bounds capacity
+from **both** directions. 🔴 And the instrument got worse, not better: the
+*direct mirror* arm swung **0.073** between seeds against ±0.036 sampling, so
+**two seeds under-resolves every anchor we own, the mirror included.**
+
+✅ **THE REPAIR IS RETAINED — user decision 2026-08-06, on correctness grounds
+rather than Elo.** `train_policy.py --vocab` / `--pad` are permanent supported
+machinery on `main`, guarded at both the loader (`policynet.load` refuses a
+row-count/map mismatch) and at the two consumers that feed raw ids
+(`context_accuracy.py`, `p54_emb_ablate.py`). ⛔ **This closes the axis as a
+source of Elo; it does not deprecate the code.** 🟡 **Whether v7 SHIPS is an
+open call, deliberately left to the user** — default is v5, because −0.0099 is
+unresolved-but-wrong-signed and the ladder cannot adjudicate it. `EVIDENCE`
+§8aw. ⚠ **Method changes this forces on everything downstream: budget ≥3 seeds
+per arm** (2 measures two networks, not an intervention) **and remember a
+two-cell delta's interval is √2× a single cell's** — our own driver printed the
+single-cell width and understated resolution by 41%.
+
+<details><summary>The original day-20 entry, kept for the report chapter</summary>
+
+**⚡ B1 INSTANCE 4 — REOPENED 2026-08-04 (day 20), and this time the defect was
+MEASURED before the build.** B1 was written down as "nearly spent, one variant
+left". E6 (`EVIDENCE` §8au) found a different defect in the same family and
+priced it without retraining anything: **permuting only the opponent's card-id
+embedding rows on the frozen v5 net costs 0.838 → 0.587 against `rule:crustle`
+and 0.625 → 0.607 against `rule:v10`.** Identifying the opponent's Pokémon is
+worth ~a quarter of the win rate where the corpus supports it — and **all six
+Mega Lucario Pokémon are out of vocabulary**, so that matchup is played blind by
+construction, not by tuning. Only **8.0–10.4%** of the rows in three of the four
+embedding tables ever received a gradient (`atk_emb`: **3.6%**).
+
+This is the same lesson as §8f and §8y one level down: the information is
+present, the *binding* is not — except here the binding is impossible in
+principle, because a per-card embedding row cannot describe a card the corpus
+never contained. **v6 (`--attr`) replaces identity-by-row with
+identity-by-attribute** — energyType, weakness, ability, resistance,
+weak-to-facing-type, plus a `cardType` one-hot on the option — all read from the
+card DB, which covers all 1,267 cards. Sized first (`p55_attr_sizing.py`), and
+the gate **killed `aceSpec` and `pokemonType`/`evolutionType` before they cost
+anything**, which is the §8ab lesson applied in advance rather than after.
+Pre-registered in `docs/experiments/embeddings/E7-card-attributes.md`;
+prediction is an **asymmetry** (gain vs `v10` > gain vs `crustle`), and a
+uniform gain falsifies the mechanism. ⚠ Support is thin — `weakness=5` appears
+on one trained card — and the corpus has zero Lucario games, so a null is live
+and "never trained on the matchup" remains a competing explanation.
+
+</details>
+
 **Sequencing (updated 2026-07-30 — B2 is dead, so the ladder shortened):** B1 is
 independent of the re-anchor and is now the **top-ranked unstarted candidate** —
 and B2's kill strengthens it, because the reason B2 died (this deck's arithmetic

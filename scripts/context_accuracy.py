@@ -47,6 +47,14 @@ class Net:
 
     def __init__(self, path: Path):
         z = np.load(path)
+        # This class indexes the tables with the RAW ids stored in the shards.
+        # A v7 net's rows are vocabulary indices, so those lookups would land on
+        # the wrong card (or IndexError, which is the lucky case). Refuse by
+        # name rather than let either happen.
+        if "vocab_slot_emb" in z:
+            raise SystemExit(f"{path.name} is a --vocab (v7) net; this script "
+                             "feeds raw shard ids straight into the tables. Map "
+                             "them through vocab_<table> first.")
         self.slot_emb, self.bag_emb = z["slot_emb"], z["bag_emb"]
         self.card_emb, self.atk_emb = z["card_emb"], z["atk_emb"]
         self.state = [(z[f"sfc{i}_w"], z[f"sfc{i}_b"])

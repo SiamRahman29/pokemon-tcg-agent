@@ -40,7 +40,7 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import extra_feats, featurize  # noqa: E402
+from sa.features import attr_feats, extra_feats, featurize  # noqa: E402
 from sa.optfeat import option_features, OPT_DENSE  # noqa: E402
 
 SHARD_ROWS = 60_000
@@ -139,7 +139,7 @@ class Writer:
 
     def reset(self):
         self.sd, self.slots, self.seld, self.gid = [], [], [], []
-        self.xd, self.xslots = [], []
+        self.xd, self.xslots, self.attr = [], [], []
         self.bags = {"my_hand": [], "my_discard": [], "opp_discard": []}
         self.od, self.ocard, self.oatk, self.otgt, self.chosen = [], [], [], [], []
         self.off = [0]
@@ -148,7 +148,7 @@ class Writer:
 
     def add(self, dense, bags, seld, opts, chosen_mask, gid, won,
             rating=NO_RATING, opp_rating=NO_RATING, team_id=-1, sub_id=-1,
-            extra=None):
+            extra=None, attr=None):
         self.sd.append(dense)
         # The v4 state block (features.extra_feats). Written unconditionally --
         # a trainer that does not want it simply does not read these arrays,
@@ -156,6 +156,9 @@ class Writer:
         xd, xids = extra
         self.xd.append(xd)
         self.xslots.append(xids)
+        # The v6 card-attribute block (features.attr_feats), same contract:
+        # always written, so a v5 control trains on the IDENTICAL rows.
+        self.attr.append(attr)
         self.slots.append(bags["slots"])
         for k in self.bags:
             self.bags[k].append(bags[k])
@@ -185,6 +188,7 @@ class Writer:
             "seld": np.stack(self.seld),
             "xdense": np.stack(self.xd),
             "xslots": np.stack(self.xslots),
+            "attr": np.stack(self.attr),
             "gid": np.asarray(self.gid, dtype=np.int64),
             "won": np.asarray(self.won, dtype=np.float32),
             # B7: who made this choice, and how good are they? NaN = the team
@@ -375,6 +379,7 @@ def main() -> int:
                     writer.add(dense, bags, sel_features(sel),
                                (od, oc, oa, ot), mask, gid, won,
                                extra=extra_feats(state, sel, me),
+                               attr=attr_feats(state, me),
                                rating=seat_rating.get(me, float("nan")),
                                opp_rating=seat_rating.get(1 - me,
                                                           float("nan")),

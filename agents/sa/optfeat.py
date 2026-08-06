@@ -44,10 +44,23 @@ VERSION = 3
 N_OPTION_TYPES = 17
 OPT_DENSE_V2 = N_OPTION_TYPES + 8      # 25 -- the shipped `policy_lw2` layout
 N_TARGET_FEATS = 12                    # the v3 block, appended
-OPT_DENSE = OPT_DENSE_V2 + N_TARGET_FEATS
+OPT_DENSE_V3 = OPT_DENSE_V2 + N_TARGET_FEATS   # 37 -- the shipped v5 layout
+
+# --- the v6 card-attribute block (day 20), appended after v3 ----------------
+# `cardType` is the strongest thing the rule-14 gate found anywhere (7 distinct,
+# modal 0.416, H/Hmax 0.780 at `opt_card`) and it is absent from BOTH vectors
+# today. That is a textbook binding failure of the same family as B1: the state
+# vector has carried `supporterPlayed` since v1, but every Trainer -- Item,
+# Tool, Supporter, Stadium -- shares option type 7, so the net cannot tell
+# which options that flag forbids. It has to infer "is this a Supporter" from
+# a card-id embedding row, which is exactly the channel that fails on cards the
+# corpus never contained.
+N_CARD_TYPES = 7                       # 0 Pokemon .. 6 Special Energy
+N_OPT_ATTR = N_CARD_TYPES + 2          # + target has ability, target weak to us
+OPT_DENSE = OPT_DENSE_V3 + N_OPT_ATTR
 # Widths a net may legitimately have been trained at. The dim guard accepts these
 # and nothing else -- an unknown width is a stale net, not a new one.
-KNOWN_OPT_DENSE = (OPT_DENSE_V2, OPT_DENSE)
+KNOWN_OPT_DENSE = (OPT_DENSE_V2, OPT_DENSE_V3, OPT_DENSE)
 N_ATTACK_IDS = 1600  # option_features returns (dense, card_id, attack_id, target_id)
 
 # --- the v5 pooled option-set block (day 13) --------------------------------
@@ -294,6 +307,28 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int, int]:
     # it two options naming two different bench slots are identical vectors.
     slot_ix = (opt.get("inPlayIndex") if t in (8, 9) else opt.get("index")) or 0
     dense[v + 11] = (min(slot_ix, 5) + 1) / 6.0
+
+    # --- v6: card attributes (indices 37..45) -----------------------------
+    # Everything above this line is v3 and must not move.
+    w = OPT_DENSE_V3
+    if card_id:
+        ct = _cdb().card(card_id).get("cardType")
+        if ct is not None and 0 <= ct < N_CARD_TYPES:
+            dense[w + ct] = 1.0
+    if pk is not None:
+        tc = _cdb().card(pk["id"])
+        dense[w + N_CARD_TYPES + 0] = 1.0 if tc.get("skills") else 0.0
+        # Same predicate as features.attr_feats' weakHit, but bound to THIS
+        # option rather than to a slot -- the B1 lesson is that the binding is
+        # what the net cannot re-derive for itself.
+        weak = tc.get("weakness") or 0
+        try:
+            mypl = state["players"][me]
+            act = mypl["active"][0] if mypl.get("active") else None
+            atk_t = _cdb().card(act["id"]).get("energyType") if act else None
+        except (KeyError, IndexError, TypeError):
+            atk_t = None
+        dense[w + N_CARD_TYPES + 1] = 1.0 if (weak and atk_t == weak) else 0.0
 
     if attack_id >= N_ATTACK_IDS:
         attack_id = 0

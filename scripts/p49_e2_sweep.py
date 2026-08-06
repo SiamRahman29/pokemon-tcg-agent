@@ -106,6 +106,12 @@ def main() -> int:
             "--state-h", "512,256",
             "--head-h", "256,128",
             "--pool",
+            # 🔴 PIN THE OPTION WIDTH TO THE NET WE WARM-START FROM (day-22
+            # merge). `main` grew `optfeat.OPT_DENSE` 37 -> 46 on day 21, and
+            # `--opt-cols` defaults to OPT_DENSE, so an unpinned run builds a
+            # 726-wide state and `--init out/policy_v5.npz` (708) refuses it.
+            # v5 was trained at 37; anything warm-starting from it must say so.
+            "--opt-cols", "37",
             "--seed", str(args.seed),
             "--device", args.device,
             "--adapters", "mirror,alakazam",

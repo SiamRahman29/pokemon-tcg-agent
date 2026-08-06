@@ -94,6 +94,10 @@ def main() -> int:
             "--state-h", "512,256",
             "--head-h", "256,128",
             "--pool",
+            # See p49: `main` grew OPT_DENSE 37 -> 46 on day 21, and --opt-cols
+            # defaults to it, so an unpinned run wants a 726-wide state while
+            # policy_v5.npz is 708. Pin to the net we --init from.
+            "--opt-cols", "37",
             "--loss", "listwise",
             "--epochs", "1",
             "--bs", "32",

@@ -20,6 +20,7 @@ sa/policynet.py mirrors any depth without a code change.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -36,8 +37,8 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import (DENSE_DIM, N_CARD_IDS, N_EXTRA,  # noqa: E402
-                         N_XSLOT, X_GROUPS)
+from sa.features import (A_GROUPS, DENSE_DIM, N_ATTR,  # noqa: E402
+                         N_CARD_IDS, N_EXTRA, N_XSLOT, X_GROUPS)
 from sa.optfeat import (OPT_DENSE, OPT_DENSE_V2, N_ATTACK_IDS,  # noqa: E402
                         pool_width)
 from sa.routing import (NAME_TO_ROUTE, ROUTE_NAMES,  # noqa: E402
@@ -46,9 +47,77 @@ from sa.routing import (NAME_TO_ROUTE, ROUTE_NAMES,  # noqa: E402
 EMB = 16
 SEL_DENSE = 14
 BAGS = ("my_hand", "my_discard", "opp_discard")
+# The four embedding tables and the id space each is indexed by. Used only by
+# --vocab; see build_remap.
+EMB_TABLES = ("slot_emb", "bag_emb", "card_emb", "atk_emb")
+PAD_IX, UNK_IX = 0, 1
 # The band the LB's top ~40 teams sit in; `val_top1@1120+` says how well the
 # net fits STRONG demonstrators as opposed to the mixture (ROADMAP B7).
 VAL_HI_RATING = 1120.0
+
+
+def build_remap(vocab_path: Path) -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Per-table id -> row map with a PAD row and a shared UNK row.
+
+    The shipped tables are allocated over the RAW id space (1300 card ids, 1600
+    attack ids) but the corpus only ever touches 104/134/135/57 of those rows.
+    The other ~90% are exported at their random init -- harmless while they are
+    never read, and NOT harmless at inference, where an out-of-vocabulary
+    opponent card lands on a random unit-normal vector whose norm (3.91-3.95) is
+    indistinguishable from a trained row's (3.97-4.07). The net cannot tell "a
+    card I have never seen" from "a card I know", so it reads confident garbage.
+
+    Remapping collapses each table to exactly the rows that got a gradient, and
+    routes everything else to ONE row that is trained, by construction, to mean
+    "unknown card". Row 0 is PAD (empty slot / no stadium / no effect); with
+    `padding_idx=0` it is pinned at zero and takes no gradient, which is where
+    the v5 net was heading on its own -- it drove |slot_emb[0]| to 2.337 against
+    a 3.958 table mean, the 11th smallest of 1,300 rows, on 25.5% of lookups.
+
+    ⚠ Per-table, not shared: a card seen in hand but never on an opponent's
+    board is trained in `bag_emb` and untrained in `slot_emb`. One shared vocab
+    would re-introduce the exact defect this removes, just for fewer rows.
+    """
+    from sa.features import N_CARD_IDS
+    from sa.optfeat import N_ATTACK_IDS
+    tabs = json.loads(vocab_path.read_text(encoding="utf-8"))["tables"]
+    sizes = {"atk_emb": N_ATTACK_IDS}
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for t in EMB_TABLES:
+        if t not in tabs:
+            raise SystemExit(f"{vocab_path} has no census for {t}")
+        ids = np.array(sorted(int(k) for k in tabs[t] if int(k) != 0),
+                       dtype=np.int64)
+        size = sizes.get(t, N_CARD_IDS)
+        if ids.size and int(ids[-1]) >= size:
+            raise SystemExit(f"{t}: census id {int(ids[-1])} >= {size}; the "
+                             "vocab was built against a different id space")
+        lut = np.full(size, UNK_IX, dtype=np.int64)
+        lut[PAD_IX] = PAD_IX
+        lut[ids] = np.arange(2, 2 + ids.size, dtype=np.int64)
+        out[t] = (ids, lut)
+    return out
+
+
+def apply_remap(data: "Data", remap: dict[str, tuple[np.ndarray, np.ndarray]]
+                ) -> None:
+    """Rewrite every id column in place. Ids at or past a table's raw size
+    cannot appear -- features.py already clamps them to 0 -- but clip anyway so
+    a corpus built by an older builder fails to UNK rather than IndexError."""
+    def m(t: str, a: np.ndarray) -> np.ndarray:
+        lut = remap[t][1]
+        return lut[np.clip(a, 0, len(lut) - 1)]
+    data.slots = m("slot_emb", data.slots)
+    data.xslots = m("slot_emb", data.xslots)
+    for nm in BAGS:
+        data.bag_flat[nm] = m("bag_emb", data.bag_flat[nm])
+    data.opt_card = m("card_emb", data.opt_card)
+    data.opt_tgt = m("card_emb", data.opt_tgt)
+    data.opt_atk = m("atk_emb", data.opt_atk)
+    for t in EMB_TABLES:
+        ids = remap[t][0]
+        print(f"  {t:9s} {len(remap[t][1]):5d} raw ids -> {ids.size + 2:4d} "
+              f"rows (PAD + UNK + {ids.size} seen)")
 
 
 def load_init(model: PolicyNet, path: Path) -> None:
@@ -149,23 +218,38 @@ class PolicyNet(nn.Module):
                  opt_cols: int = OPT_DENSE, extra: bool = True,
                  pool: bool = False, outcome: bool = False,
                  count: bool = False, adapter_names: list[str] | None = None,
-                 adapter_h: int = 64, adapters_off: bool = False):
+                 adapter_h: int = 64, adapters_off: bool = False,
+                 attr: bool = False,
+                 rows: dict[str, int] | None = None, pad: bool = False):
         super().__init__()
         self.opt_cols = opt_cols
         self.extra = extra
         self.pool = pool
         self.adapters_off = adapters_off
         self.adapter_h = adapter_h
-        self.slot_emb = nn.Embedding(N_CARD_IDS, EMB)
-        self.bag_emb = nn.EmbeddingBag(N_CARD_IDS, EMB, mode="mean",
-                                       include_last_offset=True)
-        self.card_emb = nn.Embedding(N_CARD_IDS, EMB)
-        self.atk_emb = nn.Embedding(N_ATTACK_IDS, EMB)
+        self.attr = attr
+        # `rows` shrinks each table to its own vocabulary (--vocab); absent, the
+        # tables span the raw id space exactly as v3-v6 did. Only the ROW count
+        # changes -- EMB is untouched -- so every downstream width, and hence
+        # every exported layer shape, is identical to the control's.
+        r = rows or {}
+        pi = PAD_IX if pad else None
+        self.slot_emb = nn.Embedding(r.get("slot_emb", N_CARD_IDS), EMB,
+                                     padding_idx=pi)
+        self.bag_emb = nn.EmbeddingBag(r.get("bag_emb", N_CARD_IDS), EMB,
+                                       mode="mean", include_last_offset=True,
+                                       padding_idx=pi)
+        self.card_emb = nn.Embedding(r.get("card_emb", N_CARD_IDS), EMB,
+                                     padding_idx=pi)
+        self.atk_emb = nn.Embedding(r.get("atk_emb", N_ATTACK_IDS), EMB,
+                                    padding_idx=pi)
         in_state = DENSE_DIM + 12 * EMB + len(BAGS) * EMB + SEL_DENSE
         if extra:                       # the v4 block, appended (features.py)
             in_state += N_EXTRA + N_XSLOT * EMB
         if pool:                        # the v5 block, appended (optfeat.py)
             in_state += pool_width(opt_cols, EMB)
+        if attr:                        # the v6 block, appended (features.py)
+            in_state += N_ATTR
         self.state_fc = _mlp([in_state, *state_h], dropout, None)
         in_head = state_h[-1] + opt_cols + 3 * EMB
         self.head = _mlp([in_head, *head_h], dropout, 1)
@@ -195,7 +279,7 @@ class PolicyNet(nn.Module):
 
     def forward(self, dense, slots, bag_flat, bag_off, seld,
                 opt_dense, opt_card, opt_atk, opt_tgt, opt_row,
-                xdense=None, xslots=None, routes=None,
+                xdense=None, xslots=None, attrs=None, routes=None,
                 return_state: bool = False):
         # The per-option encoding is built FIRST, because the v5 pool feeds it
         # into the state. It is the same tensor the head consumes below, so the
@@ -223,6 +307,10 @@ class PolicyNet(nn.Module):
         # vector byte-for-byte. Same discipline, third generation.
         if self.pool:
             parts.append(self._pool(oenc, opt_row, dense.shape[0]))
+        # ...and v6 goes after v5, so `attr=False` reproduces the v5 state
+        # vector byte-for-byte. Same discipline, fourth generation.
+        if self.attr:
+            parts.append(attrs)
         srepr = self.state_fc(torch.cat(parts, dim=1))       # (B, H)
         per_opt = torch.cat([srepr[opt_row], oenc], dim=1)   # (O, ...)
         logits = self.head(per_opt).squeeze(1)               # (O,)
@@ -310,7 +398,7 @@ def count_targets(seld: torch.Tensor, chosen: torch.Tensor,
 class Data:
     def __init__(self, paths: list[Path]):
         sd, slots, seld, gid, won, rating = [], [], [], [], [], []
-        xd, xs = [], []
+        xd, xs, at = [], [], []
         # B8. Present only in shards written by p26_selfplay_gen.py; a BC
         # corpus gets NaN, which is what `--advantage` refuses to weight.
         margin: list = []
@@ -337,6 +425,11 @@ class Data:
                       else np.zeros((n, N_EXTRA), dtype=np.float32))
             xs.append(z["xslots"] if "xslots" in z
                       else np.zeros((n, N_XSLOT), dtype=np.int32))
+            # Same contract for the v6 block: corpora built before day 20 get
+            # zeros so they stay loadable, and `--attr` on such a corpus is
+            # refused in main() rather than silently training on nothing.
+            at.append(z["attr"] if "attr" in z
+                      else np.zeros((n, N_ATTR), dtype=np.float32))
             gid.append(z["gid"])
             won.append(z["won"])
             self.rows_per_path.append(n)
@@ -365,7 +458,9 @@ class Data:
         self.seld = np.concatenate(seld)
         self.xdense = np.concatenate(xd)
         self.xslots = np.concatenate(xs).astype(np.int64)
+        self.attr = np.concatenate(at)
         self.has_extra = all("xdense" in np.load(p) for p in paths)
+        self.has_attr = all("attr" in np.load(p) for p in paths)
         self.gid = np.concatenate(gid)
         self.won = np.concatenate(won)
         self.rating = np.concatenate(rating)
@@ -431,6 +526,7 @@ class Data:
                    sel,
                    torch.from_numpy(self.xdense[sel]),
                    torch.from_numpy(self.xslots[sel]),
+                   torch.from_numpy(self.attr[sel]),
                    torch.from_numpy(self.routes[sel]))
 
 
@@ -560,8 +656,31 @@ def apply_x_drop(data: "Data", names: list[str]) -> np.ndarray:
     return mask
 
 
+def apply_a_drop(data: "Data", names: list[str]) -> np.ndarray:
+    """Zero the named members of the v6 attribute block and return the mask.
+
+    Same discipline as `apply_x_drop`: the block ships whole, so without a
+    drop-one arm nothing would say WHICH of energyType / weakness / ability /
+    resist / weakHit paid for the result. Zeroing keeps widths, parameter count
+    and init identical, so an arm differs only in column content.
+    """
+    mask = np.ones(N_ATTR, dtype=np.float32)
+    for nm in names:
+        if nm not in A_GROUPS:
+            raise SystemExit(f"--drop-a {nm}: known groups are "
+                             f"{', '.join(A_GROUPS)}")
+        for i in A_GROUPS[nm]:
+            mask[i] = 0.0
+    data.attr = data.attr * mask
+    print(f"--drop-a {','.join(names)}: zeroed {int((mask == 0).sum())} of "
+          f"{N_ATTR} attr columns")
+    return mask
+
+
 def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
-               x_mask: np.ndarray | None = None):
+               x_mask: np.ndarray | None = None,
+               a_mask: np.ndarray | None = None,
+               remap: dict[str, tuple[np.ndarray, np.ndarray]] | None = None):
     """Export every Linear generically, so inference mirrors any depth."""
     def arr(t: torch.Tensor) -> np.ndarray:
         return t.detach().cpu().numpy()
@@ -578,7 +697,20 @@ def export_npz(model: PolicyNet, path: Path, count_frac: np.ndarray,
         # no such key and are read as 0.
         "n_pool": np.array([pool_width(model.opt_cols, EMB) if model.pool
                             else 0], dtype=np.int64),
+        # Width of the v6 attribute block, 0 if the net has none. Same reason as
+        # n_pool: `state_in` alone no longer identifies the layout once three
+        # optional blocks exist. Nets exported before day 20 lack this key and
+        # are read as 0.
+        "n_attr": np.array([N_ATTR if model.attr else 0], dtype=np.int64),
     }
+    if remap is not None:
+        # The raw ids this net's rows stand for, in row order after PAD and UNK.
+        # Inference rebuilds the lookup from these, so the map can never drift
+        # from the tables it was trained with -- they travel in one file.
+        for t in EMB_TABLES:
+            out[f"vocab_{t}"] = remap[t][0].astype(np.int64)
+    if a_mask is not None:
+        out["a_mask"] = a_mask
     if x_mask is not None:
         # Which members of the v4 block this net was actually shown. Inference
         # applies it, so an ablation arm can never be fed a column it never saw.
@@ -691,6 +823,31 @@ def main() -> int:
                          "ABLATE (features.X_GROUPS: "
                          f"{','.join(X_GROUPS)}). The surviving mask is stored "
                          "in the npz and applied at inference.")
+    ap.add_argument("--attr", action="store_true",
+                    help="the v6 block: append per-slot CARD ATTRIBUTES "
+                         "(energyType, weakness, ability, resistance, "
+                         "weak-to-facing-type) to the STATE vector. These come "
+                         "from the card DB, which covers all 1,267 cards, so "
+                         "unlike an embedding row they transfer to cards the "
+                         "corpus never contained (E6). Default off = the v5 "
+                         "state vector, byte-for-byte, on identical rows.")
+    ap.add_argument("--drop-a", default="",
+                    help="comma-separated members of the v6 attribute block to "
+                         "ABLATE (features.A_GROUPS: "
+                         f"{','.join(A_GROUPS)}). The surviving mask is stored "
+                         "in the npz and applied at inference.")
+    ap.add_argument("--vocab", default="",
+                    help="the v7 block: an out/emb/vocab.json census. Collapses "
+                         "each embedding table to the rows the corpus actually "
+                         "trained, with row 0 = PAD and row 1 = a shared UNK "
+                         "that every out-of-vocabulary card routes to. Implies "
+                         "--pad. Default off = the v3-v6 raw id space, i.e. an "
+                         "unseen card reads a random untrained row.")
+    ap.add_argument("--pad", action="store_true",
+                    help="pin embedding row 0 to zero and give it no gradient "
+                         "(padding_idx). Alone, this is the v7 block's SECOND "
+                         "half only -- the arm that isolates 'id 0 is "
+                         "overloaded' from 'unseen cards read noise'.")
     ap.add_argument("--pool", action="store_true",
                     help="the v5 block: append a mean/max pool of the option "
                          "encodings + two count scalars to the STATE vector "
@@ -771,12 +928,27 @@ def main() -> int:
     if args.anchor_ds:
         print(f"--anchor-ds: {int(is_rl.sum()):,} primary rows + "
               f"{int((~is_rl).sum()):,} anchor rows")
+    remap = None
+    rows = None
+    if args.vocab:
+        vp = ROOT / args.vocab
+        if not vp.exists():
+            raise SystemExit(f"{vp} missing -- run scripts/p53_emb_vocab.py")
+        remap = build_remap(vp)
+        print(f"--vocab {args.vocab}:")
+        apply_remap(data, remap)
+        rows = {t: int(remap[t][0].size) + 2 for t in EMB_TABLES}
+        args.pad = True
     x_mask = None
     if args.drop_x:
         if args.no_extra:
             raise SystemExit("--drop-x ablates the v4 block; --no-extra "
                              "already removes all of it")
         x_mask = apply_x_drop(data, [s.strip() for s in args.drop_x.split(",")
+                                     if s.strip()])
+    a_mask = None
+    if args.drop_a:
+        a_mask = apply_a_drop(data, [s.strip() for s in args.drop_a.split(",")
                                      if s.strip()])
     keep = np.ones(data.n, dtype=bool)
     if args.winners_only:
@@ -842,6 +1014,11 @@ def main() -> int:
     if not args.no_extra and not data.has_extra:
         raise SystemExit(f"{args.ds} was built before the v4 state block; "
                          "rebuild it or pass --no-extra")
+    if args.attr and not data.has_attr:
+        raise SystemExit(f"{args.ds} was built before the v6 attribute block; "
+                         "rebuild it with scripts/build_policy_dataset.py")
+    if args.drop_a and not args.attr:
+        raise SystemExit("--drop-a ablates the v6 block; it needs --attr")
     if args.pool and args.no_extra:
         raise SystemExit("--pool is the v5 block and is defined as v4 + pool; "
                          "inference only knows the v4 and v5 state widths")
@@ -851,7 +1028,8 @@ def main() -> int:
                       count=args.aux_count_w > 0,
                       adapter_names=adapter_names or None,
                       adapter_h=args.adapter_h,
-                      adapters_off=args.adapters_off).to(device)
+                      adapters_off=args.adapters_off,
+                      attr=args.attr, rows=rows, pad=args.pad).to(device)
     if args.init:
         load_init(model, ROOT / args.init)
     if args.freeze_except:
@@ -873,7 +1051,9 @@ def main() -> int:
               f"h={args.adapter_h} off={args.adapters_off}")
     print(f"arch: state{list(state_h)} head{list(head_h)} loss={args.loss} "
           f"opt_cols={args.opt_cols}/{OPT_DENSE} "
-          f"extra={not args.no_extra} pool={args.pool} "
+          f"extra={not args.no_extra} pool={args.pool} attr={args.attr} "
+          f"vocab={bool(args.vocab)} pad={args.pad} "
+          f"emb_params={sum(e.weight.numel() for e in (model.slot_emb, model.bag_emb, model.card_emb, model.atk_emb)):,} "
           f"aux_outcome={args.aux_outcome_w:g} "
           f"aux_count={args.aux_count_w:g} "
           f"adapters={adapter_names or []} "
@@ -893,7 +1073,7 @@ def main() -> int:
         tot = seen = 0.0
         for batch in data.batches(train_idx, args.bs, rng):
             (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-             spans, rw, _sel, xd, xs, routes) = batch
+             spans, rw, _sel, xd, xs, at, routes) = batch
             dense, slots, seld = (dense.to(device), slots.to(device),
                                   seld.to(device))
             bf = {k: v.to(device) for k, v in bf.items()}
@@ -901,12 +1081,13 @@ def main() -> int:
             odn, ocd, oat = odn.to(device), ocd.to(device), oat.to(device)
             otg, orow, om = otg.to(device), orow.to(device), om.to(device)
             rw, xd, xs = rw.to(device), xd.to(device), xs.to(device)
+            at = at.to(device)
             routes = routes.to(device)
             if opt is not None:
                 opt.zero_grad()
             need_state = args.aux_outcome_w > 0 or args.aux_count_w > 0
             result = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
-                           orow, xd, xs, routes=routes,
+                           orow, xd, xs, at, routes=routes,
                            return_state=need_state)
             if need_state:
                 out, srepr = result
@@ -956,7 +1137,7 @@ def main() -> int:
         with torch.no_grad():
             for batch in data.batches(val_idx, args.bs, None):
                 (dense, slots, bf, bo, seld, odn, ocd, oat, otg, orow, om,
-                 spans, _rw, vsel, xd, xs, routes) = batch
+                 spans, _rw, vsel, xd, xs, at, routes) = batch
                 dense, slots, seld = (dense.to(device), slots.to(device),
                                       seld.to(device))
                 bf = {k: v.to(device) for k, v in bf.items()}
@@ -964,10 +1145,11 @@ def main() -> int:
                 odn, ocd, oat = odn.to(device), ocd.to(device), oat.to(device)
                 otg, orow, om = otg.to(device), orow.to(device), om.to(device)
                 xd, xs = xd.to(device), xs.to(device)
+                at = at.to(device)
                 routes = routes.to(device)
                 need_state = args.aux_outcome_w > 0 or args.aux_count_w > 0
                 result = model(dense, slots, bf, bo, seld, odn, ocd, oat, otg,
-                               orow, xd, xs, routes=routes,
+                               orow, xd, xs, at, routes=routes,
                                return_state=need_state)
                 if need_state:
                     out, srepr = result
@@ -1040,10 +1222,12 @@ def main() -> int:
         # `--export-last` is mandatory for both arms of such a pair.
         if args.export_last:
             if epoch == args.epochs - 1:
-                export_npz(model, ROOT / args.out, count_frac, x_mask)
+                export_npz(model, ROOT / args.out, count_frac, x_mask, a_mask,
+                           remap)
         elif acc > best:
             best = acc
-            export_npz(model, ROOT / args.out, count_frac, x_mask)
+            export_npz(model, ROOT / args.out, count_frac, x_mask, a_mask,
+                           remap)
     return 0
 
 

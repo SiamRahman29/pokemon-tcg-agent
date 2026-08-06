@@ -32,7 +32,7 @@ from ptcg.env import sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import extra_feats, featurize  # noqa: E402
+from sa.features import attr_feats, extra_feats, featurize  # noqa: E402
 from sa.optfeat import OPT_DENSE, option_features  # noqa: E402
 from build_policy_dataset import Writer, sel_features  # noqa: E402
 
@@ -83,7 +83,16 @@ def add_row(writer: Writer, item: dict[str, Any], action: list[int],
     mask[action] = 1.0
     writer.add(
         dense, bags, sel_features(sel), (od, oc, oa, ot), mask, gid, 0.5,
-        extra=extra_feats(state, sel, me))
+        extra=extra_feats(state, sel, me),
+        # 🔴 The v6 card-attribute block, added to `Writer` on `main` (day 20)
+        # and wired in here at the day-22 merge. `Writer.flush()` does
+        # `np.stack(self.attr)`, so omitting it stacks a list of `None` into an
+        # OBJECT array and the shard then fails to load at all under
+        # `allow_pickle=False` -- which is how `p46_dagger_smoke.py` caught this.
+        # ⚠ It matters beyond loading: E3's whole design is that treatment and
+        # control differ ONLY in the reviewed action label, so a DAgger shard
+        # must be column-identical to a `build_policy_dataset.py` shard.
+        attr=attr_feats(state, me))
 
 
 def prepare_dir(path: Path, force: bool) -> None:

@@ -18,6 +18,250 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
+> # ▶ START HERE — DAY 22: THE VALIDATION FLOW WAS AUDITED AND SIX THINGS WERE WRONG (2026-08-06)
+>
+> Full record: `EVIDENCE` §8ax; the tool changes are in `scripts/arena.py`,
+> `agents/sa/bcagent.py`, `scripts/p56_e7_arena.py`, `scripts/p57_e8_arena.py`.
+> **No net-vs-net verdict in this repo changes.** Every published difference ran
+> both arms back-to-back against one instrument, and that is what saved them.
+>
+> 🔴 **1. THE CRUSTLE ANCHOR CHANGED DECK AS WELL AS PILOT, AND THE DECK IS THE
+> BIGGER TERM.** `rule:crustle` ran on `crustle_v1` in p10/p19/p20/p34/p35/p37
+> and on `crustle` in p27/p28/p54/p56/p57 — **20 of 60 slots different**,
+> archived under one identity. Measured with the pilot held fixed at the repo's
+> v4, n=2,000/cell: **0.753 [0.734, 0.772] vs 0.893 [0.879, 0.906] = +0.140**
+> against a ±0.031 resolution. ⇒ **§8an's "+0.09 from the empty-bench guard" and
+> §8aq's "−0.111 from the Dwebble tie-break" both straddle a deck swap and
+> neither isolates the pilot.** Same-deck, every pilot term is **≤0.027**.
+> ⚡ **§8ah's originally expected sign is restored** — the repair made the pilot
+> *stronger* (≈ −0.04 to us), which is what §8ah predicted and §8an reported as a
+> surprise. 🔴 **§8aq's "WHICH Pokémon it benches matters more than WHETHER" is
+> retracted.** ⇒ **RULE 20.**
+>
+> 🔴 **2. `arena.py elo` WAS NUMERICALLY DIVERGENT FOR FIFTEEN DAYS.** Fixed
+> `lr=8.0` on an unnormalised batch gradient: past ~175 games per player the
+> iteration oscillates. `rule:crustle` swung **8,586 Elo** between consecutive
+> passes and read −3632 / +258 / +3397 / −3275 at iterations 499/500/501/502.
+> **Every rating it ever printed was an arbitrary sample of an oscillation.**
+> Nothing published rests on it — every Elo figure in `EVIDENCE` is a win-rate
+> conversion — **which is exactly why it survived: an unused instrument is never
+> checked.** Now a damped diagonal-Newton fit that converges to 1e-4 and
+> reproduces the bc-vs-crustle head-to-head **0.652 → 0.652**; it refuses to
+> print an unconverged fit, and flags the **12 agents that never played a game
+> connected to the anchor** (their level is prior, not evidence).
+>
+> 🔴 **3. A `net=` THAT FAILED THE LOAD GUARD SILENTLY PLAYED `sa/policy_net.npz`.**
+> `policynet.load` returns None rather than raising, and `__call__` falls back to
+> the singleton — the old width-496 `policy_lw2`. Demonstrated with a v7 net
+> whose vocab map was one entry short (§8aw's exact "stale map" hazard): accepted
+> by `build_agent`, archived under the requested net's name, would have played
+> 496-wide lw2 against a 708-wide control and printed an ordinary score.
+> ✅ **All 32 nets on disk load, so no past result is affected.** Now refuses.
+>
+> 🟠 **4. THE DEGRADATION COUNTERS WERE WIRED ONLY INTO THE SUBMISSION.** Day 15
+> built `bcagent.STATS` + `health_line()` to catch the index-order fallback and
+> called it *"the highest value-per-byte thing to log"* — then wired it into
+> Kaggle's `main.py` and **not into the arena**, the instrument day 17 calls *"the
+> ONLY instrument"*. Worse, `p57` ran arena with `capture_output=True` and printed
+> stderr **only on non-zero exit**, so the tracebacks were discarded on every
+> successful run. `arena.py play` now prints `[health]`; p56/p57/p58 surface
+> stderr on success and **hard-stop on DEGRADED**.
+>
+> 🟠 **5. `bc` WITH NO `net=` IS AN UNVERSIONED IDENTITY** — 1,226 games in
+> `games.jsonl` under the bare name `bc`, spanning 07-28 → 07-31, across which
+> `sa/policy_net.npz` was a moving target. Rule 19 one seat over. Agent names now
+> carry `#<md5-8>` **of the weight bytes**, so a retrain that reuses a path
+> archives as a new agent instead of pooling. (Shipped v5 fingerprints
+> `#dc1c9acc`, matching the bundle md5 already recorded below.)
+>
+> 🟡 **6. ARCHIVES APPEND AND A RE-RUN WAS INVISIBLE.** `p57_e8.jsonl` holds
+> **3,000 games per v5c control cell against 1,500 per treatment cell** — the
+> control was re-run for the v7pad pass into the same file. Published numbers are
+> safe (drivers parse the printed score line), but re-deriving from that archive
+> gives a control that was never the published one. Rows now carry `run`
+> (schema 2) and `play` announces when the target already holds that exact cell.
+>
+> 🔴 **7. AND THEN THE WEIGHTING LAYER — the `w` in every `W = Σ wᵢΔᵢ` headline**
+> (§8ay). `p9_field_census.py` keyed evolution lines by card **id**, but
+> `evolvesFrom` is a **name** and a name has many printings: **228 broken links
+> over 106 basic printings**, so one archetype split by which reprint the
+> opponent happened to draw. **Riolu #677 and #974 both lost Mega Lucario ex**,
+> and `rule:v10`'s share is a published weight. Fixing it exposed a second bug it
+> had masked (`ex` outranked copy count, so a 2-of tech beat a 4/3/3 engine).
+> Hand-checked against all 75 games: **69/75 → 74/75 correct**. Shares: mirror
+> 33.3 → **32.0**, alakazam5 22.0 → **25.3**, crustle 6.7 → **8.0**, v10 4.0 →
+> **5.3**.
+>
+> ⚡ **AND THE BUG IS NOT THE PROBLEM — n=75 IS.** The mirror weight, which
+> carries a third of every weighted verdict, has a 95% interval of **[22.5%,
+> 43.2%]**. *Every correction above sits inside the interval of the estimate it
+> corrects.* Bootstrapped through: weight uncertainty adds **±0.0031** to p37's
+> ΔW and **±0.0023** to E8's. ⇒ **Weight error bites in proportion to how much
+> the per-anchor deltas DIFFER.** p37's quoted ±0.0050 treats the weights as
+> exact; honestly combined it is **±0.0059**. For E8 the ±0.025 game noise
+> swamps it — **the weighting layer is not E8's problem, the 2-seed budget is.**
+> ✅ **No verdict changes** (p37 −0.0140 → −0.0155, still 2.6× outside its kill
+> line, negative in 100% of bootstraps).
+> 🔴 **Separately, E8's −0.0099 was an arithmetic error: it is −0.0078.** Its own
+> table's mirror row is a **score** in a column of **Δ**s; 0.487 − 0.5 = −0.0128,
+> confirmed from the archive at 0.4872 over 3,000 games. Still a null.
+>
+> ⛔ **NOT FIXABLE, so nobody should propose it:** the arena has no common random
+> numbers. `cg.game.battle_start` takes only the two decklists, `StartData`
+> carries no seed, and the RNG lives inside `cg.dll` — verified, two fresh
+> processes running an identical 5-game script diverge. **`evaluate_paired` is
+> seat-balanced, not variance-reduced.** The ±0.036/cell floor is structural;
+> more games or more seeds are the only levers.
+>
+> ---
+>
+> # ▶ DAY 21: THE EMBEDDING COMPONENT IS SPENT (2026-08-06)
+>
+> Full record: `docs/experiments/embeddings/E8-vocab-remap.md`, `EVIDENCE` §8aw.
+>
+> ✅ **THE FIX IS KEPT AND SUPPORTED — this is a user decision, not a leftover.**
+> *"I would have liked embeddings to be fixed regardless of their impact on
+> Elo."* Shipping 88,000 parameters of which 92% are untrained noise is
+> indefensible on its own terms whatever the scoreboard says. So:
+>
+> ```
+> python -X utf8 scripts/p53_emb_vocab.py --pds artifacts/pds_v4
+> python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 \
+>     --bs 1024 --loss listwise --state-h 512,256 --head-h 256,128 --pool \
+>     --opt-cols 37 --seed 0 --vocab out/emb/vocab.json --out out/policy_v7_s0.npz
+> ```
+>
+> `--vocab` implies `--pad`; `--pad` alone is the isolated padding fix. The map
+> ships inside the npz as `vocab_<table>` and `policynet.load` refuses any net
+> whose row count ≠ `2 + len(vocab)`. ⛔ **Two scripts feed RAW ids straight to
+> the tables and both now refuse a v7 net by name** — `context_accuracy.py` and
+> `p54_emb_ablate.py`. If you add a third consumer, guard it or map through
+> `vocab_<table>` first. ⚠ **The vocabulary is corpus-derived**: rebuild the
+> corpus and a net's map is stale — that means retraining, not remapping.
+>
+> 🟡 **Shipping v7 is an open judgement call, deliberately not taken.** Default
+> is **v5 keeps shipping** — v7's −0.0099 is not resolved as a loss (every arm
+> spans zero) but the point estimate is on the wrong side, and the LB's
+> 63.2-point floor cannot adjudicate it. Correctness gain real, strength gain
+> measured zero. To change it, name the agent the submission would evict first.
+>
+> ⛔ **DO NOT REOPEN THE EMBEDDING TABLES** *(as a source of Elo — the code
+> stands).* Three experiments, three nulls.
+> E6 measured that identity carries a quarter of the win rate; E7 tried to
+> recover it from card attributes (null); E8 fixed the two *real* defects — 90%
+> of rows shipping untrained, and row 0 overloaded across 25.5% of lookups — and
+> both fixes measure **weighted −0.0099 (v7) and −0.0047 (v7pad)** over 74% and
+> 44% of the field. **A real defect is not a lever.** Nets kept at
+> `out/policy_v7_s{0,1}.npz` / `out/policy_v7pad_s{0,1}.npz`; **v5 still ships**.
+>
+> ⚡ **CAPACITY IS BOUNDED FROM BOTH DIRECTIONS NOW.** 88,000 → 6,960 embedding
+> parameters (−92.1%, 11.5% of the whole net) costs **0.0018 / 0.0003** of
+> corpus fit and moves no anchor. With §8w (8.2× params, −43 decisions):
+> **nothing in this project has ever been capacity-limited.** Stop proposing
+> bigger or smaller nets.
+>
+> 🔴 **TWO SEEDS × 1,500 GAMES UNDER-RESOLVES EVERY ANCHOR — INCLUDING THE
+> MIRROR.** Day 20 warned §8z's ±0.019 floor was mirror-direct only. E8 found
+> the *direct mirror* arm swinging **0.073** between seeds against ±0.036
+> sampling, and archaludon swinging **0.091** against ±0.051. ⇒ **budget ≥3
+> seeds, or stop quoting anchor deltas under ~0.05.** This does not retract §8z
+> or §8aa (n=2,000, replicated) but their intervals were optimistic.
+>
+> ⛔ **A two-cell delta's resolution is √2× a single cell's.** The E8 driver
+> shipped printing one cell's width and understated it by 41%. At n=1500/cell:
+> **±0.036 per seed, ±0.025 pooled**. Arm A (direct) is √2× tighter.
+>
+> ⛔ **RULE 1 APPLIES TO PATTERNS ACROSS ARMS, NOT ONLY TO SINGLE ARMS.** E8
+> published a monotone dose-response across four arms built from single-seed
+> cells each inside its own interval; the next data point destroyed it. Knowing
+> the trap and restating it in the same message did not prevent it.
+>
+> 🟢 **The untested lever is still DATA, not encoding** (§8au): the corpus has
+> **zero** Lucario games and 40.7% of the field is under-represented >3×
+> (`PARKED-corpus-coverage.md`). E7 and E8 both tried to fix an unseen archetype
+> by re-encoding cards. Neither could. **The cheap probe is a sizing gate, not a
+> build:** do the replays we hold contain the missing archetypes at all?
+>
+> ---
+>
+> # ▶ DAY 20: THE EMBEDDING VOCABULARY IS THE BLIND SPOT (2026-08-04/05)
+>
+> Full records: `docs/experiments/embeddings/E6-identity-channel.md` (settled,
+> also `EVIDENCE` §8au) and `E7-card-attributes.md` (pre-registered, running).
+>
+> 🔴 **We ship 4 embedding tables of which 3.6–10.4% of rows ever saw a
+> gradient.** Per-table seen counts: `slot_emb` 104/1300, `bag_emb` 134/1300,
+> `card_emb` 135/1300, `atk_emb` **57/1600**. The rest ship at random N(0,1).
+>
+> 🔴 **Permuting only the OPPONENT's card ids on the frozen v5 net costs
+> 0.838 → 0.587 vs `rule:crustle` (4/4 of its Pokémon in vocabulary) and
+> 0.625 → 0.607 vs `rule:v10` (0/6).** Identifying the opponent's Pokémon is
+> worth ~a quarter of the win rate where we can do it — and **against Mega
+> Lucario we already cannot**, so there was nothing left to destroy. Mirror
+> scoping control 0.550 [0.493, 0.605], CI spanning 0.500. No retraining.
+>
+> ⚠ **Permutation, not zeroing.** Zeroing moves the input distribution the
+> downstream layers were trained against and cannot separate "identity
+> destroyed" from "activations off scale". `scripts/p54_emb_ablate.py`.
+>
+> ⛔ **A STORED ANCHOR SCORE IS NOT A CONTROL.** `arena.build_agent` archives
+> anchors as `rule:<name>` with **no version**, and `83daa48` changed Crustle on
+> 08-02: the *same net, same flags* reads **0.767 before / 0.867 after** —
+> +0.100 of apparent gain from changing nothing. 49,320 Crustle games pool both
+> eras under one identity and `arena.py elo` fits over all of them. **Every
+> strength claim must run its control back-to-back in the same session.**
+>
+> ✅ **The shipped bundle is v5.** `dist/submission.tar.gz` carries
+> `out/policy_v5.npz` byte-identical (md5 `dc1c9acc…`, width 708). The tracked
+> `agents/sa/policy_net.npz` is the old `policy_lw2` (width 496) and is **stale
+> in the tree but not what ships** — do not "fix" it by retraining.
+>
+> 🔴 **v6 IS A CLEAN NULL — DO NOT REBUILD IT** (`EVIDENCE` §8av). Arm A
+> (mirror, direct, pooled 2 seeds, n=600) **0.510 [0.470, 0.550]**; the
+> hypothesis arm vs `rule:v10` confirmed at n=2,000/cell resolves to
+> **+0.005 [−0.017, +0.027]**. Card attributes **do not** recover the identity
+> channel, and per rule 4 the out-of-vocabulary story is retracted *for this
+> intervention*. §8au's diagnosis is untouched. The nets are kept at
+> `out/policy_v6_s{0,1}.npz`; **the shipped net is unchanged**.
+>
+> ⛔ **SCREEN ON THE DIRECT ARM.** A two-cell anchor delta (treatment vs control
+> against a third party) carries **±0.080** at n=300 — every screened delta in
+> E7 was inside it, and arm C's seed swing flipped sign. The mirror's direct
+> head-to-head is **2× tighter for the same games**. Take a two-cell delta to
+> n≥2,000 or do not quote it.
+>
+> ⚠ **§8z's ±0.019 seed floor is MIRROR-DIRECT and may not carry.** Against
+> `rule:v10` at n=2,000 the two control seeds read 0.616 / 0.571 (spread 0.045).
+>
+> 🟢 **Where §8au actually points:** the corpus has **zero** Lucario games. E7
+> tried to fix an unseen archetype by re-encoding cards and failed. The untested,
+> simpler lever is **training data containing the archetype** — a data question,
+> not an embedding one.
+>
+> 🟡 **The v6 machinery is built and works if ever wanted:** `--attr`,
+> `--drop-a` + `features.A_GROUPS`, `artifacts/pds_v6`, and the dim guard
+> handles all four state widths (496 / 536 / 726 / 1002). `--drop-a`
+> sub-attribution was deliberately NOT run — five retrains against a null block.
+>
+> <details><summary>What v6 was (kept for the report chapter)</summary>
+>
+> `--attr` adds 276 state
+> columns (energyType / weakness / ability / resistance / weak-to-facing-type)
+> + a `cardType` one-hot on the option, all from the card DB, which covers all
+> 1,267 cards and therefore **transfers to cards the corpus never contained**.
+> Corpus `artifacts/pds_v6` is verified byte-identical to `pds_v4` on every v3/v4
+> column, so the control trains on identical rows. Sized first
+> (`p55_attr_sizing.py`): the gate **killed `aceSpec`** (one value corpus-wide)
+> and **`pokemonType`/`evolutionType`** (fully redundant with the six stage/ex
+> flags). Pre-registered prediction: **gain vs `rule:v10` > gain vs
+> `rule:crustle`**; a uniform gain falsifies the mechanism.
+>
+> ⚠ **Thin support, stated before the result:** `weakness=5` (Mega Lucario's)
+> appears on **one** trained card and `energyType=6` on **five**. A null was
+> called live in advance, and a null is what it measured.
+>
+> </details>
+
 > # 🔴 READ THIS FIRST — B7 RAN ON DAY 11 AND IS CLOSED (2026-07-31 night)
 >
 > **Day 10 measured; day 11 trained, and both arms lost.** The pre-registered
@@ -2300,6 +2544,20 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
       "Wins 2 anchors, loses 1" is not a verdict; "+0.16 on 13.8% and −0.07 on
       12.8%" is the start of one. `p9_field_census.py` supplies the shares.
 
+    🔴 **AND THE SHARES ARE AN ESTIMATE WITH AN INTERVAL — quote it (day 22,
+    §8ay).** They come from **75 replays**, so the mirror's 33.3% is really
+    **[22.5%, 43.2%]**. Every published `±` on a weighted ΔW — p33's ±0.0050,
+    E8's ±0.025 — is **game-sampling noise only and treats the weights as
+    exact**. Bootstrapped, weight uncertainty adds ±0.0023–0.0031, so p37's
+    honest interval is **±0.0059, not ±0.0050**.
+    ⚡ **It bites in proportion to how much the per-anchor deltas DIFFER.** All
+    same sign ⇒ reweighting barely moves the sum. Mixed signs, or one anchor
+    carrying the result ⇒ the weight is doing real work and its interval belongs
+    in the answer.
+    ⚠ The census itself was also **wrong** until day 22 (evolution lines keyed by
+    card id, 228 broken links, 6 of 75 games mislabelled) — but every correction
+    landed *inside* the n=75 interval, which is the point.
+
     ⚠ **And the deeper trap, which is the one to actually carry forward:**
     **CHECK WHERE YOUR POPULATION DATA COMES FROM BEFORE YOU LET IT RETIRE AN
     ANCHOR.** `fetch_top_episodes.py` mines the **top** episodes by `avg_score`,
@@ -2411,6 +2669,39 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     that plays an anchor should **print that anchor's arena score beside its own
     output**, so a changed instrument announces itself on the next run instead
     of on the next audit.
+
+    ⚠ **This rule's own example turned out to be mostly rule 20.** The 0.866 and
+    the 0.755 were also two different DECKS, and the deck is the bigger term
+    (§8ax). The rule is right; the story attached to it was half wrong, which is
+    itself the lesson — a timestamp check answers the question it was designed
+    for and reports nothing about the one nobody asked.
+
+20. **🔴 AN ANCHOR IS A FILE *AND AN ARGUMENT*. Check the DECK a pilot was run
+    on before comparing two of its scores.** A `rule:<name>` pilot is tuned for
+    exactly one 60 and plays any other through a generic fallback —
+    `decks/crustle_v1.py` says so in its own docstring, and HANDOFF §3.2 carried
+    an n=20 probe measuring it at **+0.08**. `rule:crustle` was nonetheless run
+    on `crustle_v1` in `p10/p19/p20/p34/p35/p37` and on `crustle` in
+    `p27/p28/p54/p56/p57`, **archived under one identity both times**, and the
+    published score tracks the deck (0.748–0.768 vs 0.866–0.870) and not the
+    pilot version. Measured directly with the pilot held fixed: **+0.140**
+    [±0.031, n=2,000/cell] — larger than either pilot effect §8an and §8aq
+    published. §8ax.
+
+    ⛔ **Rule 19's timestamp check cannot see this.** Both scripts were correct,
+    both source files were older than their archives, and the *call site*
+    differed. The only thing that catches it is the identity carrying the deck.
+
+    ✅ **Fixed in the tool, not just in the rule:** `arena.build_agent` now
+    archives `rule:<name>@<deck>` and prints a loud warning when the deck is not
+    the one `agentkit.rulebased.DECK_MODULE` names for that pilot.
+
+    ⚡ **The general form, and it is the fourth instance:** *the identity a
+    result is filed under must contain everything that can change the result.*
+    §8aq was the pilot source; §8ax is the deck; day 22 also found `bc` archived
+    with **no net** (1,226 games over four days of a moving `sa/policy_net.npz`)
+    and a `net=` **path** that a retrain can silently repoint. All four now
+    carry their content in the archived name.
 
 ---
 

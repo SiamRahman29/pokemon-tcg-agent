@@ -71,6 +71,38 @@ class PolicyAgent:
         # continuations use the same policy as the owning agent. Falling back
         # to policynet.get() here would silently use the bundled checkpoint.
         self.net = policynet.load(net_path) if net_path else None
+        # 🔴 AN EXPLICIT `net=` THAT DOES NOT LOAD MUST NEVER BECOME THE
+        # SINGLETON. `policynet.load` returns None on any guard failure or
+        # exception rather than raising, and `__call__` below falls back to
+        # `policynet.get()` -- the tracked `sa/policy_net.npz`, which is the old
+        # width-496 `policy_lw2`. So before day 22, `bc:v7,net=<a net that
+        # fails the dim or vocab guard>` played lw2, archived under the name of
+        # the net it was ASKED for, and printed a perfectly ordinary score. A
+        # whole A/B could run that way and read as a result. Demonstrated with a
+        # v7 net whose vocab map was one entry short -- exactly the "rebuild the
+        # corpus and a net's map is stale" hazard §8aw names -- which loaded as
+        # None, was accepted by `arena.build_agent` (it checks only that the
+        # path EXISTS), and would have played 496-wide lw2 against a 708-wide
+        # control. Fail loudly instead: this is the fifth "plausible number, not
+        # a crash" in this repo (rule 18).
+        #
+        # ⚠ Only the `net=` path is strict. The submission never passes
+        # `net_path` -- `build_submission.py` ships the candidate AS
+        # `sa/policy_net.npz` and verifies it with `policynet.load` at build
+        # time -- so the shipped agent keeps its fail-soft behaviour, where
+        # degrading and logging beats forfeiting a live episode.
+        #
+        # ⚠ MERGE NOTE (day 22): this guard sits immediately after the load and
+        # BEFORE the sequencer is built, because the beyond-BC branch moved the
+        # load earlier so `Sequencer` shares the agent's net. Failing here means
+        # we never construct a Sequencer around a silently-null net, which is
+        # strictly better than where the guard originally landed on `main`.
+        if net_path and self.net is None:
+            raise ValueError(
+                f"net {net_path!r} exists but FAILED policynet.load's guard "
+                f"(feature dims, n_pool/n_attr, or the v7 vocab row count). "
+                f"Refusing to fall back to the tracked sa/policy_net.npz, "
+                f"which is a different net and would have scored silently.")
         self.seq = None
         if sequencer:
             from .sequencer import Sequencer

@@ -152,8 +152,10 @@ def run_anchor(key: str, games: int) -> tuple[Tally, dict]:
     ours, theirs, their_deck = ANCHORS[key]
     _, deck_us = resolve_deck("grimmsnarl")
     their_name, deck_them = resolve_deck(their_deck)
-    _, agent_us = build_agent(ours, deck_us)
-    label_them, agent_them = build_agent(theirs, deck_them)
+    _, agent_us = build_agent(ours, deck_us, "grimmsnarl")
+    # pass the deck name: a rule pilot's identity includes the 60 it is piloting
+    # (EVIDENCE §8ax), and this script's whole job is to be a cross-check
+    label_them, agent_them = build_agent(theirs, deck_them, their_name)
 
     tally = Tally(dict(grimmsnarl.DECKLIST))
     wrapped = instrument(agent_us, tally)

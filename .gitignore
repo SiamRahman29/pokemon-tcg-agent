@@ -28,6 +28,7 @@ out/e1/
 out/e2/
 out/e3/
 out/e5/
+out/emb/
 
 # --- Built submission zips ---
 dist/**

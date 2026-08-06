@@ -27,11 +27,21 @@ comparisons run under varying load.
 
 Deck specs: `sample` (the SDK sample deck), a `decks/` module name (`iono`,
 `dragapult_ex`, ...), or a path to a headerless 60-line deck.csv.
+
+🔴 **ARCHIVED IDENTITIES CARRY WHAT CAN CHANGE THE RESULT (day 22, rule 20).**
+A rule pilot archives as `rule:<name>@<deck>` -- it is tuned for exactly one 60
+and plays any other through a generic fallback, worth **+0.140** in the one case
+measured (EVIDENCE §8ax), and running it off its `DECK_MODULE` deck prints a
+warning to **stderr**. A policy agent archives as `bc:<tag>#<md5-8 of the
+weights>`, because a bare `bc` follows a moving `sa/policy_net.npz` and a `net=`
+path can be repointed by a retrain. Names written before day 22 have neither
+suffix and pool everything that shared a spec string.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import random as _random
 import sys
 import time
@@ -49,7 +59,9 @@ from ptcg.env import harness, sdk    # noqa: E402
 
 ARENA_DIR = ROOT / "out" / "arena"
 GAMES_PATH = ARENA_DIR / "games.jsonl"
-SCHEMA = 1
+# 2 (day 22): every row carries `run`, a per-invocation id. Rows written before
+# the bump have no `run` key and are all one undifferentiated pool.
+SCHEMA = 2
 
 
 # --- decks --------------------------------------------------------------------
@@ -102,9 +114,19 @@ def _flag_num(flags: set[str], prefix: str, cast):
     return None
 
 
-def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
+def build_agent(spec: str, deck: list[int],
+                deck_name: str | None = None) -> tuple[str, harness.Agent]:
     """Build (canonical name, agent). The name is what the archive records, so
-    the same config always archives under the same identity."""
+    the same config always archives under the same identity.
+
+    🔴 `deck_name` IS PART OF A RULE AGENT'S IDENTITY, and leaving it out cost
+    two published findings. A `rule:<name>` pilot is tuned for one 60 and plays
+    any other through a generic fallback -- `decks/crustle_v1.py` says so in its
+    own docstring -- so `rule:crustle` on `crustle_v1` and `rule:crustle` on
+    `crustle` are different instruments. Both archived as plain `rule:crustle`,
+    and §8an/§8aq attributed a 0.11 swing between them entirely to the pilot's
+    bench logic when the deck argument had changed too. See EVIDENCE §8ax.
+    """
     kind = spec.split(":", 1)[0]
     if kind == "rule":
         # rule:<deck-name> -- a self-contained sample rule-based agent, bound to
@@ -124,6 +146,24 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
         if budget is not None:
             overrides["SEARCH_TIME_BUDGET"] = budget
             name += f",tb{budget:g}"
+        # The deck goes in the identity, and a deck that is not the one this
+        # pilot was tuned for is called out rather than merely recorded.
+        from agentkit.rulebased import DECK_MODULE
+
+        tuned = DECK_MODULE.get(rname)
+        if deck_name is not None:
+            name += f"@{deck_name}"
+            if tuned and deck_name != tuned:
+                # ⚠ STDERR, deliberately. Drivers parse stdout for the score
+                # line and drop everything else, so a warning printed to stdout
+                # is a warning nobody sees -- which is how this defect survived
+                # five experiments. p56/p57/p58 echo stderr even on success.
+                print(f"⚠ rule:{rname} is tuned for `{tuned}` and is being run "
+                      f"on `{deck_name}`.\n  It will play the unshared slots "
+                      f"through a generic fallback, so this is a\n  DIFFERENT "
+                      f"instrument from rule:{rname}@{tuned} -- do not compare "
+                      f"their\n  scores across runs (EVIDENCE 8ax, HANDOFF "
+                      f"rule 20).", file=sys.stderr, flush=True)
         return name, make_rule_agent(rname, deck, overrides)
     if kind == "random":
         return "random", make_random_agent(deck)
@@ -244,16 +284,48 @@ def build_agent(spec: str, deck: list[int]) -> tuple[str, harness.Agent]:
                     f"`bc:<label>,{f}`.")
         if net_path and not Path(net_path).exists():
             raise SystemExit(f"bc net not found: {net_path}")
-        return ((f"bc:{tag}" if tag else "bc"),
-                PolicyAgent(deck, net_path, chip_targeting=chip,
-                            energy_spread=spread, drag_target=drag,
-                            boss_converts=boss, drag_high_hp=drag_hi,
-                            boss_veto=veto, counter_source=source,
-                            chip_wall_defer=wall, boss_prize_veto=bossprize,
-                            sequencer=sequencer,
-                            seq_k=seq_k, seq_dets=seq_dets,
-                            seq_budget=seq_budget, seq_reply=seq_reply))
+        try:
+            agent = PolicyAgent(deck, net_path, chip_targeting=chip,
+                                energy_spread=spread, drag_target=drag,
+                                boss_converts=boss, drag_high_hp=drag_hi,
+                                boss_veto=veto, counter_source=source,
+                                chip_wall_defer=wall, boss_prize_veto=bossprize,
+                                sequencer=sequencer,
+                                seq_k=seq_k, seq_dets=seq_dets,
+                                seq_budget=seq_budget, seq_reply=seq_reply)
+        except ValueError as exc:
+            # the `net=` guard (sa/bcagent.py): a net that exists but fails
+            # policynet.load used to fall through to the tracked singleton and
+            # score silently under the requested net's name.
+            raise SystemExit(f"{spec}: {exc}")
+        return (f"bc:{tag}" if tag else "bc") + _net_fp(net_path), agent
     raise SystemExit(f"unknown agent spec: {spec!r}")
+
+
+def _net_fp(net_path: str | None) -> str:
+    """`#<8 hex>` of the weights this agent will actually use.
+
+    🔴 RULE 19 APPLIES TO OUR OWN AGENT, NOT ONLY TO ANCHORS. A bare `bc` spec
+    passes no `net=`, so it plays whatever `sa/policy_net.npz` happens to be at
+    that moment -- and `out/arena/games.jsonl` holds **1,226 games archived
+    under the single identity `bc`, spanning 07-28 to 07-31**, across which that
+    file was a moving target. `arena.py elo` pools them. Rule 19 was written
+    about `rule:<name>` anchors and this is the same defect one seat over.
+
+    ⚠ A `net=` PATH IS NOT AN IDENTITY EITHER: `out/policy_v5.npz` can be
+    overwritten by a retrain and every archived row still says `policy_v5.npz`.
+    The fingerprint is of the BYTES, so a re-trained net archives as a new
+    agent rather than pooling with its predecessor -- which is the behaviour
+    §8aw's "rebuild the corpus and a net's map is stale" warning needs.
+    """
+    import hashlib
+
+    from sa import policynet
+
+    path = Path(net_path) if net_path else Path(policynet._PATH)
+    if not path.exists():
+        return "#none"
+    return "#" + hashlib.md5(path.read_bytes()).hexdigest()[:8]
 
 
 # --- play ---------------------------------------------------------------------
@@ -266,11 +338,43 @@ def cmd_play(args: argparse.Namespace) -> int:
 
     deck_name_a, deck_a = resolve_deck(args.deck_a)
     deck_name_b, deck_b = resolve_deck(args.deck_b)
-    name_a, agent_a = build_agent(args.a, deck_a)
-    name_b, agent_b = build_agent(args.b, deck_b)
+    name_a, agent_a = build_agent(args.a, deck_a, deck_name_a)
+    name_b, agent_b = build_agent(args.b, deck_b, deck_name_b)
+    # zero the health counters so the line printed at the end describes THIS
+    # run and not whatever else the process did first
+    if "sa.bcagent" in sys.modules:
+        sys.modules["sa.bcagent"].reset_stats()
 
     games_path = Path(args.archive) if args.archive else GAMES_PATH
     games_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # 🔴 ARCHIVES APPEND, AND A RE-RUN USED TO BE INVISIBLE ONCE WRITTEN. Every
+    # driver writes many cells into one file, so refusing to append would break
+    # the normal pattern -- but nothing distinguished "the second cell of this
+    # experiment" from "the same cell run twice". `out/arena/p57_e8.jsonl`
+    # carries 3,000 games per v5c CONTROL cell against 1,500 per treatment cell,
+    # because the control was re-run for the v7pad pass into the same file. The
+    # published numbers are safe (drivers parse the score line arena prints),
+    # but anyone re-deriving from the archive gets a control pooled over two
+    # runs that was never the published control. So: stamp the run, and say so
+    # out loud when the target already holds this exact cell.
+    run_id = f"{int(time.time()):x}-{_random.Random().getrandbits(24):06x}"
+    dup = 0
+    if games_path.exists():
+        cell = {(name_a, name_b, deck_name_a, deck_name_b),
+                (name_b, name_a, deck_name_b, deck_name_a)}
+        for line in games_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                if (r.get("agent0"), r.get("agent1"),
+                        r.get("deck0"), r.get("deck1")) in cell:
+                    dup += 1
+    if dup:
+        print(f"⚠ {games_path.name} ALREADY HOLDS {dup} games of this exact "
+              f"cell.\n  Appending. This run is tagged run={run_id}; anything "
+              f"re-derived from this\n  file without splitting on `run` pools "
+              f"two separate measurements.", file=sys.stderr, flush=True)
+
     rows: list[dict] = []
     t_start = time.monotonic()
     # Append+flush per game. Buffering rows until the end meant a killed run
@@ -282,7 +386,7 @@ def cmd_play(args: argparse.Namespace) -> int:
         decks = ((deck_name_a, deck_name_b) if a_seat == 0
                  else (deck_name_b, deck_name_a))
         row = {
-            "schema": SCHEMA, "ts": time.time(), "match": match,
+            "schema": SCHEMA, "ts": time.time(), "run": run_id, "match": match,
             "agent0": names[0], "agent1": names[1],
             "deck0": decks[0], "deck1": decks[1],
             "winner": r.winner, "turns": r.turns, "selects": r.selects,
@@ -325,6 +429,26 @@ def cmd_play(args: argparse.Namespace) -> int:
         if left < 300.0:
             flag = "  <-- WOULD TIME OUT ON KAGGLE" if left <= 0 else ""
             print(f"  pool left ({name}): min {left:.0f}s of 600s{flag}")
+    # 🔴 THE DEGRADATION READOUT. `bcagent.__call__` wraps every decision in a
+    # catch-all that returns `range(minCount)` -- index order -- and prints a
+    # traceback to stderr. An arm running that on EVERY decision still returns
+    # legal moves, still finishes its games, and still prints a perfectly
+    # ordinary score line, which is what the drivers parse. Day 15 built the
+    # counters to make it a direct read and then wired them only into the
+    # SUBMISSION (`build_submission.py`), so the ladder had the instrument and
+    # the arena -- the one day 17 calls "the ONLY instrument" -- did not.
+    # ⚠ STATS is process-global, so on an in-process A/B this is the sum over
+    # BOTH sides and cannot say which arm degraded. Non-zero means re-run the
+    # arms separately, not that the treatment is at fault.
+    if "sa.bcagent" in sys.modules:
+        print(f"  {sys.modules['sa.bcagent'].health_line()}")
+    # And the per-component detail, for any agent carrying a sequencer. ⚠ BOTH
+    # blocks are kept deliberately (day-22 merge): `[health]` says whether the
+    # AGENT degraded, this says whether the PLANNER did, and E5 needed the
+    # second to defend its confirm cell (`errors: 0`, `budget_aborts: 0` in all
+    # four arms). EVIDENCE §8bb -- and the counters belong in a manifest as well
+    # as on stdout, because §8bb was nearly filed as unauditable when a later
+    # pass looked for them in `out/logs/` and found nothing.
     for name, agent in ((name_a, agent_a), (name_b, agent_b)):
         seq = getattr(agent, "seq", None)
         if seq is not None:
@@ -364,29 +488,111 @@ def _load_rows(path: Path = GAMES_PATH) -> list[dict]:
     return rows
 
 
+_LN10_400 = math.log(10.0) / 400.0
+# Damping on the diagonal-Newton step. Below 1.0 because the Hessian is not
+# actually diagonal -- players are coupled through their shared games -- and an
+# undamped diagonal step can overshoot when two agents play mostly each other.
+_DAMP = 0.8
+# Two virtual draws against a phantom at `anchor_rating`. Bradley-Terry has no
+# finite maximum for an unbeaten player, so without this a 20-0 agent's rating
+# runs away and prints whatever the iteration cap happened to reach. At two
+# games this is under 0.2% of a 2,000-game player's evidence and invisible;
+# on a 20-game player it is the only thing keeping the number finite.
+_PRIOR_N = 2.0
+
+
 def fit_elo(rows: list[dict], anchor: str = "rule:iono",
-            anchor_rating: float = 1000.0, iters: int = 500,
-            lr: float = 8.0) -> dict[str, float]:
+            anchor_rating: float = 1000.0, iters: int = 2000,
+            lr: float = _DAMP) -> tuple[dict[str, float], float]:
     """Batch-gradient Bradley-Terry fit (draw = half a win), all games weighted
     equally regardless of when they were played. Anchored so ratings are
-    comparable across refits as the archive grows."""
+    comparable across refits as the archive grows. Returns (ratings, max final
+    step in Elo points) -- see `cmd_elo`, which refuses to print an unconverged
+    fit.
+
+    🔴 **THE STEP MUST BE SCALED BY THE CURVATURE, and this is rule 15.**
+    Until day 22 this function took a FIXED `lr=8.0` step on an UNNORMALISED
+    batch gradient. The gradient sums over a player's games, so its curvature
+    grows with n while the step did not: past roughly 175 games per player the
+    iteration is divergent, and it oscillates instead of converging. On the real
+    `games.jsonl` that meant `rule:crustle` (1,320 games) swinging **8,586 Elo**
+    between consecutive iterations and reading -3632 / +258 / +3397 / -3275 at
+    iterations 499 / 500 / 501 / 502. **Every rating this printed was an
+    arbitrary sample of an oscillation, including small ones** -- even 30-game
+    anchors swung 200+. Nothing published rests on it (every Elo figure in
+    `EVIDENCE` is a win-rate conversion), which is exactly why it survived
+    fifteen days: an unused instrument is never checked against reality.
+
+    ⚠ Dividing by the game COUNT alone is not enough either -- it is stable, but
+    a near-ceiling player's curvature is p(1-p) << 0.25 and 500 iterations left
+    a 1.3 Elo residual. The step is the diagonal Newton one: gradient over the
+    summed per-game curvature p(1-p)*ln(10)/400, damped by `_DAMP`.
+    """
     games = [(r["agent0"], r["agent1"], r["winner"]) for r in rows]
     players = sorted({p for a0, a1, _ in games for p in (a0, a1)})
     rating = {p: anchor_rating for p in players}
+    step = 0.0
     for _ in range(iters):
         grad = {p: 0.0 for p in players}
+        hess = {p: 0.0 for p in players}   # -d2(loglik)/d(rating)^2, diagonal
         for a0, a1, winner in games:
             s0 = 1.0 if winner == 0 else 0.5 if winner == 2 else 0.0
             e0 = 1.0 / (1.0 + 10.0 ** ((rating[a1] - rating[a0]) / 400.0))
             grad[a0] += s0 - e0
             grad[a1] += (1.0 - s0) - (1.0 - e0)
+            h = e0 * (1.0 - e0) * _LN10_400
+            hess[a0] += h
+            hess[a1] += h
+        step = 0.0
         for p in players:
-            rating[p] += lr * grad[p]
-        if anchor in rating:  # re-anchor every pass
-            shift = anchor_rating - rating[anchor]
-            for p in players:
-                rating[p] += shift
-    return rating
+            # the prior's own gradient and curvature: _PRIOR_N virtual draws
+            # against a phantom fixed at `anchor_rating`
+            ep = 1.0 / (1.0 + 10.0 ** ((anchor_rating - rating[p]) / 400.0))
+            g = grad[p] + _PRIOR_N * (0.5 - ep)
+            h = hess[p] + _PRIOR_N * ep * (1.0 - ep) * _LN10_400
+            d = lr * g / h if h > 0.0 else 0.0
+            rating[p] += d
+            step = max(step, abs(d))
+        if step < 1e-4:
+            break
+    # ⚠ Re-anchor ONCE, after convergence, not every pass. Re-anchoring inside
+    # the loop shifts every player by the anchor's own residual each iteration,
+    # which for a component that never played the anchor is pure injected drift
+    # that only the 2-game prior pushes back against -- 500 passes still left a
+    # 2.0 Elo residual. The shift is a constant offset and commutes with the
+    # fit, so doing it last costs nothing and the iteration becomes plain
+    # Newton ascent on a concave objective.
+    if anchor in rating:
+        shift = anchor_rating - rating[anchor]
+        for p in players:
+            rating[p] += shift
+    return rating, step
+
+
+def anchor_component(rows: list[dict], anchor: str = "rule:iono") -> set[str]:
+    """Players joined to `anchor` by a chain of games -- the only ones whose
+    rating is on the anchor's scale at all.
+
+    🔴 Two agents that played only each other form their own component: their
+    DIFFERENCE is identified, their LEVEL is not, and the fit pins it with
+    nothing but the prior. Printing them in one sorted column next to anchored
+    ratings invites exactly the comparison the data cannot support, so `elo`
+    marks them.
+    """
+    adj: dict[str, set[str]] = defaultdict(set)
+    for r in rows:
+        a0, a1 = r["agent0"], r["agent1"]
+        adj[a0].add(a1)
+        adj[a1].add(a0)
+    if anchor not in adj:
+        return set()
+    seen, stack = {anchor}, [anchor]
+    while stack:
+        for nxt in adj[stack.pop()]:
+            if nxt not in seen:
+                seen.add(nxt)
+                stack.append(nxt)
+    return seen
 
 
 def cmd_elo(args: argparse.Namespace) -> int:
@@ -404,13 +610,34 @@ def cmd_elo(args: argparse.Namespace) -> int:
             ls = r.get(f"lat{seat}") or {}
             if ls.get("n"):
                 lat[name].append(ls["p99"])
-    ratings = fit_elo(rows)
-    print(f"Elo over {len(rows)} archived games (rule:iono anchored at 1000):\n")
+    ratings, step = fit_elo(rows)
+    # Rule 9: a metric that never prints is not a metric that passed. The fit
+    # silently diverged for fifteen days; the convergence residual is now a
+    # required read, and an unconverged fit refuses rather than printing.
+    if step > 0.5:
+        print(f"🔴 THE FIT DID NOT CONVERGE: final step {step:.1f} Elo. "
+              f"Do not quote these ratings.")
+        return 1
+    linked = anchor_component(rows)
+    print(f"Elo over {len(rows)} archived games (rule:iono anchored at 1000; "
+          f"converged, final step {step:.5f} Elo):\n")
     for name, elo in sorted(ratings.items(), key=lambda kv: -kv[1]):
-        line = f"  {elo:7.1f}  {name}  ({counts[name]} games)"
+        mark = "  " if name in linked else "🔴"
+        line = f"{mark}{elo:7.1f}  {name}  ({counts[name]} games)"
         if lat[name]:
             line += f"  p99={sum(lat[name]) / len(lat[name]):.0f}ms"
         print(line)
+    loose = sorted(set(ratings) - linked)
+    if loose:
+        print(f"\n🔴 {len(loose)} agents (marked) never played a game connected "
+              "to the anchor.\n  Their LEVEL is set by the prior, not by "
+              "evidence -- only their difference\n  from others in their own "
+              "component means anything. Do not read them off\n  this column.")
+    print("\n⚠ Ratings pool the WHOLE archive regardless of when a game was "
+          "played. An\n  agent identity that meant different things on "
+          "different days (rule 19) is\n  averaged, not separated. This is a "
+          "browsing tool; strength claims come from\n  `play`'s back-to-back "
+          "score line.")
     return 0
 
 

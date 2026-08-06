@@ -4180,7 +4180,211 @@ python -X utf8 scripts/p33_anchor_resolution.py
 python -X utf8 scripts/p34_matchup_liveness.py --games 400
 ```
 
+## 8ay. 🔴 THE WEIGHTING LAYER AUDITED: the field census split archetypes by CARD PRINTING, and the weights it feeds come from 75 games (2026-08-06, day 22)
+
+**Why this exists.** §8ax audited the arena — the **Δ** in every headline. Every
+headline is **W = Σ wᵢ Δᵢ**, and nobody had ever audited the **w**. They come
+from `p9_field_census.py` over our own ladder replays (§8ac), and they set the
+weight on every anchor in `p33.ANCHORS`, `p37`, E7 and E8.
+
+### Defect 1 — evolution lines were keyed by card ID, and a name has many
+
+`_evolution_index` resolved `evolvesFrom` (a **name**) to a single card id and
+took the first match. **106 basic printings share a name with another, and 228
+links were broken.** A deck seen through Abra #741 was labelled "Abra"; the
+identical deck seen through Abra #109 was labelled "Alakazam". The function's own
+docstring says it exists to stop exactly this ("naming that deck 'Kadabra' and
+the next one 'Alakazam' splits one archetype in two") — one level down.
+
+It reached the anchors: **Riolu #677 and #974 both lost Mega Lucario ex**, so
+three `lucario_v10` games labelled as "Hariyama", and `rule:v10`'s share is a
+published weight. Fixed by indexing the whole line graph **by name**; linking
+every printing is not enough on its own, because `_signature` groups by ROOT and
+two printings of one basic are two roots.
+
+### Defect 2 — `ex` outranked copy count, and the 1-of guard did not reach it
+
+Repairing defect 1 exposed a second one it had been masking: the ranking tried
+every `ex` line before considering copies, so a **2-of** tech beat a 4/3/3
+engine and five Abra/Kadabra/Alakazam games labelled "Dudunsparce ex". Same trap
+as the Fezandipiti one the docstring already records, one copy higher. Ranking is
+now **evolved-line first** (a deck evolves its engine and merely plays its
+support basics — the only signal here about deck ROLE), then total copies across
+the line, with `ex` as a tie-break.
+
+### Measured against a hand-check of all 75 games
+
+| | old | corrected |
+|---|---|---|
+| correctly labelled | **69 / 75** | **74 / 75** |
+| mirror | 33.3% | **32.0%** |
+| alakazam5 | 21.3% (`p33` used 22.0%) | **25.3%** |
+| crustle | 6.7% | **8.0%** |
+| `rule:v10` | 4.0% | **5.3%** |
+| archaludon / garchomp / dragapult | 8.0 / 6.7 / 5.3% | unchanged |
+
+⚠ **The one remaining error is a mirror game** (`4xMunkidori, 2xSnorunt,
+2xMarnie's Impidimp, 2xFroslass, 1xMarnie's Morgrem`) where the opponent's
+Grimmsnarl ex never reached play, so the Snorunt/Froslass support line outweighed
+the Impidimp line and it labels "Froslass". **Partial observation is the limit
+here, not the tie-break order** — no ordering of these features fixes it without
+breaking the Alakazam-vs-Dunsparce cases. A real fix is matching observed cards
+against the known `decks/*.py` 60s; that is a build, and it is not done.
+
+### 🔴 The finding that dominates both defects: n = 75
+
+| anchor | share | 95% Wilson |
+|---|---|---|
+| **mirror** | 32.0% | **[22.5%, 43.2%]** — 20.7pp wide |
+| alakazam5 | 25.3% | [16.9%, 36.2%] |
+| crustle / archaludon | 8.0% | [3.7%, 16.4%] |
+| `rule:v10` | 5.3% | [2.1%, 12.9%] |
+
+**Every correction above is inside the interval of the estimate it corrects.**
+
+### What it does to the published verdicts — bootstrap over the 75 labels
+
+| verdict | published | corrected | weight-only 95% | sign stable |
+|---|---|---|---|---|
+| `p37` deck search (§8as) | −0.0140 | **−0.0155** | ±0.0031 | 100% |
+| E8 v7 (§8aw) | −0.0099 | **−0.0078** | ±0.0023 | 100% |
+
+⚡ **Weight error bites in proportion to how much the per-anchor deltas DIFFER.**
+p37's deltas are all the same sign, so ±20pp on a share moves ΔW by ±0.0031;
+against p37's ±0.0050 game-sampling resolution that is not negligible — combined
+**±0.0059**, an 18% widening of an interval that was quoted as if the weights
+were exact. For E8 the ±0.025 game noise swamps it entirely: **the weighting
+layer is not E8's problem, the 2-seed budget is**, exactly as day 21 said.
+
+✅ **No verdict changes.** p37's ΔW is still 2.6× outside its kill line and
+negative in 100% of bootstraps; E8 is still an unresolved null with the point
+estimate on the wrong side.
+
+🔴 **But E8's −0.0099 was ALSO an arithmetic error, independent of the weights.**
+Its own table gives mirror Δ = 0.487 − 0.5 = −0.0128, and the archive confirms
+0.4872 pooled over 3,000 games. Recomputed from the published table with the
+published weights: **−0.0078**, not −0.0099. The total implies a mirror Δ of
+−0.019 that appears nowhere. ⚠ The table also prints a **score** in a column
+headed **Δ** for the mirror row and deltas everywhere else, which is how it
+happened.
+
+```powershell
+python -X utf8 scripts/p9_field_census.py --dir replays/submission_v4 replays/submission_v5
+```
+
+## 8ax. 🔴 THE CRUSTLE ANCHOR CHANGED **DECK** AS WELL AS PILOT, AND THE DECK IS THE BIGGER TERM — §8an and §8aq both attribute it to the wrong thing (2026-08-06, day 22)
+
+**How it surfaced.** An audit of the local validation flow, not a new
+experiment. `arena.build_agent` archived a rule pilot as `rule:<name>` with **no
+deck**, so `out/arena/*.jsonl` was asked which 60 the Crustle anchor was actually
+piloting in each published run. The answer splits perfectly, and not by pilot
+version:
+
+| deck played | runs | our score |
+|---|---|---|
+| `crustle_v1` (the pilot's own list) | p10, p19, p20, p34, p35, p37 ctrl | 0.768 / 0.7885 / 0.768 / 0.748 / 0.755 / 0.764 |
+| 🔴 `crustle` (field consensus) | **p27, p28** — §8an's and §8aq's own v2/v3 rows — plus p54, p56, p57 | **0.870 / 0.866** |
+
+The two decks differ in **20 of 60 slots**. `decks/crustle_v1.py`'s own docstring
+already said what that does: *"A pilot run on the other list scores ~20 of its
+cards through a generic fallback, so it plays them legally but badly."* HANDOFF
+§3.2 even carries an n=20 probe reading **0.620 on its own list vs 0.700 on the
+consensus one** — the right sign, and most of the magnitude, sitting in the repo
+the whole time.
+
+**The measurement** (`p58_crustle_deck.py`, `out/arena/p58_crustle_deck.jsonl`).
+One net (`policy_v5`), **one pilot — the v4 in the repo today** — two decks,
+back-to-back in one session, n=2,000 per cell:
+
+| deck | our score | 95% CI |
+|---|---|---|
+| `crustle_v1` | **0.7530** | [0.734, 0.772] |
+| `crustle` | **0.8930** | [0.879, 0.906] |
+| **DECK TERM** | 🔴 **+0.1400** | two-cell resolution ±0.031 |
+
+✅ **Positive control:** the `crustle_v1` cell reproduces §8aq's p35 (0.755) at
+0.753, so this is the same instrument §8aq measured, not a drifted one.
+
+🔴 **+0.140 is larger than either effect the two sections published** — §8an's
++0.087…+0.102 "empty-bench guard" and §8aq's −0.111 "Dwebble tie-break". Both
+comparisons straddle a deck swap: §8an's v1 row is `crustle_v1` and its v2/v3
+rows are `crustle`; §8aq's 0.866 is `crustle` and its 0.755 is `crustle_v1`.
+**Neither isolates the pilot.** That statement needs no model — it is what the
+archives say.
+
+### What the pilot terms actually are
+
+Every *same-deck* pilot comparison available, which is the part that needs no
+assumption:
+
+| held fixed | pilot change | our score | Δ |
+|---|---|---|---|
+| deck `crustle_v1` | v1 (no guard) → v4 (shipped) | 0.768 → 0.753 | **−0.015** |
+| deck `crustle` | v4 → v2 (guard + bench-anything) | 0.893 → 0.870 | **−0.023** |
+| deck `crustle` | v4 → v3 (guard only) | 0.893 → 0.866 | **−0.027** |
+
+⚠ **Every pilot term is ≤ 0.027 — a fifth of the deck term.**
+
+**Under additivity** (stated as an assumption; no cell exists for v1/v2/v3 on the
+other deck), §8an's observed +0.102 decomposes into deck **+0.140** and pilot
+**−0.038**, and §8aq's observed −0.111 into deck **−0.140** and pilot **+0.027**.
+Two consequences:
+
+1. ⚡ **§8ah's originally EXPECTED sign is restored.** §8ah predicted the broken
+   pilot was flattering us and that repairing it would *lower* our score. §8an
+   found the opposite and called it out in bold — *"the expected sign was the
+   other one"*. With the deck term removed the repair is worth **≈ −0.04 to
+   us**, i.e. the repaired pilot is stronger, exactly as predicted. **The
+   surprise was the confound.**
+2. 🔴 **§8aq's headline reverses.** *"WHICH Pokémon a pilot benches matters more
+   than WHETHER it benches"* compared a tie-break at −0.111 against a repair at
+   +0.09. The same-deck numbers are **+0.027** and **−0.038**: comparable, both
+   small, and if anything *whether* is the larger. The "one line worth more than
+   the whole repair it was a footnote to" is a deck swap.
+
+### What does NOT move
+
+✅ **No net-vs-net verdict changes, for the reason §8an already gave** — both
+arms of every published difference faced the same pilot *and* the same deck, so
+a level shift on one anchor cancels in the difference. §8an's Result 1 (the §8ah
+alarm is retired) stands on that argument, which was never the confounded one.
+✅ **E6/E7/E8 are internally clean** for the same reason: `p54`/`p56`/`p57` ran
+treatment and control against `crustle` back-to-back.
+⚠ **But the E-series' Crustle cell is not the anchor table's Crustle cell.**
+`p33.ANCHORS` weights Crustle at 0.755 (`crustle_v1`); E8 measured its 6.7% term
+against `crustle`, where we score 0.893. The weight was calibrated on a different
+instrument from the one the experiment used.
+
+### The fix
+
+`arena.build_agent` now archives a rule pilot as **`rule:<name>@<deck>`** and
+prints a loud warning when the deck is not the one `DECK_MODULE` says the pilot
+was tuned for. The two Crustles can no longer pool under one identity.
+
+⇒ **HANDOFF rule 20.** Rule 19 said *an anchor is a file*. It is a file **and an
+argument**, and rule 19's timestamp check cannot see the argument.
+
+```powershell
+python -X utf8 scripts/p58_crustle_deck.py --matches 1000
+```
+
+⚠ **The open piece, named rather than buried:** the decomposition assumes the
+deck and pilot terms add. Confirming it directly needs the v1/v2/v3 pilots run
+on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
+`b7869d2` / `83daa48`. **Not run.** The two model-free facts above — a +0.140
+deck term, and both published comparisons straddling a deck change — are enough
+to retract the attributions without it.
+
 ## 8aq. 🔴 AN ANCHOR CHANGED AFTER ITS LAST MEASUREMENT, AND EVERY DOC QUOTED THE OLD NUMBER — the shipped Crustle pilot is 0.755, not 0.866 (2026-08-02, day 18)
+
+> 🔴 **CORRECTED BY §8ax (day 22). The 0.866 and the 0.755 were measured on
+> DIFFERENT DECKS**, and the deck term is **+0.140** against the −0.111 this
+> section attributes to the tie-break. The "which Pokémon it benches matters more
+> than whether it benches" headline below is **retracted**; same-deck, the
+> tie-break is +0.027 and the guard −0.038. ✅ The section's *method* finding —
+> an instrument modified 26 minutes after its calibration, and rule 19 — stands
+> and is if anything strengthened: the same audit missed a second axis of drift
+> sitting in the same runs.
 
 **How it surfaced.** `p34_matchup_liveness.py` (built today for the deck design)
 prints each anchor's arena score beside the liveness table as a **cross-check** —
@@ -4338,6 +4542,310 @@ second-least informative anchor in the set, and the opposite of the direction
 claimed. **Rule 1 exists for exactly this and it was violated by the person who
 maintains it.** The n=6 figure should never have been characterised at all.
 
+## 8aw. 🔴 THE EMBEDDING DEFECTS WERE REAL, THE FIXES ARE CORRECT, AND BOTH ARE NULLS — plus 92% of the tables are free to delete (2026-08-06, day 21)
+
+Full record: `docs/experiments/embeddings/E8-vocab-remap.md`. Nets
+`out/policy_v7_s{0,1}.npz` (remap+UNK+pad) and `out/policy_v7pad_s{0,1}.npz`
+(pad only) against the same-session control `out/policy_v5c_s{0,1}.npz`.
+Driver `scripts/p57_e8_arena.py`; logs `out/emb/e8_v7.log`, `out/emb/e8_v7b.log`.
+
+### The two defects, measured
+
+1. **90% of every table ships untrained.** `slot_emb` 104/1300 rows ever got a
+   gradient, `bag_emb` 134/1300, `card_emb` 135/1300, `atk_emb` **57/1600**.
+   88,000 embedding parameters ship; ~6,880 (7.8%) were ever trained. The
+   untrained rows are **not** inert: their norms (3.908–3.953) are
+   indistinguishable from trained rows' (3.970–4.068), so a card the corpus
+   never contained arrives as a confident arbitrary identity rather than as
+   "unknown".
+2. **Row 0 is overloaded across 25.5% of all slot lookups** — empty slot, out of
+   range, no stadium, no effect, no `padding_idx`. The net drove
+   `|slot_emb[0]|` to **2.337** against a 3.958 table mean (11th smallest of
+   1,300) — it taught itself what `padding_idx=0` gives exactly and for free.
+
+### The fix and the sizing gate that priced it first
+
+`train_policy.py --vocab` collapses each table to row 0 = PAD (`padding_idx`),
+row 1 = a shared UNK, rows 2.. = the seen ids, per-table. **88,000 → 6,960
+parameters (−92.1%)**, every layer width unchanged (`state_in` 708 on both
+arms). Verified firing: UNK hits 6/6 v10 Pokémon, 2/4 archaludon, **0/4
+crustle, 0/6 mirror**.
+
+🔴 **Rule 14, run before the arena: UNK can only bite on ~12% of the weighted
+field** (v10 4.0% + archaludon 8.0%); everything else is ≥78% in vocabulary.
+Recorded in advance so a positive out-of-vocab arm could not later be quoted as
+a field-wide result.
+
+### Result — both interventions are nulls
+
+| arm | opponent | weight | v7 Δ | v7pad Δ |
+|---|---|---|---|---|
+| A | mirror, **direct** | 33.3% | 0.487 [0.470, 0.506] | 0.4875 [0.470, 0.506] |
+| E | rule:alakazam5 | 22.0% | −0.009 | — |
+| D | rule:archaludon | 8.0% | −0.028 | — |
+| B | rule:crustle | 6.7% | −0.003 | −0.014 |
+| C | rule:v10 | 4.0% | +0.021 | +0.015 |
+| | **weighted** | | ~~−0.0099~~ **−0.0078** (74%) | **−0.0047** (44%) |
+
+> 🔴 **−0.0099 was an arithmetic error, corrected day 22 (§8ay).** The mirror row
+> is a **score**, not a Δ, and the rest of the column is Δs: 0.487 − 0.5 =
+> **−0.0128**, which the archive confirms at 0.4872 pooled over 3,000 games.
+> Recomputing this table with its own weights gives **−0.0078**; the published
+> total implies a mirror Δ of −0.019 that appears nowhere. With §8ay's corrected
+> field shares it is −0.0078 as well — the weight changes cancel here.
+> ✅ **The verdict is unchanged**: still inside ±0.025, still an unresolved null
+> with the point estimate on the wrong side.
+
+n=1500 games/cell/seed, 2 seeds. Two-cell 95% resolution **±0.036 per seed,
+±0.025 pooled**; arm A direct is √2× tighter.
+
+⚡ **The one arm whose seeds agreed does not survive attribution.** v7's arm C
+(+0.018 / +0.023) was the entire case for UNK. But **`v7pad` has no UNK row** —
+it keeps all 1,300 rows including the untrained ones and changes only
+`padding_idx` — and it scored **+0.034** on that same arm at seed 0, *higher*
+than v7-with-UNK, then −0.005 at seed 1. ⇒ both readings of arm C were
+single-seed artefacts and the gain cannot be attributed to the mechanism it was
+built to test. The decomposition also separates nothing: v7 and v7pad pool to
+the same 0.487 on the mirror, so the mirror cost is not the capacity cut.
+
+### ⚡ What is NOT a null: capacity is now bounded from both directions
+
+**92% of the embedding parameters — 11.5% of the whole net — can be deleted for
+0.0018 of corpus fit on one seed and 0.0003 on the other**, with no anchor
+moving outside noise. Read with §8w (8.2× the parameters bought **−43
+decisions**), the same net has now been measured to be insensitive to capacity
+*added* and capacity *removed*. **Nothing in this project has ever been
+capacity-limited.**
+
+### 🔴 The seed floor does not carry to anchors, and now not even to the mirror
+
+The day-20 box already warned that §8z's ±0.019 floor is a mirror-direct number
+(`rule:v10` control seeds read 0.616 / 0.571). E8 adds two instances where the
+between-seed swing **exceeds what sampling can produce**:
+
+| arm | seed 0 → seed 1 | swing | 95% sampling |
+|---|---|---|---|
+| v7 D (archaludon) | +0.018 → −0.073 | **0.091** | ±0.051 |
+| v7pad A (**mirror, direct**) | 0.524 → 0.451 | **0.073** | ±0.036 |
+
+⇒ the escape hatch that the *direct* mirror arm is trustworthy at 2 seeds is
+now closed too. **Two seeds × 1,500 games under-resolves every anchor we own**,
+and single-seed anchor readings elsewhere in this repo are worth less than their
+printed intervals claim. ⚠ This does not retract §8z or §8aa — both ran at
+n=2,000 with replicated seeds — but it does say their intervals were optimistic.
+
+### Rule 15, third instance — and three errors caught inside this experiment
+
+A fourth candidate defect (*"`mode="mean"` erases copy counts on 57.4% of
+decisions"*) was **retracted before anything was built**: the bag flats keep
+duplicates and `EmbeddingBag(mode="mean")` divides by bag LENGTH, so the pool is
+a count-weighted average `Σ (count_c/n)·e_c` — multiplicity survives. The
+`--bagsum` arm was dropped; `sum = n·mean` and `n` is already dense.
+
+Also corrected in-flight: (i) the driver printed **one cell's** width for a
+two-cell delta, understating resolution by 41%; (ii) a **dose-response reading
+across four arms** was published from single-seed cells each inside its own
+interval and destroyed by the next data point — *rule 1 applies to patterns
+across arms, not only to individual arms*; (iii) the driver printed "SUPPORTS
+the UNK mechanism" for a net with no UNK row.
+
+### ✅ The repair is KEPT, not shelved — user decision 2026-08-06
+
+The user's call, recorded verbatim in intent: *the embeddings should be fixed
+regardless of their impact on Elo.* Shipping 88,000 parameters of which 92% are
+untrained noise is indefensible on its own terms whatever the scoreboard says.
+So `--vocab` is **permanent, supported machinery on `main`**, not an experiment
+branch:
+
+- `train_policy.py --vocab out/emb/vocab.json` (implies `--pad`) and
+  `--pad` alone; census from `scripts/p53_emb_vocab.py`.
+- The map travels inside the npz as `vocab_<table>`; `policynet.load` refuses
+  any net whose row count ≠ `2 + len(vocab)`, so tables and map cannot drift.
+- Guards added where raw ids are fed straight to the tables:
+  `scripts/context_accuracy.py` and `scripts/p54_emb_ablate.py` both refuse a
+  v7 net by name rather than mis-index it.
+- Nets: `out/policy_v7_s{0,1}.npz`, `out/policy_v7pad_s{0,1}.npz`.
+
+⚠ **What shipping it would cost, stated so the decision is not made by
+accident.** v5 holds a settled ladder position; v7 measures **−0.0099 weighted**
+— *not* resolved as a loss (every arm's interval spans zero, and the one arm
+outside it is the one where seed variance exceeds sampling variance), but the
+point estimate is on the wrong side and the LB's 63.2-point floor cannot
+adjudicate the difference. **The correctness gain is real and the strength gain
+is measured to be zero**, so this is a judgement call, not an optimisation.
+⇒ **Default: v5 keeps shipping.** To ship v7 instead, the honest framing is the
+standing rule — *name the agent the submission would evict first*.
+
+⚠ **Maintenance note the remap introduces:** the vocabulary is derived from a
+specific corpus. Rebuild the corpus and the census changes, so a net's map is
+only valid for the census it was trained under. It travels in the npz precisely
+so this cannot go wrong silently, but a corpus change means retraining, not
+remapping.
+
+⇒ **`dist/submission.tar.gz` is unchanged** (v5, md5 `dc1c9acc5ead16e5`).
+
+---
+
+## 8av. 🔴 CARD ATTRIBUTES ARE A CLEAN NULL — the §8au diagnosis survives, this repair for it does not (2026-08-05, day 20)
+
+> ⚠ **Renumbered 2026-08-06.** This section was filed as §8aq and §8aq was
+> already taken (*"an anchor changed after its last measurement"*, day 18), as
+> §8ap was by the E6 section below. Both originals are cross-referenced across
+> HANDOFF and EVIDENCE, so the NEW sections moved: E6 §8ap → **§8au**, E7 §8aq →
+> **§8av**. Letters in use through §8at; append from §8au.
+
+Full record and pre-registration:
+`docs/experiments/embeddings/E7-card-attributes.md`, written before any arena
+number existed.
+
+**The intervention.** `--attr` replaces identity-by-embedding-row with
+identity-by-attribute: 276 state columns (energyType, weakness, ability,
+resistance, weak-to-facing-type across 12 slots) plus a `cardType` one-hot and
+two target flags on the option vector, all read from the card DB, which covers
+**all 1,267 cards** and therefore describes cards the corpus never contained.
+Corpus `artifacts/pds_v6`, 248,985 rows, with `dense`/`xdense`/`opt_dense[:,:37]`
+verified byte-identical to `pds_v4` — the control trains on **identical rows**.
+
+**Sized before building** (`p55_attr_sizing.py`, rule 14): `cardType` at
+`opt_card` was the strongest thing found anywhere (7 distinct, modal 0.416,
+H/Hmax 0.780). The gate also **killed `aceSpec`** (one value corpus-wide) and
+**`pokemonType`/`evolutionType`** — the six stage/ex flags already encoded give
+12 distinct signatures and **none maps to more than one value of either**.
+
+**The pre-registered prediction was an ASYMMETRY:** gain against `rule:v10`
+(0/6 of its Pokémon in vocabulary) must exceed gain against `rule:crustle`
+(4/4), because a uniform gain would be a better feature block rather than
+evidence for the out-of-vocabulary mechanism.
+
+| arm | n | result |
+|---|---|---|
+| **A** mirror, direct, pooled 2 seeds | 600 | **0.510 [0.470, 0.550]** — includes 0.500 |
+| **C** `rule:v10,noS`, pooled 2 seeds | 2,000/cell | **+0.005 [−0.017, +0.027]** — includes 0 |
+
+🔴 **v6 does not promote, and per rule 4 the out-of-vocabulary story is
+RETRACTED for this intervention.** It is not falsified either: the two seeds
+disagreed in *sign* at both sample sizes (−0.030/+0.073 at n=300;
+−0.014/+0.024 at n=2,000). What is established is that **card attributes as
+implemented do not recover the identity channel** — not that identity is
+unimportant. §8ap stands untouched.
+
+⚡ **And the clone fit the corpus BETTER on both seeds** (`val_top1` 0.7190 vs
+0.7163, 0.7152 vs 0.7139) **while buying no strength** — rule 3's fourth
+independent confirmation.
+
+### 🔴 A DESIGN ERROR, and it is the most reusable thing here
+
+The screening arms B/C/D are a **difference of two independent cells**, so at
+n=300 each delta carries a 95% half-width of **±0.080**. Every screened delta
+was inside it. Those rows were **uninformative, not null** — and arm C's
+sign-flipping 0.103 seed swing is exactly what that resolution predicts.
+**Arm A's direct head-to-head is 2× tighter for the same number of games**
+(±0.040 at n=600), which is what `p33_anchor_resolution.py`'s `direct` flag has
+been saying about the mirror all along. Screen on the direct arm; take a
+two-cell anchor delta to n≥2,000 or do not quote it.
+
+### 🔧 A correction made inside the session that made the error
+
+After **seed 0 alone** this was written up mid-session as *"the pre-registered
+prediction is falsified… fails on direction."* **Seed 1 reversed the sign and
+that characterisation was wrong.** Same rule-1 failure §8an records from an n=6
+smoke, committed by the person applying the rule. One seed of a two-cell delta
+at n=300 licenses nothing.
+
+### ⚠ A seed-variance caution the next design must carry
+
+Against `rule:v10` at n=2,000 the two **control** seeds read **0.616 and 0.571**
+(spread 0.045) while the two treatment seeds read 0.602 and 0.595 (spread
+0.007). §8z's ±0.019 seed floor was measured **mirror-direct**; nothing licenses
+assuming it carries to a third-party anchor. Two seeds cannot characterise a
+variance — this is a flag, not a number to quote.
+
+### What it leaves
+
+The corpus contains **zero** Lucario games. E7 tried to repair an unseen
+archetype by re-encoding cards and it did not work. The untested and simpler
+explanation remains: the fix for an archetype never observed is **training data
+containing it**. That is a data question, not an embedding question. `--drop-a`
+sub-attribution is deliberately **not run** — five retrains against a null block
+is wasted compute.
+
+## 8au. 🔴 THE IDENTITY CHANNEL IS WORTH A QUARTER OF THE WIN RATE — and against Mega Lucario it is ALREADY DEAD (2026-08-04, day 20)
+
+Full record: `docs/experiments/embeddings/E6-identity-channel.md`. No retraining
+anywhere in this section — every arm is the frozen `out/policy_v5.npz`
+(sha256 `26c681c4845a7eb0…`, byte-identical to the `sa/policy_net.npz` inside
+`dist/submission.tar.gz`) with **embedding rows permuted**.
+
+**Why permutation and not zeroing.** Zeroing a table moves the input
+distribution the downstream layers were trained against, so degradation from
+"identity destroyed" cannot be separated from degradation from "activations off
+their training scale". Permutation feeds the identical multiset of row vectors
+and scrambles only the card→row assignment. Row 0 is never touched:
+`slot_emb[0]` is the empty slot and training drove it to norm **2.337** against
+a 3.95 table mean, so it encodes "nothing here", not a card.
+
+**The vocabulary, per table** (`scripts/p53_emb_vocab.py`) — rows that ever
+received a gradient, out of the rows we ship:
+
+| table | rows | ever looked up | share |
+|---|---|---|---|
+| `slot_emb` | 1300 | 104 | 8.0% |
+| `bag_emb` | 1300 | 134 | 10.3% |
+| `card_emb` | 1300 | 135 | 10.4% |
+| `atk_emb` | 1600 | **57** | **3.6%** |
+
+**The gate.** Permuting all four tables, mirror, direct head-to-head:
+**0.997 [0.981, 0.999]**, W299/D0/L1, n=300. Not a broken net — the permuted
+policy still beats `random` at **0.867 [0.803, 0.912]**, and the `--mode copy`
+round-trip control is tensor-identical, so the serialisation path adds nothing.
+
+**The finding.** Holding our own 19 card ids fixed and scrambling only cards we
+can see but do not own (`atk_emb` excluded — `opt_attack` carries only *our*
+attacks, so permuting it is a self-inflicted wound):
+
+| opponent | opp **Pokémon** in vocabulary | v5 | identity scrambled | Δ |
+|---|---|---|---|---|
+| `rule:crustle` | **4 / 4** | 0.838 [0.792, 0.876] | 0.587 [0.530, 0.641] | **−0.251**, disjoint |
+| `rule:v10,noS` | **0 / 6** | 0.625 [0.569, 0.678] | 0.607 [0.550, 0.660] | **−0.018**, overlapping |
+
+Scoping control: the same net scores **0.550 [0.493, 0.605]** in the mirror,
+CI spanning 0.500, because both decks are our 19 and the permuted rows are
+never looked up.
+
+🔴 **Knowing which Pokémon the opponent has is worth roughly a quarter of the
+win rate where we can do it. Against Mega Lucario we cannot do it at all** —
+Makuhita, Hariyama, Lunatone, Solrock, Riolu and Mega Lucario ex are *all six*
+out of vocabulary, so scrambling that matchup costs nothing. There was nothing
+left to destroy. Both scrambled arms land at ~0.59–0.61 regardless of opponent,
+which is what "no opponent read" plays like: generic-good Pokémon, winning on
+raw deck strength alone.
+
+### ⚠ What this does NOT license
+
+**Not** a claim that a fix recovers the 0.251. Permutation measures *correct*
+identity against *scrambled* identity; an unseen card is neither — it is a
+fixed random vector that at least stays consistent within a game. 0.251 is an
+upper bound on a repair, not an estimate of one.
+
+**Not** an attribution of the Mega Lucario weakness to vocabulary alone. The
+corpus contains **no Lucario games at all**, and "never trained on the matchup"
+is a sufficient explanation by itself. The vocabulary gap and the data gap are
+the same absence seen twice, and no ablation separates them — only an
+intervention can (E7).
+
+### 🔧 A methods note this section nearly got wrong
+
+The first Crustle number came out **0.838** against a recorded **0.755** and
+briefly looked like an improvement. It is not: `83daa48` changed the Crustle
+anchor on 08-02, and the *same* net with the *same* flags reads **0.767 before
+/ 0.867 after** (n=2,000 / 4,000) — **+0.100 of apparent gain from changing
+nothing on our side**, reproducing §8an's `CRUSTLE_CALIB` pair to three
+decimals. `arena.build_agent` archives anchors as `rule:<name>` with **no
+version**, so all 49,320 Crustle games pool two different opponents under one
+identity, and `arena.py elo` fits over the whole archive. **Every Δ above is
+valid only because both arms ran back-to-back in one session against one build.
+A stored anchor score is not a control.**
+
 ## 8ao. 🔴 B8 FAILS ITS PRE-REGISTERED BAR — the RL fine-tune is a CLEAN NULL, and the control arm is what makes it clean (2026-08-02, day 17)
 
 **The pre-registration, written before any code** (ROADMAP §2.5 B8, HANDOFF day-17
@@ -4481,6 +4989,17 @@ played on an empty bench and lost to the first KO. It filed the consequence as
 against a 57.1% real win rate — this is a mechanism for part of it"*, i.e. **the
 expectation was that our numbers were OPTIMISTIC.** The re-run was left
 unauthorised for a day and is authorised now.
+
+> 🔴 **THE SENTENCE BELOW IS FALSE FOR HALF THIS SECTION'S OWN TABLE, and it is
+> the load-bearing one. CORRECTED BY §8ax (day 22).** The v1 column ran on
+> `crustle_v1` (`p10`/`p19`/`p20`); the v2 and v3 columns ran on `crustle`
+> (`p27`/`p28`) — a **20-of-60-slot** different deck, worth **+0.140** measured
+> with the pilot held fixed. The +0.087…+0.102 attributed here to the
+> empty-bench guard is mostly that. Same-deck, the repair is worth **≈ −0.04**,
+> which is the sign §8ah predicted and this section reports as a surprise.
+> ✅ **Result 1 (the §8ah alarm is retired) survives** — it rests on differences
+> cancelling, not on this attribution. **Result 2 and the mechanism narrowing
+> below are about a term five times smaller than the one nobody controlled.**
 
 **The instrument.** Identical agent specs, identical decks (`grimmsnarl` vs
 `crustle_v1`), n=2,000 each, seats alternating. **Only the pilot's bench logic

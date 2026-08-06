@@ -104,6 +104,102 @@ def extra_feats(state: dict, sel: dict,
     ids[ids >= N_CARD_IDS] = 0
     return x, ids
 
+# --- the v6 card-attribute block (day 20), APPENDED after the v4 block -------
+# E6 (docs/experiments/embeddings/E6-identity-channel.md) priced the identity
+# channel by permuting embedding rows on the frozen v5 net: scrambling only the
+# OPPONENT's card ids costs 0.838 -> 0.587 against rule:crustle, whose four
+# Pokemon are all in vocabulary, and 0.625 -> 0.607 against rule:v10, whose six
+# are all OUT of it. We do not read Mega Lucario badly; we cannot read it at
+# all, because `slot_emb` has no trained row for any of its Pokemon.
+#
+# A per-card embedding row can only ever describe cards the corpus contained.
+# These attributes come from the card DB, which covers all 1,267 cards, so an
+# unseen Pokemon arrives as "Fighting, weak to Psychic, has an ability" instead
+# of an untrained N(0, 1) vector. That is the only channel here that transfers.
+#
+# Sized BEFORE building (rule 14, scripts/p55_attr_sizing.py, at the decision):
+#   energyType   10 distinct  modal 0.438  H/Hmax 0.720   at the opp active
+#   weakness      9 distinct  modal 0.443  H/Hmax 0.732
+#   hasAbility    2 distinct  modal 0.717  H/Hmax 0.860
+#   weak-to-our-active's-type fires on 12.1% of decisions
+# and the gate KILLED two candidates before they cost anything: `aceSpec` is a
+# single value across the whole corpus, and `pokemonType`/`evolutionType` are
+# fully redundant -- the six flags at slot +4..+9 give 12 distinct signatures
+# and none maps to more than one value of either. Shipping those would have
+# repeated EVIDENCE 8ab, where five leftover columns measured -22 Elo against
+# having no block at all.
+#
+# `resistance` is marginal (3 distinct, modal 0.835) so it gets one flag, not
+# a one-hot.
+N_ATTR_ETYPE = 11          # energyType, 0..10
+N_ATTR_WEAK = 9            # weakness: index 0 = none, else the type 1..8
+PER_SLOT_ATTR = N_ATTR_ETYPE + N_ATTR_WEAK + 3   # + ability, resist, weakHit
+N_ATTR = N_SLOTS * PER_SLOT_ATTR
+
+# Same drop-one machinery as X_GROUPS, over columns of the attr vector. The
+# block ships whole, so without these nothing would say WHICH member paid.
+_A_ETYPE, _A_WEAK = 0, N_ATTR_ETYPE
+_A_ABILITY = _A_WEAK + N_ATTR_WEAK
+_A_RESIST, _A_WEAKHIT = _A_ABILITY + 1, _A_ABILITY + 2
+
+
+def _a_group(lo: int, hi: int) -> tuple[int, ...]:
+    return tuple(s * PER_SLOT_ATTR + i
+                 for s in range(N_SLOTS) for i in range(lo, hi))
+
+
+A_GROUPS: dict[str, tuple[int, ...]] = {
+    "attrEnergyType": _a_group(_A_ETYPE, _A_ETYPE + N_ATTR_ETYPE),
+    "attrWeakness": _a_group(_A_WEAK, _A_WEAK + N_ATTR_WEAK),
+    "attrAbility": _a_group(_A_ABILITY, _A_ABILITY + 1),
+    "attrResist": _a_group(_A_RESIST, _A_RESIST + 1),
+    "attrWeakHit": _a_group(_A_WEAKHIT, _A_WEAKHIT + 1),
+}
+
+
+def attr_feats(state: dict, me: int) -> np.ndarray:
+    """The v6 block: card attributes for all 12 slots, same slot order as
+    `featurize` (my active, my bench x5, opp active, opp bench x5)."""
+    a = np.zeros(N_ATTR, dtype=np.float32)
+    mypl, oppl = state["players"][me], state["players"][1 - me]
+
+    def active_type(pl) -> int | None:
+        act = pl["active"][0] if pl["active"] else None
+        return cdb.card(act["id"]).get("energyType") if act else None
+
+    # the type that would be ATTACKING each side's slots
+    facing = (active_type(oppl), active_type(mypl))
+
+    slots = ([mypl["active"][0] if mypl["active"] else None]
+             + [(mypl["bench"][i] if i < len(mypl["bench"]) else None)
+                for i in range(5)]
+             + [oppl["active"][0] if oppl["active"] else None]
+             + [(oppl["bench"][i] if i < len(oppl["bench"]) else None)
+                for i in range(5)])
+
+    for si, pk in enumerate(slots):
+        if pk is None:
+            continue
+        c = cdb.card(pk["id"])
+        base = si * PER_SLOT_ATTR
+
+        et = c.get("energyType") or 0
+        if 0 <= et < N_ATTR_ETYPE:
+            a[base + _A_ETYPE + et] = 1.0
+
+        weak = c.get("weakness") or 0
+        if 0 <= weak < N_ATTR_WEAK:
+            a[base + _A_WEAK + weak] = 1.0
+
+        a[base + _A_ABILITY] = 1.0 if c.get("skills") else 0.0
+        a[base + _A_RESIST] = 1.0 if c.get("resistance") else 0.0
+        # does whatever is facing this slot hit it for weakness?
+        att = facing[0 if si < 6 else 1]
+        a[base + _A_WEAKHIT] = 1.0 if (weak and att == weak) else 0.0
+
+    return a
+
+
 # id bags: per-slot card id (12), my hand, my discard, opp discard, opp known
 BAG_NAMES = ("slots", "my_hand", "my_discard", "opp_discard")
 
