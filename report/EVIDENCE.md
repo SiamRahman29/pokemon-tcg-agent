@@ -4403,6 +4403,66 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bk. 🔬 F2 STEP 2 — TEN SEEDS OF ONE RECIPE, AND THE SPREAD IS A RANGE, NOT A NUISANCE TERM (2026-08-07, day 25, 3rd session)
+
+Pre-registered in `docs/experiments/E10-final-push.md` (F2 steps 2–3), frozen in
+`ad7d29f`. Six new seeds (5–10) trained on the **byte-identical** v5 recipe —
+same corpus `pds_v4`, same architecture, same hyperparameters, same 12 epochs,
+`--pool --opt-cols 37` — and each screened identically against `policy_v5_s1`
+in the shipped configuration.
+
+### The screens: mirror, DIRECT, seat-balanced, `--no-rules` both arms, n=1,400/cell
+
+| seed | score vs `s1` | 95% CI | Elo | resolves? |
+|---|---|---|---|---|
+| **s7** | **0.528** | [0.502, 0.554] | **+19.5** | ✅ yes (barely) |
+| s2 (fresh, §8bh) | 0.510 | [0.484, 0.536] | +7.0 | no |
+| s5 | 0.504 | [0.478, 0.530] | +2.8 | no |
+| s9 | 0.504 | [0.477, 0.530] | +2.8 | no |
+| s8 | 0.501 | [0.475, 0.527] | +0.7 | no |
+| s4 | 0.480 | [0.454, 0.506] | −13.9 | no |
+| s10 | 0.472 | [0.446, 0.499] | −19.5 | 🔴 yes, worse |
+| v5 | 0.469 | (from §8bf) | −21.6 | — |
+| s3 | 0.465 | [0.439, 0.491] | −24.4 | 🔴 yes, worse |
+| s6 | 0.458 | [0.432, 0.484] | −29.3 | 🔴 yes, worse |
+
+`[health] OK fallbacks=0 net_missing=0` on all six new cells.
+
+### 🔴 The variance decomposition, on ten unselected draws
+
+Observed sd **0.0232**; per-cell sampling sd √(0.25/1400) = **0.0134**;
+⇒ **between-seed sd 0.0190 ≈ 13.2 Elo**, χ² 95% CI (9 df) **[9.1, 24.1]**.
+Two random seeds of one recipe differ by ~**18.7 Elo** typically.
+
+🔴 **And the max minus the min over these ten reads 48.7 Elo** — §8bg's headline
+"50 Elo", reproduced almost exactly on a distribution whose sd is 13. ⇒ **the
+number was never wrong as a range and was always wrong as a nuisance term: a
+range grows with the number of draws, a standard deviation does not.** Every
+doc quoting "the seed is worth 50 Elo" should say **"a lucky seed beats an
+unlucky one by ~50 Elo when you look at ten of them; the seed-to-seed sd is
+~13."**
+
+⚡ **A second-order fact worth the report:** the *screen* ranking is itself
+mostly noise. Of ten seeds, **three resolve worse than `s1` and exactly one
+resolves better** — and that one (`s7`) clears the lower bound by 0.002. On a
+13-Elo sd with a 13.4-Elo measurement, a screen is a weak instrument and the
+only thing it is licensed to do is **nominate**, which is precisely what the
+pre-registration restricts it to.
+
+### The confirmation — IN FLIGHT, verdict deliberately blank (§8i rule)
+
+`s7` (the single screen winner) vs the incumbent **`policy_v5_s2`**, shipped
+configuration, mirror direct, **n=2,800** (±~0.019). **Ship bar, pre-registered
+before the cell: point ≥ 0.53 AND CI excluding 0.50.** Below the bar → keep
+`s2`, write the null. ⚠ **`s7`'s 0.528 is the maximum of six screens and must be
+expected to regress** — §8bh measured that regression at 0.027 on its only prior
+instance.
+
+```powershell
+python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 --loss listwise --state-h 512,256 --head-h 256,128 --pool --opt-cols 37 --seed 7 --out out/policy_v5_s7.npz
+python -X utf8 scripts/arena.py play "bc:v5s7ship,net=out/policy_v5_s7.npz,noChip,noSpread,noSrc" "bc:v5s1ship,net=out/policy_v5_s1.npz,noChip,noSpread,noSrc" --matches 700 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p68_seed_s7.jsonl
+```
+
 ## 8bj. 🔴 F1 — THE BIGGEST DISAGREEMENT WITH THE 1150s IN THE MIRROR IS *WHEN*, NOT *WHETHER*: an on-policy control shows identical rates, and F1 closes as a chapter (2026-08-07, day 25, 3rd session)
 
 Pre-registered in `docs/experiments/E10-final-push.md` (F1 steps 2–4) with the
@@ -4712,6 +4772,17 @@ itself very loose** (3 df: a factor of ~2 either way is inside the interval).
 The claim that survives is directional and it is enough to act on: **the seed
 nuisance is real, it is smaller than §8bg said, and §8bg said it was that large
 because it read a selected extreme as a spread.**
+
+> ⚡ **UPDATED the same session with six more seeds — and the update is the
+> cleanest possible demonstration of the point.** F2 step 2 screened seeds 5–10
+> identically (§8bk), giving **ten** unselected offsets against `s1`: 0.469,
+> 0.510, 0.465, 0.480, 0.504, 0.458, **0.528**, 0.501, 0.504, 0.472. Observed sd
+> 0.0232, sampling sd 0.0134 ⇒ **between-seed sd 0.0190 ≈ 13.2 Elo** (χ², 9 df:
+> **[9.1, 24.1]**). 🔴 **And the max-minus-min over those ten draws reads 48.7
+> Elo** — §8bg's "50 Elo", reproduced almost exactly, **on a distribution whose
+> standard deviation is 13.** ⇒ **the original number was never wrong as a
+> range; it was wrong as a description of the nuisance.** A range grows with the
+> number of draws; a sd does not.
 
 ### ⚠ What does NOT change
 
