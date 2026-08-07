@@ -4403,6 +4403,143 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bj. 🔴 F1 — THE BIGGEST DISAGREEMENT WITH THE 1150s IN THE MIRROR IS *WHEN*, NOT *WHETHER*: an on-policy control shows identical rates, and F1 closes as a chapter (2026-08-07, day 25, 3rd session)
+
+Pre-registered in `docs/experiments/E10-final-push.md` (F1 steps 2–4) with the
+kill criterion written before any extraction: *"no cluster passes sizing AND
+classifies as dominated → F1 closes as a chapter."*
+
+### Step 2 — the extraction
+
+`policy_v5_s2` scored over all **21,785** single-choice expert decisions in the
+**257** mirror games (§8bi), `--equiv` on so two copies of one card in one role
+cannot manufacture a disagreement (§8x):
+
+| | count | rate |
+|---|---|---|
+| disagreements with the expert | 7,318 | 33.6% of decisions |
+| equivalent-option ties dropped | 386 | — |
+| **confident** (clone margin ≥ 0.25) | **4,785** | 22.0%, **18.6/game** |
+
+Margin quantiles among disagreements: p50 0.370, p90 0.823. **519 clusters**
+by (context, what the clone wanted, what the expert took); **3 pass the
+pre-registered 0.5 firings/game gate.** Ranked first by a wide margin: the clone
+wanting **Munkidori** — 2,167 confident disagreements, **8.4/game, in 253 of 257
+games.**
+
+### 🔴 Step 3 — and the ranking is an ARTIFACT of counting per DECISION
+
+This is §8ai's detector defect in a new costume. That day's empty-bench detector
+counted a pilot as declining to bench when it benched **later in the same turn**,
+and it made a clean anchor (`rule:archaludon`) look broken. Munkidori's
+Adrena-Brain is **"Once during your turn"** — so an agent that fires it at
+action 1 and an expert who fires it at action 4 disagree on **every decision in
+between** and do **exactly the same thing**.
+
+`scripts/p67_option_rate.py` asks the ordering-free question instead. Munkidori
+[ABILITY], expert mirror corpus:
+
+| | per decision | per turn |
+|---|---|---|
+| available | 16.2/game | 3.77/game |
+| **expert used it** | **38.5%** of available decisions | **93.8%** of available turns |
+| **clone's top-1 was it** | **75.1%** of available decisions | **96.9%** of available turns |
+
+**The 2× per-decision gap is a 3-point per-turn gap.** Residual "clone wanted it
+in a turn the expert never used it": **0.19/game — below the 0.5 gate**, and in
+the same band as Morgrem (0.2) and the Archaludon rule (0.187), both killed on it.
+
+### ✅ And the on-policy control settles it, because the counterfactual could not
+
+The clone column above is off-policy. So the shipped agent was made to **play**
+80 mirror games in the shipped configuration (`harness.Recorder` via
+`p20_record_games.py`, §8ad — the recorder whose output is byte-compatible with
+Kaggle replays), those games were mined into a corpus with the **same** miner,
+and the **same** instrument was run on them:
+
+| Munkidori [ABILITY] | our shipped agent (on-policy, 1 seat, 80 games) | 1150+ experts (257 mirror games) |
+|---|---|---|
+| available turns / game | 3.71 | 3.77 |
+| **uses / game** | **6.42** | **6.23** |
+| uses per available turn | 1.73 | 1.65 |
+| % of available turns used | 99.3% | 93.8% |
+
+🔴 **We use Munkidori's ability at the same rate the 1150+ pilots do. The entire
+cluster is sequencing** — we take it at the first opportunity (82.8% of offered
+decisions), they take it later in the turn (38.5%) — **and sequencing is a closed
+axis.** ⚡ **The instrument's own positive control comes free**: on our own
+recorded games the "demonstrator took it" and "clone's top-1" columns are
+identical (514/514, ratio 1.00), which exercises the reconstruction, the option
+matching, the width-slicing and the net scoring end to end.
+
+### Step 4 — the one ordering-free difference, and the discriminator says NO RULE
+
+**Spikemuth Gym** (a Stadium: *"Once during each player's turn, that player may
+search their deck for a Marnie's Pokémon…"*). Here the per-turn gap survives:
+
+| Spikemuth Gym search | our agent | experts |
+|---|---|---|
+| available turns / game | 6.08 | 5.84 |
+| **% of available turns used** | **95.7%** | **72.7%** |
+| uses / game | 6.34 | 4.79 |
+| turns where the clone wants it and the expert never used it | — | **0.77/game ✅ passes sizing** |
+
+**The separating variable is the TURN NUMBER.** Averaged over available turns,
+the experts use it at turn **6.56** and decline at turn **9.73**; we use it at
+7.47 and decline (rarely) at 11.24. ⇒ **the 1150s stop searching once their
+board is built; we keep searching to the end of the game.**
+
+🔴 **Classified as a TRADEOFF, so no rule is built (rule 11; tradeoff rules are
+0 for 4).** The action is a free once-per-turn search with one mechanical cost —
+one fewer card in the deck — and that cost only pays out in a deck-out, while
+these games end at turn 11–13 with the deck nowhere near empty. **"Decline it
+late" is therefore not provable by arithmetic from the board**, which is exactly
+the bar the discriminator sets. ⚠ It is *also* not shown to be harmless; what is
+shown is that it is **not the class rules have ever repaired.**
+
+### ⇒ F1's kill criterion is met, and F1 closes as a chapter
+
+*"No cluster passes sizing AND classifies as dominated."* Three passed sizing:
+one dissolved into sequencing under an on-policy control, one is a tradeoff, one
+(below) is encoding-shaped and on a closed axis. **The finding that goes in the
+report is stronger than the rule would have been: what separates a 990 clone
+from a 1150 rule-agent in our own matchup is not a menu of moves it fails to
+find — it takes the same actions at the same rates — it is WHEN and WHETHER-late,
+and that is precisely the class a per-decision clone cannot be repaired toward
+with a rule.**
+
+### ⚠ Recorded, NOT opened: 22.3% of TO_HAND decisions have no card identity at all
+
+The third sized cluster is `TO_HAND` with **both** sides unnamed (1.41/game). The
+cause: in **22.3% of TO_HAND rows every option carries `opt_card == 0`** — the
+net is choosing a search target whose identity is not in its features, and these
+rows **survive `--equiv`**, so they are not identical options. (`ACTIVATE` and
+`REMOVE_DAMAGE_COUNTER_COUNT` are 100% unnamed too, but correctly so: those are
+yes/no and count selects.) **This is encoding-shaped, the encoding axis is closed
+(+115 → +37 → +14 → 0 → 0), and E10 requires a §8au-style pricing before any
+retrain (the B1-instance-5 bar).** Sized for whoever prices it: **2.8% of all
+mirror decisions.** ⛔ Not opened this side of the freeze.
+
+### Scoring the pre-registration
+
+- **"≥1 cluster passes the frequency bar"** — ✅ correct, 3 did.
+- **"Most clusters classify as tradeoffs and F1 most likely ships nothing while
+  producing the report's strongest §7b addendum"** — ✅ correct on both halves.
+- **"If a dominated class exists, my guess is targeting/bench-management"** —
+  untested: no dominated class was found anywhere, so the guess neither hit nor
+  missed. Recorded as unfalsified, not as a hit.
+- **Not predicted, and the actual result:** that the largest cluster would be an
+  artifact of the counting unit. E10 wrote the sizing gate in firings/game and
+  still let the *ranking* run per decision. ⇒ **the §8ai lesson needs to be a
+  standing rule, not a remembered anecdote: size AND rank per turn.**
+
+```powershell
+python -X utf8 scripts/p66_mirror_disagree.py --net out/policy_v5_s2.npz --ds artifacts/pds_mirror_exp --equiv --margin 0.25 --dump out/logs/f1_disagreements.jsonl
+python -X utf8 scripts/p20_record_games.py --a "bc:v5s2ship,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" --b "bc:v5s2ship_b,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" --deck-a grimmsnarl --games 80 --swap --out out/replays/f1_ours_mirror
+python -X utf8 scripts/p67_option_rate.py --card Munkidori --type ABILITY --ds artifacts/pds_mirror_exp
+python -X utf8 scripts/p67_option_rate.py --card Munkidori --type ABILITY --ds artifacts/pds_ours_mirror1
+```
+
 ## 8bi. ✅ F1's SIZING GATE PASSES (257 mirror games, 22,665 expert decisions) and 🔴 F3's COVERAGE LEVER IS KILLED — the games that would fix the corpus DO NOT EXIST at any band we can mine (2026-08-07, day 25, 3rd session)
 
 Both gates pre-registered in `docs/experiments/E10-final-push.md`, frozen in

@@ -1,0 +1,22 @@
+8 shards, 248985 rows -> 235314 train / 13671 val (1603 games)
+arch: state[512, 256] head[256, 128] loss=listwise opt_cols=37/46 extra=True pool=True attr=False vocab=False pad=False emb_params=88,000 aux_outcome=0 aux_count=0 adapters=[] device=cpu params=702913
+epoch 0: train=1.1927 val_top1=0.6545 val_top1@1120+=0.6330 (n=6130) (79s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 1: train=0.9686 val_top1=0.6840 val_top1@1120+=0.6685 (n=6130) (76s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 2: train=0.9028 val_top1=0.6925 val_top1@1120+=0.6737 (n=6130) (93s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 3: train=0.8625 val_top1=0.7021 val_top1@1120+=0.6884 (n=6130) (139s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 4: train=0.8316 val_top1=0.7060 val_top1@1120+=0.6964 (n=6130) (104s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 5: train=0.8069 val_top1=0.7109 val_top1@1120+=0.7051 (n=6130) (97s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 6: train=0.7847 val_top1=0.7099 val_top1@1120+=0.7042 (n=6130) (78s)
+epoch 7: train=0.7652 val_top1=0.7133 val_top1@1120+=0.7078 (n=6130) (80s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 8: train=0.7462 val_top1=0.7115 val_top1@1120+=0.7069 (n=6130) (79s)
+epoch 9: train=0.7309 val_top1=0.7170 val_top1@1120+=0.7111 (n=6130) (80s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s8.npz
+epoch 10: train=0.7149 val_top1=0.7149 val_top1@1120+=0.7072 (n=6130) (81s)
+epoch 11: train=0.7013 val_top1=0.7104 val_top1@1120+=0.7042 (n=6130) (87s)
