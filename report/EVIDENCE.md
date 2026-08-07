@@ -4403,7 +4403,196 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bi. ✅ F1's SIZING GATE PASSES (257 mirror games, 22,665 expert decisions) and 🔴 F3's COVERAGE LEVER IS KILLED — the games that would fix the corpus DO NOT EXIST at any band we can mine (2026-08-07, day 25, 3rd session)
+
+Both gates pre-registered in `docs/experiments/E10-final-push.md`, frozen in
+`ad7d29f`. One new instrument answers both, because both questions are about a
+**matchup** and every census this repo has run labels only one seat.
+
+### The instrument: `scripts/p65_archetype_census.py`
+
+Labels **seat 0 and seat 1 separately**, each from the *other* seat's
+observation frames — the same lower-bound reconstruction
+`p9_field_census.analyse` uses, so the labels are comparable with every share
+already published. Two defects it caught in its own first run, recorded because
+both are the §8ay/§8ax family (a label that silently means something else):
+
+- 🔴 **`_signature` returns `Marnie's Grimmsnarl ex`, not `Grimmsnarl ex`.** The
+  first version hardcoded the short name and reported **0.0% mirror** on a dump
+  that is 45% mirror. A zero that looks like a finding.
+- 🔴 **The demonstrator is `李秉叡（ntumlnoob）`, not `ntumlnoob`.** Exact-match
+  on `--player` returned a zero-game corpus — rule 9's failure mode, caught here
+  by the mirror count being non-zero while the player count was zero.
+
+### ✅ F1 — the mirror corpus is large, and it is larger than the gate asked for
+
+| dump | games | mirror games | expert decisions in mirror |
+|---|---|---|---|
+| `replays/ntumlnoob_31-07-2026` | 330 | **148** (44.8%) | **12,406** |
+| `replays/sixth_sense_31-07-2026` | 228 | **112** (49.3%) | **10,259** |
+| **unique** (3 episodes appear in both dumps) | 555 | **257** | **22,665** |
+
+**Gate was ≥100 mirror games. Measured 257, and 22,665 expert decisions inside
+them** — a corpus 1.75× the size of the held-out split every agreement number in
+this repo is computed on (12,939). ⇒ **F1 proceeds to step 2 with no widening
+and no top-band mining.**
+
+⚠ **E10's stated reason for expecting the pass was wrong, and the distinction
+matters for anything else that reads these dumps.** It predicted *"their band is
+>70% mirror"*. **71.7% is the share of SEATS playing Grimmsnarl; the share of
+GAMES that are mirror is 44.8%** — because a Grimmsnarl seat facing an Alakazam
+seat contributes one Grimmsnarl seat and zero mirror games. The two numbers
+differ by a factor of 1.6 and the prediction quoted the wrong one. Recorded as a
+**pass on the gate, a miss on the prediction.**
+
+### 🔴 F3 — the corpus-coverage lever, killed on AVAILABILITY
+
+`PARKED-corpus-coverage.md`'s probe, run over the exact four dumps that built
+`artifacts/pds_v4` (`replays/2026-07-2{6,7,8,9}`, 1,603 games, manifest
+`avg_score` **1057–1223, mean 1171**). Decisions belonging to a **Grimmsnarl
+seat**, by what it was facing:
+
+| opponent | field weight (§8ac) | corpus decisions | share |
+|---|---|---|---|
+| mirror | 33.3% | 88,676 | **56.9%** |
+| Crustle | 6.7% | 15,560 | 10.0% |
+| Team Rocket's Spidops | — | 11,990 | 7.7% |
+| Teal Mask Ogerpon ex | — | 9,136 | 5.9% |
+| Dragapult ex | 5.3% | 8,097 | 5.2% |
+| Alakazam | 22.0% | 7,668 | 4.9% |
+| Cynthia's Garchomp ex | 6.7% | 923 | 0.6% |
+| **Archaludon ex** | **8.0%** | **0** | **0.00%** |
+| **Mega Lucario ex** | **4.0%** | **0** | **0.00%** |
+
+🔴 **Zero games. Not "discarded by the miner" — the miner has no archetype
+filter at all** (`build_policy_dataset` clones both seats of every game unless
+`--player` is given, and `pds_v4` was built without it). **The games are not in
+the dumps.** And they cannot be got: these dumps are the *top* of Kaggle's
+episode feed, and §8i already measured that the feed **stops at avg_score
+~1055** while the archetypes in question live below it (§8ac: Archaludon and
+Mega Lucario are **0 of 47** in games above opponent rating 900). ⇒ **the repair
+this lever proposes requires training data that does not exist on the platform,
+at the band where the decks are actually played.** Killed, not declined.
+
+⚡ **And the diagnosis was pointing the wrong way anyway.** The corpus is 56.9%
+mirror against a field that is 33.3% mirror *at the rating we held when §8ac was
+measured* and **71.4% mirror above 1000** — where we now sit (`55326513` reads
+1004.5). **The "over-representation" of the mirror is the corpus being aimed at
+the field we are climbing INTO**, and the under-represented archetypes are
+exactly the ones §8ac says vanish as we climb. ⇒ **`PARKED-corpus-coverage.md`
+is answered and closes: the gap is real, unfixable with obtainable data, and
+shrinking on its own.**
+
+⚠ The one thing this does **not** license: nothing here says the mirror-heavy
+corpus is *optimal*, only that its mismatch cannot be repaired by mining. A
+different corpus weighting is a different (closed) axis, not this one.
+
+```powershell
+python -X utf8 scripts/p65_archetype_census.py --dir replays/ntumlnoob_31-07-2026 --player ntumlnoob
+python -X utf8 scripts/p65_archetype_census.py --dir replays/2026-07-26 --dir replays/2026-07-27 --dir replays/2026-07-28 --dir replays/2026-07-29 --top 16
+```
+
+## 8bh. 🔴 THE SELECTION DEBT IS PAID AND IT COST 0.027 — `s2`'s edge is +7 Elo, not +26, and §8bg's "50 Elo seed spread" was mostly the MAX of a selected set (2026-08-07, day 25, 3rd session)
+
+**Pre-registered** in `docs/experiments/E10-final-push.md` (F2 step 1), frozen in
+`ad7d29f` before either cell ran. §8bg closed by recording a debt in plain words:
+*"`s2` won a screen of THREE seeds, so 0.537 is inflated by selection … a
+confirmation run on fresh games does not exist yet."* It exists now.
+
+### Mirror, DIRECT, seat-balanced, `--no-rules` BOTH arms, n=1,400/cell, all vs `policy_v5_s1`
+
+| cell | score | 95% CI | Elo | verdict |
+|---|---|---|---|---|
+| `policy_v5_s2` — **screen** (§8bg, selected best of 3) | 0.537 | [0.511, 0.563] | +25.8 | ✅ resolved |
+| `policy_v5_s2` — **fresh games** (this cell) | 🔴 **0.510** | [0.484, 0.536] | **+7.0** | **does NOT resolve** |
+| `policy_v5_s4` — first screen | 0.480 | [0.454, 0.506] | −13.9 | does not resolve |
+
+`[health] OK fallbacks=0 net_missing=0` on both new cells; 282,543 and 289,009
+net calls, no fallback, no missing weights.
+
+🔴 **0.537 → 0.510 on the same comparison, same configuration, same weight
+files, different games.** The two readings are *statistically compatible*
+(Δ=0.027, SE 0.019, p≈0.15) — this is not a contradiction and §8bg is not
+retracted. But only one of them is an unbiased estimate of `s2`'s level: the
+screen was **conditioned on being the maximum of three**, and the confirmation
+was not. ⇒ **the honest number for the shipped net is 0.510, and the +25.8 Elo
+in every doc that quotes §8bg should read +7.0.**
+
+### 🔴 What this does to the "50 Elo seed spread"
+
+§8bg's headline was `s2` 0.537 vs `s3` 0.465 — a **max minus a min over three
+draws**, which is an order statistic, not a standard deviation. The four seed
+offsets against `s1` that are *not* selected on:
+
+| net | vs `s1` | source |
+|---|---|---|
+| `policy_v5` | 0.469 | §8bf (0.531 with the seats swapped) |
+| `policy_v5_s2` | 0.510 | this section, fresh games |
+| `policy_v5_s3` | 0.465 | §8bg |
+| `policy_v5_s4` | 0.480 | this section |
+
+Observed sd across the four is 0.0203; the per-cell sampling sd is
+√(0.25/1400)=0.0134, so the **between-seed** sd is
+√(0.0203² − 0.0134²) ≈ **0.015 in win rate ≈ 11 Elo**, and two random seeds
+differ by √2× that ≈ **15 Elo typically** — not 50. ⚠ **On n=4 that estimate is
+itself very loose** (3 df: a factor of ~2 either way is inside the interval).
+The claim that survives is directional and it is enough to act on: **the seed
+nuisance is real, it is smaller than §8bg said, and §8bg said it was that large
+because it read a selected extreme as a spread.**
+
+### ⚠ What does NOT change
+
+- **The seed is still pure nuisance and still comparable to real interventions.**
+  11 Elo of sd sits between v5's +14 and nothing; a 2-seed A/B still measures its
+  intervention on top of it, so §8aw's warning and the ≥3-seed rule stand.
+- **Nothing about the ensembling verdicts** (§8bf, §8bg): those were
+  net-vs-net at fixed weight files, with no selection step.
+- **Nothing shipped moves.** `55326513` is `policy_v5_s2`, and this cell says it
+  is a **median seed**, not a lucky one — which is a demotion of the ship's
+  provenance and an *increase* in the headroom F2 is hunting.
+
+### 🔴 And it re-prices F2 before F2 spends its budget
+
+E10 justified the seed harvest on σ≈25: *"best-of-12 ≈ +35–40 Elo over the
+median seed"*. At sd≈11 the same order statistic (E[max of 12] ≈ 1.63σ) is
+**≈ +18 Elo over the median**, and this section measures the winner's curse that
+eats into it on its only instance so far: **0.027 of win rate, ~19 Elo, lost
+between a screen and its confirmation.** ⇒ **the harvest is still positive-EV
+but roughly half the size E10 priced it at, and the pre-registered structure —
+screens select, only a fresh-game confirmation ships — is what stops it from
+being a bias-manufacturing machine.** The protocol is unchanged; the expectation
+is halved, and it is halved *before* the ship decision rather than after.
+
+⚡ **Third time a number has fallen when a debt was paid rather than quoted**:
+B8's estimate went down at 4× the data (§8ao), the E5 "scaling curve" flattened
+when its independent variable was checked (§8bb), and now a screen winner gives
+back 0.027 on fresh games. **The pattern is not that this project is unlucky —
+it is that selected numbers are the ones that get published unless something
+forces a re-draw.**
+
+### Scoring the pre-registration
+
+- **E10's F2 prediction — "the winner's fresh-game confirmation shrinks toward
+  ~0.51–0.53"** — was written about a *future* screen winner and lands exactly on
+  the incumbent's own re-draw: **0.510.** Recorded as a hit on the mechanism,
+  untested on the object it named.
+- **E10 assumed the screen distribution "will span ~50 Elo again."** On the
+  evidence above it should be expected to span ~30, and the F2 write-up must not
+  reuse the 50.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v5s2ship,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" "bc:v5s1ship,net=out/policy_v5_s1.npz,noChip,noSpread,noSrc" --matches 700 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p65_s2_confirm.jsonl
+python -X utf8 scripts/arena.py play "bc:v5s4ship,net=out/policy_v5_s4.npz,noChip,noSpread,noSrc" "bc:v5s1ship,net=out/policy_v5_s1.npz,noChip,noSpread,noSrc" --matches 700 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p65_s4_screen.jsonl
+```
+
 ## 8bg. 🔴 THE TRAINING SEED IS WORTH 50 Elo — more than the best feature intervention this project ever found, and it is pure nuisance (2026-08-07, day 25)
+
+> 🔴 **NARROWED BY §8bh (same day, 3rd session): the "50 Elo" below is a MAX
+> MINUS A MIN over three draws, and its maximum was selected.** `s2` re-measured
+> on fresh games reads **0.510, not 0.537**; the between-seed sd over four
+> unselected offsets is **≈11 Elo**, so two random seeds differ by ~15 Elo, not
+> 50. The *nuisance* finding stands; the *magnitude* in this section's title does
+> not. Read §8bh before quoting any number here.
 
 **Decision rule pre-registered** in `docs/experiments/E9b-which-net-ships.md`,
 frozen in commit `e214c66` **before the ens5 cell reported**, including two

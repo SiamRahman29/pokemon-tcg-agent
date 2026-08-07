@@ -1,0 +1,68 @@
+  2026-07-26                     403 games
+  2026-07-27                     400 games
+  2026-07-28                     400 games
+  2026-07-29                     400 games
+
+1603 games, 3206 seats; manifest avg_score 1057-1223 (mean 1171)
+
+=== SEAT ARCHETYPE SHARE (both seats, n=3206) ===
+  Marnie's Grimmsnarl ex         1804   56.3%
+  Team Rocket's Spidops           237    7.4%
+  Crustle                         207    6.5%
+  Teal Mask Ogerpon ex            194    6.1%
+  Alakazam                        188    5.9%
+  Dragapult ex                    152    4.7%
+  Meowth ex                       133    4.1%
+  Mega Kangaskhan ex              111    3.5%
+  Hydrapple ex                     42    1.3%
+  Froslass                         27    0.8%
+  Cynthia's Garchomp ex            20    0.6%
+  Raging Bolt ex                   18    0.6%
+  Latias ex                        17    0.5%
+  Rillaboom                        16    0.5%
+  Munkidori                         9    0.3%
+  Mega Froslass ex                  7    0.2%
+
+=== MATCHUP PAIRS (n=1603) ===
+  Marnie's Grimmsnarl ex     vs Marnie's Grimmsnarl ex       477   29.8%
+  Marnie's Grimmsnarl ex     vs Team Rocket's Spidops        156    9.7%
+  Marnie's Grimmsnarl ex     vs Teal Mask Ogerpon ex         143    8.9%
+  Crustle                    vs Marnie's Grimmsnarl ex       131    8.2%
+  Alakazam                   vs Marnie's Grimmsnarl ex       100    6.2%
+  Dragapult ex               vs Marnie's Grimmsnarl ex        99    6.2%
+  Marnie's Grimmsnarl ex     vs Meowth ex                     85    5.3%
+  Marnie's Grimmsnarl ex     vs Mega Kangaskhan ex            54    3.4%
+  Hydrapple ex               vs Marnie's Grimmsnarl ex        24    1.5%
+  Alakazam                   vs Mega Kangaskhan ex            20    1.2%
+  Crustle                    vs Teal Mask Ogerpon ex          17    1.1%
+  Alakazam                   vs Meowth ex                     15    0.9%
+  Crustle                    vs Team Rocket's Spidops         15    0.9%
+  Dragapult ex               vs Team Rocket's Spidops         13    0.8%
+  Marnie's Grimmsnarl ex     vs Raging Bolt ex                12    0.7%
+  Alakazam                   vs Dragapult ex                  11    0.7%
+
+=== MIRROR (Marnie's Grimmsnarl ex both seats) ===
+  mirror games               477   29.8%
+  their manifest avg_score 1057-1214 (mean 1171)
+
+=== DECISIONS BY OPPONENT ARCHETYPE, for every Marnie's Grimmsnarl ex seat ===
+  opponent                      games  decisions  dec/game
+  Marnie's Grimmsnarl ex          954      88676      93.0
+  Crustle                         131      15560     118.8
+  Team Rocket's Spidops           156      11990      76.9
+  Teal Mask Ogerpon ex            143       9136      63.9
+  Dragapult ex                     99       8097      81.8
+  Alakazam                        100       7668      76.7
+  Meowth ex                        85       5711      67.2
+  Mega Kangaskhan ex               54       3554      65.8
+  Hydrapple ex                     24       1441      60.0
+  Cynthia's Garchomp ex            10        923      92.3
+  Rillaboom                        11        786      71.5
+  Raging Bolt ex                   12        729      60.8
+  Latias ex                         9        556      61.8
+  Dudunsparce                       3        220      73.3
+  Cynthia's Roserade                2        187      93.5
+  Munkidori                         3        159      53.0
+  TOTAL                          1804     155927      86.4
+
+  MIRROR decisions: 88676 of 155927 (56.9%)

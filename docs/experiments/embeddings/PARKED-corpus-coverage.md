@@ -1,4 +1,15 @@
-# PARKED — the training corpus does not match the field we play
+# ~~PARKED~~ CLOSED — the training corpus does not match the field we play
+
+> 🔴 **CLOSED 2026-08-07 (day 25) by the probe this file specifies — see
+> EVIDENCE §8bi.** The gate was run over the four dumps that built `pds_v4`
+> (1,603 games): **Archaludon and Mega Lucario appear in ZERO of them**, and the
+> miner discards nothing — it clones both seats of every game. The games are not
+> in the dumps and cannot be obtained (§8i: Kaggle's episode feed stops at
+> avg_score ~1055; §8ac: those archetypes are 0 of 47 above opponent rating
+> 900). ⇒ **killed on availability, not declined.** And the mismatch is
+> self-closing: the corpus is 56.9% mirror against a field that is **71.4%
+> mirror above rating 1000**, which is where we now play. Nothing below is
+> retracted; it is answered.
 
 Found 2026-08-05 while chasing why Mega Lucario is 0/6 out of vocabulary.
 **Parked deliberately. Not an embedding problem — do not work it under the
