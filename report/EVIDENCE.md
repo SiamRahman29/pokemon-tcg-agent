@@ -4403,7 +4403,95 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bf. 🔴 E9 RE-MEASURED IN THE SHIPPED CONFIGURATION: the VOTE is a null against its better member, and the live bundle's whole gain is the SEED SWAP (2026-08-07, day 25)
+
+§8be closed with the configuration trap named but not paid: arena `bc` defaults
+to `chip_targeting`/`energy_spread`/`counter_source` **ON**, the submission
+builds `--no-rules` with all three **OFF**, and **every E9 cell ran rules-on**.
+Day 24 launched the re-measurement, archived 1,404 games to
+`out/arena/p62_ship_config.jsonl`, and **never scored them.** Scored here, plus
+the two cells that were missing.
+
+### Mirror, DIRECT, seat-balanced, fixed weight files both sides, `--no-rules` on BOTH arms
+
+| cell | shipped config (rules OFF) | §8be (rules ON) |
+|---|---|---|
+| ens2 vs `policy_v5` (the old shipped net) | **0.559** [0.533, 0.585] | 0.541 [0.519, 0.563] |
+| ens2 vs `policy_v5_s1` (the better member) | 🔴 **0.505** [0.479, 0.531] | 0.531 [0.510, 0.553] |
+| `policy_v5_s1` vs `policy_v5` (the seed swap) | **0.531** [0.505, 0.557] | 0.549 [0.527, 0.571] |
+
+n=1,400/cell (1,404 for row 1), `[health] OK fallbacks=0 net_missing=0` on all
+three — so no arm silently played the index-order fallback or the stale lw2
+singleton (§8ax defects 3 and 4).
+
+🔴 **Read rows 2 and 3 together.** The seed swap resolves (lower bound 0.505,
+barely). The vote **does not beat the member it is built on**. Those are
+consistent in exactly one way: **the live bundle's entire measured gain over the
+old shipped net is the seed swap, and the vote contributes nothing measurable on
+top of it.** Shipping `policy_v5_s1` as a single file would, on this evidence,
+have bought the same thing for half the inference and none of the fail-soft
+machinery.
+
+⚠ **This is NOT a refutation of §8be, and must not be written up as one.**
+0.505 [0.479, 0.531] and 0.531 [0.510, 0.553] overlap — the rules-on point
+estimate sits exactly on the rules-off upper bound. Two readings this close
+cannot separate "the configuration changed the answer" from "these are two
+samples of one quantity". The claim that survives is narrower and still
+decision-relevant: **the vote is unproven in the configuration we ship, not
+disproven.** ⇒ **rule 4 applies — the mechanism is retracted for the shipped
+configuration, not falsified.**
+
+🔴 **And it undercuts the comparison that PICKED ens2.** §8be preferred ens2 over
+the seedswap on ΔW +0.0289 (6/7 anchors) vs +0.0215 (4/7). **All fourteen of
+those anchor cells were rules-on.** The two candidates it was choosing between
+are, in the shipped configuration, separated by one null. ⇒ **no weighted anchor
+verdict in §8be describes the shipped agent**, and re-running that table is the
+only way to restore it.
+
+### ⚡ AND THE DECORRELATION LESSON WAS ATTRIBUTED TO THE WRONG VARIABLE
+
+`scripts/p63_net_agreement.py` makes §8be's one-off agreement check a standing
+gate and reproduces both published numbers independently, over **12,939
+held-out decisions** rather than §8be's 1,471: `policy_v5c_s1` vs
+`policy_v5_s1` **100.0%** (exact), and `policy_v5` vs `policy_v5c_s0` **88.4%**
+against the published 87.5%. Then three fresh seeds of the v5 recipe:
+
+| pair | agree | pair | agree |
+|---|---|---|---|
+| `v5` vs `v5_s1` | 80.8% | `v5_s1` vs `s2` | 81.2% |
+| `v5` vs `s2` | 81.4% | `v5_s1` vs `s3` | 80.6% |
+| `v5` vs `s3` | 81.2% | `s2` vs `s3` | 80.9% |
+
+🔴 **Every independent seed pair lands in 80.6–81.4% — a 0.8-point spread across
+six pairs.** The 88.4% outlier is `v5c_s0`, which is **not a v5-recipe seed**.
+⇒ **§8be's "members must be decorrelated" is right, but its implied cause is
+wrong: seed variation does not produce correlated members, mixing RECIPES does.**
+Training more seeds cannot fail the decorrelation gate, so "check agreement
+before adding a member" is cheap insurance rather than the binding constraint
+day 24 took it for.
+
+⚠ **The gate default is 85%, and that number is a MIDPOINT GUESS stated as
+such.** One pair helped at 80.8% and one hurt at 88.4%; nothing has measured
+where between them the boundary is. HANDOFF's "~90%" was too loose — it would
+have waved through the exact pair that made ens3 lose.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:ens2ship,net=out/policy_v5.npz+out/policy_v5_s1.npz,noChip,noSpread,noSrc" "bc:v5s1ship,net=out/policy_v5_s1.npz,noChip,noSpread,noSrc" --matches 700 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p62_ship_config.jsonl
+python -X utf8 scripts/p63_net_agreement.py --nets out/policy_v5.npz,out/policy_v5_s1.npz,out/policy_v5_s2.npz,out/policy_v5_s3.npz
+```
+
 ## 8be. ⚡ E9 — SEED ENSEMBLING WORKS, AND THE SHIPPED NET WAS THE WEAKER OF TWO WE ALREADY HAD (2026-08-07, day 24)
+
+> ⚠ **NARROWED BY §8bf (day 25) — read that first.** Every cell in this section
+> ran **rules-ON** while the submission ships **rules-OFF**. Re-measured in the
+> shipped configuration, the **seed swap survives (0.531)** and **the vote does
+> not beat its better member (0.505, null)**. What stands: the shipped net was
+> the weaker seed, and ensembling beats the *old shipped net*. What does **not**
+> stand unqualified: the title's "ensembling works" (it does not resolve against
+> the best member where it counts), and the weighted-anchor comparison below
+> that **chose** ens2 over the seedswap — all fourteen of those cells are
+> rules-on. Also: the "correlated members" diagnosis is right but its cause was
+> misattributed — see §8bf, fresh seeds are uniformly ~81% apart.
 
 **Pre-registered** in `docs/experiments/E9-ensemble.md` before any cell ran,
 including two predictions that were wrong.
