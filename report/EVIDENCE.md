@@ -4403,6 +4403,88 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8be. ⚡ E9 — SEED ENSEMBLING WORKS, AND THE SHIPPED NET WAS THE WEAKER OF TWO WE ALREADY HAD (2026-08-07, day 24)
+
+**Pre-registered** in `docs/experiments/E9-ensemble.md` before any cell ran,
+including two predictions that were wrong.
+
+**Why this is not the closed capacity axis (§8w).** §8w scaled ONE net 2.6× and
+8.2× and bought 2 decisions of 12,939, then lost 43 — the features bind a single
+fitted function. Ensembling averages functions fitted **independently**. ⚡ And
+the precondition was already measured, filed as a warning about our instrument:
+§5.6/E8 found two same-recipe nets differing only in `--seed` swinging **0.073**
+against each other. Re-measured directly here: `policy_v5` and `policy_v5_s1`
+**disagree on 23.0% of 1,471 real ladder decisions** — about as far apart as we
+are from human demonstrators. Nothing in this repo had ever tried a vote.
+
+### Mirror, DIRECT head-to-head, fixed weight files both sides, n=2,000/cell
+
+| cell | score | 95% CI | verdict |
+|---|---|---|---|
+| 🔴 `policy_v5` (SHIPPED) vs `policy_v5_s1` | **0.451** | [0.429, 0.473] | **the shipped net is the WEAKER seed** |
+| ens2 vs `policy_v5` | **0.541** | [0.519, 0.563] | resolved |
+| ens2 vs `policy_v5_s1` | **0.531** | [0.510, 0.553] | resolved — beats the better member too |
+| ens3 vs `policy_v5_s1` | 0.491 | [0.469, 0.513] | null |
+| ens3 vs ens2 | 0.495 | [0.473, 0.517] | null |
+
+🔴 **Prediction 1 was wrong: arm C is not a null.** `policy_v5_s1` has sat in
+`out/` since 08-01 and is ≈ +34 Elo on the net we ship. **Every A/B this project
+ever ran "against v5" used the weaker of two available nets.**
+
+### 🔴 MORE MEMBERS IS NOT BETTER — correlated members actively hurt
+
+There are **four** v5-recipe nets on disk but only **three policies**:
+`policy_v5c_s1` is **100.0% decision-identical** to `policy_v5_s1` (different
+md5, same function). Voting with both would give that policy two of four votes —
+a weighted vote with weights nobody chose, flattering the result because the
+doubled member is the stronger one. And the honest 3-net vote **still lost**:
+`policy_v5c_s0` agrees with `policy_v5` on **87.5%** of decisions, so ens3 is
+effectively two votes for the v5-ish policy against one for the stronger `s1`.
+⇒ **Ensemble members must be decorrelated; 87.5% agreement is enough to hurt.**
+`build_submission.py` now refuses byte-identical members outright.
+
+### Weighted anchor confirmation — 90.6% of the field, n=1,500/cell, one session
+
+| anchor | w | incumbent | seedswap | ens2 | Δ swap | Δ ens2 |
+|---|---|---|---|---|---|---|
+| mirror (direct) | 0.320 | — | — | — | **+0.049** | **+0.041** |
+| alakazam5 | 0.253 | 0.797 | 0.799 | 0.822 | +0.002 | +0.025 |
+| archaludon | 0.080 | 0.714 | 0.707 | 0.755 | −0.007 | +0.041 |
+| crustle_v1 | 0.080 | 0.764 | 0.811 | 0.803 | +0.047 | +0.039 |
+| garchomp | 0.067 | 0.641 | 0.714 | 0.688 | +0.073 | +0.047 |
+| v10 | 0.053 | 0.636 | 0.591 | 0.621 | −0.045 | −0.015 |
+| dragapult | 0.053 | 0.812 | 0.805 | 0.825 | −0.007 | +0.013 |
+| **WEIGHTED** | | | | | **+0.0215** | 🔴 **+0.0289** |
+
+Resolution ±0.0115 (game sampling ⊕ §8ay's ±0.003 weight uncertainty):
+**seedswap 1.9× outside, positive on 4/7; ens2 2.5× outside, positive on 6/7.**
+⇒ **ens2 is the candidate** — larger, far more consistent, and it beats the
+seedswap head-to-head. **The largest confirmed gain since the v4 state block.**
+
+⚠ **`bc:garchomp` read 0.641 where §8ap recorded 0.857.** Its archived
+fingerprint is `#a25b904d` — the stale width-496 `lw2` singleton, not v5. All
+three arms met that identical build back-to-back, so the **deltas are unaffected**
+(§8an's argument); the **level** has moved a long way and nobody should quote the
+absolute row until it is explained. Possible sixth instance of anchor drift.
+
+⚠ **Both candidates are worse against `rule:v10`** — the one archetype the corpus
+contains **zero** games of (§8au). Coherent, not noise.
+
+### 🔴 THE CONFIGURATION TRAP, found while building the bundle
+
+Arena `bc` defaults to `chip_targeting`/`energy_spread`/`counter_source` **ON**;
+the submission ships `--no-rules`, all three **OFF** (§8f: 0.427 with a v3 net).
+**Every cell above ran rules-ON, both arms alike** — so the ΔW is internally
+valid but describes a rules-on pair, while the bundle is rules-off. ⇒ **the
+shipped configuration was never the measured one**, and this likely applies to
+earlier verdicts too. Re-measured in the shipped configuration:
+`p62_ship_config.jsonl`.
+
+```powershell
+python -X utf8 scripts/p60_ensemble.py --matches 1000 --arms C,A,B
+python -X utf8 scripts/p61_ens_anchors.py --matches 750
+```
+
 ## 8bd. 🔴 E3's NEAR-TIE BAND IS INDIFFERENT — and measuring it RETRACTS §8am's cliff, which was a property of the deviation's DEPTH, not its RATE (2026-08-07, day 23)
 
 **Pre-registered** in `docs/experiments/beyond-bc/E3b-near-tie-gate.md`, frozen in

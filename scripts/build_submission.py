@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import shutil
 import subprocess
 import sys
@@ -54,6 +55,10 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 
 AGENT_KIND = {agent_kind!r}
+# Extra ensemble members, relative to the bundle root. Empty = single net, i.e.
+# exactly the behaviour every submission before this one had. When non-empty the
+# agent votes across sa/policy_net.npz + these (EVIDENCE: E9).
+ENSEMBLE_EXTRA = {ensemble_extra!r}
 # Explicit rule flags, pinned at BUILD time. The defaults in sa/bcagent.py are
 # tuned for the lw2 net; an optfeat-v3 net wants them OFF (the three rules
 # measure 0.427 against it -- report/EVIDENCE.md 8f). Pinning the (net, flags)
@@ -73,7 +78,28 @@ _deck = _read_deck()
 
 if AGENT_KIND == "bc":
     from sa.bcagent import PolicyAgent as _A
-    _agent = _A(_deck, **AGENT_KWARGS)
+    _agent = None
+    if ENSEMBLE_EXTRA:
+        # 🔴 FAIL-SOFT IS NON-NEGOTIABLE ON THE SHIPPED PATH. An explicit
+        # `net=` is STRICT by design (day 22: a net that failed its guard used
+        # to silently play a different one), and strict means it RAISES. In the
+        # arena that is correct -- a bad cell must not print a score. Here it
+        # would forfeit a live episode. So: try the vote, and on ANY failure
+        # fall back to the single bundled net, which is member 0 -- i.e. the
+        # agent that shipped before this change. Degrade, log, keep playing.
+        try:
+            _paths = [os.path.join(_HERE, "sa", "policy_net.npz")]
+            _paths += [os.path.join(_HERE, p) for p in ENSEMBLE_EXTRA]
+            _agent = _A(_deck, "+".join(_paths), **AGENT_KWARGS)
+            print("[health] ENSEMBLE OK members=%d" % len(_paths), flush=True)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            print("[health] ENSEMBLE FAILED TO LOAD -- falling back to the "
+                  "single bundled net", flush=True)
+            _agent = None
+    if _agent is None:
+        _agent = _A(_deck, **AGENT_KWARGS)
 else:
     from sa.agent import SearchAgent as _A
     _agent = _A(_deck)
@@ -123,7 +149,7 @@ def agent(obs):
 '''
 
 SMOKE = r'''
-import sys, time
+import os, sys, time
 sys.path.insert(0, ".")
 
 # Load main.py THE WAY KAGGLE DOES: exec the source with no __file__ in globals
@@ -158,6 +184,13 @@ if _ag is not None and type(_ag).__name__ == "PolicyAgent":
     _live = _ag.net or _pn.get()
     assert _live is not None, "POLICY NET NOT LOADED -- agent would play random-legal"
     print(f"NET_OK opt_in={_live.opt_in} state_in={_live.state_in}")
+    # An ensemble that quietly loaded ONE member is a different agent shipping
+    # under the measured one's name, and it would score like the single net
+    # while the build log said nothing. Assert the member count explicitly.
+    _want = int(os.environ.get("SMOKE_MEMBERS", "1"))
+    _got = len(getattr(_live, "nets", []) or [1])
+    print(f"MEMBERS={_got} want={_want}")
+    assert _got == _want, f"ensemble has {_got} members, expected {_want}"
     print("FLAGS chip=%s spread=%s src=%s wall=%s"
           % (_ag.chip_targeting, _ag.energy_spread, _ag.counter_source,
              _ag.chip_wall_defer))
@@ -217,6 +250,12 @@ def main() -> int:
     # TOGETHER -- a v3 net with the lw2 defaults is the 0.427 configuration.
     ap.add_argument("--policy-net", default=None,
                     help="path to an npz to ship as sa/policy_net.npz")
+    # Extra ensemble members (EVIDENCE E9). Each is copied into the bundle as
+    # sa/policy_net_<i>.npz and voted with sa/policy_net.npz. Member ORDER is
+    # part of the agent's identity -- member 0 supplies the count rule.
+    ap.add_argument("--ensemble-net", action="append", default=[],
+                    help="extra npz to vote with the shipped policy net; "
+                         "repeatable")
     ap.add_argument("--no-rules", action="store_true",
                     help="disable chip_targeting/energy_spread/counter_source. "
                          "Required with an optfeat-v3 net (EVIDENCE 8f).")
@@ -238,8 +277,11 @@ def main() -> int:
         shutil.rmtree(build)
     build.mkdir(parents=True)
 
+    ensemble_extra = [f"sa/policy_net_{i + 1}.npz"
+                      for i in range(len(args.ensemble_net))]
     (build / "main.py").write_text(
-        MAIN_PY.format(agent_kind=args.agent, agent_kwargs=agent_kwargs),
+        MAIN_PY.format(agent_kind=args.agent, agent_kwargs=agent_kwargs,
+                       ensemble_extra=ensemble_extra),
         encoding="utf-8")
     print(f"agent kwargs: {agent_kwargs or '(bcagent.py defaults)'}")
 
@@ -280,6 +322,38 @@ def main() -> int:
             raise SystemExit(f"{src} FAILS the dim guard -- it would silently "
                              "fall back to random-legal on Kaggle")
         print("  dim guard: net loads OK")
+    if args.ensemble_net:
+        if not keep_policy:
+            raise SystemExit("--ensemble-net needs --nets both|policy")
+        from ptcg.env import sdk as _sdk2
+        _sdk2.load()
+        from sa import policynet as _pn2
+        for i, extra_net in enumerate(args.ensemble_net):
+            src = Path(extra_net)
+            if not src.is_absolute():
+                src = ROOT / src
+            if not src.exists():
+                raise SystemExit(f"--ensemble-net not found: {src}")
+            dst = build / "sa" / f"policy_net_{i + 1}.npz"
+            shutil.copy2(src, dst)
+            if _pn2.load(dst) is None:
+                raise SystemExit(f"{src} FAILS the dim guard")
+            print(f"  sa/{dst.name} <- {src} (dim guard OK)")
+        # The members must be DIFFERENT policies. Two files holding one policy
+        # would give it two votes -- silently weighting a vote whose whole
+        # point is one member one vote (E9: policy_v5c_s1 is 100% identical to
+        # policy_v5_s1 despite a different md5).
+        import hashlib
+        seen: dict[str, str] = {}
+        for f in ["policy_net.npz"] + [f"policy_net_{i + 1}.npz"
+                                       for i in range(len(args.ensemble_net))]:
+            digest = hashlib.md5((build / "sa" / f).read_bytes()).hexdigest()
+            if digest in seen:
+                raise SystemExit(
+                    f"ensemble members {seen[digest]} and {f} are the SAME "
+                    "bytes -- that is a weighted vote, not an ensemble")
+            seen[digest] = f
+        print(f"  ensemble: {len(seen)} distinct members")
     for extra in ("value_net.npz", "policy_net.npz", "deck_library.json"):
         present = (build / "sa" / extra).exists()
         note = "present" if present else "excluded -> handcrafted fallback"
@@ -302,9 +376,11 @@ def main() -> int:
         with tempfile.TemporaryDirectory() as tmp:
             with tarfile.open(out) as tar:
                 tar.extractall(tmp)
+            env = dict(os.environ,
+                       SMOKE_MEMBERS=str(1 + len(args.ensemble_net)))
             proc = subprocess.run([sys.executable, "-X", "utf8", "-c", SMOKE],
                                   cwd=tmp, capture_output=True, text=True,
-                                  timeout=1800)
+                                  timeout=1800, env=env)
             ok = proc.returncode == 0 and "RESULT=" in proc.stdout
             if args.agent == "bc" and "NET_OK" not in proc.stdout:
                 ok = False

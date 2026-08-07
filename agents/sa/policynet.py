@@ -338,6 +338,17 @@ class Ensemble:
     def __len__(self) -> int:
         return len(self.nets)
 
+    # Passthroughs so anything that introspects a net (the build smoke, the
+    # dim guard's callers) sees the shape it is actually being fed. Every
+    # member is verified same-architecture by `load` before it gets here.
+    @property
+    def opt_in(self) -> int:
+        return self.primary.opt_in
+
+    @property
+    def state_in(self) -> int:
+        return self.primary.state_in
+
     def scores(self, obs: dict) -> np.ndarray:
         acc = None
         for net in self.nets:

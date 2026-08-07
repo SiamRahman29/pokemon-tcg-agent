@@ -21,7 +21,122 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 23 (2026-08-07)
+> # ▶ START HERE — DAY 24 (2026-08-07): ENSEMBLING WORKS, AND WE HAD BEEN SHIPPING THE WEAKER OF TWO NETS WE ALREADY OWNED
+>
+> **📌 USER DIRECTIVE, STANDING UNTIL THEY LIFT IT: report work is SUSPENDED.
+> Track A only — the simulation leaderboard and a stronger agent.** `STRATEGY.md`
+> gets no edits. `EVIDENCE.md` keeps getting entries because it is what stops the
+> next session re-running an experiment; that is engineering, not report writing.
+>
+> Full record: `EVIDENCE` §8be. Pre-registration: `docs/experiments/E9-ensemble.md`
+> (frozen before any cell, including two predictions that were wrong).
+>
+> ## 🔴 1. THE SHIPPED NET IS THE WEAKER SEED
+>
+> `out/policy_v5_s1.npz` has been sitting in `out/` since 08-01 and **beats the
+> shipped `out/policy_v5.npz` 0.549 [0.527, 0.571]**, n=2,000 mirror direct
+> (arm C read 0.451 from the incumbent's side). ≈ +34 Elo, free, one file.
+> ⇒ **Every A/B this project ever ran "against v5" used the weaker of two
+> available nets.** I predicted this arm would be a null. It is not.
+>
+> ## ⚡ 2. A 2-NET VOTE BEATS BOTH MEMBERS — the largest confirmed gain since the v4 state block
+>
+> `Ensemble` (softmax each member over the option set, then average — **not** a
+> raw-logit mean, because a listwise loss pins ranking and not scale). Spec:
+> `bc:<label>,net=a.npz+b.npz`. Mirror, direct, fixed weight files, n=2,000:
+>
+> | cell | score | 95% CI |
+> |---|---|---|
+> | ens2 vs `policy_v5` (shipped) | **0.541** | [0.519, 0.563] |
+> | ens2 vs `policy_v5_s1` (better member) | **0.531** | [0.510, 0.553] |
+>
+> **Weighted anchor confirmation, 90.6% of the field, n=1,500/cell, one session:**
+> **ens2 ΔW = +0.0289 ± 0.0115, 2.5× outside, positive on 6 of 7 anchors.**
+> The seed swap alone is **+0.0215**, 1.9× outside, positive on only 4 of 7.
+> ⇒ **ens2 is the candidate.**
+>
+> ## 🔴 3. MORE MEMBERS IS NOT BETTER — and the reason generalises
+>
+> Four v5-recipe nets are on disk but there are only **three policies**:
+> `policy_v5c_s1` is **100.0% decision-identical** to `policy_v5_s1` (different
+> md5, same function). And the honest 3-net vote **lost anyway** (0.491 vs the
+> best member): `policy_v5c_s0` agrees with `policy_v5` on **87.5%**, so ens3 is
+> effectively two votes for the v5-ish policy against one for the stronger `s1`.
+> ⇒ **Members must be DECORRELATED. 87.5% agreement is already enough to hurt.**
+> `build_submission.py` refuses byte-identical members; it cannot detect the
+> 87.5% case, so **check agreement before adding a member** (the one-off script
+> pattern is in this box's item 6).
+>
+> ## 🔴 4. THE CONFIGURATION TRAP — READ THIS BEFORE TRUSTING ANY OLD ΔW
+>
+> Arena `bc` defaults to `chip_targeting`/`energy_spread`/`counter_source` **ON**.
+> The submission builds with `--no-rules`, all three **OFF** (§8f: those rules
+> measure 0.427 against a v3-optfeat net). **Every E9 cell ran rules-ON, both arms
+> alike** — internally valid, but a delta between two rules-*on* agents, while the
+> bundle is rules-*off*. ⚠ **This likely affects earlier verdicts too (§8aa, §8z):
+> the shipped configuration may never have been the measured one.** Re-run in the
+> shipped config: `out/arena/p62_ship_config.jsonl`.
+>
+> ## 📦 5. THE BUNDLE IS BUILT AND VERIFIED — ⛔ NOT SUBMITTED
+>
+> ```powershell
+> python -X utf8 scripts/build_submission.py --agent bc --deck grimmsnarl \
+>     --nets policy --no-rules --policy-net out/policy_v5.npz \
+>     --ensemble-net out/policy_v5_s1.npz
+> ```
+> `dist/submission.tar.gz`, 6.9 MiB. Smoke on the **extracted** bundle, loaded the
+> way Kaggle loads it: `MEMBERS=2 want=2`, 2 distinct member md5s, both pass the
+> dim guard, `RESULT=0 turns=17 lat_max=0.01s pool_left=599.9s`.
+> ✅ **Fail-soft is preserved**: `main.py` tries the vote and on ANY exception
+> falls back to the single bundled net (which is member 0), logging loudly. An
+> explicit `net=` is strict *by design* since day 22 — strict means it raises, and
+> raising on the shipped path would forfeit a live episode.
+>
+> ## 🎲 6. IF YOU SUBMIT: SUBMIT TWICE, NOT ONCE
+>
+> The board shows your **best ACTIVE** submission and only the **latest 2** are
+> active. Today's two are *the same v5 policy* and they landed **990.7 and 904.1**
+> — so the 990.7 is a lucky draw, not v5's level (mean ≈ 947, and §8ak now has the
+> decision-identical gap at **86.6**). Submitting once evicts the 990.7 and leaves
+> one fresh draw beside the stale 904.1. **Submitting twice replaces both slots
+> with two draws of the better agent and the board takes the max.** Expected
+> displayed score ≈ 1015 vs the 990.7 held today — but the spread is wide enough
+> to land lower, so it IS a gamble against a settled number.
+> ⛔ **Do not submit once.** It is dominated by both alternatives (submit twice, or
+> don't submit).
+>
+> ## ▶ THE DAY-25 PLAN — the retrain, which is the obvious next move
+>
+> 1. 🔬 **Train 3 more v5-recipe seeds (~2 h unattended), then vote across the
+>    decorrelated set.** This is the direct consequence of item 3: the vote is
+>    limited by having two independent members, and correlated ones hurt.
+>    ```powershell
+>    python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 \
+>        --bs 1024 --loss listwise --state-h 512,256 --head-h 256,128 --pool \
+>        --opt-cols 37 --seed 2 --out out/policy_v5_s2.npz
+>    ```
+>    ⚠ **`--opt-cols 37` is mandatory** — `optfeat.OPT_DENSE` grew 37 → 46 on the
+>    merge, and anything sharing an ensemble with `policy_v5` must match its
+>    layout. Repeat for `--seed 3`, `--seed 4`.
+>    ⚠ **Check pairwise agreement before adding any member** and drop anything
+>    above ~90% agreement with a member already in the vote.
+> 2. 🔬 **Then re-confirm in the SHIPPED configuration** (`noChip,noSpread,noSrc`),
+>    not the arena default — item 4. Do the mirror first; it is 32% of the field
+>    and the tightest instrument we own.
+> 3. ⚠ **Inference cost is not free forever.** 2 members = 0.01 s/move against a
+>    600 s pool, so 5 is still nothing — but the smoke prints `lat_max`, so read
+>    it rather than assuming.
+> 4. ⛔ **Do NOT reopen a closed axis** (fourteen). ⛔ **Do not push without
+>    asking** — 30+ commits are local by design.
+> 5. 🟡 **Still open, unresolved:** `bc:garchomp` read **0.641** where §8ap
+>    recorded **0.857**, and its fingerprint says it is piloted by the stale
+>    width-496 `lw2` singleton. The E9 *deltas* are unaffected (all three arms met
+>    that identical build back-to-back) but the level is unexplained — possible
+>    sixth instance of anchor drift.
+>
+> ---
+>
+> # ▶ DAY 23 (2026-08-07)
 >
 > ## 📈 STANDING FIRST: RANK 129 / 6,483 AT 990.7 — BEST EVER, AND THE ANSWER TO "SHOULD WE SUBMIT" IS NO
 >
