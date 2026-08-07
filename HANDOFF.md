@@ -21,7 +21,104 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 24 (2026-08-07): ENSEMBLING WORKS, AND WE HAD BEEN SHIPPING THE WEAKER OF TWO NETS WE ALREADY OWNED
+> # ▶ START HERE — DAY 25 (2026-08-07): THE SEED IS WORTH 50 Elo, ENSEMBLING IS NOT, AND `policy_v5_s2` IS SUBMITTED
+>
+> **📌 USER DIRECTIVE, STANDING: report work is SUSPENDED. Track A only.**
+> `STRATEGY.md` gets no edits. `EVIDENCE.md` keeps getting entries.
+>
+> Full record: `EVIDENCE` §8bf (shipped-config re-measurement) and **§8bg** (the
+> seed result). Pre-registration: `docs/experiments/E9b-which-net-ships.md`,
+> frozen in `e214c66` before the deciding cell reported.
+>
+> ## 📈 1. THE LIVE STANDING — and a submission was made
+>
+> | active? | submission | score | what it is |
+> |---|---|---|---|
+> | ✅ **active** | **`55326513`** (08-07 14:05) | *pending* | **`policy_v5_s2`, single net, rules off — the day-25 ship** |
+> | ✅ active | `55321893` (08-07 09:59) | **934.7** | ens2 (v5 + v5_s1 vote); read 954.3 earlier, **drifting down** |
+> | ⛔ inactive | `55169114` | 918.5 | evicted by the new submission |
+> | ⛔ inactive | `55160229` | 978.4 | the old 990.7 — **frozen, gone, and NOT recoverable** |
+>
+> 🔴 **A RESUBMISSION DOES NOT INHERIT A SCORE.** Every submission starts at
+> μ=600 and draws fresh. The 990.7/978.4 cannot be "restored" by resubmitting
+> that tarball — and we know its true level, because `55169114` is
+> **decision-identical** to it and sits at **918.5**. Same function, 978.4 vs
+> 918.5. ⇒ **the 990.7 was the top of a range, not an agent we lost.** Same for
+> the 1017 the user observed on `55321893`, now 934.7.
+>
+> ## 🔴 2. THE TRAINING SEED IS WORTH ~50 Elo AND IT IS PURE NUISANCE
+>
+> Shipped config (`--no-rules` both arms), mirror, direct, n=1,400/cell, all vs
+> `policy_v5_s1`. Same corpus, architecture, hyperparameters, epochs — **only
+> `--seed` differs**:
+>
+> | net | score | 95% CI | Elo |
+> |---|---|---|---|
+> | `policy_v5_s2` | **0.537** | [0.511, 0.563] | **+25.8** |
+> | `policy_v5_s3` | **0.465** | [0.439, 0.491] | **−24.4** |
+>
+> **A 50 Elo spread from the seed alone**, against the v4 state block's **+37**
+> (systematic feature enumeration, the project's second-largest confirmed win)
+> and v5's **+14**. ⚡ Independently reproduces §8be's incidental 0.073 swing.
+> ⇒ **every 2-seed A/B this project ran measured its intervention on top of a
+> ±25 Elo nuisance term.** §8aw's warning was understated, not overstated.
+>
+> ## 🔴 3. ENSEMBLING FAILED TO BEAT ITS OWN BEST MEMBER TWICE
+>
+> Both in the shipped configuration, both null:
+> **ens2 vs `v5_s1` 0.505** [0.479, 0.531] · **ens5 vs `v5_s1` 0.522** [0.496,
+> 0.548]. ⇒ **a vote is bounded by its members; mediocre nets do not average
+> into a good one.** The live `55321893` bundle's whole gain over the old shipped
+> net was the **seed swap** (0.531), not the vote.
+> ⚠ **NOT a refutation of §8be** — its cells were rules-ON and the intervals
+> overlap. The claim is *unproven where it counts*, not disproven (rule 4).
+> 🔴 **And §8be's weighted-anchor table, which CHOSE ens2 over the seedswap, is
+> all rules-on. No weighted verdict in it describes the shipped agent.**
+>
+> ## ✅ 4. TWO INSTRUMENT FACTS, both cheap and both settled
+>
+> - **`scripts/p63_net_agreement.py`** is the decorrelation gate. Reproduces
+>   §8be's numbers independently over 12,939 held-out decisions (`v5c_s1` vs
+>   `v5_s1` **100.0%** exact; `v5` vs `v5c_s0` **88.4%** vs the published 87.5%).
+>   🔴 **All ten fresh-seed pairs sit in 80.4–81.4%** ⇒ **seed variation cannot
+>   produce correlated members; mixing RECIPES does.** §8be's diagnosis was right
+>   and its implied cause was wrong. ⚠ Gate default 85% is a **midpoint guess**;
+>   HANDOFF's old "~90%" would have waved through the pair that made ens3 lose.
+> - **Latency is a non-issue, measured not assumed:** ens5 runs **6.7 ms/move
+>   mean, 34.4 ms max, 598.8 s of 600 s pool unspent.** Member count is not
+>   cost-constrained at any size worth considering.
+>
+> ## ⚠ 5. THE OUTSTANDING DEBT — read before quoting 0.537
+>
+> **`s2` won a screen of THREE seeds, so 0.537 is inflated by selection.** It
+> survives Bonferroni (p≈0.016) so it is a caveat, not a retraction — but the
+> honest estimate is **below** 0.537 and **a confirmation run on fresh games does
+> not exist yet.** That is day 26's cheapest real task (~12 min).
+> ⛔ **DO NOT vote only the screen winners** — that compounds the same bias.
+> 🟡 **`policy_v5_s4` was trained and never screened.**
+>
+> ## ▶ THE DAY-26 PLAN
+>
+> 1. ⏱ **Read the LB ≥1 h after 14:05 UTC** for `55326513`, and take a second
+>    read ≥1 h later (rule 2). ⚠ A rising score is unconverged, not momentum.
+> 2. 🔬 **Confirm `s2` on fresh games** (~12 min) — pays the debt in item 5.
+> 3. 🔬 **Screen `s4`** (~12 min). Cheap, and it widens the seed distribution
+>    from 4 points to 5.
+> 4. ⚠ **The honest strategic read: none of this is an LB lever.** §8ak's
+>    decision-identical pair reads **63–87 points apart**; our whole candidate
+>    spread is ~50 Elo. **The board cannot resolve any of it.** Both slots are
+>    now filled with drawn-fresh agents, which is the one thing that WAS worth
+>    doing. ⇒ **further seed-hunting buys a number the ladder cannot show.**
+> 5. ⛔ **Do NOT reopen a closed axis** (fifteen — ensembling joins the list).
+>    ⛔ **Do not push without asking** — 30+ commits are local by design.
+>
+> ---
+>
+> # ▶ DAY 24 (2026-08-07): ENSEMBLING WORKS, AND WE HAD BEEN SHIPPING THE WEAKER OF TWO NETS WE ALREADY OWNED
+>
+> ⚠ **SUPERSEDED IN PART BY DAY 25 (above): re-measured in the shipped
+> configuration, the vote does NOT beat its better member and the gain is the
+> seed swap. Item 5's "⛔ NOT SUBMITTED" is also stale — see the standing box.**
 >
 > **📌 USER DIRECTIVE, STANDING UNTIL THEY LIFT IT: report work is SUSPENDED.
 > Track A only — the simulation leaderboard and a stronger agent.** `STRATEGY.md`

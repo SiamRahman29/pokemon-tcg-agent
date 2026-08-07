@@ -4403,6 +4403,80 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bg. 🔴 THE TRAINING SEED IS WORTH 50 Elo — more than the best feature intervention this project ever found, and it is pure nuisance (2026-08-07, day 25)
+
+**Decision rule pre-registered** in `docs/experiments/E9b-which-net-ships.md`,
+frozen in commit `e214c66` **before the ens5 cell reported**, including two
+predictions and the branch that was actually taken.
+
+Three fresh seeds of the v5 recipe (seeds 2/3/4 — same corpus `pds_v4`, same
+architecture, same hyperparameters, same listwise loss, same 12 epochs; the
+**only** difference is the integer passed to `--seed`), each screened against
+`policy_v5_s1` in the **shipped** configuration.
+
+### Mirror, DIRECT, seat-balanced, `--no-rules` BOTH arms, n=1,400/cell
+
+| cell | score | 95% CI | Elo | verdict |
+|---|---|---|---|---|
+| `policy_v5_s2` vs `policy_v5_s1` | **0.537** | [0.511, 0.563] | +25.8 | ✅ resolved BETTER |
+| `policy_v5_s3` vs `policy_v5_s1` | **0.465** | [0.439, 0.491] | −24.4 | 🔴 resolved WORSE |
+| ens5 vs `policy_v5_s1` | 0.522 | [0.496, 0.548] | +15.3 | null — does not resolve |
+
+`[health] OK fallbacks=0 net_missing=0` on all three.
+
+🔴 **`s2` and `s3` are 0.072 apart — a ~50 Elo spread produced by nothing but
+the random seed.** Set that against the interventions this project has paid for:
+the v4 state block, found by systematic feature enumeration and the
+second-largest confirmed win in the repo, was **+37 Elo**. The v5 pooled block
+was **+14**. ⇒ **Choosing a lucky seed is worth more than the best feature
+engineering we ever did, and it is not a lever — it is a nuisance term that
+every previous A/B was measured on top of.**
+
+⚡ **This is an independent reproduction, not a new anomaly.** §8be noted in
+passing that two same-recipe nets differing only in `--seed` swing **0.073**
+against each other, and filed it as a complaint about instrument noise. Measured
+here as an effect in its own right, in the shipped configuration, at n=1,400:
+**0.072.** ⇒ **§8aw's "two seeds under-resolves every anchor we own" was more
+right than it knew** — a 2-seed budget measures an intervention against a ±25
+Elo nuisance, which is larger than most interventions tested.
+
+### The 5-net vote does NOT rescue it
+
+ens5 averages `v5`, `s1`, `s2`, `s3`, `s4` — and the screen shows that set is
+**one good member (`s2`), one middling (`s1`), and two weak (`v5`, `s3`)**. It
+reads 0.522 [0.496, 0.548]: **it does not resolve above 0.500 against a member
+it contains.** ⇒ **a vote is bounded by its members; three mediocre nets cannot
+be averaged into a good one.** Taken with §8bf's ens2 null, **the ensembling
+axis has now failed to beat its own best member twice, at two different member
+counts, both in the shipped configuration.**
+
+### Scoring the pre-registration, including where it was wrong
+
+- **Prediction 1 — "X lands in [0.52, 0.56]": correct on the point estimate
+  (0.522) and at the very bottom edge of the band.** The part that mattered —
+  whether it resolved — went the other way. Recorded as a weak hit, not a hit.
+- **Prediction 2 — "ens5 will not beat `s2` by a resolved margin": untested.**
+  That cell was deliberately not run (the rule forbade it), so this stands
+  unfalsified rather than confirmed. It must not be quoted as evidence.
+- **Branch taken: 2** (X did not resolve above 0.500) ⇒ **`policy_v5_s2` ships
+  alone.** Submitted as **`55326513`**, evicting `55169114` (918.5) and retaining
+  `55321893` (934.7).
+
+⚠ **THE DEBT, RECORDED RATHER THAN HIDDEN: `s2` won a screen of three seeds, so
+0.537 is inflated by selection by an unknown amount.** It survives a Bonferroni
+correction for three comparisons (p≈0.016), so this is a caveat and not a
+retraction — but **the honest estimate of `s2`'s edge is below 0.537 and nobody
+should quote that number as `s2`'s level until a confirmation run on fresh games
+exists.** It does not exist yet.
+
+⛔ **DO NOT vote only the members that won the screen.** That selects on the
+screening data and compounds the same bias across the whole ensemble. If it is
+worth testing it is worth testing on fresh games.
+
+```powershell
+python -X utf8 scripts/arena.py play "bc:v5s2ship,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" "bc:v5s1ship,net=out/policy_v5_s1.npz,noChip,noSpread,noSrc" --matches 700 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p64_seed_screen.jsonl
+```
+
 ## 8bf. 🔴 E9 RE-MEASURED IN THE SHIPPED CONFIGURATION: the VOTE is a null against its better member, and the live bundle's whole gain is the SEED SWAP (2026-08-07, day 25)
 
 §8be closed with the configuration trap named but not paid: arena `bc` defaults
