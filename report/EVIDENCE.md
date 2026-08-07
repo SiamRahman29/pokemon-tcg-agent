@@ -4508,17 +4508,35 @@ find — it takes the same actions at the same rates — it is WHEN and WHETHER-
 and that is precisely the class a per-decision clone cannot be repaired toward
 with a rule.**
 
-### ⚠ Recorded, NOT opened: 22.3% of TO_HAND decisions have no card identity at all
+### 🔴 The third sized cluster looked like a REPRESENTATIONAL DEFECT for about ten minutes, and it is not one
 
-The third sized cluster is `TO_HAND` with **both** sides unnamed (1.41/game). The
-cause: in **22.3% of TO_HAND rows every option carries `opt_card == 0`** — the
-net is choosing a search target whose identity is not in its features, and these
-rows **survive `--equiv`**, so they are not identical options. (`ACTIVATE` and
-`REMOVE_DAMAGE_COUNTER_COUNT` are 100% unnamed too, but correctly so: those are
-yes/no and count selects.) **This is encoding-shaped, the encoding axis is closed
-(+115 → +37 → +14 → 0 → 0), and E10 requires a §8au-style pricing before any
-retrain (the B1-instance-5 bar).** Sized for whoever prices it: **2.8% of all
-mirror decisions.** ⛔ Not opened this side of the freeze.
+The third cluster is `TO_HAND` with **both** sides unnamed, 1.41/game: in
+**22.3% of TO_HAND rows every option carries `opt_card == 0`**, and those rows
+**survive `--equiv`**, so they are not identical options either. Written up
+first as "the net is choosing a search target whose identity is not in its
+features" — an encoding-shaped defect in the B1 lineage. **That was wrong, and
+the raw replays say so.** Option areas across 592 TO_HAND selects in 25 expert
+mirror games:
+
+| area | selects | card id resolvable? |
+|---|---|---|
+| 1 = DECK (`sel.deck` present) | 366 (61.8%) | ✅ yes — `_card_at` reads `sel["deck"][index]` |
+| **6 = PRIZE** | **161 (27.2%)** | ⛔ **no, and correctly no** |
+| 3 = DISCARD | 49 (8.3%) | ✅ yes |
+| 12 = LOOKING | 16 (2.7%) | mostly yes |
+
+🔴 **The unnamed options are PRIZE CARDS. They are face down.** No agent, human
+or otherwise, knows which prize it is taking, and the one feature that separates
+them is exactly the one that should: `opt_dense[36]`, the index disambiguator
+(**the only differing column in all 615 rows, confirmed bitwise**). ⇒ **there is
+no blind spot here, there is a hidden-information choice**, our net and a 1150+
+pilot are both guessing, and a "disagreement" on a coin flip is not a defect in
+either of them. ⛔ **Nothing to price and nothing to open.**
+
+⚡ **Worth recording as a method note rather than buried**: the defect-shaped
+reading survived the sizing gate, the `--equiv` filter and the clustering, and
+died to *one look at the raw option dicts*. The encoding axis stayed closed by
+inspection, not by an A/B — which is the cheapest way it has ever been defended.
 
 ### Scoring the pre-registration
 

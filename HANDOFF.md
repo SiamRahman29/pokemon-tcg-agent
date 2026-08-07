@@ -87,10 +87,12 @@ it lets any team name in a replay be joined to its rating.
 >   ⛔ A screen number never ships. If it ships: **submit twice, by 08-15**, and
 >   the next submission evicts **`55321893`** (917.3).
 > - ⏱ **Rule-2 reads on `55326513`** at ≥17:10 and ≥18:10 UTC.
-> - ⚠ **Recorded, not opened:** 22.3% of `TO_HAND` decisions offer options with
->   **no card identity at all** (`opt_card == 0`), surviving `--equiv` — the net
->   picks a search target it cannot name. **2.8% of all mirror decisions.**
->   Encoding axis is closed; needs §8au-style pricing first. Do not retrain on it.
+> - ✅ **A defect-shaped reading that died to one look at the raw data, recorded
+>   so nobody re-finds it:** 22.3% of `TO_HAND` decisions offer options with no
+>   card identity (`opt_card == 0`) and they survive `--equiv`. They are **PRIZE
+>   selections — face down.** Both sides are guessing; the only differing feature
+>   is the index disambiguator, which is the correct encoding. **Not a blind
+>   spot, nothing to price.** §8bj.
 >
 > ---
 >
