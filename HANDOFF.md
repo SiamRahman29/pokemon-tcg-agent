@@ -87,6 +87,14 @@ it lets any team name in a replay be joined to its rating.
 >   ⛔ A screen number never ships. If it ships: **submit twice, by 08-15**, and
 >   the next submission evicts **`55321893`** (917.3).
 > - ⏱ **Rule-2 reads on `55326513`** at ≥17:10 and ≥18:10 UTC.
+>   🔴 **BLOCKED 17:04 UTC — the Kaggle OAuth token EXPIRED.**
+>   `~/.kaggle/credentials.json` is an OAuth credential (`access_token` +
+>   `refresh_token`), **not** the old `kaggle.json` API key, and its
+>   `access_token_expiration` was **16:56:20 UTC** — every call after that
+>   returns **401 Unauthorized**, including `competition_leaderboard_download`.
+>   The SDK did **not** silently refresh. ▶ **Fix: run `kaggle auth login` in the
+>   terminal** (interactive browser flow — a session cannot do it). ⚠ Any
+>   submission needs this too, so **re-auth well before 08-15.**
 > - ✅ **A defect-shaped reading that died to one look at the raw data, recorded
 >   so nobody re-finds it:** 22.3% of `TO_HAND` decisions offer options with no
 >   card identity (`opt_card == 0`) and they survive `--equiv`. They are **PRIZE
