@@ -440,6 +440,15 @@ three measured facts that survive all of it:
 | **F3** | **Corpus-coverage sizing gate** (the parked "last untested lever") | 40.7% of the field >3× under-represented in training; the one axis never probed | run `PARKED-corpus-coverage.md`'s probe: do our held replays contain the missing archetypes at all? (~30 min) | §8ac predicts a kill (blind archetypes are 0/47 above rating 900, and the mirror is OVER-represented 1.92×); verdict written either way, ⛔ no training this side of the freeze |
 | ~~**F4**~~ | ~~one pre-registered β for B8~~ | the only honestly open door on a closed axis ("unfalsified rather than refuted", §8ao) | — | **DECLINED at planning time**: two nulls over 20,000 games, closed on the METHOD, hard stop spent, no integration runway by 08-15. A report line, not a run |
 
+### ▶ OUTCOMES (day 25, 3rd session — three of the four items concluded in one sitting)
+
+| # | verdict | the number that decided it |
+|---|---|---|
+| **F1** | 🔴 **CLOSED as a chapter — its pre-registered kill criterion is met** | gate passed hugely (257 mirror games, 22,665 expert decisions) and the extraction found 4,785 confident disagreements, 18.6/game. **The top cluster dissolved under an on-policy control**: the clone wants Munkidori's ability at 75.1% of offered decisions vs the experts' 38.5%, but **6.42 uses/game vs 6.23** when the shipped agent is made to play — identical behaviour, different *timing*, and sequencing is closed. The one ordering-free difference (Spikemuth Gym's search: the 1150s stop at turn ~9.7, we never stop) is a **tradeoff** ⇒ no rule (0/4). `EVIDENCE` §8bj, **HANDOFF rule 21** |
+| **F2** | 🔬 **IN FLIGHT, and RE-PRICED before it spends its budget** | the selection debt is paid: `s2` on **fresh games** is **0.510 [0.484, 0.536]**, not the screen's 0.537 ⇒ **+7 Elo, not +26**, and the between-seed sd over four unselected offsets is **≈11 Elo, not 25**. Best-of-12 is worth **≈+18**, not +35–40. Seeds 5–10 training/screening; **only a fresh-game confirmation vs `s2` can ship** (≥0.53 AND CI excluding 0.50). `EVIDENCE` §8bh |
+| **F3** | 🔴 **KILLED on AVAILABILITY** | over the four dumps that built `pds_v4` (1,603 games, avg_score 1057–1223) **Archaludon and Mega Lucario appear in ZERO games**, and the miner discards nothing. The data does not exist at any band we can mine, and the mismatch is self-closing (corpus 56.9% mirror vs a field that is 71.4% mirror above 1000 — where we now play). `EVIDENCE` §8bi; `PARKED-corpus-coverage.md` marked CLOSED |
+| ~~F4~~ | declined at planning time, unchanged | — |
+
 **Discipline that binds all of it:** shipped config (`--no-rules`) in every cell;
 byte-identical-net rule-toggled A/Bs where possible (the seed nuisance cancels);
 otherwise ≥3 seeds; name what a submission evicts; if shipping, **submit twice,

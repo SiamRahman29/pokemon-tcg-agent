@@ -21,7 +21,80 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 25, 2nd SESSION (2026-08-07): THE FINAL PUSH — MIRROR MINING, SEED HARVEST, COVERAGE GATE
+> # ▶ START HERE — DAY 25, 3rd SESSION (2026-08-07): F1 CLOSED, F3 KILLED, THE SEED PREMIUM WAS SELECTION — and the board reads **1010.1**
+>
+> **The final push ran. Three of E10's four items concluded in one session; F2 is
+> the only one still in flight.** Full record: `EVIDENCE` **§8bh** (the selection
+> debt), **§8bi** (both sizing gates), **§8bj** (F1's verdict). Pre-registration:
+> `docs/experiments/E10-final-push.md`, frozen in `ad7d29f` before any cell.
+>
+> ## 📈 1. THE LIVE STANDING — our best number ever, and it is NOT settled
+>
+> | active? | submission | score | what it is |
+> |---|---|---|---|
+> | ✅ **active** | **`55326513`** (08-07 14:05) | **1004.5 → 1010.1** | `policy_v5_s2`, single net, rules off |
+> | ✅ active | `55321893` (08-07 09:59) | **917.3** | ens2 vote — read 954.3, then 934.7, now 917.3: **still drifting down** |
+>
+> **Rank 103 / 6,518 at 1004.5** (16:07 UTC read) — best rank and best score this
+> project has ever had; top is `LiamK` **1188.8**. ⚠ **Both reads are inside the
+> 4-hour convergence window and the score ROSE between them (2h02m → 2h32m), so
+> rule 2 is NOT satisfied** — `55054446` once read 916.8 → 936.0 → 979 and
+> settled at **905.2**. ▶ **Next reads: ≥17:10 UTC and ≥18:10 UTC.**
+>
+> ## 🔴 2. THE SEED PREMIUM WAS MOSTLY SELECTION — `s2` is +7 Elo, not +26
+>
+> The day-25 debt is paid. `s2` vs `s1` on **fresh games**, same config, same
+> weight files: **0.510 [0.484, 0.536]** against the screen's 0.537. It **does
+> not resolve.** `s4` screens at 0.480. ⇒ §8bg's "50 Elo seed spread" was a
+> **max-minus-min over three draws whose max was selected**; the between-seed sd
+> over four *unselected* offsets is **≈11 Elo**, so two random seeds differ by
+> ~15, not 50. **The shipped net is a median seed, not a lucky one.**
+> ⚠ **F2 is re-priced before it spends its budget: best-of-12 buys ≈+18 Elo, not
+> +35–40, and one screen→confirm pair already gave back 0.027.** The protocol is
+> unchanged — **screens select, only a fresh-game confirmation ships.**
+>
+> ## 🔴 3. F1 IS CLOSED, AND IT CLOSED ON A COUNTING UNIT
+>
+> The mirror gate passed hugely (**257 games, 22,665 expert decisions**). The
+> extraction found **4,785 confident disagreements (18.6/game)** and its top
+> cluster — the clone wanting **Munkidori**, 8.4/game — **dissolved under an
+> on-policy control**: we fire Adrena-Brain **6.42×/game**, the 1150+ pilots
+> **6.23×/game**. Identical. We take it at the first opportunity, they take it
+> later in the turn ⇒ **sequencing, a closed axis.** The one ordering-free
+> difference (Spikemuth Gym's search: they stop at turn ~9.7, we never stop) is a
+> **tradeoff** ⇒ no rule (rule 11, 0/4). **F1's pre-registered kill criterion is
+> met and it closes as a chapter.**
+> ⚡ **New standing rule (21): SIZE AND RANK PER TURN, not per decision.** §8ai's
+> lesson was remembered as an anecdote and E10 still let the ranking run per
+> decision; the per-decision view overstated this cluster by ~25×.
+>
+> ## 🔴 4. F3 IS KILLED ON AVAILABILITY
+>
+> Over the four dumps that built `pds_v4` (1,603 games, avg_score 1057–1223):
+> **Archaludon and Mega Lucario appear in ZERO games**, and the miner discards
+> nothing — it clones both seats of every game. **The data does not exist**
+> (§8i: the episode feed stops at ~1055; §8ac: those decks are 0/47 above rating
+> 900). And the mismatch is self-closing — the corpus is 56.9% mirror against a
+> field that is **71.4% mirror above 1000**, which is where we now play.
+> `PARKED-corpus-coverage.md` is marked CLOSED.
+>
+> ## ▶ 5. WHAT IS STILL RUNNING / WHAT IS NEXT
+>
+> - 🔬 **F2 seeds 5–10 training + screening** (`out/logs/p68_seed_s*.txt`,
+>   `out/arena/p68_seed_s*.jsonl`). ~18 min/seed to train, ~6 min to screen.
+>   **When all screens are in: take the single best, confirm it on FRESH games
+>   vs the incumbent `s2`, ship bar = point ≥0.53 AND CI excluding 0.50.**
+>   ⛔ A screen number never ships. If it ships: **submit twice, by 08-15**, and
+>   the next submission evicts **`55321893`** (917.3).
+> - ⏱ **Rule-2 reads on `55326513`** at ≥17:10 and ≥18:10 UTC.
+> - ⚠ **Recorded, not opened:** 22.3% of `TO_HAND` decisions offer options with
+>   **no card identity at all** (`opt_card == 0`), surviving `--equiv` — the net
+>   picks a search target it cannot name. **2.8% of all mirror decisions.**
+>   Encoding axis is closed; needs §8au-style pricing first. Do not retrain on it.
+>
+> ---
+>
+> # ▶ DAY 25, 2nd SESSION (2026-08-07): THE FINAL PUSH — MIRROR MINING, SEED HARVEST, COVERAGE GATE
 >
 > **📌 USER DIRECTIVE (day 25, 2nd session): a FINAL PUSH at the ~150-Elo gap to
 > the leaders (we show 990.7-class play; the top holds 1145–1166). Track A only
@@ -3223,6 +3296,30 @@ Every rule here was paid for. Rules 1, 2 and 8 have each invalidated real work.
     with **no net** (1,226 games over four days of a moving `sa/policy_net.npz`)
     and a `net=` **path** that a retrain can silently repoint. All four now
     carry their content in the archived name.
+
+21. **🔴 SIZE *AND RANK* PER TURN, NOT PER DECISION — a within-turn ordering
+    difference inflates a per-decision count without changing what happens.**
+    F1's largest mirror cluster was "the clone wants Munkidori's ability and the
+    1150+ pilot does not": **75.1% vs 38.5%** of the decisions where it is
+    offered, 8.4 confident disagreements per game, top of 519 clusters. Per
+    **turn** it is 96.9% vs 93.8%, and an on-policy control — the shipped agent
+    made to play 80 mirror games and mined with the same miner — reads **6.42
+    uses/game against the experts' 6.23.** Identical behaviour; the ability is
+    *"Once during your turn"*, so wanting it at action 1 rather than action 4
+    generates a disagreement on every decision in between. **The per-decision
+    view overstated the cluster by ~25×.** §8bj.
+
+    ⛔ **This is §8ai's empty-bench detector, third instance** (the first
+    overcounted "declines to bench" when the pilot benched later in the same
+    turn; the second made `rule:archaludon` look worse than a broken pilot).
+    Rule 14 already says *size before you build* — this says **the unit of the
+    size must be the unit the effect lives in**, and for anything that happens
+    once per turn that unit is the turn.
+
+    ✅ **`scripts/p67_option_rate.py` is the tool**: availability, take-rate and
+    per-turn use for one option class, on any corpus, with the demonstrator and
+    the net scored side by side (on our own games those two columns must agree
+    exactly — a free positive control that exercises the whole chain).
 
 ---
 
