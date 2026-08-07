@@ -21,10 +21,12 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 25, 3rd SESSION (2026-08-07): F1 CLOSED, F3 KILLED, THE SEED PREMIUM WAS SELECTION — and the board reads **1010.1**
+> # ▶ START HERE — DAY 25, 3rd SESSION (2026-08-07): THE FINAL PUSH RAN IN FULL AND SHIPPED NOTHING — F1 closed, F2 null, F3 killed, and the board reads **1010.1**
 >
-> **The final push ran. Three of E10's four items concluded in one session; F2 is
-> the only one still in flight.** Full record: `EVIDENCE` **§8bh** (the selection
+> **All four E10 items concluded in one session. Nothing cleared a bar, and every
+> bar was written before its cell ran.** ⇒ **`55326513` (`policy_v5_s2`) stands
+> as the final agent unless something new appears; no submission is due, and the
+> 08-15 slot is unspent.** Full record: `EVIDENCE` **§8bh** (the selection
 > debt), **§8bi** (both sizing gates), **§8bj** (F1's verdict). Pre-registration:
 > `docs/experiments/E10-final-push.md`, frozen in `ad7d29f` before any cell.
 >
@@ -80,12 +82,16 @@ it lets any team name in a replay be joined to its rating.
 >
 > ## ▶ 5. WHAT IS STILL RUNNING / WHAT IS NEXT
 >
-> - 🔬 **F2 seeds 5–10 training + screening** (`out/logs/p68_seed_s*.txt`,
->   `out/arena/p68_seed_s*.jsonl`). ~18 min/seed to train, ~6 min to screen.
->   **When all screens are in: take the single best, confirm it on FRESH games
->   vs the incumbent `s2`, ship bar = point ≥0.53 AND CI excluding 0.50.**
->   ⛔ A screen number never ships. If it ships: **submit twice, by 08-15**, and
->   the next submission evicts **`55321893`** (917.3).
+> - 🔴 **F2 IS DONE AND IT SHIPS NOTHING.** Ten seeds of one recipe; the single
+>   screen winner `s7` (**0.528** vs `s1`) then read **0.487 [0.468, 0.505]**
+>   against the incumbent `s2` over 2,800 fresh games — **below the 0.53 bar and
+>   not even above 0.500.** ⇒ **keep `policy_v5_s2`; `55326513` stands; no
+>   submission is due.** The winner's curse measured **0.031** here against
+>   §8bh's 0.027. ⚡ **Why it could not work, quantitatively:** between-seed sd
+>   **0.0190** vs a 1,400-game screen's error **0.0134** — *the same size*, so
+>   the max of ten screens selects mostly for measurement error. A real harvest
+>   needs **~5,100 games/screen (~3.5 h)** for a prize of ≈+20 Elo on a ladder
+>   whose noise floor is 63. §8bk.
 > - ⏱ **Rule-2 reads on `55326513`** at ≥17:10 and ≥18:10 UTC.
 >   🔴 **BLOCKED 17:04 UTC — the Kaggle OAuth token EXPIRED.**
 >   `~/.kaggle/credentials.json` is an OAuth credential (`access_token` +

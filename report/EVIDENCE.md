@@ -4449,14 +4449,55 @@ resolves better** — and that one (`s7`) clears the lower bound by 0.002. On a
 only thing it is licensed to do is **nominate**, which is precisely what the
 pre-registration restricts it to.
 
-### The confirmation — IN FLIGHT, verdict deliberately blank (§8i rule)
+### 🔴 The confirmation — `s7` FAILS THE BAR AND THE HARVEST SHIPS NOTHING
 
 `s7` (the single screen winner) vs the incumbent **`policy_v5_s2`**, shipped
-configuration, mirror direct, **n=2,800** (±~0.019). **Ship bar, pre-registered
-before the cell: point ≥ 0.53 AND CI excluding 0.50.** Below the bar → keep
-`s2`, write the null. ⚠ **`s7`'s 0.528 is the maximum of six screens and must be
-expected to regress** — §8bh measured that regression at 0.027 on its only prior
-instance.
+configuration, mirror direct, **n=2,800**. Ship bar, pre-registered before the
+cell: **point ≥ 0.53 AND CI excluding 0.50.**
+
+| cell | score | 95% CI | verdict |
+|---|---|---|---|
+| `policy_v5_s7` vs `policy_v5_s2` | 🔴 **0.487** | [0.468, 0.505] | **FAILS — below 0.53, and does not even resolve above 0.500** |
+
+`[health] OK fallbacks=0 net_missing=0`, 569,642 net calls, seats balanced
+(P0 699/701, P1 663/735). ⇒ **Branch taken: keep `policy_v5_s2`. Nothing ships.
+`55326513` stands.**
+
+🔴 **The winner's curse, measured a second time and slightly larger.** Naive
+transitivity through `s1` predicted `s7` vs `s2` ≈ **0.518** (0.528 and 0.510
+against the same reference). Measured **0.487** — a give-back of **0.031**,
+against §8bh's 0.027 on the previous instance. **Two instances, 0.027 and 0.031,
+both in the direction the pre-registration expected.**
+
+### ⚡ The finding that outlives the null: this instrument CANNOT harvest this effect
+
+Between-seed sd is **0.0190**; a 1,400-game screen measures a seed with sd
+**0.0134**. Those are the same size. **Selecting the max of ten draws under
+measurement error that large selects mostly for measurement error** — which is
+exactly what happened: `s7` topped the screens and then lost to a seed that
+screened 0.018 lower. To make the screen a real instrument the per-cell error
+would have to fall to ~half the signal, i.e. **≈5,100 games per screen** (10
+seeds ≈ 51,000 games, ~3.5 h of arena), and the prize for all of it is the
+**≈+20 Elo** an E[max of 12] buys over the median — **on a ladder whose noise
+floor is 63 points (§8ak).**
+
+⇒ **F2 closes as a null with a quantitative reason, not a shrug: the seed
+lottery is real, it is ~13 Elo of sd, and it is not harvestable with screens
+whose error equals the effect.** ⚠ It is *not* shown that a better-powered
+harvest would fail — that is unrun, not refuted (rule 4).
+
+### Scoring the pre-registration, item by item
+
+- **"The screen distribution will span ~50 Elo again"** — ✅ correct (48.7), and
+  §8bh had already narrowed *why* that is the wrong statistic to quote.
+- **"The winner's fresh-game confirmation vs `s2` shrinks toward ~0.51–0.53 and
+  the bar is a coin flip to clear"** — 🔴 **wrong, and wrong in the direction
+  that matters**: it landed at **0.487**, below the whole predicted band. The
+  prediction under-modelled the give-back by treating one screen's selection as
+  the only bias; the confirmation also changes *opponent*, and the incumbent
+  `s2` is itself the 2nd-best of the ten draws.
+- **"Either outcome is fine: the bundle already holds a selected seed"** — ✅ and
+  it is now the load-bearing sentence: the shipped net ranks **2 of 10**.
 
 ```powershell
 python -X utf8 scripts/train_policy.py --ds artifacts/pds_v4 --epochs 12 --bs 1024 --loss listwise --state-h 512,256 --head-h 256,128 --pool --opt-cols 37 --seed 7 --out out/policy_v5_s7.npz
