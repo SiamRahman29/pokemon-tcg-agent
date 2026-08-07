@@ -34,14 +34,17 @@ it lets any team name in a replay be joined to its rating.
 >
 > | active? | submission | score | what it is |
 > |---|---|---|---|
-> | ✅ **active** | **`55326513`** (08-07 14:05) | **1004.5 → 1010.1** | `policy_v5_s2`, single net, rules off |
-> | ✅ active | `55321893` (08-07 09:59) | **917.3** | ens2 vote — read 954.3, then 934.7, now 917.3: **still drifting down** |
+> | ✅ **active** | **`55326513`** (08-07 14:05) | **1004.5 → 1010.1 → 1044.3** | `policy_v5_s2`, single net, rules off |
+> | ✅ active | `55321893` (08-07 09:59) | 954.3 → 934.7 → 917.3 → **937.1** | ens2 vote — **not monotone either; it is noise, not a trend** |
 >
-> **Rank 103 / 6,518 at 1004.5** (16:07 UTC read) — best rank and best score this
-> project has ever had; top is `LiamK` **1188.8**. ⚠ **Both reads are inside the
-> 4-hour convergence window and the score ROSE between them (2h02m → 2h32m), so
-> rule 2 is NOT satisfied** — `55054446` once read 916.8 → 936.0 → 979 and
-> settled at **905.2**. ▶ **Next reads: ≥17:10 UTC and ≥18:10 UTC.**
+> ⚡ **RANK 55 / 6,525 AT 1044.3** (17:35 UTC, +3h30m) — **by far the best rank
+> and score this project has had** (previous best 129 at 990.7); top is `LiamK`
+> **1202.3**, so the gap is **158**. 🔴 **NOT SETTLED: three reads, all inside
+> or near the 4-hour window, and the score rose at every one** (1004.5 → 1010.1
+> → 1044.3). Rule 2 is **not** satisfied and a rising score is unconverged, not
+> momentum — `55054446` once read 916.8 → 936.0 → 979 and settled at **905.2**.
+> ▶ **Next: two reads ≥1 h apart, both after 18:05 UTC, and they must AGREE
+> before this number is quoted anywhere.**
 >
 > ## 🔴 2. THE SEED PREMIUM WAS MOSTLY SELECTION — `s2` is +7 Elo, not +26
 >
@@ -103,11 +106,18 @@ it lets any team name in a replay be joined to its rating.
 >   `kaggle auth login` buys half a day and then breaks mid-session — it did
 >   exactly that here, and a re-login attempt left the file **unmodified**
 >   (same mtime, same expiry), so the flow does not reliably take.
->   ▶ **DURABLE FIX — use the classic API token instead, it does not expire:**
->   kaggle.com/settings → API → *Create New API Token* → save the downloaded
->   `kaggle.json` to `C:\Users\USER\.kaggle\kaggle.json`. The SDK prefers it and
->   it needs no browser. ⚠ **Reads through the 08-31 continued-play window and
->   the 08-15 submission both depend on this.**
+>   ✅ **FIXED 17:35 UTC, and the recipe is VERIFIED — ⛔ it is NOT `kaggle.json`,
+>   which is the OLD SDK's scheme and does not work here.** This SDK wants a raw
+>   token string:
+>   1. kaggle.com/settings/api → under **API**, *Generate New Token* → copy it
+>   2. save the bare string (no JSON, no quotes, no trailing newline) to
+>      **`C:\Users\USER\.kaggle\access_token`** — or export `KAGGLE_API_TOKEN`
+>
+>   It does not expire, so this is the durable fix for the 08-15 submission and
+>   the daily reads through the 08-31 continued-play window.
+>   ⚠ **A token is a credential: never paste it into a chat, an issue or a
+>   commit.** If one is ever exposed, *Expire API Token* on the same settings
+>   page invalidates it and a new one can be issued.
 > - ✅ **A defect-shaped reading that died to one look at the raw data, recorded
 >   so nobody re-finds it:** 22.3% of `TO_HAND` decisions offer options with no
 >   card identity (`opt_card == 0`) and they survive `--equiv`. They are **PRIZE
