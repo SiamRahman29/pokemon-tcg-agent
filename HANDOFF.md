@@ -98,9 +98,16 @@ it lets any team name in a replay be joined to its rating.
 >   `refresh_token`), **not** the old `kaggle.json` API key, and its
 >   `access_token_expiration` was **16:56:20 UTC** — every call after that
 >   returns **401 Unauthorized**, including `competition_leaderboard_download`.
->   The SDK did **not** silently refresh. ▶ **Fix: run `kaggle auth login` in the
->   terminal** (interactive browser flow — a session cannot do it). ⚠ Any
->   submission needs this too, so **re-auth well before 08-15.**
+>   The SDK did **not** silently refresh despite holding a `refresh_token`.
+>   🔴 **The OAuth token's TTL is 12 h** (issued 04:56 UTC, expired 16:56), so
+>   `kaggle auth login` buys half a day and then breaks mid-session — it did
+>   exactly that here, and a re-login attempt left the file **unmodified**
+>   (same mtime, same expiry), so the flow does not reliably take.
+>   ▶ **DURABLE FIX — use the classic API token instead, it does not expire:**
+>   kaggle.com/settings → API → *Create New API Token* → save the downloaded
+>   `kaggle.json` to `C:\Users\USER\.kaggle\kaggle.json`. The SDK prefers it and
+>   it needs no browser. ⚠ **Reads through the 08-31 continued-play window and
+>   the 08-15 submission both depend on this.**
 > - ✅ **A defect-shaped reading that died to one look at the raw data, recorded
 >   so nobody re-finds it:** 22.3% of `TO_HAND` decisions offer options with no
 >   card identity (`opt_card == 0`) and they survive `--equiv`. They are **PRIZE
