@@ -448,7 +448,7 @@ rather than from suspicion.
 
 ---
 
-## 5. Measurement discipline, and six failures of our own process
+## 5. Measurement discipline, and seven failures of our own process
 
 The full codex is 20 rules, each paid for by invalidated work (`HANDOFF.md` §2).
 The load-bearing ones:
@@ -724,6 +724,37 @@ seven defects we found, not about the ones we did not. The audit was a day of
 reading our own code with a specific question, not a proof of correctness, and
 the fact that its two real findings were both in the *oldest and most reused*
 component of the flow — the anchor set — is the part we would extrapolate from.
+
+### 5.8 Failure seven: three times, we credited an effect to the variable we had named
+
+This is the error the previous section's defect 1 turns out to be an instance of,
+and once we had a name for it we found it twice more in a week. In each case the
+experiment was competently run, the conclusion was directionally right, and **the
+cause was assigned to a quantity that had not actually moved**:
+
+| what we published | the variable we credited | what had actually changed |
+|---|---|---|
+| "repairing the anchor's pilot is worth +0.09" | the pilot's code | the **deck** it was handed, 20 of 60 cards, worth +0.140 |
+| "more planning compute collapses the win rate" | the compute budget | realized compute was **flat** (652→616→606 s); the planner's **firing rate** moved |
+| "the first ~20% of deviations from the clone are free, then a cliff" | the deviation **rate** | a softmax temperature moves rate **and depth** together |
+
+The third is the newest and the only one caught by a *designed* experiment rather
+than by an audit afterwards. Our exploration probe had raised a temperature and
+watched the win rate fall off a cliff between 20% and 30% of decisions deviated.
+A later probe deviated on the same decisions but always by **exactly one rank** —
+swapping the clone's *k*-th choice for its (*k*+1)-th, which pins the depth by
+construction and leaves τ controlling only the rate. At **half of all decisions
+deviated** it scores **0.356 [0.332, 0.382]** where the temperature probe, at a
+comparable rate, scored **0.055 [0.031, 0.096]**. There is no cliff in the new
+curve at all: 0.495 → 0.494 → 0.487 → 0.455 → 0.356, monotone and smooth.
+
+⇒ **A knob is not a variable.** Turning one dial can move several quantities, and
+the one named on the dial is the one that ends up in the write-up. The defence is
+not more care — all three of these were careful — it is **reading the realized
+value of the thing you are claiming varied**, from the run's own logs, before
+attributing anything to it. That check is now a step in this project's
+experimental template, and it is cheap: in all three cases the disproving number
+was already sitting in an archive nobody had queried.
 
 ---
 
@@ -1451,6 +1482,28 @@ Honest nulls at n≥2000 are the section we are most confident in.
   or below the same-deck control in stage 1, and the single promoted candidate
   confirmed negative on **7 anchors of 7** over 57,600 games (ΔW **−0.0155**
   against ±0.0059). The consensus 60 survived a proper search. §7c.4.
+- **Uncertainty-gated DAgger (E3)** — the one experiment here that was stopped by
+  an *input* rather than a result, and then partly answered without it. We built
+  the full pipeline: 8,963 candidate decisions mined from the shipped clone's own
+  live ladder games, ranked by how nearly tied the clone's choice was, a review UI
+  that hides the clone's pick and the game's outcome to avoid anchoring the
+  labeller, and a frozen treatment/control export differing in **one field**. Then
+  the intended reviewer turned out to have no Pokémon TCG expertise, five of seven
+  high-confidence labels contradicted the clone, and inspection showed several
+  contradictions were picking functionally identical cards or plays the rules do
+  not permit. **We threw the labels away rather than train on them.** No stronger
+  automated teacher was available either — our own planner had already lost to the
+  clone.
+  ⚡ **What we could still test is the premise, and it needs no teacher: take the
+  other side of every near-tie and play the games.** Flipping *all* 7.0% of
+  decisions in the band the review queue is drawn from — far more aggressive than
+  relabelling 160 of them — scores **0.494 [0.467, 0.520]** at n=1,400 against a
+  same-file control. **The band is indifferent: the clone does not rank it
+  backwards.** ⚠ We are careful about what that licenses. It measures the
+  *average* value of moving within the band, |E[effect]|; a competent teacher's
+  value is E[|effect|], which is a different number and is not measured here. So
+  E3 is *unresolved*, not refuted — and the honest cost of that is one line in a
+  report rather than a claimed null.
 - **Six candidates closed by sizing before an A/B was spent.**
 
 ---

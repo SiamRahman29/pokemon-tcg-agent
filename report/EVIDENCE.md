@@ -4380,6 +4380,133 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bd. 🔴 E3's NEAR-TIE BAND IS INDIFFERENT — and measuring it RETRACTS §8am's cliff, which was a property of the deviation's DEPTH, not its RATE (2026-08-07, day 23)
+
+**Pre-registered** in `docs/experiments/beyond-bc/E3b-near-tie-gate.md`, frozen in
+commit `675d09c` **before any arm ran**, including the two predictions below that
+turned out wrong.
+
+**Why it exists.** E3 (uncertainty-gated DAgger) is parked at its teacher gate: no
+qualified reviewer, and the planner is disqualified as an automatic teacher
+(§8bb). But E3's *premise* — that decisions where the clone's selected/unselected
+boundary is nearly tied are worth relabelling — needs no teacher to test. **Take
+the other side of the boundary and play the games.**
+
+### The intervention, and why its geometry matters
+
+`bc,flip<τ>` swaps the lowest-scored **selected** option for the highest-scored
+**unselected** one whenever their logit gap is under τ, excluding bitwise-equivalent
+pairs (§8x free ties). Since `choose` returns the top-k by logit, that is exactly
+a swap of ranks *k* and *k+1*: 🔴 **the deviation is ONE RANK DEEP at every τ, by
+construction.** τ moves only *how often* it fires. Hold that thought.
+
+### Sizing first (rule 14), `p43 --dump-margins`, 115 ladder games, 19,573 decisions
+
+| | |
+|---|---|
+| rankable candidates | **8,963** (77.9/game) |
+| bitwise-equivalent free ties, excluded | 799 (4.1% of decisions; **8.2%** of those with a boundary) |
+| median boundary margin | **1.479** logits |
+| **the 160-item human review queue** | margins `[0.0001, 0.1316]` — **the bottom 10%** |
+
+⇒ **The review queue is the extreme tail, not the band**, and free-by-construction
+ties are far too few to be what makes near-ties cheap.
+
+### The sweep — mirror, DIRECT, **the same weight file on both sides**, n=1,400/arm
+
+| τ | decisions flipped | our score | 95% CI | W/D/L |
+|---|---|---|---|---|
+| **0** (control) | **0.0%** | **0.495** | [0.469, 0.521] | 693/0/707 |
+| 0.10 | 7.0% | **0.494** | [0.467, 0.520] | 691/0/709 |
+| **0.50** | **21.8%** | **0.487** | [0.461, 0.513] | 681/1/718 |
+| 1.00 | 34.7% | **0.455** | [0.429, 0.481] | 636/1/763 |
+| 2.00 | 51.2% | **0.356** | [0.332, 0.382] | 499/0/901 |
+
+⚡ **This is the only experiment in this repo with no training-seed term.** §5.6's
+"our A/Bs measured two networks, not one intervention" cannot apply: both arms
+load `out/policy_v5.npz`, fingerprinted `#dc1c9acc` on both sides of every row.
+The printed interval is the whole interval.
+✅ **Harness control passed:** τ=0 fires 0 flips in 111,529 eligible decisions and
+reads 0.495 — the pre-registered 0.500.
+
+### 🔴 Result 1 — the band E3 targets is indifferent
+
+The review queue's 160 items all sit at margin ≤ 0.1316, i.e. **strictly inside
+the τ=0.10 band**. Flipping **every** decision in that band — 7.0% of all
+decisions, an intervention far more aggressive than relabelling 160 of them —
+measures **0.494 [0.467, 0.520]** against a ±0.026 resolution. At τ=0.50, which
+covers 21.8% of decisions, still null: **0.487 [0.461, 0.513]**.
+
+⇒ **No systematic re-ranking of the near-tie band pays.** Whatever E3 could
+recover, it is not "the clone ranks these backwards".
+
+⚠ **This does NOT kill E3, exactly as pre-registered.** The flip measures
+**|E[effect]|**; a teacher's value is bounded by **E[|effect|]**, and §8am's own
+reading is that an indifferent-on-average band is precisely where some choices are
+better and some worse. 🔴 **The day-23 plan's claim that a null here "kills E3
+without a reviewer" is therefore withdrawn — by the pre-registration that
+predicted the null, not after seeing it.** What the null does establish is that
+E3's entire value rests on case-by-case correctness, and that the *average*
+movement available in its band is below what our best instrument resolves.
+
+### 🔴 Result 2 — the pre-registration MISSED on two arms, and the misses are the finding
+
+| arm | predicted | measured | verdict |
+|---|---|---|---|
+| τ=0 | 0.500 | 0.495 | ✅ met |
+| τ=0.10 | null | 0.494 | ✅ met |
+| τ=0.50 | null | 0.487 | ✅ met |
+| **τ=1.00** | **≲0.40** | **0.455** | 🔴 **direction right, magnitude wrong** |
+| **τ=2.00** | **≲0.20** | **0.356** | 🔴 **direction right, magnitude wrong** |
+
+Both predictions came from §8am's temperature probe, matched on deviation rate.
+Set the two instruments side by side at matched rate:
+
+| deviation rate | **this probe** (one rank deep) | §8am (softmax, n=200) |
+|---|---|---|
+| ~21% | **0.487** [0.461, 0.513] | 0.520 [0.451, 0.588] |
+| ~31–35% | **0.455** [0.429, 0.481] | **0.315** [0.255, 0.382] |
+| ~44–51% | **0.356** [0.332, 0.382] | **0.055** [0.031, 0.096] |
+
+**The bottom two rows are disjoint, the last one by a mile** — at roughly half of
+all decisions deviated, sampling costs ≈ −494 Elo and one-rank flipping costs
+≈ −103.
+
+⇒ 🔴 **§8am's headline — "the first ~20% of deviations are free and the next 10%
+cost ~150 Elo", a CLIFF in the deviation rate — is retracted as stated.** Raising
+a softmax temperature raises the deviation **rate** and the deviation **depth**
+together; §8am attributed the whole cost to the rate because it never varied them
+separately. This probe pins depth at exactly one rank and finds **no cliff at
+all** in margin units: 0.495 → 0.494 → 0.487 → 0.455 → 0.356, monotone 5/5, with
+the incremental cost of each added band rising smoothly (−0.001, −0.007, −0.032,
+−0.099) as the bands reach decisions the net is more confident about.
+
+⚡ **Same shape as §8bb** (E5's "compute curve" that never scaled) and as §8ax
+(the anchor that changed deck as well as pilot): **an effect attributed to the
+variable that was named rather than the one that moved.** Third instance in three
+sessions, and the first one caught by an experiment designed to isolate a
+variable rather than by an audit afterwards.
+
+⚠ **What this does NOT separate.** The flip differs from softmax in *two* ways:
+depth (one rank vs unbounded) and targeting (only near-ties vs any decision).
+Both push the same direction, so the comparison bounds their combined effect and
+does not apportion it. Separating them is one more sweep (sample from the top-2
+only, at matched rate) and is **not run**.
+
+✅ **What survives of §8am:** its chosen τ=0.5 and B8's exploration budget are
+untouched — a 20% deviation rate is confirmed free here too, at 7× the sample
+size. What changes is the *reason*, and therefore what it licenses: the free band
+is not "a fifth of selects are genuine near-ties", it is "moving one rank is cheap
+wherever you do it, and moving further is what costs".
+
+```powershell
+python -X utf8 scripts/p43_dagger_queue.py --dump-margins out/logs/p43_margin_sizing.txt
+python -X utf8 scripts/p59_e3_flip.py --matches 700 --taus 0,0.10,0.50,1.00,2.00
+```
+Archive `out/arena/p59_e3_flip.jsonl` (rows carry `run`; three invocations are
+pooled in that file and **must be split on it** — the day-22 schema, load-bearing
+on the very next experiment after it shipped). Logs `out/logs/p59_e3_*.txt`.
+
 ## 8bc. 🔴 THE REST OF THE VALIDATION FLOW, AUDITED: five more instrument defects, none of which ever touched a published number (2026-08-06, day 22)
 
 **Why this exists.** §8ax and §8ay are two findings of one audit; this is the
@@ -5298,7 +5425,22 @@ only difference between the two sides is the temperature. 200 games per arm.
 | 1.00 | 30.5% | **0.315** | [0.255, 0.382] | **−135** |
 | 2.00 | 44.0% | **0.055** | [0.031, 0.096] | **−494** |
 
-### 🔴 The finding is the shape, not the chosen value
+### ⛔ NARROWED BY §8bd (day 23) — the finding below is the shape, and the shape belongs to a DIFFERENT variable
+
+> 🔴 **The cliff is not a property of the deviation RATE.** Raising a softmax
+> temperature raises how *often* the agent leaves the argmax **and how far down
+> the ranking it goes**; this probe never separated them and credited the rate.
+> §8bd deviates on the same decisions but always by **exactly one rank**, so τ
+> controls the rate alone — and at ~51% of decisions deviated it scores
+> **0.356 [0.332, 0.382]** where the row below, at 44%, reads **0.055**. Disjoint,
+> and there is **no cliff at all** in the one-rank curve (0.495 → 0.494 → 0.487 →
+> 0.455 → 0.356, monotone 5/5).
+> ✅ **What survives:** τ=0.5 as B8's exploration setting, and "≈20% deviation is
+> free" as a *measurement* (independently reproduced at 7× the sample size).
+> ⛔ **What does not:** the sentence below beginning *"The net's selects are
+> sharply stratified"*. The free band is not "a fifth of selects are genuine
+> near-ties"; it is **"one rank is cheap wherever you move it, and depth is what
+> costs"**. B8's headroom argument rested on the retracted reading — see §8bd.
 
 **The first ~20% of deviations are FREE and the next 10% cost ~150 Elo.** From
 tau 0.25 → 0.50, off-argmax rises 6.3 pp for **no measurable change**. From 0.50

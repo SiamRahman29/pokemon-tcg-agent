@@ -18,7 +18,75 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 22: THE VALIDATION FLOW WAS AUDITED AND SIX THINGS WERE WRONG (2026-08-06)
+> # ▶ START HERE — DAY 23: THE E3 GATE RAN, AND IT RETRACTED A DIFFERENT EXPERIMENT (2026-08-07)
+>
+> Full record: `EVIDENCE` §8bd; pre-registration
+> `docs/experiments/beyond-bc/E3b-near-tie-gate.md` (frozen in `675d09c`, before
+> any arm ran, **including the two predictions that turned out wrong**).
+>
+> 🔴 **1. THE NEAR-TIE BAND E3 TARGETS IS INDIFFERENT.** `bc,flip<τ>` swaps the
+> clone's *k*-th choice for its (*k*+1)-th whenever their logit gap is under τ.
+> The 160-item review queue sits entirely inside the τ=0.10 band; flipping **every
+> decision in that band** — 7.0% of all decisions, far more aggressive than
+> relabelling 160 — reads **0.494 [0.467, 0.520]**, n=1,400. At τ=0.50 (21.8% of
+> decisions) still null at **0.487**. ⇒ **No systematic re-ranking of the band
+> pays.** ⚡ **This is the only experiment here with no training-seed term**: both
+> arms load the same weight file, `#dc1c9acc` on both sides of every row.
+> ⚠ **E3 IS NOT KILLED, and the day-23 plan's claim that a null would kill it is
+> WITHDRAWN — by the pre-registration, before the data.** The flip measures
+> |E[effect]|; a teacher's value is E[|effect|]. §8am's own reading says an
+> indifferent-on-average band is exactly where a sorter has room.
+>
+> 🔴 **2. THE BIGGER RESULT IS A RETRACTION OF §8am.** Two arms MISSED their
+> pre-registered predictions (τ=1.00 predicted ≲0.40, read **0.455**; τ=2.00
+> predicted ≲0.20, read **0.356**) — both predictions were §8am's, matched on
+> deviation *rate*. At matched rate: ~31–35% deviated, **0.455 [0.429, 0.481]**
+> here vs §8am's **0.315 [0.255, 0.382]**; ~44–51% deviated, **0.356 [0.332,
+> 0.382]** vs **0.055 [0.031, 0.096]**. **Disjoint.** ⇒ **A softmax temperature
+> raises deviation RATE and DEPTH together; §8am credited the rate.** This probe
+> pins depth at exactly one rank and finds **no cliff at all**: 0.495 → 0.494 →
+> 0.487 → 0.455 → 0.356, monotone 5/5. ✅ τ=0.5 and B8's exploration budget are
+> untouched; what changes is what the free band *means*.
+> ⚡ **Third instance in three sessions of "the effect was credited to the
+> variable we named"** (§8ax's deck, §8bb's compute, now this) — and the **first
+> caught by a designed experiment rather than an audit afterwards**. Written up as
+> `STRATEGY` §5.8, with the defence: read the *realized* value of the thing you
+> claim varied, from the run's own logs.
+>
+> ⚠ **NOT separated:** the flip differs from softmax in depth **and** targeting.
+> One more sweep (sample from the top-2 only, at matched rate) would apportion
+> them. **Not run.**
+>
+> ### 📝 The report moved a lot this session
+> `STRATEGY` §5.7 (the day-22 audit as its own chapter — seven defects, why five
+> could not have moved a number), §5.8 (above), a **B8 chapter that did not
+> exist**, an E3 entry, and §2's summary table corrected — it read *"self-play RL:
+> 0 — never run"*, true of league self-play and hiding a 20,000-game measured
+> null. `EVIDENCE` gained §8bc (the five audit defects that had only ever been in
+> this file) and §8bd.
+> 🔴 **And a propagation failure was found and fixed:** day 22 corrected E8's
+> weighted figure **−0.0099 → −0.0078** and the correction reached **two** places
+> while **six** files kept the old number — including `STRATEGY` §4g contradicting
+> its own §8. Same for §8aq's retracted headline (still live in `ROADMAP`'s
+> calendar) and p37's ΔW. **ROADMAP's own rule — grep the claim across all four
+> files in the same commit — is the one that keeps getting skipped.**
+>
+> ### ▶ THE DAY-24 PLAN
+>
+> 1. 📝 **The report is still the only lever** (rubric arithmetic unchanged: ~76%
+>    analysis and writing, ~14% leaderboard). Thinnest remaining: §7's
+>    opponent-modelling chapter predates the §8ay weight correction, and §1's
+>    approach chapter has never been re-read against what days 19–23 measured.
+> 2. 🔬 **The one cheap experiment left, and it is optional**: separate depth from
+>    targeting in §8bd (sample from the top-2 only at matched rate, ~25 min). It
+>    sharpens a retraction we have already published rather than opening an axis.
+> 3. ⛔ **Do NOT reopen a closed axis.** Thirteen now. E3 is *unresolved for want
+>    of a teacher*, which is not the same as open — do not build a teacher.
+> 4. ⛔ **Do NOT submit**, and do not push without asking (28 commits are local).
+>
+> ---
+>
+> # ▶ DAY 22: THE VALIDATION FLOW WAS AUDITED AND SIX THINGS WERE WRONG (2026-08-06)
 >
 > Full record: `EVIDENCE` §8ax; the tool changes are in `scripts/arena.py`,
 > `agents/sa/bcagent.py`, `scripts/p56_e7_arena.py`, `scripts/p57_e8_arena.py`.
@@ -148,7 +216,7 @@ it lets any team name in a replay be joined to its rating.
 > seat-balanced, not variance-reduced.** The ±0.036/cell floor is structural;
 > more games or more seeds are the only levers.
 >
-> # ▶ THE DAY-23 PLAN — THE REPORT IS THE ONLY LEVER LEFT, AND THE ARITHMETIC SAYS SO
+> # ⛔ SUPERSEDED — THE DAY-23 PLAN (executed; see the day-24 plan above). Item 2's "a null kills E3" claim is WITHDRAWN by §8bd.
 >
 > 🔴 **Read the rubric before planning anything.** Model Score is **70% across
 > five bullets**, and *"performance within the competition track"* is **one of

@@ -3,6 +3,34 @@
 **Pre-registered 2026-08-06 (day 23), before any arm was run.** Written after the
 sizing pass and before the A/B, per rule 14.
 
+---
+
+## 🔴 RESULT (2026-08-07) — full record in `report/EVIDENCE.md` §8bd
+
+| τ | flipped | score | 95% CI | prediction | verdict |
+|---|---|---|---|---|---|
+| 0 | 0.0% | 0.495 | [0.469, 0.521] | 0.500 | ✅ met |
+| 0.10 | 7.0% | 0.494 | [0.467, 0.520] | null | ✅ met |
+| **0.50** | 21.8% | **0.487** | [0.461, 0.513] | null | ✅ met |
+| 1.00 | 34.7% | 0.455 | [0.429, 0.481] | ≲0.40 | 🔴 **missed** |
+| 2.00 | 51.2% | 0.356 | [0.332, 0.382] | ≲0.20 | 🔴 **missed** |
+
+**1. The band E3 targets is indifferent.** The 160 queue items sit at margin
+≤ 0.1316, inside the τ=0.10 band; flipping *every* decision in that band reads
+**0.494 [0.467, 0.520]**. No systematic re-ranking of the near-tie band pays.
+⚠ **E3 is not killed** — as pre-registered, this measures |E[effect]| and a
+teacher's value is E[|effect|]. The withdrawal of the day-23 plan's "a null kills
+E3" claim was written **before** the data.
+
+**2. The two misses are the bigger finding.** Both predictions were §8am's,
+matched on deviation *rate*. At matched rate a one-rank flip costs far less than
+a softmax deviation (0.356 vs 0.055 at ~half of all decisions), because
+temperature raises rate **and depth** together while the flip pins depth at one
+rank. 🔴 **§8am's "cliff in the deviation rate" is retracted**; in margin units
+the curve is smooth and monotone 5/5.
+
+---
+
 ## Why this exists
 
 E3 is parked at its teacher gate: the review pilot produced no usable labels

@@ -1,0 +1,14 @@
+E3b near-tie gate -- flip the boundary pair under tau, mirror, direct, one net both sides (out/policy_v5.npz)
+700 paired matches per arm, 2002s so far
+
+   tau  flipped   score             95% CI            W/D/L      n
+   0.1     7.0%   0.494  [0.467, 0.520]         691/0/709   1400
+   0.5    21.8%   0.487  [0.461, 0.513]         681/1/718   1400
+     1    34.7%   0.455  [0.429, 0.481]         636/1/763   1400
+
+for comparison, §8am measured the same axis by TEMPERATURE (n=200/arm, sampling vs argmax):
+   tau  off-argmax   score
+  0.25       14.1%   0.465
+   0.5       20.4%   0.520
+     1       30.5%   0.315
+     2       44.0%   0.055
