@@ -1,0 +1,7 @@
+E9 ensemble -- mirror, direct, fixed weight files both sides
+1000 paired matches per arm, 1325s so far
+
+ arm   score             95% CI            W/D/L      n  note
+   C   0.451  [0.429, 0.473]        901/1/1098   2000  member vs member -- the rival hypothesis
+   A   0.541  [0.519, 0.563]        1082/0/918   2000  ensemble vs the SHIPPED member
+   B   0.531  [0.510, 0.553]        1063/0/937   2000  ensemble vs the other member

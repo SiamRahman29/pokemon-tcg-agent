@@ -1,0 +1,20 @@
+E9 confirmation -- candidates over the weighted anchor set
+5 pairs/cell, 37s so far
+
+      anchor      w  incumb  seedswap    ens2  d(swap)  d(ens2)
+     mirror*  0.320      --        --      --   +0.049   +0.041
+   alakazam5  0.253   1.000     0.700   0.700   -0.300   -0.300
+  archaludon  0.080   0.700     0.900   0.700   +0.200   +0.000
+  crustle_v1  0.080   0.800     1.000   0.600   +0.200   -0.200
+    garchomp  0.067   0.700     0.800   0.700   +0.100   +0.000
+         v10  0.053   0.400     0.700   0.600   +0.300   +0.200
+   dragapult  0.053   0.900     0.900   0.900   +0.000   +0.000
+
+coverage 90.6% of the measured field
+WEIGHTED delta seedswap -0.0056
+WEIGHTED delta ens2     -0.0682
+
+* mirror terms are p60's DIRECT head-to-heads at n=2,000
+  (seedswap 0.549 and ens2 0.541 vs the incumbent).
+⚠ weights are 75-game estimates (§8ay): add ~±0.003 of
+  weight uncertainty to each weighted total.

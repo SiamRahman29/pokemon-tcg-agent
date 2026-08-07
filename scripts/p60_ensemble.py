@@ -30,6 +30,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 S0 = "out/policy_v5.npz"
 S1 = "out/policy_v5_s1.npz"
+# A THIRD DISTINCT POLICY, and the only other one there is.
+# 🔴 There are FOUR v5-recipe nets on disk but only THREE policies:
+# `policy_v5c_s1` is **100.0% decision-identical** to `policy_v5_s1` over 1,471
+# real decisions (same seed, same recipe -- the npz bytes differ, the function
+# does not). Voting with both would have given that one policy TWO of four
+# votes: a weighted vote with weights nobody chose, which is exactly what
+# `Ensemble`'s own docstring says softmaxing is meant to prevent. It would also
+# have flattered the result, because the doubled member is the STRONGER one.
+# Agreement with the others: v5 87.5%, v5_s1 74.4%.
+C0 = "out/policy_v5c_s0.npz"
 
 # arm -> (spec A, spec B, note)
 ARMS = {
@@ -40,7 +50,13 @@ ARMS = {
     "B": (f"bc:ens01,net={S0}+{S1}", f"bc:v5s1,net={S1}",
           "ensemble vs the other member"),
     "D": (f"bc:ensdegen,net={S0}+{S0}", f"bc:v5s0,net={S0}",
-          "degenerate ensemble -- MUST read 0.500"),
+          "degenerate ensemble -- must be CONSISTENT with 0.500"),
+    # day-24 follow-ups: is three better than two, and does the vote beat the
+    # best single net available rather than merely the shipped one?
+    "E": (f"bc:ens3,net={S0}+{S1}+{C0}", f"bc:v5s1,net={S1}",
+          "3-net vote vs the BEST single member"),
+    "F": (f"bc:ens3,net={S0}+{S1}+{C0}", f"bc:ens01,net={S0}+{S1}",
+          "3-net vote vs 2-net vote"),
 }
 
 SCORE_RE = re.compile(
