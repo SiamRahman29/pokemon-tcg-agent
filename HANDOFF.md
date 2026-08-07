@@ -21,7 +21,73 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 25 (2026-08-07): THE SEED IS WORTH 50 Elo, ENSEMBLING IS NOT, AND `policy_v5_s2` IS SUBMITTED
+> # ▶ START HERE — DAY 25, 2nd SESSION (2026-08-07): THE FINAL PUSH — MIRROR MINING, SEED HARVEST, COVERAGE GATE
+>
+> **📌 USER DIRECTIVE (day 25, 2nd session): a FINAL PUSH at the ~150-Elo gap to
+> the leaders (we show 990.7-class play; the top holds 1145–1166). Track A only
+> still stands; `STRATEGY.md` got ONE user-authorised edit (§7b.4, the thesis
+> statement) and is otherwise untouched; `EVIDENCE.md` keeps getting entries.**
+>
+> 🔒 **The full plan is pre-registered in `docs/experiments/E10-final-push.md`
+> — frozen before any cell, with bars and predictions. Read it before running
+> anything. ROADMAP §2.6 carries the ranked table; this box is the summary.**
+>
+> ## The frame — three measured facts pick the experiments
+>
+> 1. **The climb runs through the MIRROR** (§8ac): 33.3% of our games at 955,
+>    51.1% above opponent rating 900, **71.4% above 1000**.
+> 2. **A field clone converges to 0.500 against field-modal play in the mirror
+>    by construction** — and the leaders are rule agents. Whatever they do
+>    differently in our own 60 is minable: we hold **557 games from two 1150+
+>    teams on our exact list** (`replays/ntumlnoob_31-07-2026`,
+>    `replays/sixth_sense_31-07-2026`).
+> 3. **True strength is the target, not the displayed number** — the LB reads
+>    decision-identical agents 63–87 apart (§8ak), but continued play after
+>    08-17 converges toward true level, and Round 2's BO3 plays the real agent.
+>
+> ## The four items, ranked (details + kill criteria in E10)
+>
+> - **F1 — mirror-conditioned disagreement mining** (highest ceiling): filter
+>   the expert dumps to MIRROR games (sizing gate: ≥100 games), extract
+>   large-margin disagreements between `policy_v5_s2` and the 1150+ pilots
+>   (`context_accuracy`/`p16` machinery, `--equiv`), cluster, size (≥0.5
+>   firings/game), classify with the discriminator — **dominated → rule
+>   candidate; tradeoff → chapter, no rule (0/4)**. Watch the top clusters
+>   (§8ah's method). Rule A/Bs run byte-identical-net rule-toggled, so the seed
+>   nuisance cancels. ⛔ This is an AUDIT of experts, not B7 cloning and not an
+>   E3 teacher.
+> - **F2 — seed harvest, done honestly** (guaranteed EV): seed = ±25 Elo pure
+>   nuisance (§8bg) and only 4 seeds ever sampled. Screen `s4` + confirm `s2`
+>   on fresh games (the item-5 debt), train/screen ~6–8 more seeds vs `v5_s1`
+>   at n=1,400 shipped-config, then **one confirmation on fresh games vs the
+>   incumbent `s2`: ship bar = point ≥0.53 AND CI excluding 0.50.** Screens
+>   never ship. If shipping: **submit twice, by 08-15.**
+> - **F3 — the corpus-coverage sizing gate** (30 min): run the probe in
+>   `docs/experiments/embeddings/PARKED-corpus-coverage.md`; expected kill via
+>   §8ac (the blind archetypes vanish above rating 900); verdict written either
+>   way, no training this side of the freeze.
+> - **F4 — B8 β: DECLINED, recorded** — the one honestly open door on a closed
+>   axis, declined for the freeze window (two nulls, closed on the method, hard
+>   stop spent). Do not relitigate.
+>
+> Plus carryover: **rule-2 LB reads on `55326513`** (≥1 h apart, both slots in
+> one call).
+>
+> ## ⛔ Standing constraints that bind this push
+>
+> - Fifteen closed axes + ensembling stay closed; F1's feature-shaped findings
+>   need a §8au-priced defect before any retrain (the B1-instance-5 bar).
+> - Every A/B in shipped config (`--no-rules` both arms — the §8be trap).
+> - Interventions need ≥3 seeds or a seed-cancelling design; a two-cell delta's
+>   interval is √2× a single cell's.
+> - Name what a submission evicts before quoting any bar (next eviction:
+>   `55321893`, ens2, 934.7).
+> - EVIDENCE entries (§8bh+) the session each item concludes; verdicts blank
+>   while cells are in flight.
+>
+> ---
+>
+> # ▶ DAY 25, 1st SESSION (2026-08-07): THE SEED IS WORTH 50 Elo, ENSEMBLING IS NOT, AND `policy_v5_s2` IS SUBMITTED
 >
 > **📌 USER DIRECTIVE, STANDING: report work is SUSPENDED. Track A only.**
 > `STRATEGY.md` gets no edits. `EVIDENCE.md` keeps getting entries.
@@ -97,7 +163,7 @@ it lets any team name in a replay be joined to its rating.
 > ⛔ **DO NOT vote only the screen winners** — that compounds the same bias.
 > 🟡 **`policy_v5_s4` was trained and never screened.**
 >
-> ## ▶ THE DAY-26 PLAN
+> ## ▶ THE DAY-26 PLAN — ⚠ SUPERSEDED by the FINAL PUSH box above (items 1–3 are folded into F2 and the carryover line; item 4's "the ladder cannot show it" is answered in the frame: continued play and the Round-2 BO3 can)
 >
 > 1. ⏱ **Read the LB ≥1 h after 14:05 UTC** for `55326513`, and take a second
 >    read ≥1 h later (rule 2). ⚠ A rising score is unconverged, not momentum.

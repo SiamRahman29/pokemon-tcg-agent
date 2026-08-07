@@ -1154,6 +1154,36 @@ mode of your demonstrator mixture, and moving the target off that mode costs
 more than the better target gains — even when the better target is measurably,
 symmetrically better and you successfully imitate it.*
 
+### 7b.4 Where the remaining Elo lives: the mirror (pre-registered plan, day 25 — results follow in the hypothesis log, §8bh onward)
+
+Combining §4f with §7b produces a prediction about our own ceiling that is
+sharper than either alone. §4f measured that the opponent pool is a function of
+our own rating: the mirror is 33.3% of our games at 955, 51.1% above opponent
+rating 900, and 71.4% above 1000. §7b measured that our strength comes from
+sitting on the field's mode. Put together: **the last 150 Elo runs through a
+matchup where sitting on the mode is worth exactly 0.500 by construction.** A
+field clone cannot out-mirror field-modal play, and the agents above us —
+handcrafted rule agents, like everything strong on this board — hold 1145–1166
+by doing something in our own deck's mirror that the mode does not.
+
+That difference is observable even though §7b proved it is not clonable. We
+hold 557 games from two 1150+ teams playing our card-for-card 60. The final
+week's plan, frozen before any cell in `docs/experiments/E10-final-push.md`,
+is to *audit* those games the way §4c audited the feature set: filter to mirror
+games, extract the decisions where the expert diverges from our clone with high
+clone confidence (the opposite of the indifferent near-tie band, §5.8), size
+each divergence class, and put it to the §3 discriminator. A dominated class
+becomes a rule; a tradeoff class becomes evidence for this section's thesis —
+that the residual between a good clone and a great player is made of tradeoffs,
+the one class of decision that neither rules (0 for 4) nor more cloning (§7b)
+has ever repaired. Alongside it run two closures: an honest harvest of the ±25
+Elo training-seed nuisance (screen many, confirm one on fresh games), and the
+sizing gate on the parked corpus-coverage question. Whatever the outcomes, they
+are written under pre-registered bars — the prediction recorded in advance is
+that the mirror audit finds mostly tradeoffs, and that this negative would be
+the cleanest measurement of *where imitation ends* that the project has
+produced.
+
 ## 7c. The deck
 
 ### 7c.1 The concept: a 320 HP attacker that refuels itself, behind chip damage the opponent cannot block
