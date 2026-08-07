@@ -4,12 +4,15 @@
 then ~2 weeks continued play; strategy report due **2026-09-14**. Kaggle CLI is
 authenticated.
 
-**Standing (read 2026-08-01 10:17 UTC, full LB — now 6,088 rows):** we are
-**`Scio`, rank 268 of 6,088, 923.0** — our best live number, and ⚠ **still
-climbing, so NOT a settled reading** (rule 2). Top is `Majkel1337` 1251.3, then
-`Sixth Sense` 1181.7, `keidroid` 1174.3, `flg` 1163.1. The board grew
-3,000 → 5,000 → 6,024 → **6,088** and the top reshuffles constantly — treat any
-ranking as a snapshot.
+**Standing (read 2026-08-07, full LB — now 6,483 rows):** we are **`Scio`, rank
+129 of 6,483, 990.7** — best rank and best score this project has had, on an
+agent submitted 08-01 and settled since. Top is `LiamK` 1166.0, then `flg`
+1162.7, `Raihan Ramadistra` 1151.1, `Sixth Sense` 1144.9. ⚠ The board grew
+3,000 → 5,000 → 6,024 → 6,088 → **6,483** and **the top has reshuffled completely
+since day 13** (the old top four — `Majkel1337` 1251.3, `keidroid` 1174.3 — are
+no longer there, and the ceiling fell ~85 points). **Treat any ranking as a
+snapshot, and never compare a score across board sizes** (§8p: the same tarball
+read 958 and 834 on a 4,000- and a 6,024-row board).
 
 ✅ **Getting the LB no longer needs 300 paginated calls:**
 `competition_leaderboard_download('pokemon-tcg-ai-battle', path='out/lb')`
@@ -18,7 +21,44 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 23: THE E3 GATE RAN, AND IT RETRACTED A DIFFERENT EXPERIMENT (2026-08-07)
+> # ▶ START HERE — DAY 23 (2026-08-07)
+>
+> ## 📈 STANDING FIRST: RANK 129 / 6,483 AT 990.7 — BEST EVER, AND THE ANSWER TO "SHOULD WE SUBMIT" IS NO
+>
+> Read 2026-08-07 via `competition_leaderboard_download` (one call, all 6,483
+> rows). Previous bests were 185/6,103 at 955.1 and 198/6,136 at 942.7.
+>
+> | active? | submission | score | what it is |
+> |---|---|---|---|
+> | ✅ **active** | `55160229` (08-01 10:39) | **990.7** | **v5 — the pooled option-set net. This is the score the board shows.** |
+> | ✅ **active** | `55169114` (08-01 18:42) | 904.1 | **decision-identical to v5** (health logging only) |
+> | ⛔ inactive | `55156480` | 910.5 | v4 state block |
+> | ⛔ inactive | `55072063` | 952.0 | the frozen 07-29 reading, ~4,000-entrant board (§8p) |
+>
+> 🔴 **ANY NEW SUBMISSION EVICTS `55160229`, THE 990.7.** Eviction is by recency
+> and only the latest 2 are active, so a third submission drops the *older* active
+> one — which is our best-scoring agent and the one displaying our rank. **Day
+> 13's standing rule ("name the agent a submission would evict before quoting the
+> bar") is now answered with a name and a number.**
+> ⇒ ⛔ **Do not submit.** Nothing in the repo measures better than v5 in the arena;
+> v7 is an unresolved null with the point estimate on the wrong side (−0.0078);
+> and the ladder cannot adjudicate any of it (below). **There is no candidate
+> whose expected gain exceeds the certain cost of evicting a 990.7.**
+> ⚠ The calendar's "last safe day to submit ~08-15" is therefore moot for us —
+> **the freeze has effectively already started, by arithmetic rather than by date.**
+>
+> ⚡ **AND THE PAIR ITSELF PRODUCED A RESULT: the decision-identical gap WIDENED to
+> 86.6** (990.7 vs 904.1). §8ak hedged that its 63.2 was *"a lower bound observed
+> at one moment"* because four reads had been shrinking (81.7 → 76.2 → 69.0 →
+> 63.2) and might converge. **Six days on, they diverged instead.** Two agents whose
+> true difference is *exactly zero* have now been observed 63–87 points apart.
+> ⚠ **RULE 2: one reading.** Logged in `EVIDENCE` §8ak, deliberately **not** yet
+> promoted into `STRATEGY` §5.1b (which still cites the settled 63.2). **Taking the
+> confirming read ≥1 h apart is day 24's first five minutes.**
+>
+> ---
+>
+> # ▶ DAY 23: THE E3 GATE RAN, AND IT RETRACTED A DIFFERENT EXPERIMENT
 >
 > Full record: `EVIDENCE` §8bd; pre-registration
 > `docs/experiments/beyond-bc/E3b-near-tie-gate.md` (frozen in `675d09c`, before
@@ -71,18 +111,62 @@ it lets any team name in a replay be joined to its rating.
 > calendar) and p37's ΔW. **ROADMAP's own rule — grep the claim across all four
 > files in the same commit — is the one that keeps getting skipped.**
 >
-> ### ▶ THE DAY-24 PLAN
+> # ▶ THE DAY-24 PLAN — AND THE HONEST ANSWER TO "WHAT IS LEFT TO EXPLORE"
 >
-> 1. 📝 **The report is still the only lever** (rubric arithmetic unchanged: ~76%
->    analysis and writing, ~14% leaderboard). Thinnest remaining: §7's
->    opponent-modelling chapter predates the §8ay weight correction, and §1's
->    approach chapter has never been re-read against what days 19–23 measured.
-> 2. 🔬 **The one cheap experiment left, and it is optional**: separate depth from
->    targeting in §8bd (sample from the top-2 only at matched rate, ~25 min). It
->    sharpens a retraction we have already published rather than opening an axis.
-> 3. ⛔ **Do NOT reopen a closed axis.** Thirteen now. E3 is *unresolved for want
->    of a teacher*, which is not the same as open — do not build a teacher.
-> 4. ⛔ **Do NOT submit**, and do not push without asking (28 commits are local).
+> **Nothing on this list is an Elo lever, and that is not a gap in the list.**
+> Model Score is 70% across five bullets with the leaderboard as *one* of them
+> (~14% of the grade); Deck Score is 20%. **~76% of the grade is analysis and
+> writing, and the Round-2 gate (§3.5) is the Strategy Category, not the ladder.**
+> Ranked by value per hour:
+>
+> 1. ⏱ **FIVE MINUTES, DO IT FIRST: the rule-2 confirming read** of the
+>    decision-identical pair (above). If 86.6 holds, `STRATEGY` §5.1b gets a
+>    stronger headline *and* loses a hedge that turned out to be wrong. That is a
+>    rubric-scoring correction for the price of one API call.
+> 2. 📝 **THE REPORT IS THE WORK.** Two chapters have never been re-read against
+>    what days 19–23 measured, and both are load-bearing:
+>    **§7 (opponent modelling)** predates §8ay's weight correction, so its shares
+>    may be the broken-classifier ones; **§1 (approach and rationale)** was written
+>    when the feature axis was still paying and now has to account for five
+>    generations ending +115 → +37 → +14 → 0 → 0. ⚠ Check both against `EVIDENCE`
+>    rather than trusting the prose — that exact check found the stale −0.0099 in
+>    six files today.
+> 3. 🔬 **Two ~25-minute runs that FIRM UP PUBLISHED RETRACTIONS, not new axes.**
+>    Both are optional and neither can change a verdict:
+>    (a) **separate depth from targeting** in §8bd — sample from the top-2 only at
+>    matched rate; right now the retraction of §8am's cliff bounds the two
+>    mechanisms jointly and apportions neither;
+>    (b) **confirm §8ax's additivity assumption** — run the v1/v2/v3 Crustle
+>    pilots on the *other* deck (restore from `b7869d2` / `83daa48`). The
+>    retraction does not depend on it; the *sizes* do.
+> 4. 🟢 **THE ONLY GENUINELY OPEN THREAD, and its prior is poor — say so before
+>    starting.** Every axis is closed except one: the corpus contains **zero**
+>    Lucario games and 40.7% of the field is under-represented >3×
+>    (`PARKED-corpus-coverage.md`, §8au). The **cheap probe is a sizing gate, not
+>    a build**: do the replays we already hold contain the missing archetypes at
+>    all? ⚠ **State the prior first:** E7 and E8 both tried to fix an unseen
+>    archetype by re-encoding cards and both failed, and the "more data" axis is
+>    0 for 5. This is worth doing because it *closes* the last green thread with a
+>    measurement and becomes a chapter — **not** because it is likely to pay.
+> 5. ⛔ **Do NOT reopen a closed axis. Thirteen:** search, data, demonstrators,
+>    capacity, sequencing, RL, deck, encoding, embeddings, multitask, routing,
+>    planning, and now the near-tie band. ⚠ **E3 is "unresolved for want of a
+>    teacher", which is NOT the same as open** — §8bd measured that no *systematic*
+>    re-ranking of its band pays, and a teacher's value (E[|effect|]) is simply not
+>    measurable with what we have. **Do not build a teacher.**
+> 6. ⛔ **Do NOT submit** (see the standing box — it evicts a 990.7), and **do not
+>    push without asking**: 29 commits are local by design.
+>
+> #### 🟡 Open judgement calls, none urgent, all the user's
+>
+> - **Ship v7 or keep v5?** Unresolved by design since day 21. Default: v5 ships —
+>   and the eviction arithmetic above now makes that near-decisive.
+> - **Which Crustle cell belongs in the anchor table?** Neither `@crustle_v1`
+>   (0.755, strong pilot / wrong deck) nor `@crustle` (0.893, weak pilot / right
+>   deck) is "the field's Crustle played well". A real fix is a pilot for the
+>   consensus list. No verdict depends on it.
+> - **Keep `experiments/beyond-bc` tracking `main`, or reset it to `eff71fd`** as a
+>   historical marker?
 >
 > ---
 >

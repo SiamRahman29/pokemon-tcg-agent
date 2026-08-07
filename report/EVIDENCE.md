@@ -3736,6 +3736,29 @@ instrument, not the agent — **if the readings are settled.**
 | 05:25 | 874.8 | 951.0 | **76.2** | 910.5 |
 | 07:25 | 875.3 | 944.3 | **69.0** | 910.5 |
 | **10:33 (day 17)** | **879.5** | **942.7** | **63.2** | 910.5 |
+| ⚡ **2026-08-07 (day 23)** | **904.1** | **990.7** | 🔴 **86.6** | 910.5 |
+
+### 🔴 SIX DAYS LATER THE GAP DID NOT CLOSE — IT WIDENED TO 86.6
+
+The day-17 entry hedged that 63.2 was *"a lower bound observed at one moment
+rather than a stable floor"*, because the gap had been shrinking across four
+reads (81.7 → 76.2 → 69.0 → 63.2) and an obvious extrapolation was that two
+identical agents would eventually converge. **They did not.** After six further
+days of ladder play — far past any convergence argument — the same pair reads
+**990.7 and 904.1**, a gap of **86.6**, wider than any of the four original reads.
+
+⇒ **The 63.2 figure was not a floor and not a settling point; it was one sample
+of a quantity that wanders.** The claim this section exists to support is
+strengthened rather than weakened: the ladder's noise between two agents whose
+true difference is *exactly zero* has now been observed anywhere from 63 to 87
+points, against a largest-ever measured effect of +40.5.
+⚠ **RULE 2: this is ONE reading.** It is logged, not yet quoted in
+`STRATEGY` §5.1b, which continues to cite the fully-settled 63.2. Confirm with a
+second read ≥1 h apart before promoting it.
+
+📈 **Standing at the same moment: rank 129 of 6,483 at 990.7 — our best rank and
+best score ever** (previous bests: 185/6,103 at 955.1, 198/6,136 at 942.7). The
+board displays the best **active** submission, which is `55160229`.
 
 ### ✅ The fourth read landed and the verdict is now writable
 
