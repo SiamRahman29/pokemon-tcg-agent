@@ -73,6 +73,27 @@ it lets any team name in a replay be joined to its rating.
 > lesson was remembered as an anecdote and E10 still let the ranking run per
 > decision; the per-decision view overstated this cluster by ~25×.
 >
+> ## 🔴 3b. E11 — F1 WAS CLOSED ONE STEP EARLY, AND THE STEP FOUND SOMETHING (which then measured zero)
+>
+> Rule 21 says rank per turn — but F1 applied the per-turn *correction* only to
+> the two clusters the per-**decision** ranking had already chosen.
+> `scripts/p70_perturn_sweep.py` ranks **every** option class per turn with no
+> pre-selection, and found the first candidate where **WE are the weaker
+> player**: **`Buddy-Buddy Poffin`**, conditioned on identical board occupancy —
+> experts **70.2%** of available turns at board 4, us **29.4%**; at board 5,
+> 46.9% vs 7.2%. **0.80 plays/game**, ordering-free, confound-checked (both sides
+> decline at the same mean board size).
+> ✅ Rule built (`targeting.poffin_force`, arena flag `poffin`, default OFF),
+> pre-registered in `docs/experiments/E11-poffin.md` at **`a50a240` before the
+> code**, positive control passed (play rate 39.7% → 61.6%).
+> 🔴 **A/B, byte-identical net, n=2,800: 0.487 [0.469, 0.506].** Fails the bar,
+> does not resolve, slightly negative. **Does not ship. Tradeoff rules are 0/5.**
+> ⚡ **The lesson is the thesis:** a behavioural difference from the 1150s that is
+> real, sized, ordering-free and confound-checked still converts to **zero Elo**.
+> ⛔ **Do NOT now try a milder threshold** — E11 pre-registered that as a separate
+> experiment precisely so it cannot become a knob tuned after seeing the result.
+> §8bl.
+>
 > ## 🔴 4. F3 IS KILLED ON AVAILABILITY
 >
 > Over the four dumps that built `pds_v4` (1,603 games, avg_score 1057–1223):
