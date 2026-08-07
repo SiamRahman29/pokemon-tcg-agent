@@ -4489,6 +4489,24 @@ the experts use it at turn **6.56** and decline at turn **9.73**; we use it at
 7.47 and decline (rarely) at 11.24. ⇒ **the 1150s stop searching once their
 board is built; we keep searching to the end of the game.**
 
+⚡ **Two follow-ups make the classification evidential rather than a judgement
+call.** First, conditioning on the late game sharpens the split — at **turn ≥
+10** we search in **146 of 162** available turns (**90.1%**) and the experts in
+**236 of 471** (**50.1%**). 🔴 **A coin flip is not a rule.** If declining late
+were dominated the 1150s would sit near 0%, not at 50% — *they* are deciding
+case by case, which is what a tradeoff looks like from the outside. Second, the
+searched card is tracked to see whether it is ever **played**:
+
+| Spikemuth search → is the fetched card later played? | ours | experts |
+|---|---|---|
+| all searches | 345/390 = **88%** | 265/304 = **87%** |
+| late searches (turn ≥ 10) | 48/80 = **60%** | 20/44 = **45%** |
+
+⇒ **our extra late searches are not waste**: the card comes down 60% of the
+time, a *higher* rate than the experts manage on their own late searches. What
+they fetch is the same three cards in the same order (Grimmsnarl ex, Morgrem,
+Impidimp). **Nothing here is dominated in either direction.**
+
 🔴 **Classified as a TRADEOFF, so no rule is built (rule 11; tradeoff rules are
 0 for 4).** The action is a free once-per-turn search with one mechanical cost —
 one fewer card in the deck — and that cost only pays out in a deck-out, while
