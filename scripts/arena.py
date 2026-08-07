@@ -290,8 +290,10 @@ def build_agent(spec: str, deck: list[int],
                     f"unknown bc flag {f!r} in {spec!r}. Note the first token "
                     f"after `bc:` is a LABEL, not a flag -- write "
                     f"`bc:<label>,{f}`.")
-        if net_path and not Path(net_path).exists():
-            raise SystemExit(f"bc net not found: {net_path}")
+        # `net=a.npz+b.npz` is an ensemble spec; every member must exist.
+        for _p in (net_path.split("+") if net_path else []):
+            if _p and not Path(_p).exists():
+                raise SystemExit(f"bc net not found: {_p}")
         try:
             agent = PolicyAgent(deck, net_path, chip_targeting=chip,
                                 energy_spread=spread, drag_target=drag,
@@ -331,6 +333,19 @@ def _net_fp(net_path: str | None) -> str:
 
     from sa import policynet
 
+    # An ensemble's identity is ALL of its members, in order: swapping one
+    # member is a different agent, and voting order is part of the spec
+    # (member 0 supplies the count rule).
+    if net_path and "+" in net_path:
+        h = hashlib.md5()
+        for p in net_path.split("+"):
+            if not p:
+                continue
+            q = Path(p)
+            if not q.exists():
+                return "#none"
+            h.update(q.read_bytes())
+        return "#" + h.hexdigest()[:8]
     path = Path(net_path) if net_path else Path(policynet._PATH)
     if not path.exists():
         return "#none"

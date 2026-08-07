@@ -261,10 +261,21 @@ class Net:
         pointwise (BCE) term -- a pure listwise net's logits are not calibrated
         probabilities, only a valid ranking.
         """
+        sc, srepr = self._forward(obs)
+        return self.pick(obs, sc, srepr)
+
+    def pick(self, obs: dict, sc: np.ndarray,
+             srepr: np.ndarray | None) -> list[int]:
+        """Rank by `sc` and decide HOW MANY to take.
+
+        Split out of `choose` so an ensemble can supply its own combined
+        scores without re-implementing the count rule -- rule 18: do not
+        re-derive a statistic the tool already computes. `choose` is exactly
+        `pick` applied to this net's own forward pass.
+        """
         sel = obs["select"]
         mn = sel.get("minCount", 0)
         mx = sel.get("maxCount", 0)
-        sc, srepr = self._forward(obs)
         order = list(np.argsort(-sc))
         k = mx
         if mx > mn:
@@ -284,6 +295,87 @@ class Net:
                 k = mn + int(round(frac * (mx - mn)))
             k = max(mn, min(k, mx))
         return [int(i) for i in order[:k]]
+
+
+class Ensemble:
+    """Several independently-trained nets voting on one decision.
+
+    🔴 **Why this is not the closed capacity axis.** §8w made ONE net bigger
+    (2.6x and 8.2x the parameters) and bought two decisions out of 12,939 and
+    then lost 43 -- the features, not the parameter count, were binding. An
+    ensemble does something else: it averages functions that were fitted
+    *independently*, which cancels the part of each net's error that is
+    idiosyncratic to its own initialisation rather than shared.
+
+    ⚡ **And this project has already measured that the idiosyncratic part is
+    large.** §5.6/E8 found two same-recipe nets differing only in `--seed`
+    swinging **0.073** against each other in a direct mirror head-to-head,
+    against ±0.036 of sampling noise -- they disagree far more than the games
+    alone explain, i.e. they make DIFFERENT mistakes. That measurement was
+    filed as a warning about our instrument; it is also the precondition for
+    averaging to pay.
+
+    ⚠ **Probabilities, not raw logits.** A listwise loss fixes the ranking, not
+    the scale: two nets can be equally good and differ by a constant factor in
+    logit magnitude, and a raw-logit mean would then be a weighted vote with
+    weights nobody chose. Softmax each net over the option set first, then
+    average, so every member gets exactly one vote. `--raw` overrides.
+
+    ⚠ **The count comes from the FIRST member**, via its own `pick`. Ensembling
+    the count fraction as well would confound "which options" with "how many",
+    and the count rule is a per-(type, context) table, not a scored quantity.
+    """
+
+    def __init__(self, nets: list["Net"], raw: bool = False):
+        if not nets:
+            raise ValueError("Ensemble needs at least one net")
+        self.nets = nets
+        self.raw = raw
+        # exposed so callers that introspect a Net (x_mask checks, vocab
+        # guards, the flip probe) see the primary member's shape
+        self.primary = nets[0]
+
+    def __len__(self) -> int:
+        return len(self.nets)
+
+    def scores(self, obs: dict) -> np.ndarray:
+        acc = None
+        for net in self.nets:
+            s = np.asarray(net.scores(obs), dtype=np.float64)
+            if not self.raw:
+                z = s - float(s.max())
+                e = np.exp(z)
+                s = e / e.sum()
+            acc = s if acc is None else acc + s
+        return acc / float(len(self.nets))
+
+    def choose(self, obs: dict) -> list[int]:
+        sel = obs.get("select") or {}
+        n = len(sel.get("option") or [])
+        if n == 0:
+            return []
+        # srepr is only consulted by the `learned` count mode, which the
+        # shipped nets do not use; the primary's own forward supplies it when
+        # it is needed rather than being faked.
+        srepr = None
+        if COUNT_MODE == "learned" and self.primary.count_head is not None:
+            srepr = self.primary._forward(obs)[1]
+        return self.primary.pick(obs, self.scores(obs), srepr)
+
+
+def load_ensemble(paths: list[str], raw: bool = False) -> Ensemble | None:
+    """Load several nets for voting. Returns None if ANY member fails.
+
+    Strict on purpose: a silently-dropped member is a different agent playing
+    under the ensemble's name, which is day 22's defect 2 with extra steps.
+    """
+    nets = []
+    for p in paths:
+        net = load(p)
+        if net is None:
+            return None
+        nets.append(net)
+    return Ensemble(nets, raw=raw)
 
 
 def load(path) -> Net | None:

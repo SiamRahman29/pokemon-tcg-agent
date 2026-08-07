@@ -98,7 +98,13 @@ class PolicyAgent:
         # Load an explicit net before constructing the sequencer so simulated
         # continuations use the same policy as the owning agent. Falling back
         # to policynet.get() here would silently use the bundled checkpoint.
-        self.net = policynet.load(net_path) if net_path else None
+        # `net=a.npz+b.npz` loads an ENSEMBLE: the members vote per option
+        # (softmax each, then average). One path behaves exactly as before.
+        if net_path and "+" in net_path:
+            parts = [p for p in net_path.split("+") if p]
+            self.net = policynet.load_ensemble(parts)
+        else:
+            self.net = policynet.load(net_path) if net_path else None
         # 🔴 AN EXPLICIT `net=` THAT DOES NOT LOAD MUST NEVER BECOME THE
         # SINGLETON. `policynet.load` returns None on any guard failure or
         # exception rather than raising, and `__call__` below falls back to

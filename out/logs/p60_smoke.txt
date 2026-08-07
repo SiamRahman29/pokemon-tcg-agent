@@ -1,0 +1,5 @@
+E9 ensemble -- mirror, direct, fixed weight files both sides
+40 paired matches per arm, 20s so far
+
+ arm   score             95% CI            W/D/L      n  note
+   D   0.475  [0.369, 0.583]           38/0/42     80  degenerate ensemble -- MUST read 0.500
