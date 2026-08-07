@@ -58,6 +58,7 @@ OPT_PLAY = 7        # OptionType.PLAY
 OPT_ATTACH = 8      # OptionType.ATTACH
 BOSS_ORDERS = 1182
 MUNKIDORI = 112
+POFFIN = 1086       # Buddy-Buddy Poffin -- E11
 DARK_ENERGY = 7     # Basic {D} Energy, card id
 DARK_TYPE = 7       # ... and energy type; pk["energies"] holds types
 
@@ -578,3 +579,63 @@ def boss_prize_veto(obs: dict, chosen: list[int], rank) -> list[int] | None:
               and _hand_card_id(state, me, o.get("index") or 0) == BOSS_ORDERS}
     rest = [i for i in rank() if i not in vetoed]
     return rest[:len(chosen)] or None
+
+
+def poffin_force(obs: dict, chosen: list[int]) -> list[int] | None:
+    """Play Buddy-Buddy Poffin when the bench has room — E11.
+
+    **The first candidate this project found where WE are the worse player at
+    something ordering-free.** `p70_perturn_sweep.py` ranks every option class
+    by its per-TURN gap (rule 21) instead of its per-decision gap, and this was
+    invisible to the per-decision ranking because the clone is never
+    *confidently wrong* here — it simply never gets round to it. Share of
+    available turns in which the card is actually played, conditioned on our own
+    board occupancy, mirror only (`EVIDENCE` §8bl, `docs/experiments/E11-poffin.md`):
+
+        board  4:  1150+ pilots 70.2%,  our clone 29.4%
+        board  5:  1150+ pilots 46.9%,  our clone  7.2%
+
+    Worth **0.80 plays/game**, over the 0.5 sizing gate, and the confound is
+    checked: both sides decline at the same mean board size (4.46 vs 4.45), so
+    it is the behaviour that differs, not the mix of situations.
+
+    Shape: benching a 70 HP basic is a **tradeoff** (development against giving
+    the mirror's own Shadow Bullet snipe another target), so rule 11 would
+    normally forbid building it. The governing precedent is `boss_veto`'s —
+    rule 10, "it lives or dies by its A/B" — and the A/B is byte-identical-net
+    with the rule toggled, so the ±13 Elo seed nuisance cancels exactly.
+
+    ⚠ **Deliberately conservative at board 5.** The experts are themselves a
+    coin flip there (46.9%), so forcing that bucket would overshoot the
+    behaviour being copied. Fires only with **>= 2 free slots**. Widening it is
+    a separate experiment, not a knob to turn after reading the result.
+    """
+    sel = obs.get("select") or {}
+    if sel.get("context") != MAIN:
+        return None
+    options = sel.get("option") or []
+    if not chosen or not 0 <= chosen[0] < len(options):
+        return None
+    state = obs.get("current") or {}
+    try:
+        me = state["yourIndex"]
+        mypl = state["players"][me]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+    # Already playing it: nothing to force.
+    if _hand_card_id(state, me, options[chosen[0]].get("index") or 0) == POFFIN:
+        return None
+
+    # Board occupancy: the Active plus every filled bench slot, out of 6.
+    bench = mypl.get("bench") or []
+    filled = (1 if (mypl.get("active") and mypl["active"][0]) else 0)
+    filled += sum(1 for pk in bench if pk)
+    if filled > 4:            # fewer than 2 free slots -- see the docstring
+        return None
+
+    for i, o in enumerate(options):
+        if (o.get("type") == OPT_PLAY
+                and _hand_card_id(state, me, o.get("index") or 0) == POFFIN):
+            return [i]
+    return None

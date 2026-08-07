@@ -76,7 +76,8 @@ class PolicyAgent:
                  boss_prize_veto: bool = False,
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
                  seq_budget: float = 0.35, seq_reply: bool = False,
-                 flip_margin: float | None = None):
+                 flip_margin: float | None = None,
+                 poffin_force: bool = False):
         self.decklist = list(decklist)
         # E3's teacher-free gate (day 23). Take the OTHER side of a near-tie:
         # when the logit gap between the lowest-scored SELECTED option and the
@@ -175,6 +176,12 @@ class PolicyAgent:
         # independent opponent agreed (0.626 [0.604, 0.647] vs rule:v10,noS
         # against 0.593 for a bare bc). `bc:<label>,noSrc` turns it off.
         self.counter_source = counter_source
+        # E11: play Buddy-Buddy Poffin when the bench has >=2 free slots. The
+        # 1150+ pilots play it in 70.2% of available turns at board size 4 and
+        # our clone in 29.4% -- 0.80 plays/game, ordering-free (rule 21). OFF by
+        # default until its own A/B clears the bar, same discipline as every
+        # rule above it.
+        self.poffin_force = poffin_force
         # The matchup branch (2026-07-30): `chip_target` is worth +0.077 in the
         # mirror and **-0.126 against `rule:crustle`**, because "kill what dies
         # to 30" farms Dwebbles while the undamageable wall survives. This defers
@@ -267,6 +274,10 @@ class PolicyAgent:
                     obs, list(picked), lambda: targeting.full_rank(net, obs))
                 if fixed is not None:
                     return fixed
+            if self.poffin_force:
+                forced = targeting.poffin_force(obs, list(picked))
+                if forced is not None:
+                    return forced[:want]
             if self.counter_source:
                 fixed = targeting.counter_source(
                     obs, list(picked), lambda: targeting.full_rank(net, obs))

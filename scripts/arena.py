@@ -214,6 +214,8 @@ def build_agent(spec: str, deck: list[int],
         source = True
         # the 5th Boss's Orders rule: opt-in, unproven
         bossprize = False
+        # E11 bench development: opt-in, unproven
+        poffin = False
         # B4 turn-level lookahead: opt-in, unproven
         sequencer = False
         seq_k, seq_dets, seq_budget = 8, 4, 0.35
@@ -281,6 +283,11 @@ def build_agent(spec: str, deck: list[int],
                 # 0.559 for unconditional chip_target, n=2000 each, and it
                 # cannot fire in the mirror. `noWall` restores the old behaviour.
                 wall = f == "wall"
+            elif f in ("poffin", "noPoffin"):
+                # E11: play Buddy-Buddy Poffin when the bench has >=2 free
+                # slots. Default OFF until its own A/B clears the bar
+                # (docs/experiments/E11-poffin.md).
+                poffin = f == "poffin"
             else:
                 # The FIRST token of a bc tag is a free-text label
                 # (`bc:old,noChip`), so a flag typed as `bc:veto` lands in the
@@ -303,7 +310,8 @@ def build_agent(spec: str, deck: list[int],
                                 sequencer=sequencer,
                                 seq_k=seq_k, seq_dets=seq_dets,
                                 seq_budget=seq_budget, seq_reply=seq_reply,
-                                flip_margin=flip_margin)
+                                flip_margin=flip_margin,
+                                poffin_force=poffin)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

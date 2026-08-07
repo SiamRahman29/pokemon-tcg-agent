@@ -77,3 +77,22 @@ and the mirror is 71.4% of our field above rating 1000 but not 100% of it.
    may be declining because its *own* subsequent play differs — it may lack the
    Basics in deck to fetch, in which case the option is available but the search
    whiffs and forcing it wastes the card. Not measured before freezing.
+
+---
+
+## ▶ VERDICT (2026-08-07, same session) — 🔴 NULL, and slightly negative
+
+**`poffin` ON vs OFF, byte-identical net, n=2,800: 0.487 [0.469, 0.506].**
+Fails the 0.53 bar and does not resolve. **The rule does not ship.**
+
+Positive control passed first (39.7% → 61.6% play rate over 40 recorded games),
+so this is a real intervention measured cleanly, not a silent no-op.
+
+Prediction 1 was half right (did not resolve ✅, but landed below the [0.50,
+0.53] band ❌). Prediction 3 — that the forced search may whiff for want of
+Basics in deck — was never measured and stays on the record as the most likely
+mechanism.
+
+⛔ **Do not now run a milder threshold.** This file pre-registered that a
+different threshold is a separate experiment, not a knob to tune after seeing
+the result. Full write-up: `EVIDENCE` §8bl.

@@ -4403,6 +4403,103 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bl. 🔴 E11 — THE CLONE REALLY DOES UNDER-DEVELOP ITS BENCH, AND FORCING IT TO STOP DOES NOT PAY (2026-08-07, day 25, 3rd session)
+
+Pre-registered in `docs/experiments/E11-poffin.md`, frozen in **`a50a240`
+before the rule was written**, bar and predictions included.
+
+### How it was found — and why F1 had already missed it
+
+§8bj closed F1 after classifying the clusters that `p66_mirror_disagree` ranked
+**per decision** — and §8bj's own conclusion was that the per-decision unit is
+wrong (rule 21). The corrected unit was then applied only to the two clusters
+the wrong unit had already selected. 🔴 **The ranking, not just the sizing, has
+to run per turn.** `scripts/p70_perturn_sweep.py` does that over **every** option
+class with no pre-selection, and it surfaces something the per-decision view
+cannot see, because the clone here is never *confidently wrong* — it simply
+never gets round to the play:
+
+**`Buddy-Buddy Poffin` (PLAY)** — *"search your deck for up to 2 Basic Pokémon
+with 70 HP or less and put them onto your Bench."* Share of AVAILABLE TURNS in
+which it is actually played, **conditioned on our own board occupancy**:
+
+| board size | expert turns | expert plays | our turns | our plays | gap |
+|---|---|---|---|---|---|
+| 1 | 94 | 98.9% | 18 | 100.0% | +1.1% |
+| 2 | 63 | 96.8% | 20 | 85.0% | −11.8% |
+| 3 | 76 | 84.2% | 26 | 69.2% | −15.0% |
+| **4** | **114** | **70.2%** | **51** | **29.4%** | **−40.8%** |
+| **5** | **147** | **46.9%** | **69** | **7.2%** | **−39.7%** |
+
+**0.80 fewer plays per game**, ordering-free, over the 0.5 sizing gate — and the
+confound is checked: **both sides decline at the same mean board occupancy**
+(4.46 vs 4.45), so it is the behaviour that differs, not the mix of situations.
+⚡ **The first candidate this project has produced in which WE are the weaker
+player at something specific, sized and ordering-free.**
+
+### ✅ The positive control, run BEFORE the A/B
+
+A rule that silently never fires produces a null that means nothing (the §8be
+family). 40 recorded games with the rule on, mined and measured by the same
+instrument:
+
+| board | rule OFF | rule ON |
+|---|---|---|
+| 1–4 | 100 / 85 / 69 / 29% | **100% (forced, by construction)** |
+| 5 | 7.2% | 13.2% (rule deliberately does not fire) |
+| overall | 39.7%, 0.91 plays/game | **61.6%, 1.32 plays/game** |
+
+⇒ the intervention is real and it is the one specified.
+
+### 🔴 The result: n=2,800, byte-identical net both arms, rule toggled
+
+| cell | score | 95% CI | verdict |
+|---|---|---|---|
+| `poffin` ON vs OFF | 🔴 **0.487** | [0.469, 0.506] | **FAILS the 0.53 bar; does not resolve; point estimate slightly NEGATIVE** |
+
+`[health] OK fallbacks=0 net_missing=0`, 575,270 net calls, seats balanced.
+Because the weight file is byte-identical on both sides, **the ±13 Elo seed
+nuisance (§8bk) cancels exactly** — this is one of the cleanest cells in the
+repo, and it says no.
+
+⇒ **The rule does not ship. `EVIDENCE` keeps the measurement; the agent keeps
+its behaviour.** Tradeoff rules are now **0 for 5**.
+
+### What this does and does NOT license
+
+- ✅ **The measurement stands**: our clone develops its bench less than the
+  1150+ pilots do, by 0.80 plays/game, conditioned on identical boards.
+- ✅ **The repair is refuted in the form tested**: forcing the play whenever
+  ≥2 bench slots are free is worth −0.013, i.e. nothing or slightly worse.
+- ⚠ **NOT shown: that matching the experts' *conditional* policy would fail.**
+  They play it 70.2% at board 4; the rule forced **100%**, overshooting the
+  behaviour it was copying. A milder variant is unproven, not disproven (rule 4).
+  ⛔ **And it is not being run** — E11 pre-registered that a different threshold
+  is "a separate experiment, not a knob to tune after seeing the result", and
+  tuning a rule downward until the number improves is precisely how a project
+  manufactures a winner at α=0.05.
+- ⚡ **The most useful reading is about the CLONE, not the card.** A behavioural
+  difference from the 1150s that is real, sized, ordering-free and confound-
+  checked still converts to **zero** Elo. Taken with §8bj (their extra actions
+  are timing) this is the sharpest statement of the project's thesis: **the gap
+  to 1150 is not a list of moves our clone fails to make.**
+
+### Scoring the pre-registration
+
+- **Prediction 1 — "lands in [0.50, 0.53] and does NOT resolve"**: half right.
+  It did not resolve ✅; the point estimate landed **below** the band (0.487) ❌.
+- **Prediction 2 — "if it resolves at all, it resolves positive"**: untested, it
+  did not resolve. Must not be quoted as confirmed.
+- **Prediction 3 — the named way it could be wrong** (the search whiffs for want
+  of Basics in deck): **not measured, and still not measured.** It remains the
+  most likely mechanism for a forced play being worthless, and it is recorded
+  here rather than quietly dropped.
+
+```powershell
+python -X utf8 scripts/p70_perturn_sweep.py --top 30
+python -X utf8 scripts/arena.py play "bc:poffinON,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc,poffin" "bc:poffinOFF,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" --matches 1400 --deck-a grimmsnarl --deck-b grimmsnarl --archive out/arena/p71_e11_ab.jsonl
+```
+
 ## 8bk. 🔬 F2 STEP 2 — TEN SEEDS OF ONE RECIPE, AND THE SPREAD IS A RANGE, NOT A NUISANCE TERM (2026-08-07, day 25, 3rd session)
 
 Pre-registered in `docs/experiments/E10-final-push.md` (F2 steps 2–3), frozen in
