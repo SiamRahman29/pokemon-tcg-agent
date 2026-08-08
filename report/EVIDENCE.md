@@ -4403,6 +4403,161 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bn. ⚡ THE FIELD AT ~1027 IS NOT THE FIELD §8ac PROJECTED — and our per-matchup win rates are not visibly worse than the #2 player's (2026-08-08, day 26)
+
+`p9_field_census.py` on the user-supplied `replays/submission_v5_s2` — **76
+games of `55326513` (`policy_v5_s2`)**, the highest-rated agent this project has
+run, censused from our own seat.
+
+### The field, and where the 27 losses actually are
+
+| archetype | share | our WR | losses |
+|---|---|---|---|
+| **Marnie's Grimmsnarl ex** (mirror) | 31.6% | 58.3% | **10** |
+| **Alakazam** | 23.7% | 77.8% | 4 |
+| Crustle | 9.2% | 85.7% | 1 |
+| Mega Lucario ex | 9.2% | 57.1% | 3 |
+| **Teal Mask Ogerpon ex** | 6.6% | **40.0%** | 3 |
+| Archaludon ex | 5.3% | 100.0% | 0 |
+| Meowth ex · Dudunsparce · Slowking | 7.8% | 33% · 0% · 0% | 5 |
+
+**Overall 49/76 = 64.5%.** Top 5 archetypes = 80.3% of the field; 68 distinct
+teams over 76 games, so this is a field sample, not a few repeat opponents.
+
+🔴 **The mirror is 31.6%, not the 71.4% §8ac projected for play above rating
+1000.** §8ac measured opponent-rating *bands* inside dumps taken at ~955; this
+is the whole field at ~1027 and the mirror share is less than half its
+projection. ⚠ **Every "the climb runs through the mirror" framing — E10's frame,
+§2.6's premise — rests on the projection, not on this.** The mirror is still the
+largest single bucket and still owns the most loss mass (10 of 27), so the
+*ordering* survives; the **weight does not**, and any weighted anchor verdict
+computed from §8ac's shares is quoting a share this dump contradicts.
+⚡ **Alakazam is back at 23.7%** after being dropped from planning entirely
+since day 9 — and it is our second-best matchup (77.8%), so it is loss-mass
+cheap but it re-prices the anchor weights.
+
+### 🔴 The control that reframes the gap: the same census from ntumlnoob's seat
+
+`p9 --us "李秉叡（ntumlnoob）"` over their 330 games (**#2 on the LB, 1162.8**):
+
+| matchup | us, ~1027 (n) | ntumlnoob, 1162.8 (n) |
+|---|---|---|
+| mirror | 58.3% (24) | 57.0% (149) |
+| Alakazam | 77.8% (18) | 70.8% (48) |
+| Crustle | 85.7% (7) | 57.6% (33) |
+| **Teal Mask Ogerpon** | **40.0%** (5) | **37.5%** (8) |
+| overall | **64.5%** | **64.5%** |
+
+⚡ **Teal Mask Ogerpon beats the #2 player at the same rate it beats us** ⇒ it
+is a **matchup property of the archetype, not a piloting failure**, and it comes
+off the "we are misplaying it" list before anything was spent on it.
+⚠ **The overall 64.5%/64.5% coincidence must NOT be read as equal strength** —
+their opponents average ~130 rating points stronger (§8ac: the pool is a
+function of your own rating), so equal win rates against a harder field means
+they are genuinely better. What it does say is that **the 135-point gap is not
+concentrated in a matchup we could close by targeting better**, which is the
+same conclusion §8bj and §8bl reached from the behavioural side.
+⚠ Our per-matchup n's are 5–24 games (±20 pp on the mirror). These are
+directional, not resolved.
+
+## 8bm. 🔴 E12 — THE PASSIVE-DAMAGE SEAM IS SIZED ON OUR OWN LADDER GAMES AND BOTH HALVES DIE AT THE GATE (2026-08-08, day 26)
+
+**User-directed** ("optimize how we target with our passive damages … a few
+games where 1 bad decision cost us games"), and answered with an autopsy of the
+**76 real ladder games of the shipped agent** the user supplied in
+`replays/submission_v5_s2` — `55326513`, `policy_v5_s2`, at ~1027.
+
+### Why this asked a different question from F1 and E11
+
+`p66` ranked disagreement per decision (wrong unit, rule 21); `p70` ranked it
+per turn (right unit, found Poffin). **Both rank by RATE, both found tradeoffs,
+and tradeoff rules are 0 for 5.** Rule 11's winning class (3/3) is the
+**dominated** option, and for passive damage dominance is *arithmetic* — it
+needs no expert corpus at all. So this asks: **was an option available that
+dominates the one we took?**
+
+### ✅ The positive control, run before any number was read
+
+The option→Pokémon mapping is the whole experiment, and the obvious route is
+wrong: `steps[i][seat]["action"]` matched the Pokémon that actually lost HP
+**11 of 48 times**. The miner's route — `steps[0][0].visualize`, `v["selected"]`
+— matches **839 of 840**. `p72 --verify` re-runs this, and it is the first thing
+to check if any number here looks wrong. ⚠ **A fifth confidently-wrong script
+was avoided by running the control first, not by noticing afterwards.**
+
+### The denominator (rule 13) — these are real, frequent decisions
+
+| context | selects | ≥2 options | real share |
+|---|---|---|---|
+| 13 `DAMAGE_COUNTER` | 532 | 527 | 99.1% |
+| 15 `DAMAGE` | 278 | 245 | 88.1% |
+| 16 `REMOVE_DAMAGE_COUNTER` (Adrena-Brain source) | 532 | 387 | 72.7% |
+
+**10.2 damage-placement choices and 5.09 source choices per game** — both an
+order of magnitude above the 0.5/game sizing gate. ⇒ **the seam is not being
+dismissed for want of opportunities.** ⛔ And all three are made by the **net
+alone**: the shipped bundle reads
+`AGENT_KWARGS = {'chip_targeting': False, 'energy_spread': False, 'counter_source': False}`.
+
+### 🔴 Half 1 — "a KO was available and we spread instead": 0.09/game
+
+Same damage, measured off the board rather than assumed, applied to every other
+legal option in the same select:
+
+| | |
+|---|---|
+| events | **7** in 76 games = **0.09/game** |
+| share of real damage choices | **0.9%** |
+| in games we LOST | 2 of 7 |
+| distinct lost games touched | **2 of 27** |
+
+**Below the gate that killed Morgrem (0.2), Pokégear (0.27) and the Archaludon
+rule (0.187)** — and the loss-attribution the hypothesis rests on is 2 of 27
+losses, i.e. it cannot be what is costing us games. ⚡ The complement is the
+real finding: **the net takes the available KO 99.1% of the time with no rule
+helping it**, which is §8's p2_lethal result (316/316 lethals taken) one level
+down. 4 of the 7 are "hit Crustle, passed a Dwebble KO" — the wall matchup
+`chip_wall_defer` already owns, and 5 of 7 are in games we won.
+
+### 🔴 Half 2 — the Adrena-Brain SOURCE pick: 0.20/game, 1.5% of the ability
+
+The source **caps** how much the activation moves ("up to 3 counters"), so a
+source carrying 1 counter when another carries 3 moves 10 damage instead of 30 —
+strictly less healing *and* strictly less damage, same action, same cost.
+**Dominated by construction, and it needs no counterfactual.**
+
+| | |
+|---|---|
+| under-moved events | **15** in 76 games = **0.20/game** (3.9% of real picks) |
+| damage actually moved | 10,750 |
+| damage available | 10,910 |
+| **left on the table** | **160 = 1.5%, or 2 damage per game** |
+
+Gap sizes are 10 damage in 14 of 15 cases. ⇒ **the net picks the source
+correctly 96.1% of the time unaided**, which independently explains why
+`counter_source` is switched off and harmless rather than merely unproven.
+
+### ⚠ What was NOT measured, and why it is recorded rather than dropped
+
+The **"would it have survived"** counterfactual on the source pick — did we heal
+the wrong Pokémon and lose one that the counters would have saved — **cannot be
+computed from these replays.** Log type 16 carries an uncensored `value`, but it
+reconciles with the observed board delta only **434 of 699 times (38%
+mismatch)**, so the damage stream will not carry a survival claim. ⛔ **Not
+built on it.** The dominated test above was chosen *because* it needs no such
+claim, not because the counterfactual was uninteresting.
+
+⇒ **Both halves of the passive-damage family close on SIZING, before any rule
+was written** — rule 14 working as designed, for the price of one script and no
+A/B. The user's observation stands (single decisions do lose games); what this
+measures is that **these** decisions are not the ones, and the clone is already
+near-perfect at the arithmetic part of targeting.
+
+```powershell
+python -X utf8 scripts/p72_loss_autopsy.py --verify
+python -X utf8 scripts/p72_loss_autopsy.py --dir replays/submission_v5_s2
+```
+
 ## 8bl. 🔴 E11 — THE CLONE REALLY DOES UNDER-DEVELOP ITS BENCH, AND FORCING IT TO STOP DOES NOT PAY (2026-08-07, day 25, 3rd session)
 
 Pre-registered in `docs/experiments/E11-poffin.md`, frozen in **`a50a240`

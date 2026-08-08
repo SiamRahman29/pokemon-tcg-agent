@@ -21,7 +21,78 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 25, 3rd SESSION (2026-08-07): THE FINAL PUSH RAN IN FULL AND SHIPPED NOTHING — F1 closed, F2 null, F3 killed, and the board reads **1010.1**
+> # ▶ START HERE — DAY 26 (2026-08-08): THE PASSIVE-DAMAGE SEAM IS SIZED ON OUR OWN LADDER GAMES AND BOTH HALVES DIE AT THE GATE — and the field at 1027 is not the field we planned for
+>
+> **📌 USER DIRECTIVE (day 26): report work stays SUSPENDED, Track A only —
+> push the agent. Named seams: passive-damage targeting, Petrel, and "a few
+> games where 1 bad decision cost us games."** The user supplied **76 real
+> ladder games of the shipped agent** in `replays/submission_v5_s2`, and asked
+> to start there. `STRATEGY.md` untouched; `EVIDENCE.md` gets entries.
+>
+> **Live board (user-read): `55326513` 1027.2 · `55321893` 906.2.** ⚠ Both moved
+> from 1044.3/937.1 — **inside the 63-point noise floor (§8ak), so nothing has
+> gone wrong and nothing is confirmed.** Rule-2 reads still owed.
+>
+> ## 🔴 1. E12 — BOTH HALVES OF THE PASSIVE-DAMAGE FAMILY CLOSE ON SIZING
+>
+> The decisions are frequent and they are **the net's alone** — the shipped
+> bundle reads `{'chip_targeting': False, 'energy_spread': False,
+> 'counter_source': False}`. Denominators are **10.2 damage-placement and 5.09
+> Adrena-Brain source choices per game**, both ~10–20× the 0.5/game gate, so
+> nothing here dies for want of opportunities:
+>
+> | dominated test | rate | verdict |
+> |---|---|---|
+> | a KO was available and we spread instead | **0.09/game**, 0.9% of real choices, **2 of 27 losses** | 🔴 under the gate that killed Morgrem (0.2), Pokégear (0.27), Archaludon (0.187) |
+> | Adrena-Brain source under-moved (the cap) | **0.20/game**, **1.5% of the ability = 2 damage/game** | 🔴 under the gate |
+>
+> ⚡ **The complement is the real finding: unaided, the net takes the available
+> KO 99.1% of the time and picks the source correctly 96.1% of the time.** That
+> is `p2_lethal`'s 316/316 one level down, and it explains why `counter_source`
+> is switched off and *harmless* rather than merely unproven.
+> ✅ **A fifth confidently-wrong script was avoided by a control run FIRST:**
+> the obvious `steps[i][seat]["action"]` route maps the chosen option to the
+> Pokémon that actually lost HP **11 of 48 times**; the miner's
+> `steps[0][0].visualize` / `v["selected"]` route matches **839 of 840**.
+> `p72_loss_autopsy.py --verify` re-runs it. **Check it first if a number here
+> looks wrong.**
+> ⛔ **The "would it have survived" counterfactual is NOT computable from these
+> replays** — log type 16's `value` reconciles with the board only 62% of the
+> time. The dominated test was chosen *because* it needs no such claim. §8bm.
+>
+> ## ⚡ 2. THE FIELD AT ~1027, AND A CONTROL THAT REFRAMES THE GAP
+>
+> 76 games, **64.5% overall**, 68 distinct opponent teams. Loss mass: **mirror
+> 31.6% share / 58.3% WR / 10 of 27 losses**, Alakazam 23.7% / 77.8% / 4, Mega
+> Lucario 9.2% / 57.1% / 3, **Teal Mask Ogerpon 6.6% / 40.0% / 3**.
+> 🔴 **The mirror is 31.6%, not §8ac's projected 71.4% above rating 1000.** The
+> ordering survives (it is still the biggest bucket and the most loss mass); the
+> **weight does not** — any weighted verdict quoting §8ac's shares is quoting a
+> share this dump contradicts. **Alakazam is back at 23.7%** after being dropped
+> from planning since day 9.
+> 🔴 **Censusing ntumlnoob's 330 games from THEIR seat (#2, 1162.8): Teal Mask
+> Ogerpon beats them 37.5% vs our 40.0%** ⇒ a **matchup property of the
+> archetype, not a piloting failure** — off the list before anything was spent.
+> Their overall is **64.5%, identical to ours** — ⚠ **not equal strength**,
+> their field is ~130 points stronger, so it means they are better. What it does
+> say: **the gap is not concentrated in a matchup we could close by targeting
+> better**, the same place §8bj and §8bl landed from the behavioural side. §8bn.
+>
+> ## ▶ 3. WHAT IS RUNNING / WHAT IS NEXT
+>
+> - ⏳ **Mining 5 unmined days (08-03…08-07) in the background** — the last day
+>   on disk was 08-02 and the LB top has reshuffled completely since day 13
+>   (`LiamK` 1202.3 is new). User asked for fresh/stronger demonstrators.
+> - ▶ **Petrel is the remaining named seam and is NOT yet touched** (user: "we
+>   can do the audit and petrel later on"). ⚡ **Nothing in the repo has ever
+>   looked at it**: `p70` measures whether a card is *played* per turn, never
+>   what Petrel *fetches*. The fetch choice is the uninstrumented seam.
+> - ⛔ **Do not build a passive-damage rule on §8bm** — it is a sizing kill, and
+>   both dominated tests are an order of magnitude under the gate.
+>
+> ---
+>
+> # ▶ DAY 25, 3rd SESSION (2026-08-07): THE FINAL PUSH RAN IN FULL AND SHIPPED NOTHING — F1 closed, F2 null, F3 killed, and the board reads **1010.1**
 >
 > **All four E10 items concluded in one session. Nothing cleared a bar, and every
 > bar was written before its cell ran.** ⇒ **`55326513` (`policy_v5_s2`) stands
