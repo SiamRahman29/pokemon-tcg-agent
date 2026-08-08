@@ -4476,9 +4476,59 @@ behavioural measure at all, being a joint function of damage output, opponent
 strength and game length, and it is **not confound-checked**. Nothing here
 licenses a rule; it licenses a pre-registered A/B at most.
 
+### ✅ THE CONFOUND CHECK — the gap is BEHAVIOURAL, not board mix (run before any rule)
+
+E11's one procedural win was checking the confound *before* pre-registering, so
+the same was done here. Mirror decisions only, tradeoff regime, Active on offer:
+**194 of ours, 794 of theirs.** Bucketed by the two situational features that
+make the Active attractive independent of any policy:
+
+| Active is lowest HP | Active is top prize | our n | our rate | their n | their rate |
+|---|---|---|---|---|---|
+| no | no | 98 | **1.0%** | 449 | **12.2%** |
+| no | yes | 85 | **1.2%** | 279 | **16.8%** |
+| yes | no | 11 | 54.5% | 65 | 13.8% |
+
+**Direct standardisation — our per-bucket rates re-weighted to THEIR board mix:
+4.1% → 5.5%, against their raw 14.1%.** The mix explains ~1.4 pp of a ~10 pp
+gap; **~86% of it is behaviour.** ⇒ unlike a mix artefact, there is something
+here to repair. Option-count distributions are also near-identical (6-option
+selects 40% vs 45%), so the second situational axis does not rescue the mix
+story either.
+
+⚡ **And the policies differ in KIND, not just rate.** We essentially never hit
+the Active unless it is the weakest thing on the board (1.0–1.2% when it is not
+the lowest HP); they hit it 12–17% regardless. Where the Active *is* the lowest
+HP the ordering **inverts** (us 54.5%, them 13.8%) — ⚠ on n=11, six events, so
+that cell is fragile and is reported rather than relied on.
+
+### 🔴 The condition that separates their Active hits — and it is rule-shaped
+
+| cut | us (n) | ntumlnoob (n) |
+|---|---|---|
+| Active **already damaged** | **7.0%** (86) | **22.4%** (441) |
+| Active undamaged | 1.9% (108) | 3.7% (353) |
+| Active at **50–75% HP** | **7%** (14) | **49%** (112) |
+| Active at 75–100% HP | 1% (145) | 7% (549) |
+
+⇒ **Both sides condition on the same variable and we do it ~3–6× more weakly.**
+The 1150s pile damage onto a *wounded* Active — concentrating toward a KO —
+where we top up the lowest-HP bench target instead. That is coherent with the
+KO-availability gap (**1.2% of our decisions vs 6.3% of theirs**): concentration
+*manufactures* the KO opportunities that §8bm then measures us taking 99.1% of.
+
+⚠ **Still a TRADEOFF (concentrate vs spread), and tradeoff rules are 0 for 5.**
+⚠ **Our 50–75% cell is n=14 (one event).** The `already damaged` cut (86 vs 441)
+is the sized one and is what any pre-registration must be built on.
+⛔ **No rule written.** E11 forced a soft 70% preference to 100% and lost; any
+intervention here must reproduce a *conditional rate*, and its threshold must be
+frozen before the cell runs, not tuned after.
+
 ```powershell
 python -X utf8 scripts/p73_target_policy.py --dir replays/submission_v5_s2
 python -X utf8 scripts/p73_target_policy.py --dir replays/ntumlnoob_31-07-2026 --us "李秉叡（ntumlnoob）"
+python -X utf8 scripts/p73_target_policy.py --dir replays/submission_v5_s2 \
+    --confound replays/ntumlnoob_31-07-2026 "李秉叡（ntumlnoob）" --arch grimmsnarl
 ```
 
 ## 8bn. ⚡ THE FIELD AT ~1027 IS NOT THE FIELD §8ac PROJECTED — and our per-matchup win rates are not visibly worse than the #2 player's (2026-08-08, day 26)

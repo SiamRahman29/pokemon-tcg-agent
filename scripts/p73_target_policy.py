@@ -44,8 +44,141 @@ from p9_field_census import _signature, analyse  # noqa: E402
 from p72_loss_autopsy import (  # noqa: E402
     AREA_ACTIVE, CHIP_CONTEXTS, _hp_map, _nm, _pk, _records,
 )
+from sa import cards  # noqa: E402
 
 import json  # noqa: E402
+
+
+def collect(dirs: list[str], us: set[str], want_arch: str | None) -> list[dict]:
+    """One row per tradeoff-regime damage decision where the Active was on offer.
+
+    Each row carries the SITUATION (properties of the board that make the Active
+    attractive regardless of any policy) and the CHOICE. That separation is the
+    whole point: a rate difference between two players is only behavioural if it
+    survives holding the situation fixed.
+    """
+    errs: Counter = Counter()
+    rows: list[dict] = []
+    for d in dirs:
+        for path in sorted((ROOT / d).glob("*.json")):
+            if path.name == "manifest.json":
+                continue
+            try:
+                g = analyse(path, errs, us)
+            except Exception:  # noqa: BLE001
+                continue
+            if g is None:
+                continue
+            arch = _signature(g.poke, g.max_copies)
+            if want_arch and want_arch.lower() not in arch.lower():
+                continue
+            rep = json.loads(path.read_text(encoding="utf-8"))
+            names = (rep.get("info") or {}).get("TeamNames") or []
+            seats = {i for i, n in enumerate(names) if n in us}
+            if not seats:
+                continue
+            recs = _records(rep)
+            for a, b in zip(recs, recs[1:]):
+                state = a["obs"]["current"]
+                if state.get("yourIndex") not in seats:
+                    continue
+                if a["sel"].get("context") not in CHIP_CONTEXTS:
+                    continue
+                opts = a["sel"].get("option") or []
+                if len(opts) < 2 or len(a["picked"]) != 1:
+                    continue
+                chosen_opt = opts[a["picked"][0]]
+                chosen = _pk(state, chosen_opt)
+                if not chosen:
+                    continue
+                s0, s1 = _hp_map(state), _hp_map(b["obs"]["current"])
+                ser = chosen["serial"]
+                if ser not in s0 or ser not in s1:
+                    continue
+                dmg = s0[ser] - s1[ser]
+                if dmg <= 0:
+                    continue
+                cand = [(j, o, _pk(state, o)) for j, o in enumerate(opts)]
+                cand = [(j, o, p) for j, o, p in cand if p]
+                if len(cand) < 2:
+                    continue
+                if any(0 < p["hp"] <= dmg for _, _, p in cand):
+                    continue                      # §8bm's regime, excluded
+                act = [(j, o, p) for j, o, p in cand if o.get("area") == AREA_ACTIVE]
+                if not act or len(act) == len(cand):
+                    continue                      # Active not a live choice here
+                ap_ = act[0][2]
+                hps = [p["hp"] for _, _, p in cand]
+                pv = [cards.prize_value(p["id"]) for _, _, p in cand]
+                apv = cards.prize_value(ap_["id"])
+                rows.append({
+                    "arch": arch,
+                    # --- the SITUATION ---
+                    "act_is_lowest_hp": ap_["hp"] == min(hps),
+                    "act_is_top_prize": apv == max(pv) and pv.count(max(pv)) == 1,
+                    "n_options": len(cand),
+                    # --- the CHOICE ---
+                    "chose_active": chosen_opt.get("area") == AREA_ACTIVE,
+                })
+    return rows
+
+
+def confound(ours: list[dict], theirs: list[dict], a_name: str,
+             b_name: str) -> None:
+    """Does the 'chose Active' gap survive holding the board situation fixed?"""
+    def key(r: dict) -> tuple:
+        return (r["act_is_lowest_hp"], r["act_is_top_prize"])
+
+    def rate(rs: list[dict]) -> float:
+        return sum(r["chose_active"] for r in rs) / len(rs) if rs else float("nan")
+
+    print("\n" + "=" * 78)
+    print("=== CONFOUND CHECK: is the 'chose Active' gap behaviour, or board mix? ===")
+    print("=" * 78)
+    print(f"  raw rates   {a_name}: {rate(ours):.1%} (n={len(ours)})"
+          f"   |   {b_name}: {rate(theirs):.1%} (n={len(theirs)})")
+
+    ga: dict = defaultdict(list)
+    gb: dict = defaultdict(list)
+    for r in ours:
+        ga[key(r)].append(r)
+    for r in theirs:
+        gb[key(r)].append(r)
+
+    print(f"\n  {'Active is lowest HP':<21}{'top prize':<11}"
+          f"{'our n':>7}{'our rate':>10}{'their n':>9}{'their rate':>12}{'share us':>10}{'share them':>12}")
+    keys = sorted(set(ga) | set(gb), key=lambda k: (-len(gb.get(k, [])),))
+    for k in keys:
+        A, B = ga.get(k, []), gb.get(k, [])
+        print(f"  {str(k[0]):<21}{str(k[1]):<11}{len(A):>7}"
+              f"{rate(A):>10.1%}{len(B):>9}{rate(B):>12.1%}"
+              f"{len(A)/max(len(ours),1):>10.1%}{len(B)/max(len(theirs),1):>12.1%}")
+
+    # Direct standardisation: our per-bucket rates, THEIR bucket mix. If this
+    # lands on their raw rate, the gap was mix. If it stays at ours, behaviour.
+    num = den = 0.0
+    missing = 0
+    for k, B in gb.items():
+        A = ga.get(k, [])
+        if not A:
+            missing += len(B)
+            continue
+        num += rate(A) * len(B)
+        den += len(B)
+    adj = num / den if den else float("nan")
+    print(f"\n  {a_name} rate re-weighted to {b_name}'s board mix: **{adj:.1%}**"
+          f"   ({missing} of their decisions fell in buckets we never saw)")
+    print(f"    vs our raw {rate(ours):.1%} and their raw {rate(theirs):.1%}")
+    print(f"\n  ⇒ if the adjusted rate sits near OUR raw rate, the gap is "
+          f"BEHAVIOURAL.\n    If it moves to THEIRS, the gap was the board mix "
+          f"and there is nothing to repair.")
+
+    print(f"\n  option-count mix (a second situational axis):")
+    for nm, rs in ((a_name, ours), (b_name, theirs)):
+        c = Counter(r["n_options"] for r in rs)
+        tot = sum(c.values())
+        print(f"    {nm:<12}" + "  ".join(
+            f"{k}opt {c[k]/max(tot,1):.0%}" for k in sorted(c)))
 
 
 def main() -> int:
@@ -54,7 +187,21 @@ def main() -> int:
     ap.add_argument("--us", action="append", default=["Scio"])
     ap.add_argument("--min-games", type=int, default=4,
                     help="hide archetypes rarer than this")
+    ap.add_argument("--confound", nargs=2, metavar=("DIR", "TEAM"),
+                    help="second dump + its owner's seat name; runs the "
+                         "confound check instead of the per-archetype table")
+    ap.add_argument("--arch", default="grimmsnarl",
+                    help="archetype substring to condition on for --confound")
     args = ap.parse_args()
+
+    if args.confound:
+        d2, team = args.confound
+        ours = collect(args.dir, set(args.us), args.arch)
+        theirs = collect([d2], {team}, args.arch)
+        print(f"conditioned on opponent archetype ~ {args.arch!r}: "
+              f"{len(ours)} of our decisions, {len(theirs)} of theirs")
+        confound(ours, theirs, "us", Path(d2).name[:12])
+        return 0
 
     us = set(args.us)
     errs: Counter = Counter()
