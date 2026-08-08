@@ -4403,6 +4403,84 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bo. ⚡ THE NET ALREADY BRANCHES ITS TARGETING ON THE MATCHUP — 4.1% → 90.9% "hit the Active", learned, with every rule OFF (2026-08-08, day 26)
+
+**User hypothesis** (day 26): *"depending on who we're facing, the policy could
+require changes — target the Active against Crustle, target the weakest against
+something else."* ⇒ measured before building anything (rule 14).
+
+### Why §8bm could not answer this
+
+§8bm sized the **dominated** half of targeting. A KO is on the table in **1.2%**
+of these decisions; the other **98.8% are tradeoffs**, where damage must go
+somewhere and arithmetic cannot say where. **A matchup-conditional policy lives
+entirely in that 98.8%, and §8bm measured none of it.** ⚠ So §8bm's "the net is
+99.1% correct" means *on the arithmetic subset* and must never be quoted as
+"the net targets correctly" — `p73` exists to stop exactly that over-read.
+
+### 🔴 The result: the branch the user proposed is already there, and it is huge
+
+`p73_target_policy.py`, tradeoff regime only, our 76 ladder games:
+
+| opponent | decisions | picks lowest HP | **chose Active** | mean HP hit |
+|---|---|---|---|---|
+| Marnie's Grimmsnarl (mirror) | 256 | 72.3% | **4.1%** | 77 |
+| Alakazam | 77 | 71.4% | **14.8%** | 61 |
+| Mega Lucario ex | 61 | 41.0% | **39.0%** | 121 |
+| Teal Mask Ogerpon ex | 23 | 56.5% | **61.9%** | 147 |
+| Archaludon ex | 40 | 55.0% | **62.1%** | 119 |
+| **Crustle** | 75 | 44.0% | **90.9%** | 126 |
+
+⚡ **A 22× swing in "hit the Active" across archetypes — 4.1% in the mirror to
+90.9% against Crustle — from a net with `chip_targeting`, `energy_spread` and
+`counter_source` all FALSE.** The policy the user described is not missing; it
+was learned from the corpus and it is already conditional, in the direction
+proposed, including the "target the weakest" behaviour in the mirror and against
+Alakazam (72.3% / 71.4% lowest-HP).
+
+⇒ **This retro-explains `chip_target`.** That rule imposed ONE static ranking
+("dies to 30, then most prizes, then lowest HP") across every matchup, and
+§8c measured it at **−0.126 vs Crustle** while `chip_wall_defer` recovered
+**+0.104** by *handing the select back to the net*. The recovery was never a
+better rule — **it was switching the rule off in the matchup where the net's own
+branch was better**, which is what the shipped config now does everywhere.
+
+### 📋 Housekeeping: `chip_wall_defer` is dead code in the shipped agent
+
+`bcagent.py:244` consults it only inside `if self.chip_targeting:`, and the
+shipped bundle sets `chip_targeting=False`. **B3 instance 1 cannot fire in
+production.** Harmless — the net handles the wall matchup unaided and §8an
+measured all three nets *higher* against the repaired Crustle pilot — but it
+should not be cited as a live rule.
+
+### ⚠ The one difference from the 1150s, and its base rate
+
+Same script on ntumlnoob's 330 games from **their** seat (#2, 1162.8):
+
+| matchup | metric | us (~1027) | ntumlnoob (1162.8) |
+|---|---|---|---|
+| mirror | **chose Active** | **4.1%** (256) | **14.0%** (1,263) |
+| mirror | picks lowest HP | 72.3% | 67.1% |
+| mirror | mean HP hit | 77 | 95 |
+| Crustle | chose Active | 90.9% (75) | 63.9% (263) |
+| Alakazam | chose Active | 14.8% | 14.1% |
+| all | KO was available | **1.2%** | **6.3%** |
+
+🔴 **We hit the Active in the mirror 3.4× less often than the #2 player**, on
+256 vs 1,263 decisions — real, sized and ordering-free.
+⛔ **And it is a TRADEOFF, which is 0 for 5 in this project.** It is the same
+shape as §8bj (Munkidori timing) and §8bl (Poffin) — both real, both sized, both
+confound-checked, both worth **zero Elo**. ⚠ **The 1.2% vs 6.3% KO-availability
+gap is the more interesting number and the least trustworthy**: it is not a
+behavioural measure at all, being a joint function of damage output, opponent
+strength and game length, and it is **not confound-checked**. Nothing here
+licenses a rule; it licenses a pre-registered A/B at most.
+
+```powershell
+python -X utf8 scripts/p73_target_policy.py --dir replays/submission_v5_s2
+python -X utf8 scripts/p73_target_policy.py --dir replays/ntumlnoob_31-07-2026 --us "李秉叡（ntumlnoob）"
+```
+
 ## 8bn. ⚡ THE FIELD AT ~1027 IS NOT THE FIELD §8ac PROJECTED — and our per-matchup win rates are not visibly worse than the #2 player's (2026-08-08, day 26)
 
 `p9_field_census.py` on the user-supplied `replays/submission_v5_s2` — **76
