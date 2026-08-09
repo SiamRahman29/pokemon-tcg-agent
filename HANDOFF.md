@@ -21,7 +21,30 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 26 (2026-08-08): THE PASSIVE-DAMAGE SEAM IS SIZED ON OUR OWN LADDER GAMES AND BOTH HALVES DIE AT THE GATE — and the field at 1027 is not the field we planned for
+> # ▶ START HERE — DAY 27 (2026-08-09): ANALYSIS SESSION — the correctness inventory, the DS audit, and four proposed evals. Nothing ran; nothing shipped.
+>
+> **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
+>
+> ## 1. The correctness inventory (compiled, not new measurement)
+> **Every decision class with a definable right answer (= dominated/arithmetic) is ≥96% correct unaided:** lethals 316/316 (§8), KO-in-targeting 99.1% (§8bm), Adrena-Brain source 96.1% (§8bm — dominance = source's counter load caps the move; 15/387 under-moved, 2 dmg/game), promotion 7/803 all-forced (B2), Pokégear 39/39 (§8ag). **The tradeoff mass (~98.8% of targeting, most of MAIN/TO_HAND) has NO ground truth** — only corpus agreement (71% `--equiv`, §8x; measures distance-from-mode, not skill, §8r) and expert-relative gaps (§8bo/§8bl/§8br), which are 0-for-5 when forced by rule. ⇒ the 135-Elo gap lives entirely where correctness is undefinable.
+>
+> ## 2. DS audit verdicts (assessment, no new cells)
+> - **Data quality is NOT the binding constraint** — volume/labels/demonstrators/coverage all measured dead (§1, §8t/§8u, §8bi). One untested variant: matchup-share resampling (corpus 56.9% mirror vs field 31.6%, §8bn) — prior against it (all reweighting lost monotonically with distance from the field mode), needs ≥3 seeds + fresh-game confirm, does not fit pre-freeze. Not scheduled.
+> - **Not overfitting — underfitting the corpus** (71% vs 95.6% ceiling; 8.2× capacity → −43; B8 fit better, played worse). Real overfitting is meta-level and already measured: field-mode-by-design (mirror ~0.500 cap), winner's curse 0.027–0.031, instrument weights wrong twice (§8ac vs §8bn).
+>
+> ## 3. Proposed evals beyond the arena (ranked; none built)
+> 1. **WP-regret autopsy** — score the 27 losses with `evalfn` (AUC 0.685/0.901), rank single-decision WP drops; finds frequency-1 blunders no rate-miner can. Findings still pass sizing gate + discriminator.
+> 2. **Frozen tactics/regression suite** — puzzle set of provable positions + past-bug positions; scores any net in seconds; non-regression instrument + report material.
+> 3. **Entropy/calibration profiling** — map where the net is uncertain per context/phase; the targeting map for Round-2's 1,800 s clock.
+> 4. **CRN seed pairing in the local engine** (`battle_start` takes no seed, §8ad) — paired A/B arms would collapse arena variance; best instrument investment for R2.
+> (1–2 fit pre-freeze; 3–4 are freeze-window/R2 work.)
+>
+> ## 4. Standing recommendation (unexecuted)
+> **Second-slot duplicate of `v5_s2` by ~08-14**: next submission evicts `55321893` (ens2, weaker); decision-identical agents read 63–87 apart (§8ak) and displayed = best active ⇒ max-of-two-draws ≈ +25–35 displayed, zero idea risk (E10 F2 step 4 logic). Rule-2 settling reads on `55326513` first.
+>
+> ---
+>
+> # ▶ DAY 26 (2026-08-08): THE PASSIVE-DAMAGE SEAM IS SIZED ON OUR OWN LADDER GAMES AND BOTH HALVES DIE AT THE GATE — and the field at 1027 is not the field we planned for
 >
 > **📌 USER DIRECTIVE (day 26): report work stays SUSPENDED, Track A only —
 > push the agent. Named seams: passive-damage targeting, Petrel, and "a few
