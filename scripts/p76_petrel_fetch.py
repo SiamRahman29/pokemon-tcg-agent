@@ -214,6 +214,82 @@ def report_fetch(rows: list[dict], games: int, plays: int, label: str,
     return {cid: (seen[cid], took[cid]) for cid in seen}
 
 
+SCRAPPER = 1137      # "Choose up to 2 Pokemon Tools attached to Pokemon ... discard them"
+
+
+def _board_tools(state: dict, me: int) -> tuple[int, int, Counter]:
+    """(tools on THEIR board, tools on ours, ids seen) — from `pk["tools"]`."""
+    theirs = ours = 0
+    ids: Counter = Counter()
+    for seat in (me, 1 - me):
+        pl = state["players"][seat]
+        for where in ("active", "bench"):
+            for pk in (pl.get(where) or []):
+                if not pk:
+                    continue
+                for t in (pk.get("tools") or []):
+                    ids[(t or {}).get("id") if isinstance(t, dict) else t] += 1
+                    if seat == me:
+                        ours += 1
+                    else:
+                        theirs += 1
+    return theirs, ours, ids
+
+
+def scrapper(dirs: list[str], us: set[str], label: str) -> None:
+    """Tool Scrapper's PRECONDITION at fetch time — is there a tool to scrap?
+
+    ⚠ A take rate alone cannot say whether a fetch was right. Scrapper does
+    nothing unless a Pokemon Tool is attached to something, so the only
+    interpretable unit is "taken | a target existed". Reporting 6.9% without
+    this split reads as tech awareness; the split says the opposite.
+    """
+    f: Counter = Counter()
+    tool_ids: Counter = Counter()
+    for _, seats, recs in _walk(dirs, us):
+        for i, r in enumerate(recs):
+            st = r["obs"]["current"]
+            me = st.get("yourIndex")
+            if me not in seats or len(r["picked"]) != 1:
+                continue
+            o = (r["sel"].get("option") or [])[r["picked"][0]]
+            if (o.get("type") or 0) != OPT_PLAY or _opt_card(r["obs"], o) != PETREL:
+                continue
+            nxt = next((x for x in recs[i + 1:i + 6]
+                        if x["obs"]["current"].get("yourIndex") == me
+                        and x["sel"].get("context") == FETCH_CTX), None)
+            if nxt is None:
+                continue
+            s2 = nxt["obs"]["current"]
+            opts = nxt["sel"].get("option") or []
+            avail = {_opt_card(nxt["obs"], oo) for oo in opts}
+            taken = _opt_card(nxt["obs"], opts[nxt["picked"][0]]) if nxt["picked"] else None
+            f["fetches"] += 1
+            if SCRAPPER not in avail:
+                f["scrapper already gone (it is a 1-of)"] += 1
+                continue
+            f["scrapper in deck"] += 1
+            th, ou, ids = _board_tools(s2, me)
+            tool_ids.update(ids)
+            key = ("THEIR tool on board" if th else
+                   "only OUR tool" if ou else "NO tool anywhere")
+            f[key] += 1
+            if taken == SCRAPPER:
+                f["  ...taken: " + key] += 1
+    print(f"\n=== TOOL SCRAPPER'S PRECONDITION — {label} ===")
+    for k, v in f.items():
+        print(f"  {k:<40}{v:>6}{v/max(f['fetches'],1):>9.1%}")
+    ind, th = f.get("scrapper in deck", 0), f.get("THEIR tool on board", 0)
+    if ind:
+        print(f"  → a scrappable opposing tool existed {th}/{ind} = "
+              f"{th/ind:.1%} of the fetches where Scrapper was still in the deck")
+        print(f"  → taken WITH a target: {f.get('  ...taken: THEIR tool on board', 0)}/{th}"
+              f"   |   taken with NO target: "
+              f"{f.get('  ...taken: NO tool anywhere', 0)}/{f.get('NO tool anywhere', 0)}")
+    print("  tools seen:", {_nm(k) if isinstance(k, int) else k: v
+                            for k, v in tool_ids.most_common(8)})
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", nargs="+", default=["replays/submission_v5_s2"])
@@ -225,12 +301,20 @@ def main() -> int:
                     help="second corpus of dumps to compare against")
     ap.add_argument("--vs-us", action="append", default=[],
                     help="seat name(s) in --vs; repeat for several pilots")
+    ap.add_argument("--scrapper", action="store_true",
+                    help="Tool Scrapper's precondition: was a tool ever on the board?")
     ap.add_argument("--top", type=int, default=22)
     args = ap.parse_args()
     us = set(args.us)
 
     if args.verify:
         return verify(args.dir, us)
+
+    if args.scrapper:
+        scrapper(args.dir, us, "/".join(sorted(us)))
+        if args.vs and args.vs_us:
+            scrapper(args.vs, set(args.vs_us), "/".join(sorted(args.vs_us)))
+        return 0
 
     if args.fetch:
         rows, g, p = fetches(args.dir, us)

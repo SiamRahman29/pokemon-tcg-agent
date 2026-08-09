@@ -4480,6 +4480,54 @@ be measurable against a 63-point noise floor** — which is rule 14 doing exactl
 the job it was written for, and the third time this session it has saved an
 arena run.
 
+### Addendum — why Petrel barely ever fetches Tool Scrapper (user question, same day)
+
+```powershell
+python -X utf8 scripts/p76_petrel_fetch.py --scrapper `
+    --dir replays/submission_v5_s2 `
+    --vs replays/2026-08-03 replays/2026-08-04 replays/2026-08-05 `
+         replays/2026-08-06 replays/2026-08-07 `
+    --vs-us "Raihan Ramadistra" --vs-us flg --vs-us "Sixth Sense"
+```
+
+The table above reads "Tool Scrapper 6.9% vs 3.1%" as one of the few cards we
+take **more** often than the experts. Decomposing the denominator says the
+opposite, and the mechanism is three multiplied constraints, not a judgement:
+
+| | us | experts |
+|---|---|---|
+| Petrel fetches | 121 | 1,067 |
+| Scrapper still in the deck (it is a **1-of**, `decks/grimmsnarl.py:30`) | 87 (71.9%) | 609 (57.1%) |
+| …**and an opposing tool was on the board** | **14 (16.1%)** | **196 (32.2%)** |
+| taken *with* a target | **1 / 14 = 7.1%** | 7 / 196 = 3.6% |
+| taken with **no tool anywhere** | **5 / 73** | 9 / 409 |
+
+🔴 **Five of our six Scrapper fetches happened with no tool on either board** —
+the card could not do anything the moment we got it. So the +3.8% is not tech
+awareness; conditioned on a target existing we take it **1 time in 14**. The
+honest summary is that neither side prioritises it: with a legal target on the
+board both are under 8%, because Unfair Stamp and Night Stretcher win the slot.
+
+⚠ **And the two corpora do not face the same field.** Tools seen on board: ours
+**Hero's Cape 10 / Air Balloon 3**; theirs **Air Balloon 178 / Hero's Cape 87**.
+Our opponents are a spread of real ladder names (not mirror-heavy — checked),
+so this is a *height* difference, not a matchup artefact: the experts play
+against §8bq's top-of-ladder field where Mega decks are 26% combined, and Mega
+decks carry Air Balloon. **Unverified but directly testable** by censusing tool
+cards against `avg_score` band.
+
+⛔ **Nothing to build.** "Never fetch Scrapper into a bare board" fires **5 in 76
+games = 0.066/game**; "fetch it when a tool is out and we didn't" is **13 in 76 =
+0.17/game**. Both far under the 0.5 gate, and the second is a tradeoff (rule 11).
+
+⚠ **This does weaken the standing case for cutting Tool Scrapper** from the 60
+(`decks/grimmsnarl_budew.py`, `grimmsnarl_boss.py`), which rests on 0.13
+plays/game and **0.00 per mirror game**. §8aj's mirror number was always rule-16
+compromised — our own list runs no tools, so the mirror answers by construction.
+The first non-mirror number now exists: against the field the strongest pilots
+actually face, **a scrappable tool is on the board 32.2% of the time.** The card
+is not dead there. It is still our thinnest slot; it is no longer *provably* dead.
+
 ## 8bq. THE TOP OF THE LADDER, 1,972 FRESH GAMES — our archetype is the most-played deck there and wins 47.9%, and "Mega Lucario is the best deck" is one player (2026-08-09, day 26)
 
 `scripts/p75_day_census.py` over the five newly-mined days (08-03…08-07).
