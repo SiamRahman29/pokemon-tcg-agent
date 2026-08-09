@@ -1,0 +1,195 @@
+fitting the INDEPENDENT calibration corpus (replays/2026-08-05, replays/2026-08-06, replays/2026-08-07, cap 250) ...
+  250 games, 36206 states
+scoring the corpus under autopsy (replays/submission_v5_s2) ...
+  76 games with our seat and a result
+
+==========================================================================
+=== CONTROLS — nothing below is readable if these fail ===
+==========================================================================
+
+C1. Does `evalfn` separate winners from losers AT ALL here?
+    Calibration corpus: 250 games, fitted per turn bucket.
+    turn bucket     n states      AUC        a        b  saturated
+    0-2                 4962    0.587    0.346   -0.027      0.0%
+    3-5                10512    0.747    0.473    0.296      0.0%
+    6-8                 9067    0.807    0.451    0.465      0.0%
+    9-11                6846    0.889    0.567    0.567      0.1%
+    12+                 4819    0.920    0.593    0.694      0.4%
+    early(0-5) 0.667 vs late(9+) 0.905   [§8l on self-play read 0.685 / 0.901]
+
+C2. Does that calibration TRANSFER to the corpus we are autopsying?
+    13885 states over 76 games:  AUC 0.709   Brier 0.2091   (base-rate Brier 0.2320)
+    reliability:   predicted   actual       n
+      [0.0,0.2)       0.107    0.160    1079
+      [0.2,0.4)       0.309    0.459    2094
+      [0.4,0.6)       0.506    0.625    3778
+      [0.6,0.8)       0.694    0.702    3089
+      [0.8,1.0)       0.914    0.818    3845
+
+C3. The NOISE FLOOR of one attributable delta (12434 of them, both seats, all games)
+    percentile         1%        5%       25%       50%       75%       95%       99%
+    dWP            -0.141    -0.034    -0.003    +0.000    +0.004    +0.043    +0.155
+    mean +0.0015   sd 0.0388   |  a 'blunder' must clear this scale, not merely be negative.
+
+==========================================================================
+=== THE AUTOPSY — 27 losses, 49 wins ===
+==========================================================================
+
+1. WORST ATTRIBUTABLE DECISION IN EACH LOSS
+   (dWP is from OUR seat; `boundary` pairs — where the opponent's whole
+    turn is folded in, including the reply to our attack — are excluded)
+   game       opponent               turn  worstdWP  wp before  what we chose
+   90903836   M Sato                   10    -0.205      0.431  DAMAGE(5 opts) chose Mega Lucario ex  | alts: Lunatone, Hariyama, Makuhita, Riolu
+   90756310   takayosi                  4    -0.155      0.478  ATTACH_FROM(3 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Impidimp, Marnie's Impidimp
+   90748198   SoichiOzaki               4    -0.149      0.441  ATTACH_FROM(3 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Impidimp, Marnie's Impidimp
+   90842298   less                     11    -0.140      0.293  DISCARD_ENERGY(2 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex
+   90757101   LiamK                    11    -0.124      0.688  DAMAGE(5 opts) chose Mega Lucario ex  | alts: Lunatone, Makuhita, Makuhita, Solrock
+   90751449   懒惰的金枪鱼                    8    -0.121      0.310  DISCARD_ENERGY(2 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex
+   90734367   hiro094                   8    -0.106      0.226  DAMAGE(5 opts) chose Hariyama  | alts: Cornerstone Mask Ogerpon ex, Solrock, Lunatone, Mega Lucario ex
+   90877036   Benarg                   16    -0.094      0.160  DAMAGE_COUNTER(6 opts) chose Mega Lopunny ex  | alts: Mega Froslass ex, Mega Lopunny ex, Dunsparce, Dunsparce
+   90753081   カントー地方マスター(KantoRegio     6    -0.087      0.572  DAMAGE(5 opts) chose Munkidori  | alts: Marnie's Morgrem, Marnie's Grimmsnarl ex, Marnie's Morgrem, Munkidori
+   90796954   wkonishi                 13    -0.083      0.482  DAMAGE(5 opts) chose Alakazam  | alts: Dudunsparce, Dudunsparce, Shaymin, Abra
+   90731867   Marshall Maximizer        5    -0.080      0.755  DAMAGE(5 opts) chose Munkidori  | alts: Marnie's Grimmsnarl ex, Marnie's Impidimp, Marnie's Impidimp, Munkidori
+   90905429   ShumpeiNomura             7    -0.078      0.596  DAMAGE(4 opts) chose Mega Kangaskhan ex  | alts: Slowking, Latias ex, Slowpoke
+   90892776   Lunariz                  10    -0.070      0.713  DAMAGE(5 opts) chose Abra  | alts: Fezandipiti ex, Shaymin, Abra, Dunsparce
+   90758745   doctorw                   8    -0.064      0.466  DAMAGE(5 opts) chose Munkidori  | alts: Snorunt, Marnie's Grimmsnarl ex, Munkidori, Munkidori
+   90742488   john jiang zhifeng        9    -0.062      0.629  DAMAGE(3 opts) chose Kadabra  | alts: Alakazam, Fezandipiti ex
+   90819344   vvs                      10    -0.058      0.462  DAMAGE(5 opts) chose Kadabra  | alts: Kadabra, Fezandipiti ex, Dunsparce, Dunsparce
+   90827661   ksew364                   4    -0.055      0.845  DAMAGE(3 opts) chose Marnie's Impidimp  | alts: Munkidori, Munkidori
+   90786032   Raihan Ramadistra         3    -0.046      0.813  DAMAGE(4 opts) chose Marnie's Impidimp  | alts: Marnie's Impidimp, Marnie's Impidimp, Munkidori
+   90830082   Kh0a                      8    -0.025      0.679  DAMAGE_COUNTER(6 opts) chose Budew  | alts: Dragapult ex, Dreepy, Munkidori, Drakloak
+   90812608   kanno                     8    -0.013      0.516  DISCARD_ENERGY(2 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex
+   90752258   あなまか                     13    -0.009      0.490  DISCARD_ENERGY(4 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex, Marnie's Grimmsnarl ex, Marnie's Grimmsnarl ex
+   90776706   James Cox & Henry Cha     3    -0.007      0.483  DISCARD_ENERGY(1 opts) chose Munkidori
+   90780054   James Cox & Henry Cha     5    -0.004      0.518  MAIN(14 opts) chose Buddy-Buddy Poffin  | alts: Basic {D} Energy, Basic {D} Energy, Basic {D} Energy, Basic {D} Energy
+   90731965   Boss's Orders Are All     3    -0.004      0.537  MAIN(4 opts) chose Dawn  | alts: Boss’s Orders, Team Rocket's Petrel, -
+   90733525   你好哇                       4    -0.004      0.365  MAIN(5 opts) chose Poké Pad  | alts: Poké Pad, Munkidori, Munkidori, -
+   90830664   LumenLiquidity            4    -0.003      0.259  MAIN(4 opts) chose Night Stretcher  | alts: Marnie's Morgrem, Marnie's Morgrem, -
+   90737596   Rafael                    2    -0.003      0.427  MAIN(7 opts) chose Dawn  | alts: Basic {D} Energy, Basic {D} Energy, Basic {D} Energy, Basic {D} Energy
+
+2. THE 20 WORST SINGLE DECISIONS ACROSS ALL 27 LOSSES
+    -0.205  90903836 t10  wp 0.43->0.23  DAMAGE(5 opts) chose Mega Lucario ex  | alts: Lunatone, Hariyama, Makuhita, Riolu
+    -0.155  90756310 t4   wp 0.48->0.32  ATTACH_FROM(3 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Impidimp, Marnie's Impidimp
+    -0.149  90748198 t4   wp 0.44->0.29  ATTACH_FROM(3 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Impidimp, Marnie's Impidimp
+    -0.140  90842298 t11  wp 0.29->0.15  DISCARD_ENERGY(2 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex
+    -0.124  90757101 t11  wp 0.69->0.56  DAMAGE(5 opts) chose Mega Lucario ex  | alts: Lunatone, Makuhita, Makuhita, Solrock
+    -0.121  90751449 t8   wp 0.31->0.19  DISCARD_ENERGY(2 opts) chose Marnie's Grimmsnarl ex  | alts: Marnie's Grimmsnarl ex
+    -0.106  90734367 t8   wp 0.23->0.12  DAMAGE(5 opts) chose Hariyama  | alts: Cornerstone Mask Ogerpon ex, Solrock, Lunatone, Mega Lucario ex
+    -0.094  90877036 t16  wp 0.16->0.07  DAMAGE_COUNTER(6 opts) chose Mega Lopunny ex  | alts: Mega Froslass ex, Mega Lopunny ex, Dunsparce, Dunsparce
+    -0.087  90753081 t6   wp 0.57->0.49  DAMAGE(5 opts) chose Munkidori  | alts: Marnie's Morgrem, Marnie's Grimmsnarl ex, Marnie's Morgrem, Munkidori
+    -0.083  90796954 t13  wp 0.48->0.40  DAMAGE(5 opts) chose Alakazam  | alts: Dudunsparce, Dudunsparce, Shaymin, Abra
+    -0.080  90731867 t5   wp 0.75->0.67  DAMAGE(5 opts) chose Munkidori  | alts: Marnie's Grimmsnarl ex, Marnie's Impidimp, Marnie's Impidimp, Munkidori
+    -0.079  90757101 t13  wp 0.76->0.68  SWITCH(4 opts) chose Marnie's Grimmsnarl ex  | alts: Munkidori, Froslass, Munkidori
+    -0.078  90905429 t7   wp 0.60->0.52  DAMAGE(4 opts) chose Mega Kangaskhan ex  | alts: Slowking, Latias ex, Slowpoke
+    -0.073  90751449 t8   wp 0.47->0.40  DAMAGE(5 opts) chose Munkidori  | alts: Froslass, Marnie's Grimmsnarl ex, Munkidori, Munkidori
+    -0.072  90796954 t11  wp 0.70->0.63  DAMAGE(5 opts) chose Kadabra  | alts: Alakazam, Dudunsparce, Dunsparce, Shaymin
+    -0.070  90892776 t10  wp 0.71->0.64  DAMAGE(5 opts) chose Abra  | alts: Fezandipiti ex, Shaymin, Abra, Dunsparce
+    -0.064  90758745 t8   wp 0.47->0.40  DAMAGE(5 opts) chose Munkidori  | alts: Snorunt, Marnie's Grimmsnarl ex, Munkidori, Munkidori
+    -0.062  90742488 t9   wp 0.63->0.57  DAMAGE(3 opts) chose Kadabra  | alts: Alakazam, Fezandipiti ex
+    -0.059  90758745 t10  wp 0.89->0.83  DAMAGE(4 opts) chose Marnie's Impidimp  | alts: Snorunt, Marnie's Grimmsnarl ex, Munkidori
+    -0.058  90819344 t10  wp 0.46->0.40  DAMAGE(5 opts) chose Kadabra  | alts: Kadabra, Fezandipiti ex, Dunsparce, Dunsparce
+
+2b. THE PUNISH — worst BOUNDARY swings in the losses (NOT attributable:
+    each folds our last action of the turn together with the opponent's
+    entire reply, and this is where the cost of a bad ATTACK lands)
+    -0.177  90758745 t11  wp 0.68->0.50  last was TO_ACTIVE(3 opts) chose Marnie's Grimmsnarl ex  | alts: Munkidori, Munkidori
+    -0.120  90903836 t7   wp 0.36->0.24  last was TO_ACTIVE(5 opts) chose Marnie's Grimmsnarl ex  | alts: Munkidori, Froslass, Munkidori, Marnie's Impidimp
+    -0.100  90757101 t12  wp 0.58->0.48  last was TO_ACTIVE(5 opts) chose Marnie's Morgrem  | alts: Munkidori, Froslass, Marnie's Grimmsnarl ex, Munkidori
+    -0.095  90756310 t3   wp 0.41->0.31  last was TO_ACTIVE(5 opts) chose Marnie's Impidimp  | alts: Snorunt, Snorunt, Marnie's Impidimp, Marnie's Impidimp
+    -0.081  90748198 t3   wp 0.31->0.23  last was TO_ACTIVE(4 opts) chose Marnie's Impidimp  | alts: Munkidori, Snorunt, Snorunt
+    -0.066  90733525 t3   wp 0.36->0.29  last was TO_ACTIVE(5 opts) chose Marnie's Impidimp  | alts: Snorunt, Munkidori, Munkidori, Marnie's Impidimp
+    -0.061  90757101 t8   wp 0.36->0.30  last was TO_ACTIVE(5 opts) chose Marnie's Morgrem  | alts: Munkidori, Froslass, Marnie's Grimmsnarl ex, Marnie's Impidimp
+    -0.061  90780054 t6   wp 0.22->0.16  last was TO_ACTIVE(5 opts) chose Marnie's Morgrem  | alts: Munkidori, Snorunt, Munkidori, Marnie's Impidimp
+    -0.059  90758745 t3   wp 0.13->0.07  last was TO_ACTIVE(1 opts) chose Munkidori
+    -0.055  90830664 t3   wp 0.27->0.22  last was TO_ACTIVE(3 opts) chose Marnie's Impidimp  | alts: Munkidori, Munkidori
+    -0.051  90753081 t5   wp 0.25->0.19  last was TO_ACTIVE(5 opts) chose Marnie's Morgrem  | alts: Marnie's Impidimp, Munkidori, Munkidori, Marnie's Impidimp
+    -0.049  90830664 t11  wp 0.13->0.08  last was TO_ACTIVE(4 opts) chose Munkidori  | alts: Munkidori, Munkidori, Munkidori
+    -0.047  90903836 t3   wp 0.22->0.17  last was TO_ACTIVE(2 opts) chose Marnie's Impidimp  | alts: Munkidori
+    -0.047  90734367 t3   wp 0.22->0.17  last was TO_ACTIVE(4 opts) chose Marnie's Impidimp  | alts: Snorunt, Marnie's Impidimp, Snorunt
+    -0.046  90812608 t3   wp 0.21->0.17  last was TO_ACTIVE(3 opts) chose Marnie's Impidimp  | alts: Munkidori, Snorunt
+    -0.045  90737596 t3   wp 0.21->0.16  last was TO_ACTIVE(2 opts) chose Marnie's Impidimp  | alts: Munkidori
+    -0.045  90776706 t4   wp 0.13->0.08  last was TO_ACTIVE(3 opts) chose Marnie's Impidimp  | alts: Munkidori, Snorunt
+    -0.042  90877036 t3   wp 0.19->0.15  last was TO_ACTIVE(3 opts) chose Marnie's Impidimp  | alts: Snorunt, Marnie's Impidimp
+    -0.040  90751449 t5   wp 0.18->0.14  last was TO_ACTIVE(3 opts) chose Marnie's Morgrem  | alts: Munkidori, Marnie's Morgrem
+    -0.037  90748198 t5   wp 0.12->0.08  last was TO_ACTIVE(5 opts) chose Marnie's Impidimp  | alts: Munkidori, Froslass, Snorunt, Marnie's Impidimp
+
+2c. WHERE THE LOST WP GOES — decomposition of all negative flow
+   stream                                            losses        wins
+   our own turn, attributable to our decision         6.3%       11.8%
+   boundary after OUR last decision (their reply)       3.8%        4.6%
+   their own turn, attributable to their decision      66.3%       50.8%
+   boundary after THEIR last decision (our reply)      23.6%       32.8%
+   ⚠ Read this before anything above: a stream that carries almost none
+     of the decline cannot hold the fix, however bad its worst event looks.
+
+   In ABSOLUTE WP per game — this is the number the gate applies to:
+                                                     losses        wins
+   our own turn, attributable to our decision         0.132       0.166
+   boundary after OUR last decision (their reply)       0.079       0.064
+   ⇒ a policy that made every one of our within-turn decisions PERFECT
+     could recover at most the first row, and only if every drop in it
+     were avoidable — which the wins column says it is not.
+
+3. THE CONTROLS — is a big drop a BLUNDER or just what losing looks like?
+   stream                                      n  mean worst   median      min
+   US, in the 27 losses                       27      -0.069   -0.064   -0.205
+   US, in the 49 wins                         49      -0.070   -0.061   -0.215
+   THEM, in the 27 games they won             27      -0.078   -0.069   -0.233
+   THEM, in the 49 games they lost            49      -0.052   -0.056   -0.123
+   ⚠ If 'US in losses' ≈ 'THEM in the games they won', a big worst-drop
+     is a property of the instrument and the game, not of our play.
+
+4. CONCENTRATION — does ONE decision carry the loss?
+   stream                         n  worst/our-neg  worst/total
+   losses                        27          45.8%        13.5%
+   wins                          49          40.0%        16.5%
+   (worst/our-neg = share of all OUR negative attributable dWP carried by
+    the single worst one; worst/total folds in the boundary pairs too.)
+
+5. SIZING — candidates at |dWP| >= 0.20, against the 0.5/game gate
+   all games           3 events over  76 games  = 0.039/game
+   losses only         1 events over  27 games  = 0.037/game
+   wins only           2 events over  49 games  = 0.041/game
+
+   by context:
+     MAIN                        1  (0.013/game)
+     DAMAGE_COUNTER              1  (0.013/game)
+     DAMAGE                      1  (0.013/game)
+   of which FORCED (<2 options, no decision was made): 1 of 3
+
+7. DISCRIMINATOR — does the WP ranking SEE §8bm's dominated events?
+   `p72` found plays where the same damage would have KO'd a different
+   legal target and what we hit survived. Those are known errors of
+   OMISSION. If the ranking cannot surface them, its null is a null
+   about self-inflicted damage only.
+   game         res turn      dWP  rank in game  the dominated event
+   90744917     win   16   -0.016      1 of 111  dmg=30 hit Mega Kangaskhan ex@180hp (survived)  |  KO available: Crustle@20hp
+   90754696     win   13   +0.004     86 of 124  dmg=30 hit Crustle@130hp (survived)  |  KO available: Mega Kangaskhan ex@30hp, Dwebble@30hp
+   90754696     win   15   +0.005     89 of 124  dmg=30 hit Crustle@80hp (survived)  |  KO available: Mega Kangaskhan ex@10hp
+   90780054    LOSS    7   +0.002      31 of 58  dmg=10 hit Mega Kangaskhan ex@80hp (survived)  |  KO available: Teal Mask Ogerpon ex@10hp
+   90796954    LOSS   15   +0.005      44 of 76  dmg=20 hit Shaymin@30hp (survived)  |  KO available: Alakazam@20hp
+   90863103     win   12   +0.005     86 of 116  dmg=30 hit Crustle@90hp (survived)  |  KO available: Dwebble@10hp
+   90863103     win   12   +0.005     84 of 116  dmg=30 hit Crustle@60hp (survived)  |  KO available: Dwebble@10hp
+
+6. MEAN ATTRIBUTABLE dWP BY CONTEXT (our decisions, all games)
+   ⛔ DO NOT read a negative row as 'this context is our leak'. The delta
+      after a select is dominated by the MECHANICAL consequence of that
+      context — a DAMAGE select spends our attack, so `evalfn` re-reads
+      the threat terms whatever we targeted. Only differences BETWEEN
+      options at the same state measure a choice, and that needs the
+      option-level counterfactual this script does not compute.
+   context                       n   /game   mean dWP      p05
+   MAIN                       3209   42.22    +0.0127   -0.004
+   TO_HAND                     830   10.92    +0.0125   +0.001
+   DAMAGE_COUNTER              527    6.93    +0.0084   +0.000
+   REMOVE_DMG_CTR_COUNT        504    6.63    +0.0085   +0.001
+   REMOVE_DMG_COUNTER          387    5.09    +0.0001   +0.000
+   ATTACH_FROM                 367    4.83    +0.0177   +0.002
+   ACTIVATE                    169    2.22    +0.0000   +0.000
+   DAMAGE                      157    2.07    -0.0276   -0.086
+   ATTACH_TO                   127    1.67    +0.0000   +0.000
+   SWITCH                      101    1.33    +0.0536   -0.022
+   TO_BENCH                     60    0.79    +0.0521   +0.021
+   DISCARD_ENERGY               44    0.58    -0.0193   -0.115
+   EVOLVE                       38    0.50    +0.0785   +0.003
+   TO_ACTIVE                    23    0.30    -0.0062   -0.062

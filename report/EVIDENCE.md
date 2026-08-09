@@ -4403,6 +4403,154 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bs. 🔴 THE WP-REGRET AUTOPSY RUNS ON THE 27 LOSSES — no blunder signature exists, and the method is provably blind to the half of the problem that matters (2026-08-09, day 27)
+
+Day 27 §3 proposal 1, built as `scripts/p77_wp_regret.py`, archived at
+`out/logs/p77_wp_regret.txt`. **Hypothesis (the user's named seam):** "a few
+games where 1 bad decision cost us games" — a frequency-1 blunder that every
+rate miner in this repo is structurally blind to, because a mistake made once
+has no rate to difference against the experts.
+
+**Method.** Score every decision state in the 76 shipped-agent ladder games with
+`evalfn`, map score → win probability through a logistic fitted **per turn
+bucket on an independent corpus** (250 fresh top-of-ladder games, 08-05…08-07),
+and difference consecutive states. A pair with the same actor in the same turn
+is caused by *that player's action* and is called **attributable**; a pair
+spanning the handover carries the opponent's whole reply and is called
+**boundary** and never attributed.
+
+### C1–C3: the controls, and §8l reproduced outside self-play
+
+| turn bucket | n states | AUC |
+|---|---|---|
+| 0–2 | 4,962 | 0.587 |
+| 3–5 | 10,512 | 0.747 |
+| 6–8 | 9,067 | 0.807 |
+| 9–11 | 6,846 | 0.889 |
+| 12+ | 4,819 | 0.920 |
+
+⚡ **early 0.667 / late 0.905 against §8l's 0.685 / 0.901** — the first time that
+number has been taken on *real ladder games by other players* rather than 200
+self-play games, and it replicates. The calibration transfers to our corpus
+(Brier **0.209** vs a base rate of 0.232, reliability monotone across all five
+bins). The noise floor of one attributable ΔWP is **sd 0.039**, 1st percentile
+**−0.141** — the scale any "blunder" has to clear.
+
+### 🔴 The verdict: there is no blunder signature
+
+| stream | n | mean worst ΔWP | median | min |
+|---|---|---|---|---|
+| **US, in the 27 losses** | 27 | **−0.069** | −0.064 | −0.205 |
+| US, in the 49 wins | 49 | **−0.070** | −0.061 | −0.215 |
+| THEM, in the 27 games they won | 27 | **−0.078** | −0.069 | −0.233 |
+| THEM, in the 49 games they lost | 49 | −0.052 | −0.056 | −0.123 |
+
+**Our worst decision in a game we lose is indistinguishable from our worst
+decision in a game we win (−0.069 vs −0.070), and milder than what the players
+who beat us did in those same games (−0.078).** A lost game must contain a big
+drop — the trajectory ends at zero — so the drop alone was never evidence; these
+three baselines are what make the statement falsifiable, and it does not survive
+any of them.
+
+⛔ **Sizing: 3 events at |ΔWP| ≥ 0.20 in 76 games = 0.039/game, of which one was
+FORCED (a single option — not a decision at all). One event across all 27
+losses.** Against the 0.5/game gate that killed Morgrem (0.2), Pokégear (0.27),
+Archaludon (0.187) and Petrel (0.29), this is **13× under**, and it is the
+smallest candidate rate this project has ever measured.
+
+**No concentration either:** the single worst decision carries 45.8% of our
+negative attributable ΔWP in losses — and **40.0% in wins**. And in absolute
+terms our own within-turn decisions bleed **0.132 WP/game in the losses vs 0.166
+in the wins**: the stream a blunder would live in is *larger in the games we
+won*.
+
+⚡ **Inspected, the ranked list contains no misplay.** The worst single decision
+in all 27 losses (−0.205) is *placing damage on the opponent's Mega Lucario ex*;
+the rest of the top ten is damage onto Mega Kangaskhan ex / Alakazam, and
+`DISCARD_ENERGY` picks where **the alternative is another copy of the same
+card**. The negative ΔWP after a DAMAGE select is mechanical — spending the
+attack makes `evalfn` re-read both threat terms — not evidence about the target
+chosen.
+
+### 🔴 The finding that actually matters: this method cannot see an error of omission
+
+The discriminator was run *because* a null needs one. §8bm found seven plays
+where the same damage on a different legal target would have KO'd something and
+what we hit survived — **known errors, owned by `p72`.** Where does the WP
+ranking put them?
+
+| game | result | ΔWP | rank in that game | the dominated event |
+|---|---|---|---|---|
+| 90744917 | win | −0.016 | **1 of 111** | KO available: Crustle@20hp |
+| 90754696 | win | **+0.004** | 86 of 124 | KO available: Mega Kangaskhan ex@30hp |
+| 90754696 | win | **+0.005** | 89 of 124 | KO available: Mega Kangaskhan ex@10hp |
+| **90780054** | **LOSS** | **+0.002** | 31 of 58 | KO available: Teal Mask Ogerpon ex@10hp |
+| **90796954** | **LOSS** | **+0.005** | 44 of 76 | KO available: Alakazam@20hp |
+| 90863103 | win | +0.005 | 86 of 116 | KO available: Dwebble@10hp |
+| 90863103 | win | +0.005 | 84 of 116 | KO available: Dwebble@10hp |
+
+🔴 **Six of seven score POSITIVE and rank mid-pack; the seventh clears the noise
+floor by less than half.** The reason is structural and it generalises past this
+deck: **a realized trajectory only contains the branch we took.** Declining a
+prize still deals damage, so the state improves and ΔWP is positive; the entire
+cost sits in the branch that never happened. ⇒ **the null above is a null about
+SELF-INFLICTED damage, and says nothing about foregone value.** Any future
+reading of this entry that drops that clause is misquoting it.
+
+⚠ **A second, narrower blind spot, from the same cause:** the attack is almost
+always the last select of a turn, so **the cost of a bad attack lands in
+`boundary`, never in the attributable stream.** The boundary ranking is
+dominated by `TO_ACTIVE` — the *forced* promotion after being knocked out —
+which is the opponent's turn arriving, not a choice of ours.
+
+### 🔴 Three instrument defects found on the way, and none of them reached a number
+
+The pattern of §8bc: everything below was caught by a control before it was
+published, and each is now a guard in the script.
+
+1. **The IRLS diverged on one turn bucket** — slope **74,173**, every state
+   pinned to 0/1, and the reliability table is what caught it. Fixed with a
+   standardised fit, a backtracking line search and a ridge; the script now
+   prints a per-bucket `saturated` column that would have shown it immediately.
+2. 🔴 **`evalfn` is UNDEFINED during setup and returns −8.2 on an empty board.**
+   It scores prizes as `6 - len(prize)` *taken*, so between one player's prize
+   pile being dealt and the other's it reads a six-prize deficit. Seven of the
+   27 losses showed an identical spurious "−0.202 at turn 0" until a turn-0
+   guard went in, and the same garbage was in the calibration corpus.
+   ✅ **It has never touched a shipped number:** the only live consumers are
+   `planner`/`sequencer`, which call `evaluate` at MAIN selects from turn 1 on
+   (and both are closed axes anyway). ⚠ **It IS inside §8l's early-game 0.685**,
+   which sampled turn 0 — §8l already called turns 0–1 noise, so the reading
+   survives, but the clean number is C1's 0.667.
+3. ⚠ **My own first fix was a selection bias, and it was worse than the bug.**
+   Guarding on "both actives non-empty" looked like a safe way to exclude setup;
+   it deleted **158 of 177 damage deltas**, because the state right after a
+   DAMAGE select has the defender's active empty exactly when we **knocked it
+   out**. It silently removed the successful damage and left `DAMAGE` reading
+   0.24/game instead of 2.07. Caught by diffing a context's event count against
+   the previous run. **A guard that changes a denominator by 88% is a finding,
+   not a fix.**
+
+### What this closes, and what it does not
+
+- 🔴 **The "1 bad decision cost us games" hypothesis is CLOSED for self-inflicted
+  within-turn damage**, on three independent baselines plus a sizing 13× under
+  the gate. It joins passive damage (§8bm), KO-setup (§8bp) and Petrel (§8br) —
+  **four seams named by the user, four kills, no arena time spent on any of them.**
+- ⚡ **It also re-confirms §8bm/§8bn's shape from a third angle:** the WP we lose
+  is lost while the *opponent* is acting, and our own decision stream is quieter
+  in our losses than in our wins. The gap is not a blunder rate.
+- ⛔ **NOT closed: errors of omission**, which the discriminator proves this
+  instrument cannot rank. The measurement that would close them is the
+  **option-level counterfactual** — score every legal option at the same state,
+  not the one realized trajectory. For damage placement that is pure arithmetic
+  (the damage is measured off the board, `p72`'s mapping is verified 839/840) and
+  needs no engine. **That is the next build if this axis is reopened, and it is
+  the honest version of "WP regret" the day-27 proposal was reaching for.**
+- ⚠ **Do not re-run the trajectory version at a different threshold hoping for
+  candidates.** The 0.20 line is not what killed it — the three baselines in the
+  control table are, and they are threshold-free.
+
 ## 8br. 🔴 PETREL'S FETCH IS NOW INSTRUMENTED — and the whole policy gap sizes at 0.29 fetches/game, under the gate (2026-08-09, day 26)
 
 The last seam the user named, and the only one nothing in this repo had ever

@@ -21,9 +21,62 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 27 (2026-08-09): ANALYSIS SESSION — the correctness inventory, the DS audit, and four proposed evals. Nothing ran; nothing shipped.
+> # ▶ START HERE — DAY 27 (2026-08-09): THE WP-REGRET AUTOPSY IS BUILT AND RUN — there is NO blunder signature in the 27 losses, and the method is provably blind to errors of omission
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
+>
+> ## 0. 🔴 E14 — WP-REGRET AUTOPSY: BUILT, RUN, CLOSED THE SAME SESSION (`p77_wp_regret.py`, §8bs)
+>
+> The user's named seam — *"a few games where 1 bad decision cost us games"* —
+> is the one shape no rate miner in this repo can see. It is now measured and
+> **it is not there.** `scripts/p77_wp_regret.py`, log `out/logs/p77_wp_regret.txt`.
+>
+> | control | reading |
+> |---|---|
+> | our worst decision, **27 losses** | **−0.069 WP** |
+> | our worst decision, **49 wins** | **−0.070 WP** ← identical |
+> | **their** worst decision, the 27 games **they won** | **−0.078 WP** ← worse than ours |
+> | events at \|ΔWP\| ≥ 0.20 | **3 in 76 games = 0.039/game**, 1 of them FORCED, **1 across all 27 losses** |
+>
+> ⛔ **0.039/game against the 0.5 gate — 13× under, the smallest candidate rate
+> this project has measured.** No concentration either (worst decision carries
+> 45.8% of our negative flow in losses, **40.0% in wins**), and in absolute terms
+> our own within-turn decisions bleed **0.132 WP/game in losses vs 0.166 in
+> wins** — the stream a blunder would live in is *bigger in the games we won*.
+> ⚡ **`evalfn`'s §8l AUC replicates on real ladder games: 0.667 early / 0.905
+> late** (§8l's 0.685/0.901 was 200 self-play games), fitted per turn bucket on
+> an independent 250-game corpus. The instrument is sound; the seam is empty.
+>
+> ## 0b. 🔴 THE PART TO CARRY FORWARD: a realized trajectory CANNOT see an error of omission
+>
+> The discriminator was run because a null needs one. §8bm's seven known
+> dominated plays ("a KO was available and we spread instead") score
+> **+0.002…+0.005 ΔWP and rank mid-pack** (31 of 58, 44 of 76, 86 of 124); only
+> one is rank 1 and it is −0.016, inside the noise floor. **Declining a prize
+> still deals damage, so the state improves — the whole cost sits in the branch
+> that never happened.**
+> ⇒ **§8bs is a null about SELF-INFLICTED damage only. Never quote it as "no
+> decision cost us a game."** ⚠ Same cause, second blind spot: **the attack is
+> the last select of a turn, so a bad attack's cost lands in `boundary` and is
+> never attributed.**
+> ▶ **The honest version, if this axis is reopened: the OPTION-LEVEL
+> counterfactual** — score every legal option at the same state instead of the
+> one realized trajectory. For damage placement it is pure arithmetic and needs
+> no engine (`p72`'s option→Pokémon mapping is verified 839/840).
+>
+> ## 0c. ⚠ THREE INSTRUMENT DEFECTS, none of which reached a number — and one was MINE
+>
+> 1. The IRLS **diverged** (slope 74,173, every state pinned to 0/1); the
+>    reliability table caught it. Fixed + a `saturated` column now prints.
+> 2. 🔴 **`evalfn` is UNDEFINED during setup — it returns −8.2 on an empty
+>    board**, because it reads prizes as `6 - len(prize)` *taken* and one pile is
+>    dealt before the other. ✅ Never touched a shipped number (live callers are
+>    `planner`/`sequencer` at MAIN, turn ≥ 1, both closed axes) — but **it is
+>    inside §8l's early-game 0.685**, whose clean value is 0.667.
+> 3. ⚠ **My first fix was a selection bias worse than the bug:** guarding on
+>    "both actives non-empty" deleted **158 of 177 damage deltas** — the state
+>    after a DAMAGE select has the defender's active empty exactly when we
+>    **KO'd** it. **A guard that moves a denominator 88% is a finding, not a fix.**
 >
 > ## 1. The correctness inventory (compiled, not new measurement)
 > **Every decision class with a definable right answer (= dominated/arithmetic) is ≥96% correct unaided:** lethals 316/316 (§8), KO-in-targeting 99.1% (§8bm), Adrena-Brain source 96.1% (§8bm — dominance = source's counter load caps the move; 15/387 under-moved, 2 dmg/game), promotion 7/803 all-forced (B2), Pokégear 39/39 (§8ag). **The tradeoff mass (~98.8% of targeting, most of MAIN/TO_HAND) has NO ground truth** — only corpus agreement (71% `--equiv`, §8x; measures distance-from-mode, not skill, §8r) and expert-relative gaps (§8bo/§8bl/§8br), which are 0-for-5 when forced by rule. ⇒ the 135-Elo gap lives entirely where correctness is undefinable.
@@ -32,8 +85,8 @@ it lets any team name in a replay be joined to its rating.
 > - **Data quality is NOT the binding constraint** — volume/labels/demonstrators/coverage all measured dead (§1, §8t/§8u, §8bi). One untested variant: matchup-share resampling (corpus 56.9% mirror vs field 31.6%, §8bn) — prior against it (all reweighting lost monotonically with distance from the field mode), needs ≥3 seeds + fresh-game confirm, does not fit pre-freeze. Not scheduled.
 > - **Not overfitting — underfitting the corpus** (71% vs 95.6% ceiling; 8.2× capacity → −43; B8 fit better, played worse). Real overfitting is meta-level and already measured: field-mode-by-design (mirror ~0.500 cap), winner's curse 0.027–0.031, instrument weights wrong twice (§8ac vs §8bn).
 >
-> ## 3. Proposed evals beyond the arena (ranked; none built)
-> 1. **WP-regret autopsy** — score the 27 losses with `evalfn` (AUC 0.685/0.901), rank single-decision WP drops; finds frequency-1 blunders no rate-miner can. Findings still pass sizing gate + discriminator.
+> ## 3. Proposed evals beyond the arena (ranked)
+> 1. ~~**WP-regret autopsy**~~ 🔴 **BUILT AND CLOSED — see §0/§0b above and §8bs.** The promise ("finds frequency-1 blunders no rate-miner can") was **half true**: it finds frequency-1 *self-inflicted* drops — there are none above the noise floor — and is **provably blind** to frequency-1 *missed opportunities*, which is what the discriminator established.
 > 2. **Frozen tactics/regression suite** — puzzle set of provable positions + past-bug positions; scores any net in seconds; non-regression instrument + report material.
 > 3. **Entropy/calibration profiling** — map where the net is uncertain per context/phase; the targeting map for Round-2's 1,800 s clock.
 > 4. **CRN seed pairing in the local engine** (`battle_start` takes no seed, §8ad) — paired A/B arms would collapse arena variance; best instrument investment for R2.

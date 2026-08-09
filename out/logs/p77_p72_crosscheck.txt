@@ -1,0 +1,73 @@
+loaded 76 replays (0 unreadable)
+[verify] chosen option names the damaged Pokemon: 839/840  (258 ambiguous, excluded)
+  ✅ mapping holds; the autopsy below rests on it.
+
+=== 76 games, 27 lost (35.5%) ===
+
+=== DENOMINATOR: are these decisions even real? ===
+  context                     selects  >=2 options  real share
+  13 DAMAGE_COUNTER               532          527      99.1%
+  15 DAMAGE                       278          245      88.1%
+  TOTAL                           810          772      95.3%   = 10.2 real choices/game
+
+=== THE DOMINATED CANDIDATE: a KO was available and we spread instead ===
+  events                          7
+  per game                        0.09   (sizing gate is 0.5/game)
+  share of real damage choices    0.9%
+  in games we LOST                2 of 7  (28.6%; losses are 35.5% of games)
+  distinct LOST games touched     2 of 27
+
+  by context: {15: 1, 13: 6}
+  how many KOs were on offer: {1: 6, 2: 1}
+
+=== WHAT WE HIT INSTEAD (the tradeoff check) ===
+  If we were hitting the ACTIVE while a bench KO went begging, that
+  is a defensible tradeoff. If we were hitting another BENCH slot,
+  it is much closer to dominated.
+   {'bench': 5, 'active': 2}
+
+  chosen target card: [('Crustle', 4), ('Mega Kangaskhan ex', 2), ('Shaymin', 1)]
+  the KO we passed up: [('Dwebble', 3), ('Mega Kangaskhan ex', 2), ('Crustle', 1), ('Teal Mask Ogerpon ex', 1), ('Alakazam', 1)]
+
+=== SAMPLE EVENTS (lost games first) ===
+  LOSS 90780054 ctx13 dmg= 10  hit Mega Kangaskhan ex@80hp (survived)  |  KO available: Teal Mask Ogerpon ex@10hp
+  LOSS 90796954 ctx13 dmg= 20  hit Shaymin@30hp (survived)  |  KO available: Alakazam@20hp
+  win  90744917 ctx15 dmg= 30  hit Mega Kangaskhan ex@180hp (survived)  |  KO available: Crustle@20hp
+  win  90754696 ctx13 dmg= 30  hit Crustle@130hp (survived)  |  KO available: Mega Kangaskhan ex@30hp, Dwebble@30hp
+  win  90754696 ctx13 dmg= 30  hit Crustle@80hp (survived)  |  KO available: Mega Kangaskhan ex@10hp
+  win  90863103 ctx13 dmg= 30  hit Crustle@90hp (survived)  |  KO available: Dwebble@10hp
+  win  90863103 ctx13 dmg= 30  hit Crustle@60hp (survived)  |  KO available: Dwebble@10hp
+
+
+======================================================================
+=== ADRENA-BRAIN SOURCE PICK (ctx 16) — the dominated test ===
+======================================================================
+  selects                         532   (7.0/game)
+  with >=2 options (a real pick)  387   (5.09/game)  <- sizing gate is 0.5
+
+  UNDER-MOVED (a source carrying more was available)
+    events                        15   (0.20/game)
+    share of real picks           3.9%
+    in games we LOST              4 of 15
+
+  damage actually moved           10750
+  damage available to move        10910
+  LEFT ON THE TABLE               160   (1.5% of the ability's value, 2 damage/game)
+  gap size histogram: {10: 14, 20: 1}
+
+  === SAMPLE (lost games first) ===
+    LOSS 90830082  moved 20 off Munkidori (90/110)  |  30 was available off Munkidori (80/110)
+    LOSS 90877036  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (80/110)
+    LOSS 90903836  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (70/110)
+    LOSS 90903836  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (80/110)
+    win  90728827  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Marnie's Grimmsnarl ex (60/320)
+    win  90744917  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (70/110)
+    win  90744917  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (70/110)
+    win  90744917  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (80/110)
+    win  90744917  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (60/110)
+    win  90746566  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (50/110)
+    win  90750643  moved 10 off Marnie's Grimmsnarl ex (310/320)  |  30 was available off Munkidori (70/110)
+    win  90757929  moved 20 off Munkidori (90/110)  |  30 was available off Marnie's Grimmsnarl ex (120/320)
+    win  90757929  moved 20 off Munkidori (90/110)  |  30 was available off Marnie's Grimmsnarl ex (120/320)
+    win  90773206  moved 20 off Marnie's Grimmsnarl ex (300/320)  |  30 was available off Munkidori (80/110)
+    win  90894388  moved 20 off Munkidori (90/110)  |  30 was available off Marnie's Grimmsnarl ex (120/320)
