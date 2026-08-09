@@ -424,7 +424,19 @@ conformity metric, and conformity to the mode is exactly a ~1000 rating.**
 | **B9** | **Marginalise the bench-slot nuisance** the net provably reads (§8bt: 16.9% of decisions flip under a semantically-null relabelling, MAIN 24.8%) | 🔴 **NULL, pre-registered.** `bc:sym8` 0.513 [0.492, 0.535] vs 0.500, n=2,000, both controls holding (`sym1` bitwise identical, `sym8` firing on 8.36% of selects). §8bu. Code stays, off by default |
 | **B10** | **"Imitation without a plan"** — condition the policy on a latent LINE and commit to it, attacking §8u's −92 Elo directly | 🔴 **Premise killed at the sizing gate, no net trained.** §8bv: plan clusters carry ≤ **+0.090 bits** about the next action beyond the board, against a **+0.372** estimator control with only two groups |
 
-⚡ **The thread is NOT closed — one operationalisation of it is.** §8u's founding
+🔴 **CLOSED 2026-08-10 (day 28) — all three operationalisations are now dead.**
+B10's latent plan died at its sizing gate (§8bv); **E16 measured the experts'
+moves as no better than ours** (+0.0066 [−0.0018, +0.0150] over 600 positions,
+with the 1100+ band at −0.0000, §8bx); and **arm C's difference-in-differences
+found no coherence effect** (−0.0051 [−0.0228, +0.0126]). ⚠ H1 is *unsupported,
+not refuted* — the expert-like continuation differs from our clone by only ~7
+agreement points — but it closes on **actionability** regardless: exploiting it
+needs a coherent expert imitator, which is B7, which measured −55/−92 Elo.
+⚡ **The by-product outlives the thread:** the mean gap is zero but the per-decision
+spread is 0.077–0.087, so there is real value at these decisions that nobody
+captures. That is §2.7's sizing gate, passed. ⇒ **the line hands off to the clock.**
+
+⚡ **The original day-27 note, kept:** one operationalisation of it is. §8u's founding
 datum stands (cloning the #2 player *successfully* cost 92 Elo, with covariate
 shift ruled out by §8s), and **HANDOFF §N** carries the two hypotheses it cannot
 yet separate plus three ranked probes. ⚠ The most valuable of those needs no

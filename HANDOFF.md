@@ -96,10 +96,28 @@ it lets any team name in a replay be joined to its rating.
 > per-decision gap whose SIGN varies, with the experts landing on the right side
 > no more often than we do. **The dispersion is the live quantity** — and it is
 > simultaneously the sizing gate for ROADMAP §2.7 (the clock).
-> ▶ **Next, pre-registered before the null was seen: arm C** — the
-> difference-in-differences with `out/policy_b7_ntum.npz` as the continuation
-> policy. Δ ≈ 0 is predicted by **both** H1 and H2, so only swapping who follows
-> the move up can separate them. ✅ b7 loads and scores against current features.
+> ## 🔴 N.0c ARM C RAN — H1 UNSUPPORTED, AND THE IMITATION THREAD IS CLOSED
+>
+> Same 300 positions, continuation swapped to `policy_b7_ntum`:
+> clone +0.0107, expert-like +0.0056, **DiD −0.0051 [−0.0228, +0.0126]**.
+> The expert's move is worth no more when followed up their way.
+> ⚠ **Treatment is weak** — b7 differs from the clone by only ~7 agreement
+> points — so H1 is **unsupported, not refuted** (§8ao's label for B8's β).
+> 🔴 **The thread closes on ACTIONABILITY:** exploiting H1 requires a coherent
+> expert imitator, which *is* B7, which measured **−55 / −92 Elo**. All three
+> operationalisations are now closed — latent plan (§8bv), per-move quality
+> (§8bx), coherence (arm C).
+>
+> ## ✅ N.0d WHERE IT HANDS OFF: the clock, with its gate already green
+>
+> E16's by-product is the live lead. **Mean gap between the experts' moves and
+> ours ≈ 0; TRUE per-position spread 0.077–0.087** over three independent
+> samples ⇒ typical |gap| **0.061–0.069**, 90th percentile **0.126** against
+> ROADMAP §2.7's pre-declared **0.10** build line. **The value is real and
+> nobody captures it — not us, not the 1100+ band.** A problem search can solve
+> and imitation cannot, because there is no demonstrator to clone.
+> ⛔ Unchanged: the **large-or-nothing** validation blocker (§2.7) — an agent
+> spending real time per move cannot be A/B'd at n≥2000 on this box.
 >
 > 📌 **USER DECISION (day 28): run this thread until it is dead, THEN take up
 > the clock.** ROADMAP §2.7 holds the parked clock design, its price, its kill

@@ -21,3 +21,34 @@ population: replays/mirror_experts, rating ≥ 1050.0
 [treatment] expert's move vs our net's move, 300 positions × 30 pairs
     [treat] 50/300 positions, 320s
     [treat] 100/300 positions, 578s
+    [treat] 150/300 positions, 834s
+    [treat] 200/300 positions, 1063s
+    [treat] 250/300 positions, 1329s
+  Δ(expert − ours): Δ = +0.0107 [-0.0019, +0.0232]  k=300 positions × 30 pairs (clustered on position)
+  [dispersion] observed per-position sd 0.1107; measurement noise 0.0690; ⇒ TRUE sd ≈ 0.0866
+  ⇒ typical |gap| at a disagreement ≈ 0.0691 (E|X| for a normal). An oracle picking the better side gains ≈ 0.0345/decision over a coin flip.
+  scale bar (§8bw, clone's own top vs last): +0.120
+  wall: 1609s treatment + 345s control
+  ⇒ NULL: their per-move advantage is invisible to a clone continuation. H1 and H2 both predict this ⇒ arm C decides.
+
+[arm C] SAME 300 positions, continuation swapped to out/policy_b7_ntum.npz #9e27e172
+  ⚠ Read the DIFFERENCE-IN-DIFFERENCES, never the level: b7_ntum is a weaker player (−92 Elo standalone, §8u), and a weaker continuation changes how long ANY early advantage persists — a level effect that hits both arms and cancels only in the difference.
+    [armC] 50/300 positions, 187s
+    [armC] 100/300 positions, 363s
+    [armC] 150/300 positions, 559s
+    [armC] 200/300 positions, 741s
+    [armC] 250/300 positions, 943s
+  Δ(expert − ours) | expert continuation: Δ = +0.0056 [-0.0090, +0.0201]  k=300 positions × 30 pairs (clustered on position)
+  🔴 DiD = -0.0051 [-0.0228, +0.0126]  k=300 positions, paired
+  ⇒ H2: the move's value does not depend on who continues. Coherence is not the mechanism ⇒ the thread turns to credit assignment (N.4.3).
+
+[exploratory — cannot produce a rule on its own]
+  turns 0-2: Δ=+0.0417 k=16
+  turns 3-5: Δ=+0.0358 k=73
+  turns 6-8: Δ=-0.0141 k=85
+  turns 9-11: Δ=+0.0092 k=71
+  turns 12-14: Δ=+0.0085 k=55
+  by rating band (pre-declared -- does the cut drive the answer?)
+    1050-1075  Δ=+0.0727 ±0.0792  k=11
+    1075-1100  Δ=+0.0064 ±0.0144  k=241
+    1100+      Δ=+0.0181 ±0.0228  k=48

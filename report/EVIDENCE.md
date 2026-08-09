@@ -4504,11 +4504,41 @@ distribution is similar but not identical. (4) None of this touches the
 **validation** blocker (§2.7): an agent spending real time per move cannot be
 A/B'd at n≥2000 on this box, so the axis remains **large-or-nothing**.
 
-▶ **Next, and pre-registered before the null was seen: arm C**, the
-difference-in-differences with `out/policy_b7_ntum.npz` as the continuation
-policy. Δ ≈ 0 is predicted by **both** H1 and H2, so the null does not
-adjudicate them; only swapping who follows the move up does. ✅ The b7 net loads
-and scores against the current feature set (verified).
+### 🔴 ARM C — the H1/H2 discriminator ran, and H1 is not supported
+
+`--arm-c out/policy_b7_ntum.npz #9e27e172`, log `out/logs/p81_e16_armc.txt`.
+Both continuations measured on the **same 300 positions**, differenced pairwise.
+
+| continuation | Δ(expert − ours) |
+|---|---|
+| shipped clone | +0.0107 [−0.0019, +0.0232] |
+| **b7_ntum** (67.2% agreement with the expert, §8u) | +0.0056 [−0.0090, +0.0201] |
+| **DiD** | **−0.0051 [−0.0228, +0.0126]** |
+
+⛔ **The DiD covers zero.** The expert's move is worth no more when an
+expert-imitating policy follows it up than when ours does. **H1 — "their moves
+are only good as a coherent sequence, so partial copying breaks them" — gets no
+support at the strongest contrast we can build.**
+
+⚠ **And the honest limit on that, which caps the claim: the treatment is WEAK.**
+`b7_ntum` agrees with ntumlnoob on **67.2%** of decisions against the clone's
+**59.9%** (§8u) — the two continuations differ by only **~7 agreement points**.
+A null DiD therefore bounds the effect *per agreement point*; it does **not**
+rule out that a fully coherent expert continuation would show something.
+⇒ **H1 is unsupported, not refuted** — the same honest label §8ao gave B8's β.
+
+🔴 **But the thread still closes, on actionability rather than truth.** Even if
+H1 holds, the only mechanism for exploiting it is building a coherent expert
+imitator — **which is exactly B7, and B7 measured −55 and −92 Elo** (§8t/§8u).
+There is no stronger expert-like policy in the repo and no route to one. ⇒ every
+operationalisation of "imitation without a plan" is now closed: the latent plan
+(§8bv, killed at its sizing gate), per-move quality (§8bx, null), and coherence
+(arm C, null). **The thread's own logic points where §N.3 said it would — credit
+assignment — and E16's dispersion is already that instrument.**
+
+⚡ **Third independent estimate of the dispersion, and it holds:** true sd
+**0.0866** here (0.0768 on the 220-position run), typical |gap| **0.069**.
+The headroom finding does not depend on which sample measured it.
 
 ## 8bw. ✅ THE INSTRUMENT THIS PROJECT HAS NEVER HAD IS FEASIBLE — a real position forks out of a replay and its options can be scored by rollout (2026-08-09, day 27, 3rd session)
 
