@@ -77,8 +77,14 @@ class PolicyAgent:
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
                  seq_budget: float = 0.35, seq_reply: bool = False,
                  flip_margin: float | None = None,
-                 poffin_force: bool = False):
+                 poffin_force: bool = False, sym_k: int = 0):
         self.decklist = list(decklist)
+        # R2 (day 27): average the decision over K bench-slot relabellings, a
+        # nuisance variable the net demonstrably reads -- 16.9% of decisions
+        # flip under one (EVIDENCE 8bt, sa/symavg.py). 0 = off; 1 = the no-op
+        # control (identity relabelling only, still pays the extra plumbing).
+        self.sym_k = int(sym_k or 0)
+        self._sym_rng = None
         # E3's teacher-free gate (day 23). Take the OTHER side of a near-tie:
         # when the logit gap between the lowest-scored SELECTED option and the
         # highest-scored UNSELECTED one is below this, swap them. This is not a
@@ -226,6 +232,27 @@ class PolicyAgent:
         STATS["flips"] += 1
         return [high if i == low else i for i in picked]
 
+    def _sym_choose(self, net, obs: dict) -> list[int]:
+        """`net.choose` with the bench relabelling averaged out (R2).
+
+        Falls back to the plain path on any failure -- this is an experiment
+        wrapped around the shipped agent, and it must never be the reason a
+        live episode forfeits.
+        """
+        from . import symavg
+        import random as _random
+        if self._sym_rng is None:
+            self._sym_rng = _random.Random(17)
+        try:
+            sc = symavg.sym_scores(net, obs, self.sym_k, self._sym_rng)
+            if sc is None:
+                return net.choose(obs)
+            # `pick` owns the count rule; srepr is only read by the `learned`
+            # count head, which the shipped COUNT_MODE ("table") does not use.
+            return net.pick(obs, sc, None)
+        except Exception:  # noqa: BLE001
+            return net.choose(obs)
+
     def __call__(self, obs: dict) -> list[int]:
         STATS["calls"] += 1
         try:
@@ -259,7 +286,10 @@ class PolicyAgent:
                 # infer. Counted so it can be read instead.
                 STATS["net_missing"] += 1
                 return list(range(mn))
-            picked = net.choose(obs)
+            if self.sym_k:
+                picked = self._sym_choose(net, obs)
+            else:
+                picked = net.choose(obs)
             if self.flip_margin is not None:
                 picked = self._flip_near_tie(net, obs, picked)
             if self.boss_veto:

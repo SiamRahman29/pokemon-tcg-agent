@@ -223,6 +223,7 @@ def build_agent(spec: str, deck: list[int],
         # E3 near-tie probe: None = off, and the agent is then byte-identical
         # in behaviour to what it was before the probe existed.
         flip_margin = None
+        sym_k = 0
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -269,6 +270,11 @@ def build_agent(spec: str, deck: list[int],
                 # boundary near-tie under this logit margin. `flip0` is a
                 # no-op control that still pays the second forward pass.
                 flip_margin = float(f[4:])
+            elif f.startswith("sym"):
+                # R2 (day 27): average the decision over K bench-slot
+                # relabellings (sa/symavg.py, EVIDENCE 8bt). `sym1` is the
+                # no-op control -- identity relabelling only.
+                sym_k = int(f[3:])
             elif f.startswith("sk"):
                 seq_k = int(f[2:])          # candidates per select
             elif f.startswith("sd"):
@@ -311,7 +317,7 @@ def build_agent(spec: str, deck: list[int],
                                 seq_k=seq_k, seq_dets=seq_dets,
                                 seq_budget=seq_budget, seq_reply=seq_reply,
                                 flip_margin=flip_margin,
-                                poffin_force=poffin)
+                                poffin_force=poffin, sym_k=sym_k)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

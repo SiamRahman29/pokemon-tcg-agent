@@ -67,15 +67,25 @@ def _opt_key(obs: dict, j: int) -> tuple:
     hp = ecount = -1
     area, idx = o.get("area"), o.get("index") or 0
     pi = o.get("playerIndex")
-    pi = st.get("yourIndex") if pi is None else pi
-    try:
-        pl = st["players"][pi]
-        arr = pl["active"] if area == 4 else (pl["bench"] if area == BENCH else None)
-        if arr is not None and 0 <= idx < len(arr) and arr[idx]:
-            hp, ecount = arr[idx]["hp"], len(arr[idx]["energies"])
-    except (KeyError, IndexError, TypeError):
-        pass
-    return (o.get("type"), area, pi, cid, hp, ecount)
+    me = st.get("yourIndex")
+    pi = me if pi is None else pi
+
+    def _at(owner, ar, ix):
+        try:
+            pl = st["players"][owner]
+            arr = (pl["active"] if ar == 4
+                   else (pl["bench"] if ar == BENCH else None))
+            if arr is not None and 0 <= ix < len(arr) and arr[ix]:
+                return arr[ix]["id"], arr[ix]["hp"], len(arr[ix]["energies"])
+        except (KeyError, IndexError, TypeError):
+            pass
+        return (-1, -1, -1)
+
+    _, hp, ecount = _at(pi, area, idx)
+    # ATTACH/EVOLVE name a SECOND in-play target; it must be part of the
+    # identity or a corrupted `inPlayIndex` is invisible to the keyset control.
+    tgt = _at(me, o.get("inPlayArea"), o.get("inPlayIndex") or 0)
+    return (o.get("type"), area, pi, cid, hp, ecount, tgt)
 
 
 def _permute_bench(obs: dict, seat: int, perm: list[int]) -> dict | None:
@@ -94,14 +104,25 @@ def _permute_bench(obs: dict, seat: int, perm: list[int]) -> dict | None:
     inv = [0] * n
     for new, old in enumerate(perm):
         inv[old] = new
+    me = st.get("yourIndex")
     for o in (out["select"].get("option") or []):
         pi = o.get("playerIndex")
-        pi = st.get("yourIndex") if pi is None else pi
+        pi = me if pi is None else pi
         if o.get("area") == BENCH and pi == seat:
             k = o.get("index") or 0
             if not 0 <= k < n:
                 return None
             o["index"] = inv[k]
+        # 🔴 ATTACH/EVOLVE (types 8, 9) name their in-play target through a
+        # SECOND pair of fields, and `optfeat` reads both (`_target_pokemon`,
+        # `slot_ix`). Leaving these stale does not relabel the position, it
+        # CORRUPTS the option -- the first version of this probe did exactly
+        # that and its 18.2% was partly measuring broken attach targets.
+        if o.get("inPlayArea") == BENCH and seat == me:
+            k = o.get("inPlayIndex") or 0
+            if not 0 <= k < n:
+                return None
+            o["inPlayIndex"] = inv[k]
     return out
 
 
@@ -185,6 +206,16 @@ def main() -> int:
                 o2 = _permute_bench(obs, seat, perm)
                 if o2 is None:
                     continue
+                # ARM 0 — KEYSET CONTROL. A relabelling must permute WHICH SLOT
+                # holds each Pokemon and nothing else, so the multiset of option
+                # identities is invariant. This is the control that catches a
+                # corrupted option (it is how the stale `inPlayIndex` was found)
+                # and it must read 0 or the arm below is measuring damage.
+                k0 = sorted(_opt_key(obs, j) for j in range(len(opts)))
+                k1 = sorted(_opt_key(o2, j) for j in range(len(opts)))
+                if k0 != k1:
+                    stats["keyset VIOLATIONS"] += 1
+                    continue
                 try:
                     s2 = net.scores(o2)
                 except Exception:  # noqa: BLE001
@@ -204,6 +235,11 @@ def main() -> int:
     print(f"  {of}/{ot} = {of/max(ot,1):.3%} of relabelings change the choice")
     print("  ✅ near 0 means the harness is sound" if of / max(ot, 1) < 0.005
           else "  🔴 NON-ZERO — the remapping harness is broken; arm 2 is void")
+
+    kv = stats["keyset VIOLATIONS"]
+    print(f"\nARM 0 (CONTROL) relabelling preserves the option identity multiset")
+    print(f"  {kv} violations"
+          + ("  ✅" if kv == 0 else "  🔴 the relabelling CORRUPTS options — arm 2 is void"))
 
     print(f"\nARM 2 our own BENCH slot relabelling (semantically null)")
     print(f"  {bf}/{bt} = {bf/max(bt,1):.3%} of relabelings change the choice")
