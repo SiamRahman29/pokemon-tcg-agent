@@ -103,9 +103,19 @@ it lets any team name in a replay be joined to its rating.
 >
 > ## ▶ 4. WHAT IS RUNNING / WHAT IS NEXT
 >
-> - ✅ **Mining of 08-03…08-07 COMPLETE: 1,978 fresh games** (401/376/401/401/399).
->   ⚠ **Not yet censused** — unknown whether they contain `LiamK` (1202) or how
->   much is our archetype. That census is the cheapest next read.
+> - ✅ **08-03…08-07 mined AND censused: 1,972 games, 3,944 seats** (`p75_day_census.py`).
+>   ⚠ **The feed's floor has RISEN — `avg_score` min 1100, median 1166** (§8i
+>   said ~1055). This is ~140 points above our 1027.
+>   🔴 **Our archetype is the MOST-PLAYED deck up there (23.7%) and wins 47.9%
+>   — 46.2% excluding its top pilot, so it is a DECK property, not a pilot one.**
+>   ⚡ **"Mega Lucario ex is the best deck (62.6%)" is FALSE — Majkel1337 is
+>   84.2% of its games; every other Lucario pilot wins 43.5%.** The
+>   pilot-concentration control in `p75` is what caught it; run it before
+>   quoting any archetype win rate from a top-of-ladder dump. §8bq.
+>   ⚡ **`李秉叡（ntumlnoob）` has switched off Grimmsnarl to Dudunsparce.** §8bo's
+>   comparison stands (it was like-for-like), but they are no longer the
+>   demonstrator to mine. **`flg` (90 games, 55.6%) is the best current
+>   Grimmsnarl source; `Raihan Ramadistra` (472) is the volume.**
 > - ▶ **Petrel is the remaining named seam and is NOT yet touched** (user: "we
 >   can do the audit and petrel later on"). ⚡ **Nothing in the repo has ever
 >   looked at it**: `p70` measures whether a card is *played* per turn, never

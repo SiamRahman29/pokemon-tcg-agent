@@ -4403,6 +4403,87 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bq. THE TOP OF THE LADDER, 1,972 FRESH GAMES — our archetype is the most-played deck there and wins 47.9%, and "Mega Lucario is the best deck" is one player (2026-08-09, day 26)
+
+`scripts/p75_day_census.py` over the five newly-mined days (08-03…08-07).
+`p9_field_census` censuses *from a seat*, which a mined day does not have — this
+walks the `visualize` stream once and attributes boards to **both** players, then
+joins `manifest.csv`'s `avg_score`.
+
+```
+python -X utf8 scripts/p75_day_census.py \
+    --dir replays/2026-08-03 replays/2026-08-04 replays/2026-08-05 \
+          replays/2026-08-06 replays/2026-08-07
+```
+
+**1,972 games, 3,944 seat-appearances, 36 archetypes, 1 episode dropped** (null
+reward — an errored game has no winner and is dropped whole, never scored as a
+loss).
+
+### ⚠ The censoring floor has RISEN since §8i
+
+`avg_score`: **min 1100, median 1166, max 1296**, all 1,972 joined. §8i put the
+floor at ~1055. **This dump is ~140 points above our own 1027.2.** Everything
+below describes the top of the ladder. ⛔ Still never an anchor.
+
+### The field up there
+
+| archetype | seats | share | WR | mean rating |
+|---|---|---|---|---|
+| **Marnie's Grimmsnarl ex (ours)** | 933 | **23.7%** | **47.9%** | 1161 |
+| Mega Lucario ex | 730 | 18.5% | 62.6% | 1205 |
+| Dudunsparce | 522 | 13.2% | 49.0% | 1165 |
+| Alakazam | 456 | 11.6% | 45.2% | 1160 |
+| Mega Lopunny ex | 294 | 7.5% | 33.0% | 1169 |
+| Dragapult ex | 263 | 6.7% | 51.0% | 1163 |
+
+⚠ Win rates here are population statistics over both seats, so they average to
+50% by construction; read them as *relative to the field*, not as skill.
+
+### 🔴 The control that rewrote the second headline
+
+At this level a deck can be **one pilot wearing a deck's name** — the §8bn
+mistake. So: top pilot's share of each archetype, their WR, and everyone else's.
+
+| archetype | top pilot | their share | their WR | **everyone else** |
+|---|---|---|---|---|
+| Mega Lucario ex | Majkel1337 | **84.2%** | 66.2% | **43.5%** |
+| Marnie's Grimmsnarl ex | Raihan Ramadistra | 50.6% | 49.6% | **46.2%** |
+| Hariyama | Majkel1337 | 88.3% | 79.2% | 71.4% |
+| Dudunsparce | LiamK | 28.9% | 52.3% | 47.7% |
+
+⚡ **"Mega Lucario ex is the best deck at 62.6%" is FALSE.** Majkel1337 is 84.2%
+of its games at 66.2%; **every other Lucario pilot wins 43.5%.** The deck is
+below average and one player is carrying it. Had this gone unchecked it would
+have argued for a deck switch on the strength of one opponent's skill.
+
+🔴 **Our archetype's 47.9% survives the same control: 46.2% excluding its top
+pilot.** That is a *deck* property, not a pilot artefact. **The most-played deck
+at the top of the ladder wins slightly under half**, and Grimmsnarl's 23.7%
+share means a large mirror fraction pulling it toward 50 — so its non-mirror
+record is worse than 47.9%. ⚠ This does not say switch decks (the deck axis is
+closed, and §8ba priced a deck term at +0.140 in a *specific* matchup, not in
+general). It says the ceiling of the current archetype in this band is real and
+should not be assumed away when reading a 1027.
+
+### For the Petrel work: the demonstrator shortlist
+
+933 Grimmsnarl seat-appearances. By pilot, with volume enough to mine:
+
+| pilot | games | WR | mean episode rating |
+|---|---|---|---|
+| Raihan Ramadistra | 472 | 49.6% | 1177 |
+| Sixth Sense | 127 | 50.4% | 1147 |
+| **flg** | **90** | **55.6%** | 1144 |
+| @kdcyberdude | 53 | 43.4% | 1145 |
+
+⚡ **`李秉叡（ntumlnoob）` has switched off Grimmsnarl** — 215 games in this window,
+now maining **Dudunsparce**, and at 35.8%. The expert corpus in §8bo is that
+player on the old deck, which does not invalidate it (it was a like-for-like
+Grimmsnarl comparison) but does mean **they are no longer the demonstrator to
+mine for current Grimmsnarl play.** ⇒ `flg` is the best win-rate-per-game
+Grimmsnarl source; `Raihan Ramadistra` is the volume.
+
 ## 8bp. 🔴 E13 DIES AT THE SIZING GATE — the KO-setup band is empty for the EXPERTS TOO, so §8bo's gap is not KO manufacture (2026-08-09, day 26)
 
 Pre-registered in `docs/experiments/E13-ko-setup.md` at **50a6344, before
