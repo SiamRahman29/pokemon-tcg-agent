@@ -1,0 +1,23 @@
+net: out\tmp\sa\policy_net.npz  #4790c469
+leaderboard rows: 6653   aliases: 2
+[C0] recorded action == our own net's pick on our own games: 528/529 = 99.8% (out-of-range 0)
+     ✅ actions are aligned to their observations.
+
+population: replays/mirror_experts, rating ≥ 1050.0
+  agree                  3724
+  disagree               2457
+  skip_below_cut         308
+  skip_multi_or_missing  904
+  skip_unrated           37
+  skip_us                1
+  ⇒ our net's top-1 differs from the expert on 39.8% of their MAIN decisions
+[C1] forked position identical to the replay's: 40/40 = 100.0%
+     ✅ an sbi captured in another process reconstructs exactly.
+
+[agreement control] identical arms at 40 positions — must read 0
+  agreement: Δ = +0.0146 [-0.0177, +0.0469]  k=40 positions × 30 pairs (clustered on position)
+  ✅ identical arms read zero — the pipeline is sound.
+
+[treatment] expert's move vs our net's move, 300 positions × 30 pairs
+    [treat] 50/300 positions, 320s
+    [treat] 100/300 positions, 578s

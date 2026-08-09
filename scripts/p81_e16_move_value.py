@@ -285,6 +285,50 @@ def run(args: argparse.Namespace) -> int:
         print("  ⇒ NULL: their per-move advantage is invisible to a clone "
               "continuation. H1 and H2 both predict this ⇒ arm C decides.")
 
+    # ---- ARM C: the H1/H2 discriminator ---------------------------------
+    cm = clo = chi = float("nan")
+    if args.arm_c:
+        cont = pnet.load(args.arm_c)
+        if cont is None:
+            print(f"🔴 arm C: could not load {args.arm_c}")
+            return 1
+        import hashlib
+        cfp = hashlib.md5(Path(args.arm_c).read_bytes()).hexdigest()[:8]
+        print(f"\n[arm C] SAME {len(dis_s)} positions, continuation swapped to "
+              f"{args.arm_c} #{cfp}")
+        print("  ⚠ Read the DIFFERENCE-IN-DIFFERENCES, never the level: "
+              "b7_ntum is a weaker player (−92 Elo standalone, §8u), and a "
+              "weaker continuation changes how long ANY early advantage "
+              "persists — a level effect that hits both arms and cancels only "
+              "in the difference.")
+        cp, cn, csec, ci = measure(dis_s, args.pairs, cont, "armC",
+                                   seed0=900_000)
+        cm, clo, chi = report(cp, cn, "Δ(expert − ours) | expert continuation")
+
+        # Pair the two continuations ON THE SAME POSITION before differencing --
+        # positions are the cluster, so an unpaired DiD throws away the pairing
+        # that makes this affordable.
+        base = {j: v for j, v in zip(ti, tp)}
+        pairs_did = [(cp[x] - base[j]) for x, j in enumerate(ci) if j in base]
+        if len(pairs_did) > 2:
+            dm = statistics.fmean(pairs_did)
+            dse = statistics.stdev(pairs_did) / (len(pairs_did) ** 0.5)
+            dlo, dhi = dm - 1.96 * dse, dm + 1.96 * dse
+            print(f"  🔴 DiD = {dm:+.4f} [{dlo:+.4f}, {dhi:+.4f}]  "
+                  f"k={len(pairs_did)} positions, paired")
+            if dlo > 0:
+                print("  ⇒ H1: the expert's move is worth more when followed "
+                      "up THEIR way ⇒ coherence is the mechanism, and "
+                      "commitment (N.4.2) becomes the lever.")
+            elif dhi < 0:
+                print("  ⇒ the expert's move is worth LESS under an "
+                      "expert-like continuation — predicted by neither "
+                      "hypothesis; treat as an instrument finding first.")
+            else:
+                print("  ⇒ H2: the move's value does not depend on who "
+                      "continues. Coherence is not the mechanism ⇒ the thread "
+                      "turns to credit assignment (N.4.3).")
+
     # ---- exploratory, labelled -----------------------------------------
     print("\n[exploratory — cannot produce a rule on its own]")
     by_turn: dict[int, list[float]] = defaultdict(list)
@@ -313,6 +357,8 @@ def run(args: argparse.Namespace) -> int:
         "pairs": args.pairs,
         "agreement": {"delta": am, "lo": alo, "hi": ahi, "k": len(ap)},
         "treatment": {"delta": tm, "lo": tlo, "hi": thi, "k": len(tp)},
+        "arm_c": ({"net": args.arm_c, "delta": cm, "lo": clo, "hi": chi}
+                  if args.arm_c else None),
         "diag": dict(diag),
     }
     (ROOT / "out/logs/p81_e16.json").write_text(
@@ -329,6 +375,9 @@ def main() -> int:
     ap.add_argument("--positions", type=int, default=600)
     ap.add_argument("--agree-positions", type=int, default=150)
     ap.add_argument("--pairs", type=int, default=30)
+    ap.add_argument("--arm-c", default=None,
+                    help="continuation net for the H1/H2 difference-in-"
+                         "differences, e.g. out/policy_b7_ntum.npz")
     return run(ap.parse_args())
 
 

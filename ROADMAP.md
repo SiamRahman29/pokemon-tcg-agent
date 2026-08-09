@@ -558,13 +558,29 @@ hours per arm**, and at a full budget it is weeks. That is why §8v ran B4 at
 gain. The ladder cannot adjudicate either (63–87 noise floor, §8ak).
 ⇒ **The honest decision rule for this axis is LARGE OR NOTHING.**
 
-### The gate to run first
+### ✅ The gate RAN AND PASSED the same session (§8bx)
 
-At ~200 real damage-placement decisions, estimate the **distribution** of the
-action-value gap. **90th percentile ≥ 0.10 ⇒ build; gaps ≤ ~0.03 ⇒ the clock
-cannot buy anything and the axis closes for the price of a probe.** ⚡ **E16's
-dispersion may answer this for free** (§8bx) — the mean was null, but the
-*spread* of per-position Δ is the same quantity.
+The gate was declared as *"90th percentile ≥ 0.10 ⇒ build; gaps ≤ ~0.03 ⇒ the
+clock cannot buy anything"* — and E16's dispersion answered it for free, because
+the spread of per-position Δ **is** that quantity.
+
+```
+TRUE between-position sd      0.0768   (observed 0.0963 − measurement noise 0.0581)
+typical |gap|                 0.0613
+90th-percentile |gap|         0.1263   ← the gate wanted ≥ 0.10
+resolution at 200 pairs       0.0304   ← gap is ~2× the instrument
+```
+
+⚡ **And the reason this is the strongest candidate left:** the *mean* gap
+between the experts' moves and ours is **zero**, but the *spread* is 0.06. So
+the value at these decisions is real and **nobody is capturing it** — not us,
+not the 1100+ band. **A problem search can solve and imitation structurally
+cannot, because there is no demonstrator to clone.**
+
+⚠ Still bounded by: the oracle figure (+0.037/decision) is an **upper bound**
+before selection noise (~half survives at gap/SE ≈ 2); per-decision gaps **do
+not add** across a game; and the **large-or-nothing** validation blocker above
+is untouched.
 
 ### Where it probably belongs: Round 2
 

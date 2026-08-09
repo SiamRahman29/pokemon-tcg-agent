@@ -20,3 +20,24 @@ population: replays/mirror_experts, rating ≥ 1050.0
   ✅ identical arms read zero — the pipeline is sound.
 
 [treatment] expert's move vs our net's move, 220 positions × 40 pairs
+    [treat] 50/220 positions, 376s
+    [treat] 100/220 positions, 749s
+    [treat] 150/220 positions, 1268s
+    [treat] 200/220 positions, 1644s
+  Δ(expert − ours): Δ = +0.0123 [-0.0004, +0.0251]  k=220 positions × 40 pairs (clustered on position)
+  [dispersion] observed per-position sd 0.0963; measurement noise 0.0581; ⇒ TRUE sd ≈ 0.0768
+  ⇒ typical |gap| at a disagreement ≈ 0.0613 (E|X| for a normal). An oracle picking the better side gains ≈ 0.0306/decision over a coin flip.
+  scale bar (§8bw, clone's own top vs last): +0.120
+  wall: 1796s treatment + 496s control
+  ⇒ NULL: their per-move advantage is invisible to a clone continuation. H1 and H2 both predict this ⇒ arm C decides.
+
+[exploratory — cannot produce a rule on its own]
+  turns 0-2: Δ=+0.0038 k=13
+  turns 3-5: Δ=+0.0221 k=48
+  turns 6-8: Δ=+0.0058 k=60
+  turns 9-11: Δ=+0.0170 k=56
+  turns 12-14: Δ=+0.0070 k=43
+  by rating band (pre-declared -- does the cut drive the answer?)
+    1050-1075  Δ=-0.0025 ±0.0675  k=10
+    1075-1100  Δ=+0.0147 ±0.0152  k=172
+    1100+      Δ=+0.0056 ±0.0201  k=38

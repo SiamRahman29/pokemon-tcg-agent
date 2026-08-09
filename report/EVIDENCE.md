@@ -4458,9 +4458,51 @@ landing on the right side of it no more often than we do. That is the same
 band. **The dispersion, not the mean, is what an oracle could capture** — and it
 is the sizing gate for the whole "spend the 600 s clock" axis (ROADMAP §2.7).
 ⛔ The per-position values were **not saved** by the first run, so the estimate
-is being recomputed properly rather than backed out of a summary interval
-(`--positions 220 --pairs 40`, `out/logs/p81_e16_dispersion.txt`); the script
-now decomposes observed spread into true variance and measurement noise.
+was recomputed properly rather than backed out of a summary interval.
+
+### ✅ THE DISPERSION RUN — and it is the first lever this project has sized onto the RIGHT side of its own instrument
+
+Independent sample, `--positions 220 --pairs 40`, log
+`out/logs/p81_e16_dispersion.txt`. **The mean replicates as a null**
+(+0.0123 [−0.0004, +0.0251] against the 600-position run's +0.0066), and the
+spread is the finding:
+
+```
+observed per-position sd  0.0963
+measurement noise         0.0581   (40 pairs/position)
+⇒ TRUE between-position sd 0.0768
+```
+
+| derived quantity | value |
+|---|---|
+| typical \|gap\| at a disagreement (E\|X\|) | **0.0613** |
+| 90th-percentile \|gap\| | **0.1263** |
+| gain of an oracle choosing max(theirs, ours) over always-ours | **+0.0372 / decision** |
+| resolution available at 200 pairs (≈15 decisions/game of the 600 s budget) | **0.0304** ⇒ **gap ≈ 2× the instrument** |
+
+⚡ **So the null and the headroom are both real, and they are not in conflict.**
+At a disagreement the two moves genuinely differ by ~0.06 win probability —
+half the clone's own best-vs-worst gap — but the **sign varies**, and the 1050+
+experts land on the good side no more often than we do (mean ≈ 0, and the
+1100+ band reads 0.0056 ± 0.0201). ⇒ **there is exploitable value at these
+decisions that NOBODY in the corpus is capturing.** That is the signature of a
+problem **search can solve and imitation structurally cannot** — there is no
+demonstrator to clone, because nobody is doing it right.
+
+🔴 **This is ROADMAP §2.7's pre-declared sizing gate and it PASSES**: the gate
+was *"90th percentile ≥ 0.10 ⇒ build; ≤ 0.03 ⇒ the clock cannot buy anything"*,
+and it reads **0.1263**. ⚠ Declared before the number was seen, in the same
+session.
+
+⚠ **Four things that keep this honest.** (1) The oracle figure is an **upper
+bound**: a real rollout oracle selects on *noisy* estimates, so at gap/SE ≈ 2 it
+picks correctly ~75–80% of the time and captures roughly half of the 0.0372.
+(2) **Per-decision gaps do not add across a game** — 15 disagreements/game does
+not mean 15 × 0.037. (3) The dispersion is measured between *our pick and the
+expert's pick*; a rollout oracle ranks the net's **own** options, and their gap
+distribution is similar but not identical. (4) None of this touches the
+**validation** blocker (§2.7): an agent spending real time per move cannot be
+A/B'd at n≥2000 on this box, so the axis remains **large-or-nothing**.
 
 ▶ **Next, and pre-registered before the null was seen: arm C**, the
 difference-in-differences with `out/policy_b7_ntum.npz` as the continuation
