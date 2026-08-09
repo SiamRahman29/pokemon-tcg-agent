@@ -4447,12 +4447,19 @@ an effect of the relevant size and did not.
    pace, length), which share no variable with the label, collapses it to the
    table above.
 
-⚡ **The `won` row is a finding in its own right, and it is the day's third
-independent confirmation:** **conditioned on the board state, winners and losers
-choose the same actions** (−0.0024 bits). That kills outcome-conditioned /
-"upside-down RL" cloning as a variant *before* it is built — the label carries no
-action information to condition on — and it corroborates §8bs (no blunder
-signature) and §8bn from a third direction.
+⚡ **The `won` row is a finding in its own right:** at the resolution measured,
+**conditioned on the board state, winners and losers choose the same actions**
+(−0.0024 bits). It corroborates §8bs (no blunder signature) and §8bn from a third
+direction.
+
+⚠ **CORRECTED SAME SESSION — the first version of this entry said this "retires
+outcome-conditioned / upside-down-RL cloning before it is built", and that is an
+OVERCLAIM.** The bucket here is deliberately coarse — `(turn//3, prize
+differential)` — and a net conditioning on the *full* board could exploit
+fine-grained differences this estimator cannot see. What is established is a
+**strong prior against** outcome conditioning, not a proof against it. The
+distinction matters because the same coarseness that makes the plan nulls
+trustworthy (it suppresses plug-in bias) is what limits this row's reach.
 
 ⚠ **What is NOT claimed.** This tests one operationalisation of "plan" (k-means
 over six shape features). A richer plan representation could carry more. But the
@@ -4496,7 +4503,7 @@ code stays; it is off by default (`sym_k=0`), and it is a correctness finding
 that measured null, exactly the case
 `correctness-fixes-are-wanted-regardless-of-elo` was written for.
 
-## 8bt. ⚡ THE NET DECIDES PARTLY ON BENCH SLOT NUMBER — 18.2% of decisions flip under a relabelling that changes nothing about the game (2026-08-09, day 27)
+## 8bt. ⚡ THE NET DECIDES PARTLY ON BENCH SLOT NUMBER — 16.9% of decisions flip under a relabelling that changes nothing about the game (2026-08-09, day 27)
 
 `scripts/p78_symmetry_probe.py`, log `out/logs/p78_symmetry.txt`, run against the
 **shipped** `55326513` npz extracted from its own tarball.

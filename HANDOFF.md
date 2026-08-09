@@ -21,10 +21,124 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 27 (2026-08-09): THE WP-REGRET AUTOPSY IS BUILT AND RUN — there is NO blunder signature in the 27 losses, and the method is provably blind to errors of omission
+> # ▶ START HERE — DAY 27 (2026-08-09): three seams measured, all null — no blunder signature, no latent plan, no bench-symmetry gain. The live thread is **"imitation without a plan"** and §N below is where the next session starts.
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
+> **📌 USER DIRECTIVE (day 27, end of 2nd session): CONTINUE THE "IMITATION WITHOUT A PLAN" THREAD IN A NEW SESSION.** Everything it needs is §N.
 >
+> ---
+>
+> # ▶ §N — NEXT SESSION STARTS HERE: the imitation-without-a-plan thread
+>
+> **Read §8u, §8r, §8bv and §8bs before proposing anything.** The thread is
+> live, but one operationalisation of it is already dead and re-running that is
+> the main way to waste this session.
+>
+> ## N.1 What is ESTABLISHED (do not re-measure)
+> - 🔴 **§8u — the founding datum.** We cloned the #2 player **successfully**
+>   (held-out agreement 59.9% → 67.2%) and measured **−92 Elo**. Field
+>   disagreement 30.2% → 32.0% → 36.2% maps monotonically to Elo 0 → −55 → −92.
+>   ⚡ **Covariate shift is RULED OUT** for that arm (§8s: 26.7% vs 31.9%,
+>   near-symmetric, with a 1.7% positive control) — so "we dragged the expert
+>   off-distribution" is not the explanation.
+> - 🔴 **§8r** — agreement peaks at rating 1050–1100 and falls in **both**
+>   directions over 87 same-deck, zero-exposure demonstrators. Agreement measures
+>   distance from the fitted mode, **not skill**. ⇒ every rate-vs-experts eval we
+>   run is a *conformity* metric, which is why they all say we match the experts
+>   while we sit at 976.
+> - 🔴 **§8bs** — no blunder signature in the 27 losses (worst decision −0.069 in
+>   losses vs −0.070 in wins vs −0.078 for the players who beat us).
+> - 🔴 **§8bv** — conditioned on the board, **winners and losers play the same**
+>   (−0.0024 bits) at the coarse bucket used. ⇒ a **strong prior against**
+>   outcome-conditioned / "upside-down RL" cloning — not a proof; a net reading
+>   the full board could resolve finer structure than this estimator.
+>
+> ## N.2 What is KILLED (⛔ do not rebuild)
+> - ⛔ **Plan-as-latent-cluster, predicting the next MAIN action** (§8bv):
+>   +0.001 / −0.009 / +0.037 / +0.090 bits at k=2/3/4/6 against a **+0.372**
+>   estimator control with only two groups. ⚠ And note the two traps, because
+>   the next instrument will meet both: a too-fine state bucket drove the plug-in
+>   MI bias high enough to make the positive control read **negative**, and the
+>   first signature was **circular** (cluster on card play rates → predict which
+>   card was played, +0.27→+0.46 of tautology).
+> - ⛔ **Bench-symmetry averaging** (E15/§8bu): 0.513 [0.492, 0.535] vs a
+>   pre-registered 0.500, both controls holding. Do not re-cut at another K.
+> - ⛔ **Demonstrator selection in any form** (B7/§8u), **more data**, **capacity**,
+>   **deck perturbation**, **search**, **within-turn sequencing**, **B8 at β=1.0**.
+>
+> ## N.3 🔴 THE TWO HYPOTHESES §8u CANNOT YET SEPARATE — this is the actual open question
+>
+> | | claim | predicts |
+> |---|---|---|
+> | **H1 "no plan"** | the expert's moves are individually good but only coherent as a *sequence*; partial copying breaks the coherence | a **coherently committed** expert imitation beats a partial one, and incoherence is measurable in our own play |
+> | **H2 "the mode is the local optimum for THIS field"** | any deviation from the field mode costs, regardless of direction or of the source's strength | nothing recovers by committing; the monotone 30.2→32.0→36.2 ⇒ 0→−55→−92 is the whole story |
+>
+> ⚡ **The fact that breaks the tie is already on the board: the top players DO
+> beat the mode.** So the mode is not optimal, and H2 in its strong form is
+> false. What is true is narrower and more uncomfortable: **our deviations from
+> the mode have all been in bad directions and theirs are in good ones.** That is
+> not an imitation problem — it is a *credit-assignment* problem, and the only
+> instruments that can tell a good deviation from a bad one are outcome feedback
+> (B8, closed on **method** at β=1.0 with the sweep never run — "unfalsified
+> rather than refuted") and a stronger evaluator than `evalfn`.
+>
+> ## N.4 Ranked probes for the next session (none built, none pre-registered yet)
+>
+> 0. ⭐⭐ **THE INSTRUMENT THIS PROJECT HAS NEVER HAD: counterfactual action value
+>    by paired rollouts with common random numbers.** Every eval we own is either
+>    a conformity metric (rate vs experts — §8r says that cannot measure skill) or
+>    a weak evaluator (`evalfn`, AUC 0.667 early). Neither can answer the only
+>    question that matters: **"in THIS exact position, is their move better than
+>    ours?"** A rollout instrument can: fork a real position, play option A and
+>    option B from it with the clone piloting both seats under the **same seeds**,
+>    and difference the win rates. No corpus, no mode, no conformity.
+>    - ⚠ **Feasibility check FIRST, ~20 min, and it is a real risk:**
+>      `search_begin_input` **is** present in replay `steps[i][seat].observation`
+>      (verified day 27) and `fastsearch.begin(sbi, my_deck, my_prize, opp_deck,
+>      opp_prize, opp_hand, opp_active)` reconstructs a position from it with
+>      determinized hidden info (`sa/worlds.determinize`) — but whether the engine
+>      accepts an sbi captured in **another process** is untested. If it does not,
+>      this probe is dead and the ranking below stands unchanged.
+>    - ⚠ **Per-DECISION resolution is unaffordable and that is fine.** Resolving a
+>      2% action-value gap at one decision needs thousands of paired games. Pool
+>      across a **decision CLASS** instead ("does our net systematically undervalue
+>      X?") — the aggregate is affordable and is the unit every seam in this repo
+>      is written in anyway.
+>    - ⚡ **What makes it worth the build: it can be pointed at the EXPERTS' games.**
+>      Take positions from `flg` / `Raihan Ramadistra` / `Sixth Sense`, score
+>      *their* move against *our net's* move by rollout, and you have measured
+>      whether they are better and where — with no assumption that agreement means
+>      skill. That is the experiment §8r's conformity trap has blocked all project.
+>
+> 1. ⭐ **Measure OUR incoherence directly, no plan recovery needed.** Count
+>    commitment switches per game — how often we change attacker / abandon a
+>    setup line mid-game — for us vs the three current Grimmsnarl experts
+>    (`Raihan Ramadistra`, `flg`, `Sixth Sense`; §8bq). H1 predicts we switch
+>    MORE. This needs no latent variable, no clustering, and no MI estimator, so
+>    it dodges every trap §8bv hit. **If we do not switch more, H1 is in serious
+>    trouble and the thread should turn to N.4.3.**
+> 2. **Commitment as a mechanism, tested without a corpus.** Add hysteresis to
+>    the shipped net (stick with the previously-preferred attacker/target unless
+>    the logit margin exceeds a threshold) and A/B it. This tests whether
+>    *commitment per se* is worth Elo, independent of whose plan it is. Cheap:
+>    it is a wrapper like `symavg.py`, and E15's harness is reusable.
+> 3. **The credit-assignment reframe (N.3).** If 1 and 2 null, the thread's own
+>    logic points here, not at more imitation work.
+> ⚠ **Pre-register every one of these** (`docs/experiments/`) before the first
+> arena game — E15 is the template, and writing the prior down first is what
+> turned a +0.013 into an honest null.
+>
+> ## N.5 Live state at handoff
+> - **LB: rank ~150 of 6,653, displayed 976.2** (= best of the ACTIVE pair; an
+>   older submission at 978.4 does **not** display, which is how "best active"
+>   was confirmed empirically).
+> - **Active pair is now two byte-identical `v5_s2` agents** — `55326513` (971.5)
+>   and `55382430` (submitted 15:04 UTC 08-09, reading 857.7 and still
+>   converging; μ starts at 600 and needs 4 h+). `55321893` (ens2, 855.9) is
+>   evicted and frozen. ⚠ **Do not read `55382430` as a result before ~20:00 UTC.**
+> - Rank-20 cutoff **1089.0**; every top-8 team runs exactly 2 submissions.
+>
+
 > ## 0. 🔴 E14 — WP-REGRET AUTOPSY: BUILT, RUN, CLOSED THE SAME SESSION (`p77_wp_regret.py`, §8bs)
 >
 > The user's named seam — *"a few games where 1 bad decision cost us games"* —
@@ -66,9 +180,12 @@ it lets any team name in a replay be joined to its rating.
 > card play rates to predict which card was played, +0.27→+0.46 of pure
 > tautology).
 > ⚡ **And the by-product is the day's most reusable fact: conditioned on the
-> board, WINNERS AND LOSERS PLAY THE SAME (−0.0024 bits).** That retires
-> outcome-conditioned / "upside-down RL" cloning before it is built, and it is a
-> third independent corroboration of §8bs.
+> board, WINNERS AND LOSERS PLAY THE SAME (−0.0024 bits)** — a third independent
+> corroboration of §8bs. ⚠ **Stated correctly:** the bucket is coarse
+> `(turn//3, prize diff)`, so this is a **strong prior against** outcome-conditioned
+> / "upside-down RL" cloning, **not a proof against it** — a net reading the full
+> board could see finer structure. The first write-up said "retires" and that was
+> an overclaim, corrected the same session.
 >
 > ## 0b. 🔴 THE PART TO CARRY FORWARD: a realized trajectory CANNOT see an error of omission
 >
