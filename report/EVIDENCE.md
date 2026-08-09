@@ -4403,6 +4403,41 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bt. ⚡ THE NET DECIDES PARTLY ON BENCH SLOT NUMBER — 18.2% of decisions flip under a relabelling that changes nothing about the game (2026-08-09, day 27)
+
+`scripts/p78_symmetry_probe.py`, log `out/logs/p78_symmetry.txt`, run against the
+**shipped** `55326513` npz extracted from its own tarball.
+
+**The question no audit here has asked.** `p18`, §8y/§8z and §8ab all asked *"what
+is in the observation that `featurize` does not read?"* — the dual question is
+**"what does the net read that carries no game meaning?"** A bench **slot
+number** is the clean case: moving a Pokémon from bench slot 1 to slot 3 changes
+nothing, but it changes `opt["index"]`, which §8f encoded deliberately (+115 Elo)
+because it was the only thing separating two options naming two copies of a card.
+
+| arm | reading |
+|---|---|
+| **option-list ORDER** (positive control — deep-sets pool the option set, §8aa, so this MUST read ~0) | **0 / 23,952 = 0.000%** ✅ harness sound |
+| **our own BENCH relabelling** | **1,889 / 21,732 = 8.69%** of relabellings change the chosen option |
+| …per decision | **660 / 3,622 = 18.2%** of decisions flip under ≥1 of 6 relabellings |
+
+Worst context is **MAIN at 27.5%** (491/1,788), then TO_HAND 14.8%.
+
+⚠ **The margin decomposition is what keeps this honest.** Median top1−top2 logit
+margin is **1.298 over all decisions but 0.354 over the unstable ones** — the
+flips live in the near-tie band. **§8bd measured that band and it is
+INDIFFERENT**: flipping the clone's *k*-th choice for its (*k*+1)-th across it
+reads **0.494 [0.467, 0.520]**. ⇒ **the prior is against this being worth Elo**,
+and it must not be described as a found gain.
+
+**What it is:** a measured correctness defect (the net consumes a nuisance
+variable), and a **free** variance reduction if wanted — averaging logits over K
+bench relabellings costs ~1 ms × K against a 600 s pool we spend 0.1 s of, and
+at K=1 it is bitwise today's agent. ⛔ **Untested in the arena. Do not ship it on
+this entry alone** — §8bd is a real prior against it, and this project's own rule
+(§8aw) is that a defect gradient descent has already routed around is a bug in
+the code, not a limit on the agent.
+
 ## 8bs. 🔴 THE WP-REGRET AUTOPSY RUNS ON THE 27 LOSSES — no blunder signature exists, and the method is provably blind to the half of the problem that matters (2026-08-09, day 27)
 
 Day 27 §3 proposal 1, built as `scripts/p77_wp_regret.py`, archived at

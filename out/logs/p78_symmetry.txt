@@ -1,0 +1,25 @@
+
+=== SYMMETRY PROBE — 25 games, k=6 relabelings ===
+
+ARM 1 (POSITIVE CONTROL) option-list order
+  0/23952 = 0.000% of relabelings change the choice
+  ✅ near 0 means the harness is sound
+
+ARM 2 our own BENCH slot relabelling (semantically null)
+  1889/21732 = 8.692% of relabelings change the choice
+  660/3622 = 18.2% of DECISIONS are unstable under at least one of 6 relabelings
+
+  logit margin (top1 - top2): all decisions median 1.298
+                              unstable ones median 0.354
+  ⇒ if the unstable ones are the near-ties, the flips are cheap;
+    if they are not, the net is deciding on slot noise.
+
+  most unstable contexts (flipped decisions / decisions seen):
+    ctx 0     491 / 1788   =  27.5%
+    ctx 7      79 / 533    =  14.8%
+    ctx 21     23 / 178    =  12.9%
+    ctx 13     16 / 203    =   7.9%
+    ctx 4      15 / 112    =  13.4%
+    ctx 15     12 / 115    =  10.4%
+    ctx 3       9 / 71     =  12.7%
+    ctx 16      8 / 136    =   5.9%
