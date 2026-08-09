@@ -21,18 +21,57 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 27 (2026-08-09): three seams measured, all null — no blunder signature, no latent plan, no bench-symmetry gain. The live thread is **"imitation without a plan"** and §N below is where the next session starts.
+> # ▶ START HERE — DAY 27 (2026-08-09): three seams measured, all null — no blunder signature, no latent plan, no bench-symmetry gain. Then the 3rd session **built the instrument this project never had**: real positions fork out of replays and their options score by rollout (§N.0, EVIDENCE §8bw). **E16 is pre-registered and awaiting a go/no-go.**
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
 > **📌 USER DIRECTIVE (day 27, end of 2nd session): CONTINUE THE "IMITATION WITHOUT A PLAN" THREAD IN A NEW SESSION.** Everything it needs is §N.
 >
 > ---
 >
-> # ▶ §N — NEXT SESSION STARTS HERE: the imitation-without-a-plan thread
+> # ▶ §N — THE IMITATION-WITHOUT-A-PLAN THREAD
 >
 > **Read §8u, §8r, §8bv and §8bs before proposing anything.** The thread is
 > live, but one operationalisation of it is already dead and re-running that is
 > the main way to waste this session.
+>
+> > ## ✅ N.0 UPDATE (day 27, 3rd session): PROBE 0's FEASIBILITY GATE IS PASSED, AND IT CORRECTED TWO OF ITS OWN PREMISES
+> >
+> > `scripts/p80_rollout_feasibility.py`, `EVIDENCE` §8bw, log
+> > `out/logs/p80_rollout_feasibility.txt`. **No experiment ran.**
+> >
+> > - ✅ **The blocking risk is dead.** An sbi captured in **another process**
+> >   reconstructs the position **exactly** — 60/60, option list bitwise
+> >   identical, both boards, turn and acting seat. Expert seats reconstruct
+> >   32/32.
+> > - ✅ **The instrument resolves.** The clone's own **top vs last** option
+> >   reads **+0.120 [+0.052, +0.189]**. That is also the **scale bar** — read
+> >   every future Δ against it.
+> > - 🔴 **CRN does not exist here.** The engine draws its own shuffles/coins
+> >   beyond the determinized world, so §N.4.0's "common random numbers" is
+> >   unachievable. A **shared world** is the only pairing — worth ρ≈0.53, so
+> >   keep it, just do not call it CRN.
+> > - 🔴 **"Per-decision resolution is unaffordable" was WRONG.** 101 ms per
+> >   rollout to terminal; ±0.020 on a pooled Δ ≈ 96 min on one core.
+> > - ⛔ **MIRROR ONLY.** The fork accepts a decklist the seat is **not**
+> >   playing and returns a plausible number (Crustle's 60 on a Grimmsnarl seat
+> >   read 0.975, the same as the correct deck). Never point it at an
+> >   unidentified deck. `replays/mirror_experts` (257 games) satisfies this by
+> >   construction.
+> > - 🔴 **And a defect in my own estimator, caught by replication:** three runs
+> >   of the same cell read +0.130 / +0.107 / +0.120 against a nominal ±0.017.
+> >   Pairs are **clustered inside positions**; clustering widens the interval
+> >   **4.1×** and all three runs then agree. Fixed in the tool. **Size on
+> >   positions, not pairs.**
+> > - ⚠ **Most positions cannot show anything:** 11 of 40 sit in win-probability
+> >   [0.15, 0.85]. Stratify on competitiveness, and estimate that WP on an
+> >   **independent** rollout batch or the selection biases the effect.
+> >
+> > ▶ **Pre-registered as E16** (`docs/experiments/E16-counterfactual-move-value.md`),
+> > **not yet run and not yet user-approved.** It scores the expert's actual
+> > move against our net's move on mirror positions, with a free agreement
+> > control (identical arms must read 0) and a **difference-in-differences** arm
+> > using `out/policy_b7_ntum.npz` as an expert-like continuation — which is the
+> > only design on the table that separates **H1 from H2** in §N.3.
 >
 > ## N.1 What is ESTABLISHED (do not re-measure)
 > - 🔴 **§8u — the founding datum.** We cloned the #2 player **successfully**
@@ -84,7 +123,10 @@ it lets any team name in a replay be joined to its rating.
 >
 > ## N.4 Ranked probes for the next session (none built, none pre-registered yet)
 >
-> 0. ⭐⭐ **THE INSTRUMENT THIS PROJECT HAS NEVER HAD: counterfactual action value
+> 0. ⭐⭐ ✅ **FEASIBILITY RESOLVED — see §N.0 above; this entry is kept for the
+>    reasoning, but its "CRN" and its affordability claim are both corrected
+>    there, and the live artifact is E16.**
+>    **THE INSTRUMENT THIS PROJECT HAS NEVER HAD: counterfactual action value
 >    by paired rollouts with common random numbers.** Every eval we own is either
 >    a conformity metric (rate vs experts — §8r says that cannot measure skill) or
 >    a weak evaluator (`evalfn`, AUC 0.667 early). Neither can answer the only
@@ -92,18 +134,13 @@ it lets any team name in a replay be joined to its rating.
 >    ours?"** A rollout instrument can: fork a real position, play option A and
 >    option B from it with the clone piloting both seats under the **same seeds**,
 >    and difference the win rates. No corpus, no mode, no conformity.
->    - ⚠ **Feasibility check FIRST, ~20 min, and it is a real risk:**
->      `search_begin_input` **is** present in replay `steps[i][seat].observation`
->      (verified day 27) and `fastsearch.begin(sbi, my_deck, my_prize, opp_deck,
->      opp_prize, opp_hand, opp_active)` reconstructs a position from it with
->      determinized hidden info (`sa/worlds.determinize`) — but whether the engine
->      accepts an sbi captured in **another process** is untested. If it does not,
->      this probe is dead and the ranking below stands unchanged.
->    - ⚠ **Per-DECISION resolution is unaffordable and that is fine.** Resolving a
->      2% action-value gap at one decision needs thousands of paired games. Pool
->      across a **decision CLASS** instead ("does our net systematically undervalue
->      X?") — the aggregate is affordable and is the unit every seam in this repo
->      is written in anyway.
+>    - ✅ ~~**Feasibility check FIRST, ~20 min, and it is a real risk**~~ — **RAN
+>      AND PASSED, 60/60 (§8bw).** The engine accepts an sbi captured in another
+>      process and reconstructs the position exactly.
+>    - 🔴 ~~**Per-DECISION resolution is unaffordable and that is fine.**~~
+>      **MEASURED FALSE** — 101 ms per rollout to terminal. Pooling across a
+>      decision class is a choice, not a necessity. ⚠ But size on **positions**,
+>      not pairs: the pair-level interval is 4.1× too narrow (§8bw).
 >    - ⚡ **What makes it worth the build: it can be pointed at the EXPERTS' games.**
 >      Take positions from `flg` / `Raihan Ramadistra` / `Sixth Sense`, score
 >      *their* move against *our net's* move by rollout, and you have measured

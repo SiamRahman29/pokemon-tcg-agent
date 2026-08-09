@@ -4403,6 +4403,90 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bw. ✅ THE INSTRUMENT THIS PROJECT HAS NEVER HAD IS FEASIBLE — a real position forks out of a replay and its options can be scored by rollout (2026-08-09, day 27, 3rd session)
+
+`scripts/p80_rollout_feasibility.py`, log `out/logs/p80_rollout_feasibility.txt`,
+net pinned to the shipped `55326513` weights (`#4790c469`). **No experiment ran
+— this is the feasibility gate HANDOFF §N.4.0 demanded before any design work.**
+
+**Why it matters.** Every eval this project owns is either a **conformity**
+metric (§8r: agreement measures distance from the fitted mode, not skill) or a
+**weak evaluator** (`evalfn`, AUC 0.667 early). Neither can answer §8u's open
+question — *"in THIS exact position, is their move better than ours?"* A rollout
+instrument can, and §N.4.0 named one blocking risk: `fastsearch.begin` had only
+ever been handed a `search_begin_input` captured **in the same process**.
+
+### The four controls
+
+| control | reading |
+|---|---|
+| **C1** forked position identical to the replay's — option list **bitwise**, both boards, turn, acting seat | **60/60 = 100%** ✅ |
+| **C2** same determinized world, same pick, 8 repeats | trajectories differ (52–92 steps) 🔴 **not reproducible** |
+| **C3** the clone's **top** option vs its **last**, paired on the world | **+0.120 [+0.052, +0.189]**, k=40 positions ✅ |
+| **C4** hand the fork a decklist the seat is **not** playing | **accepted, 40/40, plausible number, no error** 🔴 |
+
+⇒ **C1 kills the blocking risk: an sbi captured in another process reconstructs
+the position exactly.** The instrument is buildable.
+
+### Three findings that CHANGE §N.4.0's own design
+
+1. 🔴 **Common random numbers are NOT available.** C2 shows the engine draws its
+   own shuffles/coins beyond the determinized world, so §N.4.0's "paired
+   rollouts with common random numbers" is unachievable as written. A **shared
+   world** is the only pairing there is — and it still removes **ρ≈0.53** of the
+   variance, so pairing survives; only the name was wrong.
+2. 🔴 **"Per-decision resolution is unaffordable" is FALSE.** A rollout to
+   terminal costs **101 ms**. ±0.020 on a pooled Δ costs ~96 min on one core
+   (below), so pooling across a decision class is a **choice**, not a
+   necessity — the opposite of what the design assumed.
+3. ⛔ **C4 is the binding scope constraint.** `begin` takes the seat's hidden
+   deck as an *argument* and cannot check it: given Crustle's 60 for a
+   Grimmsnarl seat it returned **0.975, exactly what the correct deck
+   returned** — rule 18's "plausible number, not a crash", in a new place.
+   ⇒ **the instrument is valid only on seats whose 60 we know, i.e. the
+   MIRROR** — which is also where the climb runs (§8ac, §8bn), so the
+   constraint costs little.
+
+### 🔴 And a defect in my own estimator, caught by replication
+
+Three runs of the identical C3 cell read **+0.130 / +0.107 / +0.120** against a
+nominal ±0.017. **They cannot all be true.** The cause is clustering: pairs are
+nested inside 40 positions, and the per-position effect varies far more than
+within-position sampling implies. Clustering on the position widens the interval
+**4.1×** — and all three runs sit inside the clustered interval while none sits
+inside the naive one. **The fix is in the tool** (`p80` now prints both and
+labels the naive one *DO NOT QUOTE*), and the sizing formula was making the same
+error: **472 positions × 60 pairs**, not 1,704 pairs.
+
+⚠ **The general form, and it is the sixth instance of the family:** an analysis
+choice that is *statistically* wrong produces a plausible number, not a crash.
+What caught it was running the same cell twice — the cheapest form of rule 18's
+redundancy, and one this project had not applied to an interval before.
+
+### What the numbers say about the design
+
+* **scale bar:** the clone's own top-vs-worst option is worth **+0.120** win
+  probability. Any Δ from a future experiment must be read against that ruler.
+* **cost:** 101 ms/rollout, 17–195 ms by turn (early turns are dearer; ⚠ two
+  runs of the same cell read 78 and 101 ms — rule 7 CPU contention, so treat
+  timings as ±30%).
+* 🔴 **most positions cannot show anything: only 11 of 40 sit in win-probability
+  [0.15, 0.85]** (mean 0.802 on our own ladder games). A near-ceiling position
+  bounds the visible action-value gap. Any design must stratify on
+  competitiveness — and must estimate that WP on an **independent** rollout
+  batch, or selecting positions on the same rollouts that measure the effect
+  buys a regression-to-the-mean bias.
+* ✅ **the payoff use case is available:** expert seats reconstruct **32/32**
+  over two dumps, and `replays/mirror_experts` holds **257 mirror games** where
+  both seats are on our exact 60 — so C4's constraint is satisfied there by
+  construction.
+
+⇒ **Pre-registered as E16** (`docs/experiments/E16-counterfactual-move-value.md`)
+— score the expert's actual move against our net's move by paired rollout, with
+the agreement control, the +0.120 scale bar, and a difference-in-differences arm
+that separates §N.3's H1 from H2. ⛔ **Not a training target**: demonstrator
+selection is closed twice (§8t, §8u).
+
 ## 8bv. 🔴 R1 DIES AT ITS SIZING GATE — there is no latent "plan" in the corpus, and winners and losers play the SAME given the board (2026-08-09, day 27)
 
 `scripts/p79_plan_audit.py`, log `out/logs/p79_plan_audit.txt`. **700 games,
