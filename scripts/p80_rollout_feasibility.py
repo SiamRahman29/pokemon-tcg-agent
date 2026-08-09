@@ -35,8 +35,11 @@ Controls, in the order they must pass — each one can kill the instrument:
   as an *argument*: it does not know, and cannot check, which 60 that seat is
   actually playing. Hand it the wrong decklist and it returns a plausible win
   rate rather than an error — rule 18's shape exactly. This control exists so
-  the failure announces itself, and it is what bounds the instrument to seats
-  whose 60 we know (the mirror).
+  the failure announces itself. ✅ **It is now defused rather than merely
+  flagged:** `seat_decklist()` reads each seat's registered 60 out of the
+  replay, so the fork is fed the deck that seat actually played. That matters
+  more than it sounds — the population that looked safe by construction was
+  not (only 18 of 50 `mirror_experts` seats run our exact 60).
 
 Measurements that size the design if the controls pass: rollout cost by turn,
 the paired-vs-unpaired sd (how much a shared world actually buys), the spread
@@ -81,6 +84,31 @@ ROLLOUT_CAP = 1500
 # --------------------------------------------------------------------------
 # position extraction
 # --------------------------------------------------------------------------
+
+def seat_decklist(rep: dict, seat: int) -> list[int] | None:
+    """The 60 cards THAT SEAT actually registered, read out of the replay.
+
+    🔴 This exists because C4 found the fork accepts any decklist silently, and
+    then the "safe" population turned out not to be safe: over 25
+    `mirror_experts` games, **only 18 of 50 seats run our exact 60** — the rest
+    are 1–3 card variants of the same archetype. "Both seats are Grimmsnarl"
+    is NOT "both seats are our 60", and determinizing a variant with our list
+    would have mis-filled the hidden zones of 64% of expert seats without a
+    single error.
+
+    The registration action is a bare 60-int list at step 1. ✅ Positive
+    control: on `submission_v5_s2` this returns `decks/grimmsnarl.py`'s list
+    for our own seat **20/20**.
+    """
+    for step in (rep.get("steps") or [])[:3]:
+        if seat >= len(step):
+            continue
+        a = step[seat].get("action")
+        if isinstance(a, list) and len(a) == 60 and all(
+                isinstance(x, int) for x in a):
+            return list(a)
+    return None
+
 
 def our_seat(rep: dict) -> int | None:
     names = (rep.get("info") or {}).get("TeamNames") or []
@@ -199,12 +227,12 @@ def board_key(state: dict, who: int):
 # controls
 # --------------------------------------------------------------------------
 
-def c1_fidelity(pos: list[tuple[int, dict, int]], n: int) -> bool:
+def c1_fidelity(pos: list, n: int) -> bool:
     """The forked position must BE the position, option list included."""
     ok = bad = 0
     reasons: dict[str, int] = {}
-    for k, (i, o, me) in enumerate(pos[:n]):
-        w = determinize(o, FLAT, [], random.Random(9000 + k))
+    for k, (i, o, me, deck) in enumerate(pos[:n]):
+        w = determinize(o, deck, [], random.Random(9000 + k))
         try:
             _sid, obs2 = fork(o, w)
         except Exception as e:
@@ -248,7 +276,7 @@ def c1_fidelity(pos: list[tuple[int, dict, int]], n: int) -> bool:
     return True
 
 
-def c4_wrong_deck(o: dict, me: int, n: int) -> None:
+def c4_wrong_deck(o: dict, me: int, n: int, deck: list[int]) -> None:
     """Negative control: hand the fork a decklist the seat is NOT playing.
 
     A tool that rejected it would make the instrument safe on any seat. It does
@@ -262,7 +290,7 @@ def c4_wrong_deck(o: dict, me: int, n: int) -> None:
         return
     wrong = [c for c, k in WRONG.items() for _ in range(k)]
     out = {}
-    for name, dl in (("correct", FLAT), ("wrong", wrong)):
+    for name, dl in (("correct", deck), ("wrong", wrong)):
         vals = []
         for k in range(n):
             w = determinize(o, dl, [], random.Random(500 + k))
@@ -275,18 +303,21 @@ def c4_wrong_deck(o: dict, me: int, n: int) -> None:
           f"({out['wrong'][0]}/{n} ok)")
     if out["wrong"][0] > 0:
         print("     🔴 THE FORK ACCEPTS A DECKLIST THE SEAT IS NOT PLAYING and "
-              "returns a plausible number, not an error. ⇒ this instrument is "
-              "valid only on seats whose 60 we know — in practice the MIRROR. "
-              "Never point it at an unidentified deck.")
+              "returns a plausible number, not an error.")
+        print("     ✅ defused: the 'correct' arm above is the seat's OWN "
+              "registered 60, read from the replay by seat_decklist() — not "
+              "our list assumed onto them. Any seat in a replay we hold is "
+              "usable; a seat without a recovered decklist is skipped.")
     else:
         print("     ✅ the wrong decklist is rejected; any seat is safe.")
 
 
-def c2_determinism(o: dict, me: int, repeats: int) -> None:
+def c2_determinism(o: dict, me: int, repeats: int,
+                   deck: list[int]) -> None:
     """Is a rollout reproducible given a fixed world? Decides whether CRN exists."""
     outs = []
     for _ in range(repeats):
-        w = determinize(o, FLAT, [], random.Random(4242))
+        w = determinize(o, deck, [], random.Random(4242))
         v, st, _ = rollout(o, w, [0], me)
         outs.append((v, st))
     vals = sorted({v for v, _ in outs})
@@ -319,16 +350,23 @@ def run(args: argparse.Namespace) -> int:
     games = load_games(ROOT / args.dump, args.games)
     print(f"games: {len(games)} from {args.dump}")
 
-    pos: list[tuple[int, dict, int]] = []
+    pos: list = []
     per_game = []
+    no_deck = 0
     for _f, rep in games:
         seat = our_seat(rep)
         if seat is None:
             continue
+        deck = seat_decklist(rep, seat)
+        if deck is None:
+            no_deck += 1
+            continue
         ps = positions(rep, seat)
         per_game.append(len(ps))
         for i, o in ps:
-            pos.append((i, o, seat))
+            pos.append((i, o, seat, deck))
+    if no_deck:
+        print(f"⚠ {no_deck} games skipped: no registered decklist recovered")
     print(f"live MAIN positions with >=3 single-pick options: {len(pos)} "
           f"({statistics.fmean(per_game):.1f}/game)" if per_game else "none")
     if not pos:
@@ -339,8 +377,8 @@ def run(args: argparse.Namespace) -> int:
 
     rng = random.Random(20260809)
     sample = rng.sample(pos, min(args.positions, len(pos)))
-    c2_determinism(sample[0][1], sample[0][2], args.repeats)
-    c4_wrong_deck(sample[0][1], sample[0][2], args.repeats * 5)
+    c2_determinism(sample[0][1], sample[0][2], args.repeats, sample[0][3])
+    c4_wrong_deck(sample[0][1], sample[0][2], args.repeats * 5, sample[0][3])
     if args.verify:
         return 0
 
@@ -353,7 +391,7 @@ def run(args: argparse.Namespace) -> int:
     per_pos = []
     cost: dict[int, list[float]] = {}
     t_start = time.perf_counter()
-    for pi, (i, o, me) in enumerate(sample):
+    for pi, (i, o, me, deck) in enumerate(sample):
         try:
             sc = net.scores(o)
         except Exception:
@@ -363,10 +401,10 @@ def run(args: argparse.Namespace) -> int:
         d, ta, la = [], [], []
         for k in range(args.pairs):
             seed = 100000 * pi + k
-            wa = determinize(o, FLAT, [], random.Random(seed))
+            wa = determinize(o, deck, [], random.Random(seed))
             va, _s, secs = rollout(o, wa, [a], me)
             cost.setdefault(o["current"]["turn"], []).append(secs)
-            wb = determinize(o, FLAT, [], random.Random(seed))
+            wb = determinize(o, deck, [], random.Random(seed))
             vb, _s, _c = rollout(o, wb, [b], me)
             if va is None or vb is None:
                 continue
@@ -472,8 +510,11 @@ def run(args: argparse.Namespace) -> int:
                 tot_pos += len(ps)
                 if not ps:
                     continue
+                sdl = seat_decklist(rep, seat)
+                if sdl is None:
+                    continue
                 j, oo = ps[len(ps) // 2]
-                w = determinize(oo, FLAT, [], random.Random(5 + j))
+                w = determinize(oo, sdl, [], random.Random(5 + j))
                 tried += 1
                 try:
                     _sid, obs2 = fork(oo, w)

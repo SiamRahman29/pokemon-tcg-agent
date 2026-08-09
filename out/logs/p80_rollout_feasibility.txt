@@ -3,39 +3,40 @@ games: 20 from replays/submission_v5_s2
 live MAIN positions with >=3 single-pick options: 880 (44.0/game)
 [C1] forked position identical to the replay's: 60/60 = 100.0%
      ✅ an sbi captured in another process reconstructs exactly.
-[C2] same world, same pick, 8 repeats: values=[0.0, 1.0] steps=[57, 58, 66, 111, 86, 57, 57, 54]
+[C2] same world, same pick, 8 repeats: values=[1.0] steps=[95, 56, 58, 55, 59, 84, 84, 54]
      🔴 NOT deterministic. The engine draws its own randomness (shuffles/coins) beyond the determinized world, so a shared world is the ONLY pairing available -- not CRN.
-[C4] wrong-deck control: correct 60 -> 1.000 (40/40 ok) · WRONG 60 -> 0.950 (40/40 ok)
-     🔴 THE FORK ACCEPTS A DECKLIST THE SEAT IS NOT PLAYING and returns a plausible number, not an error. ⇒ this instrument is valid only on seats whose 60 we know — in practice the MIRROR. Never point it at an unidentified deck.
+[C4] wrong-deck control: correct 60 -> 1.000 (40/40 ok) · WRONG 60 -> 1.000 (40/40 ok)
+     🔴 THE FORK ACCEPTS A DECKLIST THE SEAT IS NOT PLAYING and returns a plausible number, not an error.
+     ✅ defused: the 'correct' arm above is the seat's OWN registered 60, read from the replay by seat_decklist() — not our list assumed onto them. Any seat in a replay we hold is usable; a seat without a recovered decklist is skipped.
 
 [C3] positive control: the clone's TOP option vs its LAST, 60 paired rollouts at each of 40 positions
-     Δ(top − last) = +0.1202 [+0.1034, +0.1371]  n=2400 pairs over 40 positions  (naive, pairs treated as independent -- DO NOT QUOTE)
-     Δ CLUSTERED BY POSITION = +0.1202 [+0.0515, +0.1889]  k=40 positions  (×4.1 wider) ← the honest interval
-     top arm 0.802 · last arm 0.682
+     Δ(top − last) = +0.1233 [+0.1059, +0.1407]  n=2400 pairs over 40 positions  (naive, pairs treated as independent -- DO NOT QUOTE)
+     Δ CLUSTERED BY POSITION = +0.1233 [+0.0521, +0.1945]  k=40 positions  (×4.1 wider) ← the honest interval
+     top arm 0.805 · last arm 0.681
      ✅ the instrument RESOLVES a contrast the clone itself ranks first vs last. It has real signal.
 
-[M2] paired sd 0.421 vs unpaired 0.613 -> shared-world correlation ρ≈0.53 (53% variance removed)
+[M2] paired sd 0.435 vs unpaired 0.612 -> shared-world correlation ρ≈0.50 (50% variance removed)
 
 [M1] rollout cost by turn
-     turn  2: n= 300 mean 163 ms
-     turn  3: n= 180 mean 134 ms
-     turn  4: n= 120 mean 152 ms
-     turn  5: n= 240 mean 168 ms
-     turn  6: n= 120 mean 133 ms
-     turn  7: n= 300 mean 114 ms
-     turn  8: n= 120 mean 29 ms
-     turn  9: n= 360 mean 72 ms
-     turn 10: n=  60 mean 56 ms
-     turn 11: n= 240 mean 60 ms
-     turn 12: n= 180 mean 52 ms
-     turn 13: n= 120 mean 36 ms
-     turn 15: n=  60 mean 17 ms
-     overall 101 ms/rollout, 2400 rollouts, 501s wall
-     ⇒ ±0.020 on a pooled Δ needs ≈472 POSITIONS (× 60 pairs each) = 96 min on one core
-     (sizing on the pair-level sd would have said 1704 pairs — the same error as the naive CI)
+     turn  2: n= 300 mean 148 ms
+     turn  3: n= 180 mean 130 ms
+     turn  4: n= 120 mean 127 ms
+     turn  5: n= 240 mean 153 ms
+     turn  6: n= 120 mean 83 ms
+     turn  7: n= 300 mean 98 ms
+     turn  8: n= 120 mean 20 ms
+     turn  9: n= 360 mean 55 ms
+     turn 10: n=  60 mean 39 ms
+     turn 11: n= 240 mean 49 ms
+     turn 12: n= 180 mean 33 ms
+     turn 13: n= 120 mean 28 ms
+     turn 15: n=  60 mean 16 ms
+     overall 86 ms/rollout, 2400 rollouts, 421s wall
+     ⇒ ±0.020 on a pooled Δ needs ≈507 POSITIONS (× 60 pairs each) = 87 min on one core
+     (sizing on the pair-level sd would have said 1815 pairs — the same error as the naive CI)
 
 [M3] position win-probability under the clone (top arm)
-     11/40 sampled positions sit in [0.15, 0.85]; mean 0.802
+     9/40 sampled positions sit in [0.15, 0.85]; mean 0.805
      ⚠ a position the clone wins 95% of the time cannot show a large action-value gap -- it bounds what any instrument can see there, and it is a property of the POSITION, not the estimator.
 
 [M4] do the EXPERTS' seats reconstruct? (the payoff use case)

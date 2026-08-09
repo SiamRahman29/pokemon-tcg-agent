@@ -4439,13 +4439,21 @@ the position exactly.** The instrument is buildable.
    terminal costs **101 ms**. ±0.020 on a pooled Δ costs ~96 min on one core
    (below), so pooling across a decision class is a **choice**, not a
    necessity — the opposite of what the design assumed.
-3. ⛔ **C4 is the binding scope constraint.** `begin` takes the seat's hidden
-   deck as an *argument* and cannot check it: given Crustle's 60 for a
-   Grimmsnarl seat it returned **0.975, exactly what the correct deck
-   returned** — rule 18's "plausible number, not a crash", in a new place.
-   ⇒ **the instrument is valid only on seats whose 60 we know, i.e. the
-   MIRROR** — which is also where the climb runs (§8ac, §8bn), so the
-   constraint costs little.
+3. ⛔ **C4 was the binding scope constraint, and it is now DEFUSED — but only
+   after it nearly landed on the population I had just called safe.** `begin`
+   takes the seat's hidden deck as an *argument* and cannot check it: given
+   Crustle's 60 for a Grimmsnarl seat it returned **exactly what the correct
+   deck returned** — rule 18's "plausible number, not a crash", in a new place.
+   The first fix was to restrict the instrument to the mirror. 🔴 **That fix
+   was wrong, because "both seats are Grimmsnarl" is not "both seats are our
+   60": over 25 `mirror_experts` games, only 18 of 50 seats run our exact
+   list** — the rest are 1–3 card variants. Determinizing those with our 60
+   would have mis-filled the hidden zones of **64% of expert seats**, silently.
+   ✅ **The real fix reads each seat's registered 60 out of the replay**
+   (`seat_decklist()`, a bare 60-int action at step 1; recovered **50/50** on
+   `mirror_experts` and validated **20/20** against `decks/grimmsnarl.py` on
+   our own seat). ⇒ **the scope constraint is lifted entirely** — any seat in a
+   replay we hold is usable, mirror or not.
 
 ### 🔴 And a defect in my own estimator, caught by replication
 
@@ -4477,9 +4485,9 @@ redundancy, and one this project had not applied to an interval before.
   batch, or selecting positions on the same rollouts that measure the effect
   buys a regression-to-the-mean bias.
 * ✅ **the payoff use case is available:** expert seats reconstruct **32/32**
-  over two dumps, and `replays/mirror_experts` holds **257 mirror games** where
-  both seats are on our exact 60 — so C4's constraint is satisfied there by
-  construction.
+  over two dumps, and `replays/mirror_experts` holds **257 archetype-mirror
+  games** — ⚠ *archetype* mirror, not identical-60 mirror, per the correction
+  above; each seat is determinized with its own recovered list.
 
 ⇒ **Pre-registered as E16** (`docs/experiments/E16-counterfactual-move-value.md`)
 — score the expert's actual move against our net's move by paired rollout, with

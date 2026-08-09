@@ -32,16 +32,23 @@ design sketched in HANDOFF §N.4.0:
 | the rollout is **not** reproducible given a fixed world — the engine draws its own shuffles/coins | ⛔ **true common random numbers are NOT available.** §N.4.0's "CRN" is unachievable; a shared determinized world is the only pairing there is |
 | a shared world still removes **~50%** of the variance (ρ≈0.50) | pairing is worth keeping, it just is not CRN |
 | **101 ms** per rollout to terminal | 🔴 **§N.4.0's "per-decision resolution is unaffordable" is FALSE** — ±0.020 on a pooled Δ costs ≈96 min on one core. Pooling across a class is a *choice*, not a necessity |
-| the fork **silently accepts a decklist the seat is not playing** and returns a plausible number | ⛔ **valid only on seats whose 60 we know ⇒ MIRROR ONLY.** This is the binding scope constraint |
+| the fork **silently accepts a decklist the seat is not playing** and returns a plausible number | ✅ **defused, not merely flagged:** each seat's registered 60 is read out of the replay (`seat_decklist()`, 50/50 recovered, validated 20/20 on our own seat). ⚠ The first fix — "restrict to the mirror" — was **wrong**: only **18 of 50** `mirror_experts` seats run our exact list |
 | the clone's own top vs last option reads **+0.120 [+0.052, +0.189]** (clustered) | the instrument has real resolution, and this is the **scale bar**: a deliberately bad move is worth ~0.12 |
 | only **11 of 40** of our own positions sit in win-probability [0.15, 0.85] | most positions are near-ceiling and bound what any instrument can see there |
 | 🔴 **pairs are clustered inside positions** — three runs of the same cell read +0.130 / +0.107 / +0.120 against a nominal ±0.017 | **every interval here is clustered on the POSITION.** The naive pair-level interval is 4.1× too narrow and is forbidden |
 
 ## Population
 
-`replays/mirror_experts` — **257 games**, both seats on Grimmsnarl (so the
-wrong-deck hazard above is controlled by construction). Expert seats are the
-1150+ pilots F1 already mined from this dump (22,665 expert decisions).
+`replays/mirror_experts` — **257 games**, both seats on the Grimmsnarl
+archetype. Expert seats are the 1150+ pilots F1 already mined from this dump
+(22,665 expert decisions).
+
+🔴 **Correction to this section's first draft, made before any cell ran.** It
+said the wrong-deck hazard was "controlled by construction" because both seats
+are Grimmsnarl. **That is false** — only **18 of 50** sampled seats run our
+exact 60; the rest are 1–3 card variants. Every seat is therefore determinized
+with **its own registered list**, recovered from the replay, and a seat whose
+list cannot be recovered is **skipped, not defaulted**.
 
 **Unit:** a MAIN decision of an expert seat with `minCount ≤ 1 ≤ maxCount`,
 ≥3 options, turn ≥ 2, live game, **where the expert's actual pick differs from

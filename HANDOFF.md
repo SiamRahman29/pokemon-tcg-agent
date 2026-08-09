@@ -52,11 +52,14 @@ it lets any team name in a replay be joined to its rating.
 > >   keep it, just do not call it CRN.
 > > - 🔴 **"Per-decision resolution is unaffordable" was WRONG.** 101 ms per
 > >   rollout to terminal; ±0.020 on a pooled Δ ≈ 96 min on one core.
-> > - ⛔ **MIRROR ONLY.** The fork accepts a decklist the seat is **not**
-> >   playing and returns a plausible number (Crustle's 60 on a Grimmsnarl seat
-> >   read 0.975, the same as the correct deck). Never point it at an
-> >   unidentified deck. `replays/mirror_experts` (257 games) satisfies this by
-> >   construction.
+> > - ⛔→✅ **The fork accepts a decklist the seat is NOT playing** and returns
+> >   a plausible number (Crustle's 60 on a Grimmsnarl seat read exactly what
+> >   the right deck read). The first fix was "mirror only" — 🔴 **and that fix
+> >   was wrong: only 18 of 50 `mirror_experts` seats run our exact 60**, so it
+> >   would have mis-determinized 64% of expert seats silently. ✅ **Real fix:
+> >   read each seat's registered 60 out of the replay** (`seat_decklist()`,
+> >   50/50 recovered, 20/20 against `decks/grimmsnarl.py` on our own seat).
+> >   **Scope constraint lifted — any seat in a replay we hold is usable.**
 > > - 🔴 **And a defect in my own estimator, caught by replication:** three runs
 > >   of the same cell read +0.130 / +0.107 / +0.120 against a nominal ±0.017.
 > >   Pairs are **clustered inside positions**; clustering widens the interval
