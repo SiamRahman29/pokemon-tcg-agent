@@ -47,6 +47,29 @@ it lets any team name in a replay be joined to its rating.
 > late** (§8l's 0.685/0.901 was 200 self-play games), fitted per turn bucket on
 > an independent 250-game corpus. The instrument is sound; the seam is empty.
 >
+> ## 0a. 🔴 R1 AND R2 BOTH RAN AND BOTH ARE NULLS — day 27, 2nd session
+>
+> **R2 / E15 — average out the bench-slot nuisance.** Pre-registered at `c2ce197`
+> BEFORE any game. `bc:sym8` vs `bc:base`, same net, mirror, n=2,000:
+> **0.513 [0.492, 0.535]** against a pre-registered 0.500 ⇒ **NULL, does not
+> ship.** Controls held: `sym1` bitwise identical to `bc` (0/1,915 selects) and
+> `sym8` fired on **8.36%** of selects, so it is not a null for want of firing.
+> The prior (§8bd's indifferent near-tie band) was written down first and was
+> right. ⛔ **Do not re-cut at another K.** §8bu. Code stays, off by default.
+>
+> **R1 — the latent "plan".** 🔴 **Killed at its sizing gate before any net was
+> trained** (§8bv, `p79_plan_audit.py`, 56,611 MAIN decisions). Plan clusters
+> carry **+0.001 / −0.009 / +0.037 / +0.090 bits** (k=2/3/4/6) about the next
+> action beyond the board, against an estimator control that reads **+0.372 with
+> only two groups**. ⚠ Two traps caught on the way: a too-fine bucket made the
+> control read NEGATIVE, and the first signature was **circular** (clustering on
+> card play rates to predict which card was played, +0.27→+0.46 of pure
+> tautology).
+> ⚡ **And the by-product is the day's most reusable fact: conditioned on the
+> board, WINNERS AND LOSERS PLAY THE SAME (−0.0024 bits).** That retires
+> outcome-conditioned / "upside-down RL" cloning before it is built, and it is a
+> third independent corroboration of §8bs.
+>
 > ## 0b. 🔴 THE PART TO CARRY FORWARD: a realized trajectory CANNOT see an error of omission
 >
 > The discriminator was run because a null needs one. §8bm's seven known

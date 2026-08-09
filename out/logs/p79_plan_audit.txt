@@ -1,0 +1,16 @@
+
+=== R1 PLAN AUDIT — 700 games, 1376 seats, 56611 MAIN decisions ===
+
+  plans                       sizes   MI(act;plan|state)   shuffled    excess
+      2[np.int64(654), np.int64(722)]               0.0599     0.0554   +0.0045
+      3[np.int64(253), np.int64(553), np.int64(570)]               0.3767     0.1022   +0.2745
+      4[np.int64(508), np.int64(71), np.int64(554), np.int64(243)]               0.4453     0.1316   +0.3137
+      6[np.int64(22), np.int64(461), np.int64(131), np.int64(235), np.int64(480), np.int64(47)]               0.6453     0.1858   +0.4595
+
+  ESTIMATOR CONTROL label = plays Petrel above the median rate
+    MI 0.4232   shuffled 0.0515   excess +0.3717   ✅ estimator sees a real label
+
+  POSITIVE-CONTROL label = did this seat WIN
+    MI(act ; won | state) 0.0531   shuffled 0.0555   excess -0.0024
+    ⚠ this is the ceiling-ish reading for 'a game-level label that
+      really does change behaviour'. Compare the clusters against it.

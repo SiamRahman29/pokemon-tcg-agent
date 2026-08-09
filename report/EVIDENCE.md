@@ -4403,6 +4403,99 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bv. 🔴 R1 DIES AT ITS SIZING GATE — there is no latent "plan" in the corpus, and winners and losers play the SAME given the board (2026-08-09, day 27)
+
+`scripts/p79_plan_audit.py`, log `out/logs/p79_plan_audit.txt`. **700 games,
+1,376 seats, 56,611 MAIN decisions** from 08-05…08-07.
+
+**The hypothesis.** §8u is the sharpest number in the repo on why we are not a
+top player: we cloned the #2 player **successfully** — held-out agreement
+59.9% → 67.2% — and measured **−92 Elo**. The reading that survives is that you
+copy a strong player's moves without their *plan*. If that is right, the corpus
+contains several coherent LINES and our memoryless net fits their mean.
+
+**The gate.** If demonstrators run distinct lines, knowing which line a seat is
+on must predict their next action **beyond what the board already says**:
+`MI(action ; plan | state-bucket)` against the same statistic with plans
+shuffled across seats (the shuffle preserves label marginals *and* the
+within-seat correlation, so it absorbs the plug-in bias).
+
+| plans (k-means on game shape) | MI | shuffled | **excess** |
+|---|---|---|---|
+| 2 | 0.0562 | 0.0551 | **+0.0010** |
+| 3 | 0.0953 | 0.1039 | **−0.0087** |
+| 4 | 0.1793 | 0.1425 | **+0.0368** |
+| 6 | 0.2671 | 0.1773 | **+0.0898** |
+| **ESTIMATOR CONTROL** — label = plays Petrel above median rate | 0.4232 | 0.0515 | **+0.3717** ✅ |
+| **label = did this seat WIN** | 0.0531 | 0.0555 | **−0.0024** |
+
+⛔ **R1's premise fails.** A label that genuinely defines behaviour reads
+**+0.372 bits with only two groups**; the best plan clustering reads **+0.090
+with six**, two of which are micro-clusters (18 and 26 seats), and the
+well-populated k=2/k=3 splits read **zero**. The estimator had the power to see
+an effect of the relevant size and did not.
+
+🔴 **Two methodological traps, both sprung and both caught:**
+1. **The first bucket was too fine** — `(turn, hand, prizes, opp_prizes,
+   n_opts)` drove the shuffled baseline to 0.36 bits and made the positive
+   control come out **negative**. Plug-in MI bias grows with
+   (#buckets × #plans × #actions)/N; the bucket is the lever.
+2. 🔴 **The first signature was CIRCULAR.** Clustering seats on their *card play
+   rates* and then predicting *which card was played* reads **+0.27 to +0.46** —
+   which is the estimator control's construction, not a finding. Re-clustering
+   on game-shape features only (bench size, energy pace, evolution timing, prize
+   pace, length), which share no variable with the label, collapses it to the
+   table above.
+
+⚡ **The `won` row is a finding in its own right, and it is the day's third
+independent confirmation:** **conditioned on the board state, winners and losers
+choose the same actions** (−0.0024 bits). That kills outcome-conditioned /
+"upside-down RL" cloning as a variant *before* it is built — the label carries no
+action information to condition on — and it corroborates §8bs (no blunder
+signature) and §8bn from a third direction.
+
+⚠ **What is NOT claimed.** This tests one operationalisation of "plan" (k-means
+over six shape features). A richer plan representation could carry more. But the
+instrument demonstrably resolves a real game-level label at 0.37 bits, so
+whatever remains is smaller than that.
+
+## 8bu. 🔴 E15 IS A NULL — averaging out the bench-slot nuisance reads 0.513 [0.492, 0.535] against a pre-registered 0.500 (2026-08-09, day 27)
+
+Pre-registered in `docs/experiments/E15-symmetry-averaging.md` at commit
+`c2ce197`, **before any arena game was played**. Log `out/logs/e15_sym8_ab.txt`.
+
+`bc:sym8` (option probabilities averaged over 8 bench relabellings,
+`agents/sa/symavg.py`) vs `bc:base`, same net (`#4790c469`), direct grimmsnarl
+mirror, seat-swapped, **n = 2,000 games**:
+
+```
+score = 0.513 [0.492, 0.535]   W1027/D0/L973
+[health] OK calls=424480 fallbacks=0 net_missing=0
+```
+
+⛔ **The interval covers 0.500. By the pre-registered criterion E15 is a null and
+does not ship.** The point estimate is +0.013 (≈ +9 Elo) — positive, and far
+under the 63–87-point LB noise floor (§8ak), so it is unmeasurable where it
+would have to show up even if real.
+
+✅ **Two controls held.** `sym1` (identity relabelling only) is **bitwise
+identical** to plain `bc` — 0 of 1,915 selects differ — so the no-op arm is
+proven rather than assumed. And `sym8` changes **8.36%** of real selects
+(160/1,915), so this is not a null for want of firing: the intervention was
+live on ~4 decisions per game.
+
+⚡ **The prior recorded before the run was right, and that is the point.** §8bd
+measured the near-tie band as indifferent (0.494 [0.467, 0.520]) and §8bt showed
+the unstable decisions sit in exactly that band (median margin 0.310 vs 1.298).
+Writing that down first is what makes this a null instead of a +0.013 headline.
+⛔ **Do not re-cut at a different K.** The pre-registration forbids it explicitly,
+and the mechanism — not the K — is what §8bd already priced.
+
+⚠ **The defect itself stands** (§8bt): the net does read a nuisance variable. The
+code stays; it is off by default (`sym_k=0`), and it is a correctness finding
+that measured null, exactly the case
+`correctness-fixes-are-wanted-regardless-of-elo` was written for.
+
 ## 8bt. ⚡ THE NET DECIDES PARTLY ON BENCH SLOT NUMBER — 18.2% of decisions flip under a relabelling that changes nothing about the game (2026-08-09, day 27)
 
 `scripts/p78_symmetry_probe.py`, log `out/logs/p78_symmetry.txt`, run against the
@@ -4418,13 +4511,24 @@ because it was the only thing separating two options naming two copies of a card
 | arm | reading |
 |---|---|
 | **option-list ORDER** (positive control — deep-sets pool the option set, §8aa, so this MUST read ~0) | **0 / 23,952 = 0.000%** ✅ harness sound |
-| **our own BENCH relabelling** | **1,889 / 21,732 = 8.69%** of relabellings change the chosen option |
-| …per decision | **660 / 3,622 = 18.2%** of decisions flip under ≥1 of 6 relabellings |
+| **option-identity multiset preserved** (control, added after the bug below) | **0 violations** ✅ |
+| **our own BENCH relabelling** | **1,670 / 21,732 = 7.69%** of relabellings change the chosen option |
+| …per decision | **613 / 3,622 = 16.9%** of decisions flip under ≥1 of 6 relabellings |
 
-Worst context is **MAIN at 27.5%** (491/1,788), then TO_HAND 14.8%.
+Worst context is **MAIN at 24.8%** (443/1,788), then TO_HAND 14.8%.
+
+🔴 **The first version of this probe read 18.2% / 27.5% and was wrong**, because
+`_permute_bench` rewrote `opt["index"]` but not **`opt["inPlayIndex"]`**, which
+ATTACH/EVOLVE (types 8, 9) use to name their in-play target and which
+`optfeat._target_pokemon` and `slot_ix` both read. That does not relabel a
+position, it **corrupts the option** — so part of the original instability was
+measured damage, not a symmetry. Caught by an **option-identity multiset
+control**, which is now arm 0 and reads 0. The effect survives the repair at
+about 1.3 pp lower. ⚠ Fourth instance this session of "a guard/permutation I
+wrote myself was the bug".
 
 ⚠ **The margin decomposition is what keeps this honest.** Median top1−top2 logit
-margin is **1.298 over all decisions but 0.354 over the unstable ones** — the
+margin is **1.298 over all decisions but 0.310 over the unstable ones** — the
 flips live in the near-tie band. **§8bd measured that band and it is
 INDIFFERENT**: flipping the clone's *k*-th choice for its (*k*+1)-th across it
 reads **0.494 [0.467, 0.520]**. ⇒ **the prior is against this being worth Elo**,
