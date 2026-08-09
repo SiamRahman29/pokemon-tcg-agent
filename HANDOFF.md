@@ -78,17 +78,42 @@ it lets any team name in a replay be joined to its rating.
 > say: **the gap is not concentrated in a matchup we could close by targeting
 > better**, the same place §8bj and §8bl landed from the behavioural side. §8bn.
 >
-> ## ▶ 3. WHAT IS RUNNING / WHAT IS NEXT
+> ## 🔴 3. E13 — THE KO-SETUP RULE, PRE-REGISTERED AND KILLED AT THE GATE THE SAME DAY
 >
-> - ⏳ **Mining 5 unmined days (08-03…08-07) in the background** — the last day
->   on disk was 08-02 and the LB top has reshuffled completely since day 13
->   (`LiamK` 1202.3 is new). User asked for fresh/stronger demonstrators.
+> The user approved building a targeting rule off §8bo's 22.4%-vs-7.0% gap.
+> Frozen first in `docs/experiments/E13-ko-setup.md` at **50a6344, before
+> `p74_ko_setup_sizing.py` existed** — then sized: **0.04 firings/game against
+> the 0.5 gate, 12× under.** No rule written, no arena time spent.
+>
+> ⚡ **The kill is bigger than the sizing.** The same funnel from ntumlnoob's
+> seat (149 games) puts **7 of 406** damaged-Active decisions in the KO-setup
+> band — **1.7% vs our 1.0%.** The band is nearly empty for the experts too, so
+> **the mechanism E13 was built on ("they concentrate to manufacture KOs") is
+> measured FALSE**, not merely too rare. ⚠ That retires my reading of §8bo's
+> "KO-available 1.2% vs 6.3%" as evidence of deliberate KO manufacture.
+> ✅ **One thing was gained:** the funnel controlled a confound §8bo never did —
+> whether our attack *already* kills their Active, making the counter genuinely
+> wasted. Ours **45.4%**, theirs **45.8%**. §8bo's ~86%-behavioural conclusion
+> survives; only this explanation of it is dead. §8bp.
+> ⛔ **Do not revive at a different chip value, and do not reach for the
+> clause-4-only "prefer a damaged Active" variant** (it sizes at 2.6–4.0/game
+> and will look tempting). It was frozen as a separate experiment *precisely* so
+> it could not become the fallback the moment clause 5 failed, and it is a
+> 100%-forcing rule against a 22.4% behaviour — E11's error verbatim (0.487).
+>
+> ## ▶ 4. WHAT IS RUNNING / WHAT IS NEXT
+>
+> - ✅ **Mining of 08-03…08-07 COMPLETE: 1,978 fresh games** (401/376/401/401/399).
+>   ⚠ **Not yet censused** — unknown whether they contain `LiamK` (1202) or how
+>   much is our archetype. That census is the cheapest next read.
 > - ▶ **Petrel is the remaining named seam and is NOT yet touched** (user: "we
 >   can do the audit and petrel later on"). ⚡ **Nothing in the repo has ever
 >   looked at it**: `p70` measures whether a card is *played* per turn, never
 >   what Petrel *fetches*. The fetch choice is the uninstrumented seam.
 > - ⛔ **Do not build a passive-damage rule on §8bm** — it is a sizing kill, and
->   both dominated tests are an order of magnitude under the gate.
+>   both dominated tests are an order of magnitude under the gate. **E13 (§8bp)
+>   closes the tradeoff half the same way. The passive-damage seam is now
+>   measured from both ends and has produced nothing shippable.**
 >
 > ---
 >

@@ -4403,6 +4403,80 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bp. 🔴 E13 DIES AT THE SIZING GATE — the KO-setup band is empty for the EXPERTS TOO, so §8bo's gap is not KO manufacture (2026-08-09, day 26)
+
+Pre-registered in `docs/experiments/E13-ko-setup.md` at **50a6344, before
+`p74_ko_setup_sizing.py` existed**. Prediction 1 named the sizing gate as the
+most likely killer, and it was.
+
+### The frozen condition, sized
+
+`p74` implements E13's five clauses exactly: a damage-placement select, all
+options opponent-side, their Active on offer and not already taken by the net,
+their Active already damaged, and `best_damage` in the band `hp-30 ≤ A < hp` —
+the placement is what converts a survivable Active into a lethal one.
+
+```
+python -X utf8 scripts/p74_ko_setup_sizing.py --dir replays/submission_v5_s2 --arch grimmsnarl
+python -X utf8 scripts/p74_ko_setup_sizing.py --dir replays/ntumlnoob_31-07-2026 \
+    --us "李秉叡（ntumlnoob）" --arch grimmsnarl
+```
+
+| funnel stage | us (24 mirror games) | ntumlnoob (149) |
+|---|---|---|
+| damage-placement selects | 303 (12.6/game) | 1497 (10.1/game) |
+| Active on offer | 218 | 891 |
+| …and not already taken | 209 | 772 |
+| …and Active already damaged | **97** | **406** |
+| **…and in the KO-setup band** | **1 (0.04/game)** | **7 (0.05/game)** |
+
+⛔ **0.04 firings/game against a 0.5 gate — 12× under.** The rule is not written.
+Same gate that closed Morgrem (0.2), Pokégear (0.27), Archaludon (0.187) and
+both halves of E12 (0.09, 0.20).
+
+### ⚡ The finding is not "the rule is too small" — it is that the MECHANISM WAS WRONG
+
+E13's stated mechanism was that the 1150+ pilots concentrate chip damage to
+*manufacture* KOs. **They do not.** Their KO-setup band is 7 of 406 damaged-Active
+decisions — **1.7%**, against our 1.0%. The band is nearly empty for both sides,
+so it cannot be carrying a 22.4%-vs-7.0% behavioural difference. Whatever drives
+§8bo's gap, it is **not** converting the Active into range of our own attack, and
+`best_damage`-shaped arithmetic cannot reach it.
+
+⚠ This retires the reading of §8bo's "KO-available 1.2% vs 6.3%" as evidence of
+deliberate KO manufacture. That coherence story was mine, and it is now measured
+false. The 6.3% has some other cause — most likely their attacks landing more
+often, which is downstream of play quality, not of target choice.
+
+### A confound §8bo did NOT control for, now checked and clean
+
+The funnel exposes a variable the direct standardisation never held fixed:
+whether our attack **already** kills their Active, in which case a counter spent
+there is wasted and declining it is correct rather than timid.
+
+| | already lethal | share of damaged-Active decisions |
+|---|---|---|
+| us | 44 / 97 | **45.4%** |
+| ntumlnoob | 186 / 406 | **45.8%** |
+
+Within 0.4 points. **§8bo's conclusion survives** — the ~86%-behavioural gap is
+not an artefact of us facing already-dead Actives more often. The gap is real and
+still unexplained; only this explanation for it is dead.
+
+### What is closed, and what is not
+
+⛔ **Closed: the KO-setup rule form.** Do not revive it at a different chip value
+— E13 pre-registered that as a separate experiment, and the reason it died (an
+empty band on *both* sides) does not move with the threshold.
+
+⚠ **Not closed: the §8bo gap itself.** The plain "prefer a damaged Active"
+variant sizes at 2.6–4.0 firings/game, well over the gate. It was pre-registered
+as a separate experiment precisely so it could not be reached for as a fallback
+the moment clause 5 failed, and **that is exactly the situation now — so it is
+not being reached for.** It is a 100%-forcing rule against a 22.4% behaviour,
+which is E11's error verbatim (0.487). If it is ever run it needs its own
+pre-registration and its own argument for why E11 does not apply.
+
 ## 8bo. ⚡ THE NET ALREADY BRANCHES ITS TARGETING ON THE MATCHUP — 4.1% → 90.9% "hit the Active", learned, with every rule OFF (2026-08-08, day 26)
 
 **User hypothesis** (day 26): *"depending on who we're facing, the policy could

@@ -142,3 +142,35 @@ rule 16's trap with a worse denominator than E11 faced.
    reproduces the cost without the payoff. Not measured before freezing. This is
    E11's prediction 3 in a new suit, and E11's prediction 3 was the one that
    survived contact.
+
+---
+
+## ▶ VERDICT (2026-08-09, same session) — ⛔ KILLED AT THE SIZING GATE, before any rule was written
+
+**0.04 firings/game against the 0.5 gate — 12× under.** No rule was written, no
+arena time was spent. `scripts/p74_ko_setup_sizing.py`, 24 mirror games: 303
+damage-placement selects → 97 with a damaged Active the net declined → **1** in
+the KO-setup band.
+
+**Prediction 1 was right, and for the reason it gave.** Predictions 2–4 are
+unscored: the experiment never reached the arena.
+
+⚡ **The kill is stronger than a sizing failure.** The same funnel run from
+`李秉叡（ntumlnoob）`'s seat (149 games) puts **7 of 406** damaged-Active
+decisions in the band — **1.7% against our 1.0%**. The band is nearly empty for
+the experts too, so it cannot be what drives their 22.4%. **The mechanism this
+experiment was built on is measured false**, not merely too rare to exploit.
+
+Prediction 4 deserves its own note: it guessed the payoff might live in *their
+follow-up*. That is now the leading hypothesis by elimination, not by evidence.
+
+One thing was gained. The funnel controlled a confound §8bo never did — whether
+our attack already kills their Active, making the counter genuinely wasted. Ours
+45.4%, theirs 45.8%. **§8bo's ~86%-behavioural conclusion survives** that check.
+
+⛔ **Do not revive this at a different chip value.** This file pre-registered that
+as a separate experiment, and the reason it died — an empty band on *both* sides
+— does not move with the threshold. ⛔ **Do not reach for the clause-4-only
+variant either**; it was frozen as a separate experiment precisely so it could
+not become the fallback the moment clause 5 failed. Full write-up: `EVIDENCE`
+§8bp.
