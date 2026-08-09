@@ -1,0 +1,49 @@
+net: out\tmp\sa\policy_net.npz  #4790c469
+leaderboard rows: 6653   aliases: 2
+[C0] recorded action == our own net's pick on our own games: 528/529 = 99.8% (out-of-range 0)
+     ✅ actions are aligned to their observations.
+
+population: replays/mirror_experts, rating ≥ 1050.0
+  agree                  3724
+  disagree               2457
+  skip_below_cut         308
+  skip_multi_or_missing  904
+  skip_unrated           37
+  skip_us                1
+  ⇒ our net's top-1 differs from the expert on 39.8% of their MAIN decisions
+[C1] forked position identical to the replay's: 40/40 = 100.0%
+     ✅ an sbi captured in another process reconstructs exactly.
+
+[agreement control] identical arms at 150 positions — must read 0
+    [agree] 50/150 positions, 291s
+    [agree] 100/150 positions, 595s
+  agreement: Δ = -0.0009 [-0.0144, +0.0126]  k=150 positions × 30 pairs (clustered on position)
+  ✅ identical arms read zero — the pipeline is sound.
+
+[treatment] expert's move vs our net's move, 600 positions × 30 pairs
+    [treat] 50/600 positions, 291s
+    [treat] 100/600 positions, 587s
+    [treat] 150/600 positions, 858s
+    [treat] 200/600 positions, 1119s
+    [treat] 250/600 positions, 1416s
+    [treat] 300/600 positions, 1757s
+    [treat] 350/600 positions, 2040s
+    [treat] 400/600 positions, 2357s
+    [treat] 450/600 positions, 2633s
+    [treat] 500/600 positions, 2919s
+    [treat] 550/600 positions, 3204s
+  Δ(expert − ours): Δ = +0.0066 [-0.0018, +0.0150]  k=600 positions × 30 pairs (clustered on position)
+  scale bar (§8bw, clone's own top vs last): +0.120
+  wall: 3502s treatment + 880s control
+  ⇒ NULL: their per-move advantage is invisible to a clone continuation. H1 and H2 both predict this ⇒ arm C decides.
+
+[exploratory — cannot produce a rule on its own]
+  turns 0-2: Δ=+0.0089 k=32
+  turns 3-5: Δ=+0.0155 k=156
+  turns 6-8: Δ=-0.0009 k=191
+  turns 9-11: Δ=+0.0162 k=134
+  turns 12-14: Δ=-0.0084 k=87
+  by rating band (pre-declared -- does the cut drive the answer?)
+    1050-1075  Δ=+0.0296 ±0.0546  k=18
+    1075-1100  Δ=+0.0070 ±0.0092  k=489
+    1100+      Δ=-0.0000 ±0.0217  k=93

@@ -474,6 +474,112 @@ last safe day ~08-15**; EVIDENCE §8bh+ entries the session each item concludes.
 
 ---
 
+## 2.7 THE CLOCK — parked with a design, a price and a kill gate (day 28, 2026-08-10)
+
+**User decision: finish the current thread first, then take this up.** Nothing
+below is built. It is recorded because the analysis is done and would otherwise
+be re-derived from scratch.
+
+**The fact this rests on: we use 1.12 s of a 600 s per-game budget.** That number
+already appears in §3.5 — but *only inside the Round-2 section*, whose conclusion
+is "which is why the R2 clock is an opportunity". **Round 1 has the same unspent
+headroom and it was never filed as a live candidate.** This section is that
+filing.
+
+### 🔴 First, a correction that weakens the case
+
+§3.5 has been quoting *"its own controlled arm measured the extra time at
+≈ +154 Elo"* as evidence that more time helps. **Read in context (§8v) it means
+something much narrower.** The three arms were `sb0.35` 0.075 (−436) → `sb1.0`
+0.165 (−282) → `sb1.0,reply` 0.375 (−89). At `sb0.35` the sequencer **blew its
+budget 62 times against 56 plans** — it was aborting mid-plan. So +154 is the
+gain from *stopping it timing out*, a floor repair, **not a scaling curve**. And
+all three arms are deeply negative: fully funded and design-fixed, B4 is −89.
+⇒ **There is no measured evidence that more time helps.** The case rests on two
+unmeasured things: that terminal rollouts beat `evalfn`-on-truncated-states, and
+that a scaling curve exists at all.
+
+### The naive design is dead on arithmetic
+
+600 s ÷ ~318 selects ≈ 1.9 s ≈ 19 rollouts ≈ 9 paired samples. Paired sd is
+**0.43** (§8bw) ⇒ SE **0.14** on one decision's gap, against a clone
+best-vs-worst gap of 0.120. That is overruling the clone on noise, and
+`planner.py`'s own comment says so verbatim. **Spreading the clock reproduces
+B4 with more samples.**
+
+### The design the arithmetic supports: concentrate
+
+| decisions covered | pairs each | SE on one gap |
+|---|---|---|
+| all 318 | 9 | 0.143 ← B4 |
+| 60 | 50 | 0.061 |
+| 30 | 100 | 0.043 |
+| **10** | **300** | **0.025** |
+
+Same compute; the entire difference is allocation. Target the **tradeoff mass in
+damage placement / targeting** — 10.2 choices/game (§8bm), and HANDOFF §1 is
+explicit that the dominated half is already 99.1% right unaided while the
+tradeoff half **has no ground truth**. Rule 11 says hand-written rules lose
+there (0-for-5); that is not an argument against an oracle that simulates the
+outcome.
+⚠ **Cost and value run opposite across a game:** a turn-2 rollout costs ~195 ms,
+a turn-15 one ~17 ms, but only **11 of 40** positions sit in win-probability
+[0.15, 0.85] — the decisions worth buying are the expensive ones.
+⚠ **Selection must be ONLINE** (a per-decision cap plus a reserve), because at
+turn 3 you cannot know what turn 9 brings. That budget manager is also the
+defence against the failure mode we have never been near: **timeout = loss.**
+
+### 🔴 Where the compute actually goes — measured, and it kills the GPU story
+
+| component | cost | share of a rollout |
+|---|---|---|
+| `net.choose` | 0.808 ms | **80%** |
+| …of which state featurize | 0.167 ms | (21% of net.choose) |
+| `fs.step` (the C engine) | 0.197 ms | 20% |
+
+A 3-layer MLP over ~6 options is ~10⁵ FLOPs — *microseconds* of arithmetic. We
+spend 0.8 ms, so **essentially all of it is Python/numpy call overhead**, not
+matmul. ⇒ **a GPU attacks the one slice that is already negligible; Amdahl caps
+it at ~1.3×.** Two further constraints: the **Round-1 agent runs on 2 vCPU with
+no GPU**, so a GPU could only ever accelerate offline labelling; and Kaggle
+notebooks give ~4 vCPU (≈3× this box). ✅ `libcg.so` exists, so the engine does
+run on Kaggle Linux.
+⇒ **The real levers are BATCHING (evaluate N lockstep rollouts in one numpy
+call, amortising the per-call overhead — the AlphaZero restructuring, and it
+targets the 80%), process parallelism, and rewriting feature extraction.**
+Stacked maybe 10–15×, and all of it is engineering, not a flag.
+
+### ⛔ The blocker that outranks the idea's merit: we cannot validate it
+
+Everything here ships on an arena A/B at n≥2000 in shipped config. A clone game
+costs ~0.17 s; an agent spending even 60 s/game is ~350× that ⇒ **n=2000 is ~33
+hours per arm**, and at a full budget it is weeks. That is why §8v ran B4 at
+**n=200** (±0.07) — enough to detect a rout, **not** enough to confirm a modest
+gain. The ladder cannot adjudicate either (63–87 noise floor, §8ak).
+⇒ **The honest decision rule for this axis is LARGE OR NOTHING.**
+
+### The gate to run first
+
+At ~200 real damage-placement decisions, estimate the **distribution** of the
+action-value gap. **90th percentile ≥ 0.10 ⇒ build; gaps ≤ ~0.03 ⇒ the clock
+cannot buy anything and the axis closes for the price of a probe.** ⚡ **E16's
+dispersion may answer this for free** (§8bx) — the mean was null, but the
+*spread* of per-position Δ is the same quantity.
+
+### Where it probably belongs: Round 2
+
+16 vCPUs + an H100 fixes the validation cost as much as the play cost, and §3.5
+already names B4 as the one axis R2 hardware genuinely reopens ("a re-probe
+candidate, not a revival"). ⚡ **And the adjacent family — value-based policy
+iteration (search produces improved targets, the policy trains toward them) — is
+the one combination never tried.** Both halves failed separately (B8 §8ao; B4
+§8v), but ⚠ **note the label carefully: §0's decline of self-play RL was a
+COMPUTE PRIOR filed as a measurement, struck on day 14.** So that family is
+*"declined for cost, never tested"*, not *"tested and dead"* — the strongest R2
+candidate we have, and E16's dispersion is its sizing gate too.
+
+---
+
 ## 3. Calendar (sim closes 2026-08-17; report due 2026-09-14)
 
 | window | Track A (LB) | Track B/C (dossier) | gate |
@@ -578,7 +684,7 @@ an H100 make several closed axes *possible* again; that is not the same as
 | deck guess-a-swap (§8al), the 11-variant search (§8ar/§8as) | all ≤ 0 against a same-deck control | ⛔ **No** |
 | RL fine-tune (§8ao) | pre-registered rule; **4× the data moved the estimate DOWN** | ⛔ **Closed on the METHOD, not the budget** — that is the exact wording of the decision rule. ⚠ The one honest opening is the **untested β**, named as unfalsified rather than refuted |
 | game-tree search (§2) | ours 0.323, n=31, rollout SE≈0.14 | ⚠ **Partly.** Variance was the killer and n is affordable now; but V10's MCTS never executing while holding 950+ is not a compute finding |
-| **within-turn sequencing, B4 (§8v)** | −89 Elo vs a 1 ms clone | 🔴 **YES, and it is the only clean case.** The controlled arm measured **extra time ≈ +154 Elo** on its own, and the prototype spent **~12 s/game — 2% of even the 600 s First Round pool.** R2 gives **3× the clock × 8× the cores + a GPU**, i.e. **150× what B4 actually used.** **A re-probe candidate, not a revival** — it was −89 with the design fix already applied |
+| **within-turn sequencing, B4 (§8v)** | −89 Elo vs a 1 ms clone | 🔴 **YES, but the case is weaker than this row long claimed.** ⚠ **The "extra time ≈ +154 Elo" reading is CORRECTED (§2.7, day 28): at `sb0.35` the sequencer blew its budget 62 times against 56 plans, so +154 is the gain from no longer ABORTING — a floor repair, not a scaling curve.** There is no measured evidence that time beyond that helps. The prototype spent **~12 s/game — 2% of even the 600 s First Round pool.** R2 gives **3× the clock × 8× the cores + a GPU**, i.e. **150× what B4 actually used.** **A re-probe candidate, not a revival** — it was −89 with the design fix already applied |
 
 **5. ⏱ THE CLOCK TRIPLES, AND IT COMPOUNDS WITH THE CORES: 600 s → 1,800 s PER
 GAME, PER PLAYER.**
@@ -621,7 +727,7 @@ in a single in-person tournament, one game lost on clock is unrecoverable.
 gap is far larger than first stated.** §8v's prototype used **~12 s/game of
 planning** (`EVIDENCE` §8v, "~40× the clone, well inside the 600 s pool") — that
 is **2% of even the First Round budget**. It lost by ≈ 89 Elo there, while its
-own controlled arm measured the extra time at **≈ +154 Elo**.
+own controlled arm measured the extra time at **≈ +154 Elo** — ⚠ **corrected day 28 (§2.7): that figure is the recovery from budget ABORTS (62 overruns against 56 plans at `sb0.35`), not evidence that more time scales into more strength.**
 **The Second Round budget is 1,800 s/game — 150× what the prototype actually
 spent — on 8× the cores with GPU-batchable net evals.**
 ⚠ **This does not reopen B4**: the design fix was already applied when it lost,

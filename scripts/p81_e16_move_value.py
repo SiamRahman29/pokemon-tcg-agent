@@ -159,6 +159,7 @@ def measure(items: list, pairs: int, cont_net, label: str,
     per_pos: list[float] = []
     ns: list[int] = []
     idxs: list[int] = []
+    within: list[float] = []
     t0 = time.perf_counter()
     for pi, (o, seat, deck, a_pick, b_pick, _t, _r, _g) in enumerate(items):
         d = []
@@ -175,9 +176,11 @@ def measure(items: list, pairs: int, cont_net, label: str,
             per_pos.append(statistics.fmean(d))
             ns.append(len(d))
             idxs.append(pi)
+            within.append(statistics.stdev(d) if len(d) > 1 else float("nan"))
         if pi and pi % 50 == 0:
             print(f"    [{label}] {pi}/{len(items)} positions, "
                   f"{time.perf_counter() - t0:.0f}s", flush=True)
+    measure.last_within = within
     return per_pos, ns, time.perf_counter() - t0, idxs
 
 
@@ -254,6 +257,22 @@ def run(args: argparse.Namespace) -> int:
           f"{len(dis_s)} positions × {args.pairs} pairs")
     tp, tn, tsec, ti = measure(dis_s, args.pairs, net, "treat")
     tm, tlo, thi = report(tp, tn, "Δ(expert − ours)")
+    # 🔴 THE MEAN IS NOT THE HEADROOM. A null mean is compatible with a large
+    # per-decision gap whose SIGN varies -- |E[x]| vs E[|x|], the same
+    # distinction E15's pre-registration drew about the near-tie band. Decompose
+    # the observed spread into true between-position variance and measurement
+    # noise, because the TRUE dispersion is what an oracle could capture.
+    w = [x for x in getattr(measure, "last_within", []) if x == x]
+    if len(tp) > 2 and w:
+        obs_sd = statistics.stdev(tp)
+        meas = statistics.fmean(w) / (statistics.fmean(tn) ** 0.5)
+        true_var = obs_sd ** 2 - meas ** 2
+        true_sd = true_var ** 0.5 if true_var > 0 else 0.0
+        print(f"  [dispersion] observed per-position sd {obs_sd:.4f}; "
+              f"measurement noise {meas:.4f}; ⇒ TRUE sd ≈ {true_sd:.4f}")
+        print(f"  ⇒ typical |gap| at a disagreement ≈ {0.798 * true_sd:.4f} "
+              f"(E|X| for a normal). An oracle picking the better side gains "
+              f"≈ {0.399 * true_sd:.4f}/decision over a coin flip.")
     print(f"  scale bar (§8bw, clone's own top vs last): +0.120")
     print(f"  wall: {tsec:.0f}s treatment + {asec:.0f}s control")
 

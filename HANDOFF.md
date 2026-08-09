@@ -76,6 +76,35 @@ it lets any team name in a replay be joined to its rating.
 > > using `out/policy_b7_ntum.npz` as an expert-like continuation — which is the
 > > only design on the table that separates **H1 from H2** in §N.3.
 >
+> ## 🔴 N.0b DAY 28 — E16 RAN AND IS A NULL: the experts' MOVES are not better than ours
+>
+> `EVIDENCE` §8bx, log `out/logs/p81_e16.txt`, pre-registered at `ed22624`.
+> 600 positions where a 1050+ pilot played what our net would not:
+>
+> | cell | reading |
+> |---|---|
+> | **Δ(expert − ours)** | **+0.0066 [−0.0018, +0.0150]** ⇒ NULL |
+> | agreement control (identical arms) | −0.0009 [−0.0144, +0.0126] ✅ |
+> | **1100+ band alone** | **−0.0000 ±0.0217**, k=93 |
+> | scale bar (clone's own top vs last) | +0.120 |
+>
+> ⚡ **Third independent route to the same place, first one by OUTCOME rather
+> than behaviour** (§8bj dissolved the clusters, §8bl's A/B read 0.487).
+> **The strongest band shows the least**, which is the wrong ordering for "their
+> moves are better". ⇒ **the gap is not in per-move choice quality.**
+> ⚠ **But E16 measures the MEAN.** A null mean is compatible with a large
+> per-decision gap whose SIGN varies, with the experts landing on the right side
+> no more often than we do. **The dispersion is the live quantity** — and it is
+> simultaneously the sizing gate for ROADMAP §2.7 (the clock).
+> ▶ **Next, pre-registered before the null was seen: arm C** — the
+> difference-in-differences with `out/policy_b7_ntum.npz` as the continuation
+> policy. Δ ≈ 0 is predicted by **both** H1 and H2, so only swapping who follows
+> the move up can separate them. ✅ b7 loads and scores against current features.
+>
+> 📌 **USER DECISION (day 28): run this thread until it is dead, THEN take up
+> the clock.** ROADMAP §2.7 holds the parked clock design, its price, its kill
+> gate, and the §8v "+154 Elo" correction.
+>
 > ## N.1 What is ESTABLISHED (do not re-measure)
 > - 🔴 **§8u — the founding datum.** We cloned the #2 player **successfully**
 >   (held-out agreement 59.9% → 67.2%) and measured **−92 Elo**. Field
@@ -1348,6 +1377,10 @@ it lets any team name in a replay be joined to its rating.
 > `seq,sb1.0` **without** reply scores **0.165 [0.120, 0.223]** against the reply
 > arm's **0.375 [0.311, 0.444]**, n=200 each — **disjoint CIs**. So the design fix
 > is worth **≈ +0.21 on its own** (≈ +193 Elo) and the extra time ≈ +154 Elo.
+> ⚠ **CORRECTED day 28 (ROADMAP §2.7): the +154 is the recovery from budget
+> ABORTS — at `sb0.35` the sequencer overran 62 times against 56 plans — so it
+> is a floor repair, NOT a time→strength scaling curve. Do not cite it as
+> evidence that spending the clock pays.**
 > **The diagnosis was confirmed by a controlled experiment and B4 died anyway.**
 > 🔴 **Consequence for NNUE: B4 was its only consumer that is not the dead
 > game-tree search (§2), so an incremental evaluator buys nothing here until some

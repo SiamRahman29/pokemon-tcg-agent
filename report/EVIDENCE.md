@@ -4403,6 +4403,71 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bx. 🔴 E16 IS A NULL — the 1050+ experts' moves are worth +0.007 over ours at their own positions, and the 1100+ band reads exactly zero (2026-08-10, day 28)
+
+Pre-registered in `docs/experiments/E16-counterfactual-move-value.md`, frozen at
+`ed22624` **before the first treatment cell**. Driver `scripts/p81_e16_move_value.py`,
+log `out/logs/p81_e16.txt`, net `#4790c469` (the shipped `55326513` weights).
+
+**The question §8u left open and no conformity metric could answer:** *in THIS
+exact position, is their move better than ours?* Fork a real expert position,
+force their move in one arm and our net's top-1 in the other, let the clone
+pilot both seats to a terminal state, difference the win rates, cluster on the
+position.
+
+**Population:** `replays/mirror_experts`, 257 games, seats rated ≥1050 on the
+08-09 board. **2,457 disagreements / 3,724 agreements — our net's top-1 differs
+from the expert on 39.8% of their MAIN decisions**, which independently
+reproduces §8q's ~40% miss against the #2 player.
+
+| cell | reading |
+|---|---|
+| **Δ(expert − ours)** | **+0.0066 [−0.0018, +0.0150]**, k=600 positions × 30 pairs |
+| agreement control (identical arms) | **−0.0009 [−0.0144, +0.0126]** ✅ |
+| scale bar (§8bw, clone's own top vs last) | **+0.120** |
+
+⛔ **The interval covers 0. By the pre-registered criterion E16 is a NULL.** The
+point estimate is **5.5% of the scale bar** — the experts' move advantage, if it
+exists at all, is a twentieth of the gap between the clone's own best and worst
+option.
+
+🔴 **The pre-declared rating split sharpens it instead of rescuing it:**
+
+| band | Δ | k |
+|---|---|---|
+| 1050–1075 | +0.0296 ±0.0546 | 18 |
+| 1075–1100 | +0.0070 ±0.0092 | 489 |
+| **1100+** | **−0.0000 ±0.0217** | **93** |
+
+**The strongest band shows exactly nothing.** "Their moves are better" predicts
+the opposite ordering. Turn buckets show no coherent pattern either
+(+0.009/+0.016/−0.001/+0.016/−0.008 over five buckets).
+
+⚡ **This is the third independent route to the same place, and the first by
+OUTCOME rather than behaviour.** §8bj (F1) dissolved the mirror disagreement
+clusters under an on-policy control; §8bl (E11) took a real, sized,
+ordering-free behavioural difference to an A/B and got 0.487. E16 skips
+behaviour entirely and scores the moves by simulated result. ⇒ **the expert gap
+is not in per-move choice quality.**
+
+⚠ **WHAT THIS DOES NOT SAY, and the distinction is the whole next step.** E16
+measures the **mean** — |E[X]|. A mean of zero is fully compatible with a large
+per-decision gap whose **sign varies**, i.e. E[|X|] ≫ 0, with the experts simply
+landing on the right side of it no more often than we do. That is the same
+|E[X]| vs E[|X|] distinction E15's pre-registration drew about §8bd's near-tie
+band. **The dispersion, not the mean, is what an oracle could capture** — and it
+is the sizing gate for the whole "spend the 600 s clock" axis (ROADMAP §2.7).
+⛔ The per-position values were **not saved** by the first run, so the estimate
+is being recomputed properly rather than backed out of a summary interval
+(`--positions 220 --pairs 40`, `out/logs/p81_e16_dispersion.txt`); the script
+now decomposes observed spread into true variance and measurement noise.
+
+▶ **Next, and pre-registered before the null was seen: arm C**, the
+difference-in-differences with `out/policy_b7_ntum.npz` as the continuation
+policy. Δ ≈ 0 is predicted by **both** H1 and H2, so the null does not
+adjudicate them; only swapping who follows the move up does. ✅ The b7 net loads
+and scores against the current feature set (verified).
+
 ## 8bw. ✅ THE INSTRUMENT THIS PROJECT HAS NEVER HAD IS FEASIBLE — a real position forks out of a replay and its options can be scored by rollout (2026-08-09, day 27, 3rd session)
 
 `scripts/p80_rollout_feasibility.py`, log `out/logs/p80_rollout_feasibility.txt`,

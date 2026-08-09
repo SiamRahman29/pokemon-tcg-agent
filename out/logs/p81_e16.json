@@ -1,0 +1,26 @@
+{
+  "net": "out\\tmp\\sa\\policy_net.npz",
+  "dump": "replays/mirror_experts",
+  "min_rating": 1050.0,
+  "pairs": 30,
+  "agreement": {
+    "delta": -0.0008888888888888893,
+    "lo": -0.01438969658944533,
+    "hi": 0.012611918811667552,
+    "k": 150
+  },
+  "treatment": {
+    "delta": 0.00661111111111111,
+    "lo": -0.0017547423778162827,
+    "hi": 0.014976964600038504,
+    "k": 600
+  },
+  "diag": {
+    "skip_below_cut": 308,
+    "skip_us": 1,
+    "skip_unrated": 37,
+    "agree": 3724,
+    "disagree": 2457,
+    "skip_multi_or_missing": 904
+  }
+}
