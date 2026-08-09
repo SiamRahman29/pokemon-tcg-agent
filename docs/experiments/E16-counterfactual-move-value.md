@@ -43,6 +43,27 @@ design sketched in HANDOFF §N.4.0:
 archetype. Expert seats are the 1150+ pilots F1 already mined from this dump
 (22,665 expert decisions).
 
+### 🔴 Deviation 1: the rating cut is **1050**, not 1150 — recorded before any treatment cell ran
+
+The "1150+ pilots" framing was written against the **pre-reshuffle board**. On
+the current leaderboard (08-09, 6,653 rows) the ceiling has fallen ~85 points
+and this dump's seats read: `Raihan Ramadistra` 1129.5, `LiamK` 1127.1,
+`Sixth Sense` 1094.1. **A 1100 cut leaves 26 seat-appearances of 514; 1050
+leaves 168.** The cut's *purpose* is "players clearly stronger than us", and we
+display **976.2**, so 1050 is ≈ +75.
+
+⚠ **Two honest limitations, neither fixable locally.** (1) The rating grades the
+**team's current agent**, not the agent that played these 08-03…08-07 games —
+`ntumlnoob` has since switched off Grimmsnarl entirely (§8bq). (2) The
+contemporaneous per-episode `avg_score` would be the right instrument, and
+`replays/manifests/` **stops at 07-27**, so it does not cover this dump.
+⇒ **The treatment is reported split by rating band as a pre-declared
+exploratory cut**, so the reader can see whether the cut drives the answer.
+
+✅ **This deviation was made while blind to every treatment number** — the
+smoke test aborted at the agreement control and no Δ(expert − ours) had been
+computed.
+
 🔴 **Correction to this section's first draft, made before any cell ran.** It
 said the wrong-deck hazard was "controlled by construction" because both seats
 are Grimmsnarl. **That is false** — only **18 of 50** sampled seats run our

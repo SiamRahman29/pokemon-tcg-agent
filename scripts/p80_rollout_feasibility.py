@@ -110,6 +110,62 @@ def seat_decklist(rep: dict, seat: int) -> list[int] | None:
     return None
 
 
+def seat_action(rep: dict, seat: int, i: int) -> list[int] | None:
+    """The action ANSWERING `steps[i][seat].observation` — it lives at step i+1.
+
+    🔴 **Off by one, and reading it off the same step is 20.1% right**, which is
+    exactly wrong enough to look like a real effect rather than a bug. Measured
+    on our own ladder games, where the shipped agent *is* this net with rules
+    off, so the recorded action must reproduce the net's own pick:
+
+        same step  `steps[i][seat].action`   →  68/338 = **20.1%**
+        next step  `steps[i+1][seat].action` →  528/529 = **99.8%**, 0 out-of-range
+
+    The same-step read also puts 20 actions **outside the option list** — the
+    tell that they answer a different select. ⛔ Any experiment that scores "the
+    expert's move" off the same step is scoring a *different decision's* move
+    and will return a plausible number (rule 18's shape, seventh instance).
+    """
+    steps = rep.get("steps") or []
+    if i + 1 >= len(steps) or seat >= len(steps[i + 1]):
+        return None
+    a = steps[i + 1][seat].get("action")
+    return list(a) if isinstance(a, list) else None
+
+
+def c0_alignment(games: list[tuple[Path, dict]], net) -> bool:
+    """Positive control for `seat_action`: on OUR games the recorded action must
+    reproduce our own net's pick. Anything below ~95% means the pairing is off.
+    """
+    hit = tot = oor = 0
+    for _f, rep in games:
+        seat = our_seat(rep)
+        if seat is None:
+            continue
+        for i, o in positions(rep, seat):
+            a = seat_action(rep, seat, i)
+            if not (a and len(a) == 1):
+                continue
+            if not 0 <= a[0] < len(o["select"]["option"]):
+                oor += 1
+                continue
+            tot += 1
+            try:
+                if list(net.choose(o)) == a:
+                    hit += 1
+            except Exception:
+                tot -= 1
+    rate = hit / tot if tot else 0.0
+    print(f"[C0] recorded action == our own net's pick on our own games: "
+          f"{hit}/{tot} = {rate:.1%} (out-of-range {oor})")
+    if rate < 0.95:
+        print("     🔴 THE ACTION/OBSERVATION PAIRING IS WRONG. Every 'what the "
+              "player chose' number downstream is a different decision's move.")
+        return False
+    print("     ✅ actions are aligned to their observations.")
+    return True
+
+
 def our_seat(rep: dict) -> int | None:
     names = (rep.get("info") or {}).get("TeamNames") or []
     for i, n in enumerate(names):
@@ -168,7 +224,7 @@ def fork(o: dict, world) -> tuple[int, dict]:
                     world.opp_hand, world.opp_active)
 
 
-def rollout(o: dict, world, first_pick: list[int] | None, me: int):
+def rollout(o: dict, world, first_pick: list[int] | None, me: int, net=None):
     """Clone pilots BOTH seats to a terminal state.
 
     -> (value in {0, 0.5, 1} from `me`'s view or None, steps, seconds)
@@ -177,8 +233,12 @@ def rollout(o: dict, world, first_pick: list[int] | None, me: int):
     game-theoretic value. That is the right question for "should our net have
     played their move" (a one-step deviation from our own policy) and the wrong
     one for "is this move good in the abstract". State it wherever it is used.
+
+    `net` is the CONTINUATION policy (both seats). Defaults to the shipped
+    clone; E16's arm C swaps it to test whether a move's value depends on who
+    follows it up.
     """
-    net = pnet.get()
+    net = net if net is not None else pnet.get()
     t0 = time.perf_counter()
     try:
         sid, obs = fork(o, world)
@@ -372,6 +432,8 @@ def run(args: argparse.Namespace) -> int:
     if not pos:
         return 1
 
+    if not c0_alignment(games, net):
+        return 1
     if not c1_fidelity(pos, args.fidelity_n):
         return 1
 
