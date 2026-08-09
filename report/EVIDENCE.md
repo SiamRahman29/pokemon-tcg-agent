@@ -4520,6 +4520,43 @@ cards against `avg_score` band.
 games = 0.066/game**; "fetch it when a tool is out and we didn't" is **13 in 76 =
 0.17/game**. Both far under the 0.5 gate, and the second is a tradeoff (rule 11).
 
+### Addendum — HOW the fetch is decided: the option vector carries no board at all
+
+Worth writing down because it is structural and would otherwise be re-derived.
+**No rule touches a Petrel fetch.** `bcagent.act` ranks with `chip_target` /
+`drag_target` / `boss_converts` *before* the net and promotes with `boss_veto` /
+`poffin_force` / `counter_source` / `energy_spread` *after* it — every one of
+them is bound to a damage-counter, Boss, or attach select. At `ctx=7` the choice
+is `net.choose(obs)` verbatim: sort by logit, take `k` from `min/maxCount`
+(here 0/1, so declining is a live option and the top logit wins).
+
+🔴 **And a fetch option's own feature vector contains nothing about the board.**
+Dumping `option_features` over a real 24-option fetch, the only non-zero entries
+are: the type-3 one-hot, "this option is mine", `dense[v+11]` = the card's
+**index in the deck list** (pure disambiguation so two copies aren't identical
+vectors), and the v6 `cardType` one-hot. **The whole v3 target block (`hp`,
+damage taken, `dies to 30`, energy count, `best_damage`, `we can KO it now`) is
+identically zero** — it resolves a Pokémon at `(player, area, index)`, and the
+deck is not an in-play area. The attack embedding is zero and the target
+embedding is `card_emb[0]`.
+
+⇒ **One option differs from another only by its card embedding and card type.**
+Everything situational must arrive through the shared state vector `srepr`,
+which is concatenated to *every* option identically and can only discriminate
+through the head MLP's interaction term. The tool counts Scrapper needs *are*
+in there (`features.py:96-97`, ours and theirs, capped at 4) — so the net is not
+blind, it simply does not use them: **1 take in 14 with a target on board.**
+
+⚠ **It is not a static priority list either.** Ranking cards by marginal take
+rate and asking how often we took the top-ranked *available* card gives
+**65/121 = 53.7%** (experts 469/1067 = 44.0%, though their number is depressed
+by rare-but-high-rate cards like Hero's Cape sitting atop the derived order —
+treat the two as "both roughly half", not as a ranking). The deviations are
+lawful-looking, not random: Unfair Stamp beats Poké Pad and Boss's Orders
+**100%/0%** when both are in the deck, and beats Night Stretcher 89%/11%, while
+the contested pairs sit at 69–76%. So the fetch is *modulated* by the spot —
+just not by the one fact Scrapper depends on.
+
 ⚠ **This does weaken the standing case for cutting Tool Scrapper** from the 60
 (`decks/grimmsnarl_budew.py`, `grimmsnarl_boss.py`), which rests on 0.13
 plays/game and **0.00 per mirror game**. §8aj's mirror number was always rule-16
