@@ -4403,6 +4403,83 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8br. 🔴 PETREL'S FETCH IS NOW INSTRUMENTED — and the whole policy gap sizes at 0.29 fetches/game, under the gate (2026-08-09, day 26)
+
+The last seam the user named, and the only one nothing in this repo had ever
+looked at: `p70_perturn_sweep` measures whether a card is **played** per
+available turn; **what `Team Rocket's Petrel` (1219, ×4) FETCHES was never
+measured at all.** `scripts/p76_petrel_fetch.py` closes that.
+
+### 🔴 Two mapping bugs, and the control that caught the second
+
+The first table this script produced said Buddy-Buddy Poffin was offered **9
+times in 76 games**. E11 measured a Poffin *gap* of 0.80 plays/game, so 9 was
+impossible — the table was nonsense. Cause: I filtered options on
+`opt["area"] == HAND`, but **a PLAY option (type 7) carries no `area` at all**;
+it is a bare index into the hand. Every card play in the corpus was invisible.
+⇒ The script now takes the card id from **`optfeat.option_features`, the same
+extractor that built the training data**, so it cannot disagree with the net
+about what an option is.
+
+⚠ The first positive control was itself too weak to catch this: requiring the
+*next* record to be our seat fires on ~2% of the corpus (**n=10**, 100%). Scanning
+to our next record instead gives **1331/1375 = 96.8%** — and the residual is
+expected, because we may draw another copy of the same id between two records,
+masking the decrement. **A control with n=10 licenses nothing.** `--verify`
+re-runs it.
+
+### What Petrel actually fetches
+
+Petrel is the second-most-held card in our hand (2,748 records) and resolves
+**121 times in 76 games — 1.59 plays/game.** Against 501 games from three
+current Grimmsnarl pilots (`Raihan Ramadistra`, `flg`, `Sixth Sense`; §8bq),
+692 fetches. Take rate is conditioned on the card actually being in the deck at
+the time — the rule-21-correct unit:
+
+| fetched card | our avail | our rate | their avail | their rate | gap |
+|---|---|---|---|---|---|
+| **Unfair Stamp** | 54 | **63.0%** | 379 | 45.1% | **+17.8%** |
+| **Night Stretcher** | 106 | **32.1%** | 633 | 19.6% | **+12.5%** |
+| **Spikemuth Gym** | 118 | **5.1%** | 669 | 13.2% | **−8.1%** |
+| Rare Candy | 120 | 5.0% | 646 | 10.4% | −5.4% |
+| Tool Scrapper | 87 | 6.9% | 383 | 3.1% | +3.8% |
+| Boss's Orders | 107 | 7.5% | 605 | 10.4% | −2.9% |
+| Buddy-Buddy Poffin | 116 | 0.9% | 671 | 3.1% | −2.3% |
+| Lillie's Determination | 111 | 12.6% | 645 | 13.5% | −0.9% |
+
+**There is a real, consistent difference: we over-fetch Unfair Stamp and Night
+Stretcher and under-fetch Spikemuth Gym and Rare Candy.** Neither side ever
+fetches Pokégear or Dawn, and neither fetches a second Petrel.
+
+### ⛔ Rule 14 kills it anyway — and the tempting sizing is the wrong one
+
+⚠ **Do not add up the take-rate gaps.** They are conditional rates over
+overlapping denominators and sum to a share of nothing. The share of fetches
+that would change if we adopted their policy **exactly** is the total variation
+distance between the two fetched distributions:
+
+```
+total variation = 18.3%   ×   1.59 Petrel plays/game   =   0.29 fetches/game
+```
+
+⛔ **0.29/game against the 0.5 gate.** And that is the **ceiling** — it is the
+entire distribution realigned at once. Any single-card rule is a fraction of it:
+the largest, Unfair Stamp at +17.8% of 54 available fetches, is **0.13/game**.
+
+### What this closes
+
+⛔ **The Petrel fetch seam is closed by sizing.** Both seams the user named on
+day 26 — passive-damage targeting and Petrel — are now measured, and **both die
+at the same gate**: passive damage at 0.09/0.20 (§8bm) and 0.04 (§8bp), Petrel
+at 0.29 as an upper bound.
+
+⚠ **What is NOT claimed:** that our fetch policy is *correct*. It differs from
+three stronger pilots in a stable direction, and 18.3% of fetches differ. The
+claim is only that **no rule written on this seam can move enough decisions to
+be measurable against a 63-point noise floor** — which is rule 14 doing exactly
+the job it was written for, and the third time this session it has saved an
+arena run.
+
 ## 8bq. THE TOP OF THE LADDER, 1,972 FRESH GAMES — our archetype is the most-played deck there and wins 47.9%, and "Mega Lucario is the best deck" is one player (2026-08-09, day 26)
 
 `scripts/p75_day_census.py` over the five newly-mined days (08-03…08-07).

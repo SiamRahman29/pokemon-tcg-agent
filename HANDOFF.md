@@ -116,10 +116,25 @@ it lets any team name in a replay be joined to its rating.
 >   comparison stands (it was like-for-like), but they are no longer the
 >   demonstrator to mine. **`flg` (90 games, 55.6%) is the best current
 >   Grimmsnarl source; `Raihan Ramadistra` (472) is the volume.**
-> - ▶ **Petrel is the remaining named seam and is NOT yet touched** (user: "we
->   can do the audit and petrel later on"). ⚡ **Nothing in the repo has ever
->   looked at it**: `p70` measures whether a card is *played* per turn, never
->   what Petrel *fetches*. The fetch choice is the uninstrumented seam.
+> - 🔴 **PETREL IS NOW INSTRUMENTED AND CLOSED BY SIZING** (`p76_petrel_fetch.py`,
+>   §8br). Petrel resolves **1.59×/game**; against 501 games from three current
+>   Grimmsnarl pilots we **over-fetch Unfair Stamp (+17.8%) and Night Stretcher
+>   (+12.5%)** and **under-fetch Spikemuth Gym (−8.1%) and Rare Candy (−5.4%)**.
+>   ⚠ **Do NOT size this by adding the take-rate gaps** — they are conditional
+>   rates on overlapping denominators. The correct sizing is total variation
+>   between the fetch distributions: **18.3% × 1.59 = 0.29 fetches/game, under
+>   the 0.5 gate**, and that is the CEILING (whole distribution at once). The
+>   biggest single-card rule is 0.13/game.
+>   🔴 **Two mapping bugs here, worth carrying forward: a PLAY option (type 7)
+>   has NO `area` field** — filtering on `area == HAND` makes every card play
+>   invisible (it returned "Poffin offered 9 times in 76 games", which E11
+>   contradicts). Take option card ids from **`optfeat.option_features`**, the
+>   extractor that built the training data. ⚠ **And the first positive control
+>   passed at n=10** because it required the *next* record to be our seat;
+>   scanning to our next record gives n=1375 at 96.8%. **A control with n=10
+>   licenses nothing.**
+> - ⛔ **BOTH seams the user named on day 26 are now closed by the SAME gate:**
+>   passive-damage targeting (0.09/0.20 §8bm, 0.04 §8bp) and Petrel (0.29 §8br).
 > - ⛔ **Do not build a passive-damage rule on §8bm** — it is a sizing kill, and
 >   both dominated tests are an order of magnitude under the gate. **E13 (§8bp)
 >   closes the tradeoff half the same way. The passive-damage seam is now
