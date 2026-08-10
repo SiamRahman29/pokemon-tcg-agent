@@ -20,9 +20,9 @@ ORC = "orc"                      # the treatment agent's tag substring
 RESERVE_S = 45.0                 # timeout = loss; below this the run is void
 
 
-def rows() -> list[dict]:
+def rows(pattern: str = "out/arena/e18/shard_*.jsonl") -> list[dict]:
     out = []
-    for p in sorted(glob.glob(str(ROOT / "out/arena/e18/shard_*.jsonl"))):
+    for p in sorted(glob.glob(str(ROOT / pattern))):
         for line in open(p, encoding="utf-8"):
             line = line.strip()
             if line:
@@ -43,7 +43,10 @@ def wilson(w: float, n: int) -> tuple[float, float, float]:
 
 
 def main() -> int:
-    rs = rows()
+    import sys
+    pattern = sys.argv[1] if len(sys.argv) > 1 else "out/arena/e18/shard_*.jsonl"
+    logs = sys.argv[2] if len(sys.argv) > 2 else "out/logs/p83_e18_*.txt"
+    rs = rows(pattern)
     if not rs:
         print("no rows yet")
         return 1
@@ -67,7 +70,7 @@ def main() -> int:
         pools.append(float(r.get(f"pool{seat}", 600.0)))
 
     p, lo, hi = wilson(score, n)
-    print(f"E18 -- the clock vs the shipped agent, mirror, byte-identical net")
+    print(f"{pattern} -- vs the shipped agent, mirror, byte-identical net")
     print(f"  n = {n} games")
     print(f"  score = {p:.4f} [{lo:.4f}, {hi:.4f}]   (Wilson)")
     for s in (0, 1):
@@ -87,12 +90,12 @@ def main() -> int:
 
     # ---- did it fire? a component that never fires reads as a null -----
     fired = Counter()
-    for lg in sorted(glob.glob(str(ROOT / "out/logs/p83_e18_*.txt"))):
+    for lg in sorted(glob.glob(str(ROOT / logs))):
         t = open(lg, encoding="utf-8", errors="replace").read()
         for m in re.finditer(r"(\w+)=(\d+)", t):
             if m.group(1) in ("fired", "overruled", "probed", "skip_won",
                               "skip_trigger", "errors", "rollouts",
-                              "aborted", "skip_thin"):
+                              "aborted", "skip_thin", "skip_capped"):
                 fired[m.group(1)] += int(m.group(2))
     if fired:
         print("\n  [firing] " + "  ".join(f"{k}={v}" for k, v in

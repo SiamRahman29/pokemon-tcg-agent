@@ -1,0 +1,6 @@
+bc:cap,orc,od1,net=out/policy_v5_s2.npz#4790c469 [grimmsnarl] vs bc:base,net=out/policy_v5_s2.npz#4790c469 [grimmsnarl], 400 paired matches (800 games)...
+  match 0 seat0: winner=1 turns=14 selects=212
+  match 0 seat1: winner=1 turns=12 selects=205
+  match 1 seat0: winner=0 turns=21 selects=247
+  match 1 seat1: winner=0 turns=11 selects=204
+  match 2 seat0: winner=1 turns=16 selects=256
