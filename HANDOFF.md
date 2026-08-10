@@ -41,7 +41,49 @@ it lets any team name in a replay be joined to its rating.
 > elimination schedule would — 57% of decisions have essentially zero gap and
 > could be abandoned after a handful of rollouts.
 >
-> **▶ Read in this order:** §8by (E17, the whole verdict) → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
+> **▶ Read in this order:** §8by (E17, the whole verdict) → **§N.6 (the clock is BUILT and its A/B is in flight)** → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
+>
+> ## 🔨 N.6 THE CLOCK IS BUILT — `agents/sa/oracle.py`, and E18 is RUNNING
+>
+> **📌 USER DECISIONS (day 29):** *(a)* build the agent and run **n=400**, and
+> **submit if it reads well** — recorded as a deviation in `E18-clock-arena.md`
+> §4, because a screen that ships is what §8bh forbids (`s7` screened 0.528 and
+> read **0.487** on 2,800 fresh games). *(b)* **NO draw-rolling** — the active
+> pair stays frozen at `55326513` (973.6) and `55382430` (878.9).
+>
+> - **Agent:** `bc:<label>,orc`, OFF by default. Two-stage: free trigger
+>   (option count ≤ 5) → 10-rollout probe that declines already-won positions →
+>   20 pairs × top-3 arms → argmax. Flags `op/os/oa/ow/om/ot/oc` in `arena.py`.
+> - ⚡ **Two things §2.7 called engineering already existed:** `planner.py` and
+>   `sequencer.py` fork mid-game, and **`timemgr.py` IS the budget manager**.
+> - **Cost:** ~65–100 s/game of the 600 s pool; worst observed game left 500 s.
+> - **E18** pre-registered at `cc070b0` **before the first game**, with its own
+>   power written down: n=400 has SE≈0.025 and detects a true +0.03 with
+>   probability **0.34**, so ⛔ **a null at n=400 is NOT a kill.**
+> - **Score it with** `python -X utf8 scripts/p83_e18_score.py` (pools
+>   `out/arena/e18/shard_*.jsonl`, checks the 45 s reserve, refuses a verdict if
+>   the oracle never fired).
+>
+> ### 🔴 Three defects the instrumentation caught, all of which would have produced a confident wrong number
+> 1. **`arena.py` defaults to the `sample` deck**, where **79% of decisions
+>    carry ≥12 options against 19.7% on grimmsnarl** — so the free trigger fired
+>    on **0.7%** of decisions instead of 24%. A `sample` A/B measures a component
+>    that barely fires and returns a null. **Rule 20 / §8ax one seat over.**
+>    ⛔ **Always pass `--deck-a grimmsnarl --deck-b grimmsnarl`.**
+> 2. 🔴 **`fs.release(root)` LEAKS.** A rollout creates a fresh search id at each
+>    of ~100 steps; `release` reclaims one node, `fs.end()` reclaims the arena.
+>    Measured **1.68 GB in 8 min** (climbing) vs **0.063 GB flat** after the fix
+>    — 6 shards went from ~10 GB (unrunnable on 7.9 GB) to **0.39 GB**. ⚡ It
+>    also probably explains an intermittent **6.9% rollout error rate**:
+>    `fs.begin` throwing under memory exhaustion. **160 games collected before
+>    the fix were DISCARDED**, not pooled — a starved oracle fires less.
+> 3. **A `python -c` process-killer matches its own command line AND its parent
+>    shell's**, so a kill loop SIGTERM'd the bash that was about to write the
+>    E18 runner. Use **`scripts/killarena.py`** (in a file, excludes its own
+>    parents). ⚠ Also: **launch long runs with NO tool-level timeout** — a 600 s
+>    cap killed the first attempt at 160 of 408 games, and killing the wrapper
+>    does **not** kill the python grandchildren, so a half-dead run keeps
+>    writing rows.
 >
 > ## What E17 established (§8by, 300 treatment + 300 control positions, ~90,000 rollouts)
 > - ⭐ **A budgeted rollout oracle over the net's OWN options is worth +0.0139 [+0.0027, +0.0250] per decision**, control-corrected. Against the §8bw scale bar of 0.120 that is 12%.
