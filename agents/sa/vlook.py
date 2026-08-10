@@ -60,6 +60,13 @@ def health_line() -> str:
         out += f" ms/eval={s['secs_x1000'] / ev:.1f}"
     if "err" in ERR:
         out += f" first_error={ERR['err']!r}"
+    if s["sd_n"]:
+        out += f" ens_sd={s['sd_x1000'] / 1000.0 / s['sd_n']:.3f}"
+    if s["fired"]:
+        # E21's decisive diagnostic: E20 kept the clone's pick 23% of the time
+        # here and 6.1% over p87's wider decision set, both under a ~20% chance
+        # rate. If pessimism identified the mechanism this rises.
+        out += (f" agree={1 - s['overruled'] / s['fired']:.1%}")
     o = s["overruled"]
     if o:
         # Same reasoning as oracle._change_line: a null is uninterpretable
@@ -86,12 +93,29 @@ class ValueLookahead:
     def __init__(self, decklist: list[int], net=None, worlds: int = 4,
                  max_opts: int = 12, min_opts: int = 2, tau: float = 0.0,
                  decision_cap_s: float = 5.0, reserve_s: float = RESERVE_S,
-                 min_turn: int = 2, seed: int = 0, vnet_path: str | None = None):
+                 min_turn: int = 2, seed: int = 0, vnet_path: str | None = None,
+                 lcb: float = 0.0, arms: int = 0):
         self.decklist = list(decklist)
         self.net = net
-        # Pinned per INSTANCE, not via the module singleton, so two agents in
-        # one process can hold different value nets (rule 4's head-to-head).
-        self.V = vnet.load(vnet_path) if vnet_path else None
+        # E21: `vnet=a.npz+b.npz+...` is an ENSEMBLE. Its members must all load
+        # or the pessimism term is computed over a different set than the
+        # identity records -- so a missing member is fatal, never silent.
+        self.Vs = []
+        if vnet_path:
+            for p in vnet_path.split("+"):
+                if not p:
+                    continue
+                m = vnet.load(p)
+                if m is None:
+                    raise ValueError(f"value net failed to load: {p}")
+                self.Vs.append(m)
+        self.V = self.Vs[0] if self.Vs else None
+        # K in `mean - K*sd`. Frozen at 1.0 by E21; 0.0 reproduces E20 exactly.
+        self.lcb = float(lcb)
+        # 0 = every option (E20). >0 = the net's top-`arms`, which is a
+        # COVERAGE constraint: successors of options the clone ranks last are
+        # precisely the ones V never saw.
+        self.arms = int(arms)
         self.worlds = int(worlds)
         self.max_opts = int(max_opts)
         self.min_opts = int(min_opts)
@@ -105,8 +129,11 @@ class ValueLookahead:
         return None
 
     # -- the fork, ONE step, then V -------------------------------------
-    def _evaluate(self, obs: dict, world, first: list[int], me: int, V):
-        """-> V(successor) from `me`'s seat, or None.
+    def _evaluate(self, obs: dict, world, first: list[int], me: int, Vs):
+        """-> (mean, sd) of the ensemble at the successor, from `me`'s seat.
+
+        The fork is paid ONCE and every member scores the same successor, so a
+        5-net ensemble costs 5 cheap forward passes, not 5 engine steps.
 
         Frees with `fs.end()`, never `fs.release()`. §N.6's defect 2: `release`
         reclaims ONE search id while a fork creates one per step, which leaked
@@ -127,9 +154,15 @@ class ValueLookahead:
                 return None
             r = cur.get("result", -1)
             if r != -1:
-                # One ply ended the game: that is ground truth, not an estimate.
-                return 0.5 if r == 2 else (1.0 if r == me else 0.0)
-            return V.win_prob(cur, me)          # 🔴 `me`, never cur["yourIndex"]
+                # One ply ended the game: ground truth, and it carries ZERO
+                # epistemic uncertainty, so pessimism must not penalise it.
+                return (0.5 if r == 2 else (1.0 if r == me else 0.0)), 0.0
+            # 🔴 `me`, never cur["yourIndex"] -- p86 verified indexing is
+            # absolute, so our pre-step seat stays valid after the step.
+            vs = [m.win_prob(cur, me) for m in Vs]
+            mu = sum(vs) / len(vs)
+            sd = (sum((x - mu) ** 2 for x in vs) / len(vs)) ** 0.5 if len(vs) > 1 else 0.0
+            return mu, sd
         except Exception as e:
             STATS["errors"] += 1
             if "err" not in ERR:
@@ -169,8 +202,8 @@ class ValueLookahead:
                 STATS["skip_trigger"] += 1
                 return None
 
-            V = self.V or vnet.get()
-            if V is None:
+            Vs = self.Vs or ([vnet.get()] if vnet.get() else [])
+            if not Vs:
                 STATS["skip_novnet"] += 1       # a missing npz must not read as a null
                 return None
             net = self.net or pnet.get()
@@ -186,11 +219,26 @@ class ValueLookahead:
             deadline = t0 + budget
 
             me = cur["yourIndex"]               # OUR seat, captured before any step
-            arms = list(range(n))               # every option; no arm selection
+            a0 = int(picked[0])
+            # E21 COVERAGE: the net's top-`arms` options, with the agent's own
+            # pick as arm 0. E20 scored every option and its argmax agreed with
+            # the clone 6.1% against a 20.3% chance rate -- successors of
+            # options the clone ranks last are exactly the ones V never saw.
+            if self.arms > 0:
+                try:
+                    sc0 = np.asarray(net.scores(obs), dtype=float)
+                    order = [int(i) for i in np.argsort(-sc0)]
+                    arms = [a0] + [i for i in order if i != a0][:self.arms - 1]
+                except Exception:
+                    STATS["skip_shape"] += 1
+                    return None
+            else:
+                arms = list(range(n))
             base = self.rng.randrange(1 << 30)
 
-            tot = [0.0] * n
-            cnt = [0] * n
+            tot = {j: 0.0 for j in arms}
+            sdt = {j: 0.0 for j in arms}
+            cnt = {j: 0 for j in arms}
             for k in range(self.worlds):
                 if time.perf_counter() > deadline:
                     break
@@ -200,16 +248,23 @@ class ValueLookahead:
                 seed = base + 100_003 + k
                 for j in arms:
                     w = determinize(obs, self.decklist, [], random.Random(seed))
-                    v = self._evaluate(obs, w, [j], me, V)
-                    if v is not None:
-                        tot[j] += v
+                    r = self._evaluate(obs, w, [j], me, Vs)
+                    if r is not None:
+                        tot[j] += r[0]
+                        sdt[j] += r[1]
                         cnt[j] += 1
-            if min(cnt) < 1:
+            if min(cnt.values()) < 1:
                 STATS["skip_thin"] += 1
                 return None
 
-            means = [tot[j] / cnt[j] for j in arms]
-            a0 = int(picked[0])
+            # E21 PESSIMISM: mean - K*sd. The disagreement between
+            # independently-initialised members is largest exactly where the
+            # successor is off-distribution, which is where E20 failed.
+            means = {j: tot[j] / cnt[j] - self.lcb * (sdt[j] / cnt[j])
+                     for j in arms}
+            STATS["sd_x1000"] += int(1000 * sum(sdt[j] / cnt[j]
+                                                for j in arms) / len(arms))
+            STATS["sd_n"] += 1
             best = int(max(arms, key=lambda j: means[j]))
             gap = means[best] - means[a0]
             STATS["fired"] += 1

@@ -111,7 +111,8 @@ class PolicyAgent:
                  orc_maxdev: int = 0,
                  vlook: bool = False, vlk_worlds: int = 4,
                  vlk_maxopt: int = 12, vlk_cap: float = 5.0,
-                 vlk_path: str | None = None):
+                 vlk_path: str | None = None,
+                 vlk_lcb: float = 0.0, vlk_arms: int = 0):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -268,7 +269,7 @@ class PolicyAgent:
             self.vlk = ValueLookahead(
                 decklist, net=self.net, worlds=vlk_worlds,
                 max_opts=vlk_maxopt, decision_cap_s=vlk_cap,
-                vnet_path=vlk_path)
+                vnet_path=vlk_path, lcb=vlk_lcb, arms=vlk_arms)
 
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
