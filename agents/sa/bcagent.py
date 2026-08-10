@@ -77,6 +77,10 @@ def health_line() -> str:
 
         if OSTATS:
             line += " | " + ohealth()
+        from .vlook import STATS as VSTATS, health_line as vhealth
+
+        if VSTATS:
+            line += " | " + vhealth()
     except Exception:
         pass
     return line
@@ -104,7 +108,10 @@ class PolicyAgent:
                  orc_sel: int = 20, orc_arms: int = 3,
                  orc_wp: float = 0.85, orc_maxopt: int = 5,
                  orc_tau: float = 0.0, orc_cap: float = 12.0,
-                 orc_maxdev: int = 0):
+                 orc_maxdev: int = 0,
+                 vlook: bool = False, vlk_worlds: int = 4,
+                 vlk_maxopt: int = 12, vlk_cap: float = 5.0,
+                 vlk_path: str | None = None):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -249,6 +256,20 @@ class PolicyAgent:
                 tau=orc_tau, decision_cap_s=orc_cap,
                 cap=orc_maxdev)
 
+        # E20 — one-ply lookahead scored by a LEARNED value function, the
+        # evaluator every dead search here lacked (§2 rollout variance, B4's
+        # handcrafted evalfn, the clock's fused rollout). Opt-in via
+        # `bc:<label>,vlp` and OFF by default: it is an experiment until it
+        # clears the A/B pre-registered in docs/experiments/E20.
+        self.vlk = None
+        if vlook:
+            from .vlook import ValueLookahead
+
+            self.vlk = ValueLookahead(
+                decklist, net=self.net, worlds=vlk_worlds,
+                max_opts=vlk_maxopt, decision_cap_s=vlk_cap,
+                vnet_path=vlk_path)
+
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
 
@@ -311,6 +332,8 @@ class PolicyAgent:
                 # match through it, so per-game oracle state must reset here.
                 if self.orc is not None:
                     self.orc.new_game()
+                if self.vlk is not None:
+                    self.vlk.new_game()
                 return list(self.decklist)
             sel = obs["select"]
             n = len(sel.get("option") or [])
@@ -336,8 +359,10 @@ class PolicyAgent:
             if self.fetch_stadium or self.fetch_scrapper:
                 # Counted before the rule runs so `seen` is the denominator
                 # even when the condition does not hold.
-                _s = sel.get("context") == 7 and isinstance(sel.get("effect"), dict) \n                    and sel["effect"].get("id") == targeting.PETREL
-                if _s:
+                _eff = sel.get("effect")
+                if (sel.get("context") == targeting.FETCH
+                        and isinstance(_eff, dict)
+                        and _eff.get("id") == targeting.PETREL):
                     STATS["fetch_seen"] += 1
                 order = targeting.petrel_fetch(
                     obs, self.fetch_stadium, self.fetch_scrapper)
@@ -394,6 +419,13 @@ class PolicyAgent:
             # `picked` -- on any doubt, any budget pressure and any exception.
             if self.orc is not None:
                 better = self.orc.choose(obs, list(picked))
+                if better is not None:
+                    return better
+            # E20 goes after the oracle for the same reason: it scores an
+            # option by SIMULATED OUTCOME rather than resemblance to the
+            # corpus, and returns None on any doubt. The two are never both on.
+            if self.vlk is not None:
+                better = self.vlk.choose(obs, list(picked))
                 if better is not None:
                     return better
             return picked

@@ -234,6 +234,12 @@ def build_agent(spec: str, deck: list[int],
         orc_probe, orc_sel, orc_arms = 10, 20, 3
         orc_wp, orc_maxopt, orc_tau, orc_cap = 0.85, 5, 0.0, 12.0
         orc_maxdev = 0          # E19a: max overrules per GAME, 0 = unlimited
+        # E20 -- the value lookahead. Opt-in, unproven. Defaults are the ones
+        # frozen in docs/experiments/E20-value-lookahead.md: W=4 worlds, no
+        # value trigger, a shape bound of 12 options.
+        vlook = False
+        vlk_worlds, vlk_maxopt, vlk_cap = 4, 12, 5.0
+        vlk_path = None
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -317,6 +323,17 @@ def build_agent(spec: str, deck: list[int],
                 orc_cap = float(f[2:])      # per-decision seconds cap
             elif f.startswith("od"):
                 orc_maxdev = int(f[2:])     # E19a: max overrules per game
+            elif f == "vlp":
+                # E20: one-ply lookahead scored by the learned value net.
+                vlook = True
+            elif f.startswith("vnet="):
+                vlk_path = f[5:]            # WHICH value net (rule 20)
+            elif f.startswith("vw"):
+                vlk_worlds = int(f[2:])     # determinized worlds per option
+            elif f.startswith("vo"):
+                vlk_maxopt = int(f[2:])     # shape bound, not a value trigger
+            elif f.startswith("vc"):
+                vlk_cap = float(f[2:])      # per-decision seconds cap
             elif f in ("fstad", "noFstad"):
                 # E21: fetch Spikemuth Gym when no Stadium is ours (0.461
                 # firings/game). Default OFF until its own A/B clears the bar.
@@ -359,13 +376,27 @@ def build_agent(spec: str, deck: list[int],
                                 orc_sel=orc_sel, orc_arms=orc_arms,
                                 orc_wp=orc_wp, orc_maxopt=orc_maxopt,
                                 orc_tau=orc_tau, orc_cap=orc_cap,
-                                orc_maxdev=orc_maxdev)
+                                orc_maxdev=orc_maxdev,
+                                vlook=vlook, vlk_worlds=vlk_worlds,
+                                vlk_maxopt=vlk_maxopt, vlk_cap=vlk_cap,
+                                vlk_path=vlk_path)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and
             # score silently under the requested net's name.
             raise SystemExit(f"{spec}: {exc}")
-        return (f"bc:{tag}" if tag else "bc") + _net_fp(net_path), agent
+        # 🔴 The VALUE net's bytes go in the identity too. A `vnet=` path is no
+        # more an identity than a `net=` path is (rule 20): retraining V and
+        # re-running would otherwise pool two different agents under one name.
+        nm = (f"bc:{tag}" if tag else "bc") + _net_fp(net_path)
+        if vlook:
+            # `_net_fp(None)` falls back to the POLICY net's path, which would
+            # archive a value-net identity that is not the value net. Demand it.
+            if not vlk_path:
+                raise SystemExit("bc:...,vlp requires vnet=<path> so the value "
+                                 "net's bytes enter the archived identity")
+            nm += "/v" + _net_fp(vlk_path)[1:]
+        return nm, agent
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 
