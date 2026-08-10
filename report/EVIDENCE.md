@@ -4484,11 +4484,42 @@ hand H (Stamp included) and theirs O, our net is `5−(H−1)` and theirs `2−O
 | plays that lost the exchange on raw cards | **1/56** | 6/508 |
 | plays strictly DOMINATED (we lose cards, they do not) | **0/56** | 3/508 |
 
-🔴 **The unconditional policy is right 55 times in 56** — because the card's own
-legality condition (*a Pokémon of ours was KO'd during their last turn*) is
-already a strong proxy for "we are rebuilding and they just spent resources".
-The single bad play is H=9 into O=3 (−3 against −1). **1 event in 76 games =
-0.013/game.**
+⛔ **RETRACTED IN THE SESSION THAT WROTE IT (user challenge: "how do you know it
+is *right*?").** This paragraph first read *"the unconditional policy is right 55
+times in 56"*. **The differential does not support that and barely reflects our
+decision at all.** Expand it:
+
+```
+D = [5-(H-1)] - [2-O] = 4 - H + O
+        var(H) = 3.34      var(O) = 27.37      var(D) = 31.93
+        share of var(D) from O alone = 85.7%
+```
+
+🔴 **86% of the metric's variance is the OPPONENT's hand size — a quantity our
+policy does not control.** At the median opponent hand (O=7), **0 of 56 plays
+read negative at any of our observed hand sizes**, so "55 of 56" mostly records
+that our opponents held a lot of cards. **A 100%-unconditional policy and a
+perfect one score alike on it.** ⚠ And it is blind to card *quality*, which is
+exactly what "a strong hand" means — shuffling away a 4-card hand that is
+precisely Rare Candy + Grimmsnarl ex + energy is a disaster at D=+7. ⚠ Our 1/56
+against the experts' 6/508 is **1.8% vs 1.2%, indistinguishable**, and was
+presented as if it favoured us.
+
+✅ **What the table DOES establish, and it is narrow:** we do not walk into the
+**dominated** case defined before the run — we lose cards while they gain —
+at **0/56** (experts 3/508). A specific failure mode is excluded. **That is not
+evidence the policy is right.**
+
+⛔ **Knowing whether it is right needs outcome linkage** (do big-hand Stamps lose
+more games?), which **18 big-hand plays in 76 games cannot resolve**, and the
+oracle route is closed by §8ca (rollout value under clone-vs-clone continuation
+does not transfer). ⇒ **The question is OPEN, not answered in our favour.**
+
+⚡ **The verdict below is unaffected, and the reason matters:** it never rested
+on this paragraph. The sizing (0.031 declines/game) kills the rule whether the
+policy is right or wrong, which is the whole point of a sizing gate — it is
+prior to the question of correctness. **The single worst play is H=9 into O=3,
+1 event in 76 games = 0.013/game.**
 
 ⛔ **Sizing the expert-matching rule:** they decline on **4.2%** of legal turns,
 and Stamp is legal on **0.74 turns/game** for us ⇒ **0.031 declines/game**, 16×

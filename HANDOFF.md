@@ -61,9 +61,17 @@ it lets any team name in a replay be joined to its rating.
 >   their 22 declines are legible — bigger hand (6.82 vs 5.72), more legal plays
 >   (4.00 vs 2.67), **smaller opponent hand** (5.82 vs 8.45).
 > - ⛔ **Sizing: 0.031 declines/game** (4.2% of 0.74 legal turns/game), 16× under
->   the gate. And the unconditional policy is right **55/56** on card
->   differential (mean **+8.32**, 0/56 dominated) because Stamp's own legality
->   condition already proxies "we are rebuilding".
+>   the gate. **This is what carries the verdict, and it is prior to whether the
+>   policy is right.**
+> - ⛔ **RETRACTED same session — "the unconditional policy is right 55/56 on
+>   card differential" is NOT supported.** `D = 4 − H + O` and **85.7% of its
+>   variance is the OPPONENT's hand size**; at the median O=7 no observed play
+>   reads negative, so a 100%-unconditional policy and a perfect one score
+>   alike. It is also blind to card *quality*, which is what "a strong hand"
+>   means. ✅ **All that survives: 0/56 strictly DOMINATED plays** (experts
+>   3/508) — one failure mode excluded, not a correctness claim. **Whether the
+>   Stamp policy is right is OPEN**; deciding it needs outcome linkage that 18
+>   big-hand plays cannot resolve, and §8ca closed the oracle route.
 > - ⚡ **The reusable finding: a marginal take-rate table cannot tell a bad
 >   policy from NO policy.** §8br's "+17.8% Unfair Stamp" was the shadow of a
 >   decision the net never makes.
