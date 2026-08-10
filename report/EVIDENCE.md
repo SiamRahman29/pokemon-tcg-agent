@@ -4403,6 +4403,176 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8by. 🟡 E17 — THE CLOCK'S OWN GATE: a budgeted rollout oracle over the net's OWN options is worth +0.014/decision, the 600 s is not the resource, and 57% of our decisions carry nothing (2026-08-10, day 29)
+
+Pre-registered in `docs/experiments/E17-self-oracle-value.md`, frozen at
+`c0a2cc9` **before the driver existed**. Driver `scripts/p82_e17_self_oracle.py`,
+log `out/logs/p82_e17.txt`, net `#4790c469` (the shipped `55326513` weights).
+**300 treatment positions and 300 control positions**, each × 3 arms × 50
+paired replicates on shared worlds — ~90,000 rollouts.
+
+**Why it existed at all.** §2.7's sizing gate had already passed on §8bx's
+dispersion — but that was measured between **our** pick and the **expert's**,
+at positions selected because a 1050+ expert disagreed with us. The clock has no
+expert: it ranks **the net's own options** at positions selected by nothing, and
+§8bx's caveat (3) says so itself. The second unmeasured quantity was the
+multiplier the whole build rested on — caveat (1)'s *"roughly half survives"*,
+an arithmetic guess. Selecting on noisy estimates is what killed F2 (§8bh).
+
+### The pre-registered readings
+
+| # | quantity | reading |
+|---|---|---|
+| **Q1** | Δ(top-2 − top-1) / Δ(top-3 − top-1) | **−0.0078** [−0.0205, +0.0049] / **−0.0186** [−0.0356, −0.0016] |
+| **Q2** | TRUE between-position sd of the top-2 gap | **0.1045** ⇒ typical \|gap\| **0.083** |
+| **Q4** ⭐ | realized gain of a budgeted oracle, R_sel=30 | **+0.0163 [+0.0060, +0.0266]**, k=300 |
+| **Q4 corrected** | minus the identical-arms control | **+0.0139 [+0.0027, +0.0250]** |
+| scale bar | §8bw clone top vs last | +0.120 |
+
+✅ **Q1 held as predicted: the net's own ranking is right on average.** There is
+**no free re-ranking** — all of the value is in per-decision *dispersion*.
+⚡ And the dispersion among **our own** options (0.1045) is **larger** than
+§8bx's our-pick-vs-expert-pick figure (0.0768 / 0.0866). The quantity §8bx
+could only call "similar but not identical" is in fact bigger.
+
+🟡 **VERDICT: the NARROW branch**, by the letter of the rule frozen at
+`c0a2cc9` — +0.0163 is above the +0.010 kill line and below the +0.020 build
+line. NARROW licenses a build **only** if a free, online-computable trigger
+selects ≥25% of decisions at ≥ +0.030, control-corrected:
+
+| trigger (free at play time) | corrected gain | share | |
+|---|---|---|---|
+| **option count ≤ 5** | **+0.0373 [+0.0109, +0.0638]** | **36%** | ✅ passes |
+| turn ≥ 11 | +0.0488 [+0.0097, +0.0878] | 21% | ❌ share |
+| score margin < 1.5 | +0.0187 [+0.0034, +0.0341] | 67% | ❌ size |
+| option count ≤ 3 | +0.0319 [−0.0204, +0.0841] | 11% | ❌ both |
+
+⚠ **The gate is met on the POINT estimate; the interval is not.** [+0.0109,
++0.0638] contains plenty of values under 0.030, so "≥ +0.030" is a point
+estimate, not an established fact. ⚡ **But the two live triggers are
+independent** — 19 positions carry both against 23 expected by chance — so they
+are two distinct handles on the value, not one covariate in two costumes.
+
+### 🔴 Three findings that change ROADMAP §2.7's own design
+
+**1. The 600 s is NOT the resource — allocation is.** The empirical budget
+curve saturates almost immediately:
+
+```
+R_sel      5      10      20      30      40
+Q4    +0.0122 +0.0143 +0.0158 +0.0163 +0.0164
+```
+
+**An 8× budget increase buys +0.004, and it is flat by 20 pairs/arm.** §2.7's
+framing ("we use 1.12 s of a 600 s budget") points at the wrong quantity.
+
+**2. §2.7's play-time arithmetic used the wrong denominator, and the correction
+is large.** It divided the budget across **~318 selects**. The oracle only fires
+at live MAIN decisions with ≥3 single-pick options, and there are **47.1 per
+game** (3,581 over 76 games), not 318. At 90 rollouts × 100 ms:
+
+| firing rule | decisions/game | think time | of the 600 s budget |
+|---|---|---|---|
+| every qualifying decision | 47.1 | **424 s** | 71% |
+| **option count ≤ 5** | **17.0** | **153 s** | **25%** |
+| turn ≥ 11 | 9.9 | 89 s | 15% |
+
+⇒ **the play-time budget is not binding, and no batching is needed to PLAY.**
+§2.7's "10–15× of engineering" is required only for **validation**.
+
+**3. 57% of our decisions carry no value at all**, and that is the single most
+actionable number here. WP estimated on the **front half** of the replicates,
+gain on the **disjoint back half** (§8bw M3's warning, obeyed):
+
+| position win probability | gain/decision | share |
+|---|---|---|
+| < 0.15 | **+0.0743** | 12% |
+| 0.15 – 0.50 | **+0.0671** | 10% |
+| 0.50 – 0.85 | −0.0079 | 20% |
+| **> 0.85** | **+0.0015** | **57%** |
+
+**The value is where we are LOSING.** A clone move in a won position has nothing
+to improve on; comeback lines are exactly where field-modal play is worst.
+⚠ WP is not free at play time — but `evalfn` reads **AUC 0.905 late** (§8bs),
+and the value is concentrated late, so the cheap proxy is accurate precisely
+where it is needed.
+
+### ✅ The controls, and the scare that was not real
+
+**C0 caught the run being pointed at the wrong network before a single
+treatment rollout.** `pnet.get()` returns whatever `SA_PNET_PATH` says, and the
+repo default `agents/sa/policy_net.npz` (`#a25b904d`) is the **v2** clone —
+three generations behind the agent that played these games. C0 read **67.3%**
+on it and **99.8%** on `out/policy_v5_s2.npz`. p80/p81 depended on an
+environment variable for this; **the net is now pinned in the script.**
+⚡ Separately verified that arm 0 really is the shipped agent's move:
+`argmax(scores) == net.choose` **106/106**.
+
+**The identical-arms control (the winner's-curse control) passed at every
+budget** — but its point estimate at k=100 was **+0.0055 and rising with
+budget**, a third of the treatment effect and exactly the shape a residual bias
+would have. The suspect was structural: **arm 0 is always rolled first *and* is
+the baseline in every estimator.** ⚠ **The obvious placebo does not
+discriminate** — arm2 − arm1 reads zero under "no bias" *and* under "arm 0 is
+low". So 200 more control positions were collected, and at **k=300 the order
+effect reads +0.0017 [−0.0036, +0.0071]** against +0.0053 at k=100. **It was
+noise.** The control at k=300 is +0.0025 ±0.0042, and the corrected effect is
++0.0139 [+0.0027, +0.0250].
+
+⚡ **The general lesson:** a control that *passes* its pre-registered test can
+still carry a point estimate large enough to matter, and "the CI covers zero" is
+not the same as "the bias is zero". The cost of resolving it was 12 minutes.
+
+### 🔴 A model-based ceiling would have been wrong by 4×
+
+Q3's normal fit says the perfect-oracle ceiling is **+0.0749** (62% of the scale
+bar) and that a budgeted oracle keeps 92% of it at R_sel=30. The **empirical**
+curve saturates at **+0.0164**. Normality fails because the gap distribution is
+a **spike at zero plus a heavy tail** — 57% of decisions read +0.0015. ⇒ making
+the split-sample estimator the pre-registered **primary** and labelling the
+model as model-based is the only reason +0.075 did not become the headline.
+⚠ **§8bx's own +0.0372 oracle figure rests on the same normal assumption and
+should be read the same way.**
+
+### ⚠ Exploratory, and labelled: the deviation threshold
+
+The oracle overrules the net on **38%** of decisions at τ=0, and §8bd measured
+that deviating at ~half of decisions is expensive when the deviations are not
+earned. Requiring a minimum estimated gap first:
+
+| τ | fires | treatment | control | corrected |
+|---|---|---|---|---|
+| 0.00 | 38% | +0.0164 | +0.0025 | +0.0139 [+0.0027, +0.0250] |
+| 0.10 | 12% | +0.0153 | +0.0008 | +0.0145 [+0.0046, +0.0244] |
+| 0.15 | **7%** | +0.0146 | +0.0000 | **+0.0146 [+0.0051, +0.0242]** |
+
+**Five times fewer overrules for the same value.** The treatment is nearly flat
+in τ while the control collapses — the shape a bias concentrated in marginal
+calls would make. ⛔ **τ was NOT pre-registered and six values were swept**;
+this is the shopping a B8 β-sweep was declined for on day 18. It needs its own
+pre-registered confirmation before any build leans on it.
+
+### ⚠ What E17 does NOT establish
+
+1. **Per-decision WP gains do not add across a game.** 17 decisions at +0.037 is
+   **not** +0.63. E17 cannot produce a win rate; only an A/B can.
+2. **The value is win probability under clone-vs-clone continuation** (§8bw). In
+   a mirror A/B the opponent *is* the clone, so the rollout model is exactly
+   right there and **flatters the design**; against the real ladder it is a
+   model mismatch.
+3. **Determinization is not free of bias.** We sample the opponent's *whole
+   deck* from a library by best overlap, and inside each determinized world the
+   rollout plays as if the hidden cards were known. Averaging outcomes does not
+   restore the information-set structure.
+4. **The trigger is post-hoc** among four candidates, and the ≥0.030 gate is met
+   on the point estimate only.
+
+⇒ **The gate passed on its own terms and the decision is now about SCHEDULE,
+not evidence.** With the corrected arithmetic an n=2,000 mirror A/B at 153 s a
+game is ≈**85 core-hours** — one overnight run if `arena.py` can use the 6 local
+cores, ~4 days if it cannot. **That is the number the build decision turns on,
+and it should be measured before any agent is written.**
+
 ## 8bx. 🔴 E16 IS A NULL — the 1050+ experts' moves are worth +0.007 over ours at their own positions, and the 1100+ band reads exactly zero (2026-08-10, day 28)
 
 Pre-registered in `docs/experiments/E16-counterfactual-move-value.md`, frozen at

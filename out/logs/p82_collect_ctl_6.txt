@@ -1,0 +1,6 @@
+net: out/policy_v5_s2.npz  #4790c469
+  positions: 3581   skipped: {'parse': 0, 'no_seat': 0, 'no_deck': 0, 'net_error': 0}
+[ctl shard 6/12] 25 positions × 3 arms × 50 replicates
+    10/25  495s  (49.5s/position)
+    20/25  843s  (42.1s/position)
+  ⇒ 25 usable positions → p82_e17_ctl_6.json  (945s wall)

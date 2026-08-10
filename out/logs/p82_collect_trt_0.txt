@@ -1,0 +1,10 @@
+net: out/policy_v5_s2.npz  #4790c469
+  positions: 3581   skipped: {'parse': 0, 'no_seat': 0, 'no_deck': 0, 'net_error': 0}
+[trt shard 0/6] 50 positions × 3 arms × 50 replicates
+[C1] forked position identical to the replay's: 40/40 = 100.0%
+     ✅ an sbi captured in another process reconstructs exactly.
+    10/50  318s  (31.8s/position)
+    20/50  558s  (27.9s/position)
+    30/50  814s  (27.1s/position)
+    40/50  1085s  (27.1s/position)
+  ⇒ 50 usable positions → p82_e17_trt_0.json  (1348s wall)

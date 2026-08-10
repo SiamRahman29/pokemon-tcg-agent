@@ -488,6 +488,30 @@ last safe day ~08-15**; EVIDENCE §8bh+ entries the session each item concludes.
 
 ## 2.7 THE CLOCK — parked with a design, a price and a kill gate (day 28, 2026-08-10)
 
+> 🟡 **UPDATED DAY 29 — E17 RAN AND THIS SECTION IS NOW PART WRONG.** Its own
+> gate (`docs/experiments/E17-self-oracle-value.md`, `EVIDENCE` §8by) reads
+> **NARROW and its trigger passes**, so a build is licensed. But three of the
+> claims below are corrected by the measurement, and they are the load-bearing
+> ones:
+>
+> 1. 🔴 **"600 s ÷ ~318 selects" is the wrong denominator.** The oracle fires
+>    only at live MAIN decisions with ≥3 single-pick options: **47.1 per game**,
+>    measured (3,581 over 76 games). The triggered design costs **153 s of the
+>    600 s budget** ⇒ **the play-time budget is NOT binding and no batching is
+>    needed to play.** The "10–15× of engineering" is a **validation** cost only.
+> 2. 🔴 **"Concentrate" was right but the table's premise is wrong: more pairs
+>    barely help.** The realized budget curve saturates by ~20 pairs/arm —
+>    +0.0122 → 0.0164 across an 8× increase in R_sel. **Allocation across
+>    DECISIONS is the lever; depth per decision is nearly spent at 20.**
+> 3. 🔴 **The "cost and value run opposite" line is superseded by a stronger
+>    fact.** 57% of our decisions sit at win probability > 0.85 and are worth
+>    **+0.0015**; the value is where we are **LOSING** (+0.074 below 0.15).
+>
+> ⚡ **And the blocker below is softer than written:** at 153 s/game an n=2,000
+> mirror A/B is ≈**85 core-hours**, i.e. one overnight run *if* `arena.py`
+> parallelises across the 6 local cores. **Measure that first — it is the number
+> the build decision turns on.**
+
 **User decision: finish the current thread first, then take this up.** Nothing
 below is built. It is recorded because the analysis is done and would otherwise
 be re-derived from scratch.
@@ -593,6 +617,16 @@ cannot, because there is no demonstrator to clone.**
 before selection noise (~half survives at gap/SE ≈ 2); per-decision gaps **do
 not add** across a game; and the **large-or-nothing** validation blocker above
 is untouched.
+
+> 🔴 **DAY 29 — the "~half survives" guess is now MEASURED, and the +0.037 is
+> retracted as a ceiling.** E17 (§8by) built the estimator the guess stood in
+> for: select on `r_sel` rollouts, score on a **disjoint** set. Realized value
+> is **+0.0139 [+0.0027, +0.0250]** per decision, control-corrected — and the
+> matching *ceiling* is **+0.0164**, not +0.075. ⚡ **The +0.037 figure came from
+> a normal fit, and normality fails badly here**: the gap distribution is a
+> spike at zero plus a heavy tail (57% of decisions read +0.0015), so the
+> normal model overstates the ceiling by **4×**. §8bx's +0.0372 rests on the
+> same assumption and should be read the same way.
 
 ### Where it probably belongs: Round 2
 

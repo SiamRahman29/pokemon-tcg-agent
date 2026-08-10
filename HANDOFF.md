@@ -21,14 +21,26 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 28 (2026-08-10): the imitation thread is **CLOSED** (E16 null, arm C null — §N.0b/§N.0c). The project has a **new instrument** (fork any real position, score its options by rollout — §8bw) and **one live lead**: the 600 s clock, whose sizing gate **PASSED** (§N.0d, ROADMAP §2.7).
+> # ▶ START HERE — DAY 29 (2026-08-10): **E17 RAN. The clock's own gate reads 🟡 NARROW and its trigger PASSES** (§8by) — a build is licensed, and the decision left is SCHEDULE, not evidence. Both owed items are closed.
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
-> **📌 USER DIRECTIVE (day 28): the imitation thread was run until dead; NEXT SESSION TAKES UP THE CLOCK.** Design, price, kill gate and blockers are in **ROADMAP §2.7**; the gate that licenses it is §N.0d.
 >
-> **▶ Read in this order:** §N.0b (E16) → §N.0c (arm C, thread closed) → §N.0d (the lead) → ROADMAP §2.7 (the clock, in full).
+> **▶ THE ONE NUMBER THAT DECIDES THE NEXT SESSION** — *does `arena.py` parallelise across the 6 local cores?* An n=2,000 mirror A/B of the oracle agent is **≈85 core-hours** (17 firings/game × 90 rollouts × 100 ms = 153 s/game). Parallel ⇒ **one overnight run**, and the build fits before the 08-15 last-safe-day. Serial ⇒ **~4 days**, and it does not. **Measure this BEFORE writing any agent** — it is a 10-minute check that decides a multi-day commitment.
 >
-> ⚠ **Two things owed before new work:** a **rule-2 settling read on `55382430`** (submitted 15:04 UTC 08-09, never read — §N.5's pair is stale), and a decision on the **draw-rolling protocol** (roll while your worst active is your oldest; ~12 draws by the 08-15 last-safe-day; costs no local CPU).
+> **▶ Read in this order:** §8by (E17, the whole verdict) → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
+>
+> ## What E17 established (§8by, 300 treatment + 300 control positions, ~90,000 rollouts)
+> - ⭐ **A budgeted rollout oracle over the net's OWN options is worth +0.0139 [+0.0027, +0.0250] per decision**, control-corrected. Against the §8bw scale bar of 0.120 that is 12%.
+> - ✅ **The net's own ranking is right on average** (top-2 − top-1 = −0.0078). **There is no free re-ranking** — the value is entirely in per-decision *dispersion*, which at **0.1045** is LARGER than §8bx's our-vs-expert 0.0768/0.0866.
+> - 🔴 **The 600 s is not the resource.** The budget curve saturates by 20 pairs/arm: an 8× increase from R_sel=5 to 40 buys **+0.004**.
+> - 🔴 **§2.7's play-time arithmetic used the wrong denominator** (~318 selects; the real figure is **47.1 qualifying decisions/game**). The triggered design costs **153 s of 600 s** ⇒ **no batching is needed to PLAY**; the engineering is only for validation.
+> - 🔴 **57% of our decisions carry nothing** (win prob > 0.85 ⇒ +0.0015). **The value is where we are LOSING** (+0.074 below 0.15). Spend the clock there or waste it.
+> - ✅ **Trigger that licenses the build: option count ≤ 5** — +0.0373 [+0.0109, +0.0638] on 36% of decisions. ⚠ Gate met on the **point** estimate only; and it is **post-hoc among four**.
+> - ⚠ **τ (a minimum margin before overruling) is exploratory** — τ=0.15 keeps the value at **1/5 the overrule rate**, but six values were swept and none pre-registered. **Pre-register it before any build leans on it.**
+>
+> ## ✅ Both owed items are CLOSED
+> - **Rule-2 read on `55382430`: settled at 878.9** (two readings, 04:02 and 04:32 UTC 08-10, identical). Its **byte-identical twin `55326513` reads 973.6** ⇒ **a 94.7-point gap between two agents with the same bytes**, against §8ak's 63.2. **The ladder's noise floor is wider than the project has been quoting.**
+> - **Draw-rolling is therefore PRICED and is with the user:** the whole 94.7 is nuisance, the LB ranks on the displayed draw, ~12 draws remain before 08-15, and it costs no local CPU. ⚠ Every submission evicts by recency — name the victim first.
 > ⛔ **Do NOT re-open:** latent plans (§8bv), expert move-quality (§8bx), coherence/commitment via imitation (arm C), demonstrator selection (§8t/§8u), and the rest of §N.2's kill list.
 >
 > ---

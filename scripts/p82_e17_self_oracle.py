@@ -298,6 +298,72 @@ def budgeted_gain(recs: list[dict], r_sel: int, splits: int,
     return out
 
 
+def gain_tau(recs: list[dict], r_sel: int, tau: float, splits: int,
+             rng: random.Random) -> tuple[list[float], float]:
+    """Q4 with a minimum estimated gap before the oracle is allowed to overrule.
+
+    ⚠ **POST-HOC.** τ was not pre-registered and six values were swept, which is
+    exactly the shopping day 18 declined a B8 β-sweep for. Reported as
+    exploratory, and it needs its own pre-registered confirmation before any
+    build leans on it. What makes it more than a lucky pick is that the
+    *treatment* is nearly flat in τ while the *control* collapses — the shape a
+    real bias concentrated in marginal calls would make, not the shape of noise.
+    """
+    out, fire = [], []
+    for rec in recs:
+        v, _ = gaps(rec)
+        R, A = v.shape
+        if R - r_sel < MIN_EVAL:
+            continue
+        idx = list(range(R))
+        acc, dev = [], 0
+        for _ in range(splits):
+            rng.shuffle(idx)
+            s, e = idx[:r_sel], idx[r_sel:]
+            d = v[s].mean(axis=0) - v[s, 0].mean()
+            d[0] = 0.0
+            j = int(np.argmax(d))
+            if d[j] <= tau:
+                j = 0                      # not earned -> keep the net's pick
+            dev += j != 0
+            acc.append(float(v[e, j].mean() - v[e, 0].mean()))
+        if acc:
+            out.append(statistics.fmean(acc))
+            fire.append(dev / len(acc))
+    return out, (statistics.fmean(fire) if fire else float("nan"))
+
+
+def corrected(trt_g: list[float], ctl_g: list[float]) -> tuple[float, float, float]:
+    """Treatment minus the identical-arms control, with the interval combined.
+
+    The control is the estimator's reading when there is nothing to find, so it
+    is the right null to subtract — and at τ=0 it is a third of the treatment.
+    """
+    mt = statistics.fmean(trt_g)
+    st = statistics.stdev(trt_g) / math.sqrt(len(trt_g))
+    mc = statistics.fmean(ctl_g)
+    sc = statistics.stdev(ctl_g) / math.sqrt(len(ctl_g))
+    se = math.sqrt(st ** 2 + sc ** 2)
+    return mt - mc, mt - mc - 1.96 * se, mt - mc + 1.96 * se
+
+
+def order_effect(ctl: list[dict]) -> None:
+    """Is arm 0 -- always rolled FIRST, and the baseline in every estimator --
+    exchangeable with the others? Under the control all three arms are the same
+    option, so any difference is an artifact of call order.
+
+    ⚠ The obvious placebo (arm2 − arm1) does NOT discriminate: it reads zero
+    under 'no effect' AND under 'arm 0 is low'. Only more positions resolve it.
+    """
+    pool, placebo = [], []
+    for r in ctl:
+        v = np.asarray(r["vals"], dtype=float)
+        pool.append(float((v[1].mean() + v[2].mean()) / 2 - v[0].mean()))
+        placebo.append(float(v[2].mean() - v[1].mean()))
+    ci(pool, "mean(arm1,arm2) − arm0  [order effect]")
+    ci(placebo, "arm2 − arm1  [placebo, uninformative]")
+
+
 def deconvolve(recs: list[dict], arm: int) -> tuple[float, float, float]:
     """-> (mean gap, observed between-position sd, TRUE sd) for one arm."""
     ds, noise = [], []
@@ -536,6 +602,61 @@ def analyze(args: argparse.Namespace) -> int:
                                          len(live), len(gsub)]
         else:
             print(f"    ⚠ length mismatch {len(gsub)} vs {len(wp)}, skipped")
+
+    # ---- the control as a NULL to subtract, and the τ sweep --------------
+    if ctl and not void:
+        print("\n[bias] is arm 0 exchangeable? (control only — all arms are "
+              "the SAME option, so any gap is call order, not move quality)")
+        order_effect(ctl)
+        print(f"\n[Q4 corrected + τ sweep at R_sel=30]  ⚠ τ is POST-HOC — six "
+              f"values swept, not pre-registered")
+        print(f"  {'τ':>5} {'fires':>6} | {'treatment':>26} | "
+              f"{'control':>18} | {'corrected':>26}")
+        res["tau"] = {}
+        for tau in (0.0, 0.02, 0.05, 0.10, 0.15, 0.20):
+            gt, ft = gain_tau(trt, 30, tau, args.splits, random.Random(7))
+            gc, _f = gain_tau(ctl, 30, tau, args.splits, random.Random(7))
+            if len(gt) < 3 or len(gc) < 3:
+                continue
+            mt = statistics.fmean(gt)
+            st = 1.96 * statistics.stdev(gt) / math.sqrt(len(gt))
+            mc = statistics.fmean(gc)
+            sc = 1.96 * statistics.stdev(gc) / math.sqrt(len(gc))
+            cm, clo, chi = corrected(gt, gc)
+            print(f"  {tau:>5.2f} {ft:>5.0%} | {mt:+.4f} [{mt-st:+.4f}, "
+                  f"{mt+st:+.4f}] | {mc:+.4f} ±{sc:.4f} | "
+                  f"{cm:+.4f} [{clo:+.4f}, {chi:+.4f}]")
+            res["tau"][f"{tau}"] = [cm, clo, chi, ft]
+
+    # ---- the NARROW branch's test, with the control subtracted -----------
+    # E17 §6: build only if a FREE, online-computable trigger selects ≥25% of
+    # decisions at ≥ +0.030. The Q6 table above is uncorrected, and the control
+    # is a third of the effect at τ=0, so the trigger must be judged corrected.
+    if ctl and not void and gains30:
+        print("\n⭐ [NARROW test] candidate triggers, CONTROL-CORRECTED "
+              "(R_sel=30, τ=0). Gate: ≥25% of decisions at ≥ +0.030")
+        gt_all = budgeted_gain(trt, 30, args.splits, random.Random(11))
+        rt = [trt[i] for i in budgeted_gain.last_keep]
+        gc_all = budgeted_gain(ctl, 30, args.splits, random.Random(11))
+        rc = [ctl[i] for i in budgeted_gain.last_keep]
+        res["narrow"] = {}
+        for name, fn in (("option count ≤ 5", lambda r: r["nopt"] <= 5),
+                         ("option count ≤ 3", lambda r: r["nopt"] <= 3),
+                         ("score margin < 1.5",
+                          lambda r: r["scores"][0] - r["scores"][1] < 1.5),
+                         ("turn ≥ 11", lambda r: r["turn"] >= 11)):
+            gt = [g for g, r in zip(gt_all, rt) if fn(r)]
+            gc = [g for g, r in zip(gc_all, rc) if fn(r)]
+            if len(gt) < 10 or len(gc) < 10:
+                print(f"  {name:<20s} too few positions "
+                      f"(trt {len(gt)}, ctl {len(gc)})")
+                continue
+            cm, clo, chi = corrected(gt, gc)
+            share = len(gt) / len(gt_all)
+            ok = "✅" if (share >= 0.25 and clo > 0 and cm >= 0.030) else "❌"
+            print(f"  {ok} {name:<20s} {cm:+.4f} [{clo:+.4f}, {chi:+.4f}]  "
+                  f"{share:.0%} of decisions  (trt k={len(gt)}, ctl k={len(gc)})")
+            res["narrow"][name] = [cm, clo, chi, share]
 
     # ---- the pre-registered verdict --------------------------------------
     print("\n" + "=" * 72)

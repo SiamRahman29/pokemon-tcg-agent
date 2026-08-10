@@ -1,0 +1,85 @@
+[ctl] 300 positions from 12 shards, net #4790c469, 3 arms × 50 reps
+[trt] 300 positions from 6 shards, net #4790c469, 3 arms × 50 reps
+
+🔴 [C-identical] the winner's-curse control — the whole Q4 procedure with three copies of ONE option. Must read 0.
+  control gain @ R_sel= 5                +0.0010 [-0.0017, +0.0036]  k=300  deviates from top-1 22% of the time
+  control gain @ R_sel=10                +0.0012 [-0.0019, +0.0044]  k=300  deviates from top-1 28% of the time
+  control gain @ R_sel=20                +0.0018 [-0.0019, +0.0055]  k=300  deviates from top-1 33% of the time
+  control gain @ R_sel=30                +0.0023 [-0.0019, +0.0066]  k=300  deviates from top-1 36% of the time
+  control gain @ R_sel=40                +0.0040 [-0.0011, +0.0090]  k=300  deviates from top-1 37% of the time
+  ✅ identical arms read zero at every budget — the split-sample estimator is unbiased under selection noise.
+
+[Q1] is the net's own ranking right on average?
+  Δ(top-2 − top-1)                       -0.0078 [-0.0205, +0.0049]  k=300
+  Δ(top-3 − top-1)                       -0.0186 [-0.0356, -0.0016]  k=300
+  scale bar (§8bw clone top vs last): +0.120
+
+[Q2] dispersion — the raw material of any oracle
+  arm top-2: mean -0.0078  observed sd 0.1123  measurement noise 0.0411  ⇒ TRUE sd 0.1045  (typical |gap| 0.0834)
+  arm top-3: mean -0.0186  observed sd 0.1498  measurement noise 0.0432  ⇒ TRUE sd 0.1435  (typical |gap| 0.1145)
+  §8bx measured 0.0768 / 0.0866 for OUR-pick vs EXPERT-pick — the comparison this experiment exists to make
+
+⭐ [Q4] REALIZED gain of a BUDGETED oracle over the net's top-3 (split-sample, disjoint selection/evaluation)
+  Q4 @ R_sel= 5 pairs/arm                +0.0122 [+0.0032, +0.0212]  k=300  =  10% of the scale bar, fires 24%
+  Q4 @ R_sel=10 pairs/arm                +0.0143 [+0.0046, +0.0239]  k=300  =  12% of the scale bar, fires 30%
+  Q4 @ R_sel=20 pairs/arm                +0.0158 [+0.0057, +0.0258]  k=300  =  13% of the scale bar, fires 35%
+  Q4 @ R_sel=30 pairs/arm                +0.0163 [+0.0060, +0.0266]  k=300  =  14% of the scale bar, fires 38%
+  Q4 @ R_sel=40 pairs/arm                +0.0164 [+0.0058, +0.0270]  k=300  =  14% of the scale bar, fires 40%
+
+[Q3/Q5] ceiling and the model-based budget curve  ⚠ MODEL-BASED — not measurements
+  per-replicate paired sd of a gap: 0.298 (§8bw measured 0.43 on the top-vs-last contrast)
+  Q3 perfect-oracle ceiling E[max(0, δ₂, δ₃)] = +0.0749  (62% of the scale bar)
+    modelled Q4 @ R_sel= 30: +0.0691   (92% of the ceiling)
+    modelled Q4 @ R_sel= 60: +0.0720   (96% of the ceiling)
+    modelled Q4 @ R_sel=130: +0.0734   (98% of the ceiling)
+    modelled Q4 @ R_sel=200: +0.0739   (99% of the ceiling)
+
+[Q6] is the gain predictable from anything FREE at play time? (exploratory — cannot produce a design on its own)
+  by score margin:
+           [−∞, 0.5)  +0.0200 ±0.0191  k=113 (38%)
+          [0.5, 1.5)  +0.0268 ±0.0216  k= 89 (30%)
+            [1.5, 3)  +0.0062 ±0.0158  k= 48 (16%)
+              [3, ∞)  -0.0010 ±0.0155  k= 50 (17%)
+  by turn:
+             [−∞, 4)  -0.0015 ±0.0139  k= 59 (20%)
+              [4, 7)  +0.0137 ±0.0146  k= 57 (19%)
+             [7, 11)  +0.0090 ±0.0118  k=120 (40%)
+             [11, ∞)  +0.0487 ±0.0382  k= 64 (21%)
+  by option count:
+             [−∞, 4)  +0.0380 ±0.0499  k= 34 (11%)
+              [4, 6)  +0.0381 ±0.0291  k= 74 (25%)
+              [6, 9)  +0.0065 ±0.0129  k= 70 (23%)
+              [9, ∞)  +0.0026 ±0.0086  k=122 (41%)
+  ⭐ by position win probability — WP from the FRONT half of the replicates, Q4@15 from the BACK half (disjoint):
+    WP [0.00, 0.15)  +0.0743 ±0.0608  k=37 (12%)
+    WP [0.15, 0.50)  +0.0671 ±0.0632  k=30 (10%)
+    WP [0.50, 0.85)  -0.0079 ±0.0208  k=61 (20%)
+    WP [0.85, 1.01)  +0.0015 ±0.0045  k=172 (57%)
+    ⇒ COMPETITIVE ONLY [0.15, 0.85]: +0.0168 ±0.0259  k=91 (30% of decisions)  ⚠ at R_sel=15, half the primary's budget
+
+[bias] is arm 0 exchangeable? (control only — all arms are the SAME option, so any gap is call order, not move quality)
+  mean(arm1,arm2) − arm0  [order effect] +0.0017 [-0.0036, +0.0071]  k=300
+  arm2 − arm1  [placebo, uninformative]  +0.0002 [-0.0049, +0.0053]  k=300
+
+[Q4 corrected + τ sweep at R_sel=30]  ⚠ τ is POST-HOC — six values swept, not pre-registered
+      τ  fires |                  treatment |            control |                  corrected
+   0.00   38% | +0.0164 [+0.0061, +0.0267] | +0.0025 ±0.0042 | +0.0139 [+0.0027, +0.0250]
+   0.02   38% | +0.0163 [+0.0060, +0.0266] | +0.0024 ±0.0042 | +0.0139 [+0.0028, +0.0250]
+   0.05   24% | +0.0160 [+0.0059, +0.0260] | +0.0022 ±0.0035 | +0.0138 [+0.0031, +0.0244]
+   0.10   12% | +0.0153 [+0.0057, +0.0249] | +0.0008 ±0.0024 | +0.0145 [+0.0046, +0.0244]
+   0.15    7% | +0.0146 [+0.0052, +0.0241] | +0.0000 ±0.0015 | +0.0146 [+0.0051, +0.0242]
+   0.20    5% | +0.0138 [+0.0047, +0.0229] | -0.0002 ±0.0006 | +0.0140 [+0.0049, +0.0232]
+
+⭐ [NARROW test] candidate triggers, CONTROL-CORRECTED (R_sel=30, τ=0). Gate: ≥25% of decisions at ≥ +0.030
+  ✅ option count ≤ 5     +0.0373 [+0.0109, +0.0638]  36% of decisions  (trt k=108, ctl k=108)
+  ❌ option count ≤ 3     +0.0319 [-0.0204, +0.0841]  11% of decisions  (trt k=34, ctl k=34)
+  ❌ score margin < 1.5   +0.0187 [+0.0034, +0.0341]  67% of decisions  (trt k=202, ctl k=202)
+  ❌ turn ≥ 11            +0.0488 [+0.0097, +0.0878]  21% of decisions  (trt k=64, ctl k=64)
+
+========================================================================
+PRE-REGISTERED DECISION RULE (E17 §6, frozen at c0a2cc9)
+  primary   Q4 @ R_sel=30 = +0.0163 [+0.0060, +0.0266]
+  secondary Q3 ceiling    = +0.0749
+  ⇒ 🟡 NARROW. Build only if Q6 shows a free online trigger selecting ≥25% of decisions at ≥ +0.030; else it is a chapter.
+========================================================================
+⚠ Per-decision WP gains DO NOT ADD across a game, and the value is win probability under clone-vs-clone continuation. Neither this script nor any other here converts Q4 into a win rate.

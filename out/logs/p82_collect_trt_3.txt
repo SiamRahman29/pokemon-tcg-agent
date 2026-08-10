@@ -1,0 +1,8 @@
+net: out/policy_v5_s2.npz  #4790c469
+  positions: 3581   skipped: {'parse': 0, 'no_seat': 0, 'no_deck': 0, 'net_error': 0}
+[trt shard 3/6] 50 positions × 3 arms × 50 replicates
+    10/50  255s  (25.5s/position)
+    20/50  587s  (29.4s/position)
+    30/50  873s  (29.1s/position)
+    40/50  1116s  (27.9s/position)
+  ⇒ 50 usable positions → p82_e17_trt_3.json  (1292s wall)
