@@ -29,6 +29,12 @@ STATS = {
     # the reason §8am reports "off-argmax selects" next to every score.
     "flip_eligible": 0,
     "flips": 0,
+    # E21 (day 30). A rule that silently never fires produces a null that means
+    # nothing -- the §8be family, and control 2 of every pre-registration since.
+    # `fetch_seen` counts Petrel fetches reached; `fetch_fired` counts those the
+    # rule actually redirected.
+    "fetch_seen": 0,
+    "fetch_fired": 0,
 }
 
 
@@ -54,6 +60,9 @@ def health_line() -> str:
     status = "OK" if bad == 0 else "DEGRADED"
     line = (f"[health] {status} calls={s['calls']} fallbacks={s['fallbacks']} "
             f"net_missing={s['net_missing']} deck={s['deck_returns']}")
+    if s["fetch_seen"]:
+        line += (f" fetch={s['fetch_fired']}/{s['fetch_seen']}"
+                 f" ({s['fetch_fired'] / s['fetch_seen']:.1%})")
     if s["flip_eligible"]:
         line += (f" flips={s['flips']}/{s['flip_eligible']}"
                  f" ({s['flips'] / s['flip_eligible']:.1%})")
@@ -75,7 +84,8 @@ def health_line() -> str:
 
 def reset_stats() -> None:
     STATS.update(calls=0, fallbacks=0, net_missing=0, deck_returns=0,
-                 first_error=None, flip_eligible=0, flips=0)
+                 first_error=None, flip_eligible=0, flips=0,
+                 fetch_seen=0, fetch_fired=0)
 
 
 class PolicyAgent:
@@ -89,6 +99,7 @@ class PolicyAgent:
                  seq_budget: float = 0.35, seq_reply: bool = False,
                  flip_margin: float | None = None,
                  poffin_force: bool = False, sym_k: int = 0,
+                 fetch_stadium: bool = False, fetch_scrapper: bool = False,
                  oracle: bool = False, orc_probe: int = 10,
                  orc_sel: int = 20, orc_arms: int = 3,
                  orc_wp: float = 0.85, orc_maxopt: int = 5,
@@ -204,6 +215,12 @@ class PolicyAgent:
         # default until its own A/B clears the bar, same discipline as every
         # rule above it.
         self.poffin_force = poffin_force
+        # E21: inject board facts into Petrel's fetch -- the ONE select whose
+        # option vector carries no board at all (§8br). Both OFF by default and
+        # opt-in via `bc:<label>,fstad` / `,fscrap` until an A/B clears the bar,
+        # same discipline as every rule above.
+        self.fetch_stadium = fetch_stadium
+        self.fetch_scrapper = fetch_scrapper
         # The matchup branch (2026-07-30): `chip_target` is worth +0.077 in the
         # mirror and **-0.126 against `rule:crustle`**, because "kill what dies
         # to 30" farms Dwebbles while the undamageable wall survives. This defers
@@ -315,6 +332,17 @@ class PolicyAgent:
             if self.boss_converts:
                 order = targeting.boss_converts(obs)
                 if order is not None:
+                    return order[:want]
+            if self.fetch_stadium or self.fetch_scrapper:
+                # Counted before the rule runs so `seen` is the denominator
+                # even when the condition does not hold.
+                _s = sel.get("context") == 7 and isinstance(sel.get("effect"), dict) \n                    and sel["effect"].get("id") == targeting.PETREL
+                if _s:
+                    STATS["fetch_seen"] += 1
+                order = targeting.petrel_fetch(
+                    obs, self.fetch_stadium, self.fetch_scrapper)
+                if order is not None:
+                    STATS["fetch_fired"] += 1
                     return order[:want]
             net = self.net or policynet.get()
             if net is None:

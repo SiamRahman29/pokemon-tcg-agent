@@ -216,6 +216,9 @@ def build_agent(spec: str, deck: list[int],
         bossprize = False
         # E11 bench development: opt-in, unproven
         poffin = False
+        # E21 Petrel fetch rules: opt-in, unproven
+        fstad = False
+        fscrap = False
         # B4 turn-level lookahead: opt-in, unproven
         sequencer = False
         seq_k, seq_dets, seq_budget = 8, 4, 0.35
@@ -314,6 +317,14 @@ def build_agent(spec: str, deck: list[int],
                 orc_cap = float(f[2:])      # per-decision seconds cap
             elif f.startswith("od"):
                 orc_maxdev = int(f[2:])     # E19a: max overrules per game
+            elif f in ("fstad", "noFstad"):
+                # E21: fetch Spikemuth Gym when no Stadium is ours (0.461
+                # firings/game). Default OFF until its own A/B clears the bar.
+                fstad = f == "fstad"
+            elif f in ("fscrap", "noFscrap"):
+                # E21: fetch Tool Scrapper only when a Tool is on THEIR board
+                # (0.171 firings/game). Default OFF, same discipline.
+                fscrap = f == "fscrap"
             elif f in ("poffin", "noPoffin"):
                 # E11: play Buddy-Buddy Poffin when the bench has >=2 free
                 # slots. Default OFF until its own A/B clears the bar
@@ -343,6 +354,7 @@ def build_agent(spec: str, deck: list[int],
                                 seq_budget=seq_budget, seq_reply=seq_reply,
                                 flip_margin=flip_margin,
                                 poffin_force=poffin, sym_k=sym_k,
+                                fetch_stadium=fstad, fetch_scrapper=fscrap,
                                 oracle=oracle, orc_probe=orc_probe,
                                 orc_sel=orc_sel, orc_arms=orc_arms,
                                 orc_wp=orc_wp, orc_maxopt=orc_maxopt,

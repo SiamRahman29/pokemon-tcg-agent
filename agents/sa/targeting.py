@@ -79,6 +79,12 @@ CHIP_DAMAGE = 30
 # against this card id), which is the upgrade path if a second wall appears.
 WALL_POKEMON = frozenset({345})   # Crustle -- Mysterious Rock Inn
 
+# --- E21: Petrel's fetch (day 30) --------------------------------------------
+FETCH = 7            # SelectContext of a "search your deck" resolution
+PETREL = 1219        # Team Rocket's Petrel -- "search your deck for a Trainer"
+SPIKEMUTH = 1259     # Spikemuth Gym (Stadium, x4)
+TOOL_SCRAPPER = 1137  # "discard up to 2 Pokemon Tools" (x1)
+
 
 def _pokemon_at(state: dict, player: int, area: int, index: int) -> dict | None:
     try:
@@ -638,4 +644,92 @@ def poffin_force(obs: dict, chosen: list[int]) -> list[int] | None:
         if (o.get("type") == OPT_PLAY
                 and _hand_card_id(state, me, o.get("index") or 0) == POFFIN):
             return [i]
+    return None
+
+
+# --- E21: the Petrel fetch ---------------------------------------------------
+
+def petrel_fetch(obs: dict, stadium: bool = False,
+                 scrapper: bool = False) -> list[int] | None:
+    """Inject board facts into Petrel's fetch — the one select with NO board.
+
+    **Why this select and not another.** §8br's structural addendum: a fetch
+    option's feature vector contains *nothing* about the board. The whole v3
+    target block (`hp`, damage taken, dies-to-30, energy count, best_damage) is
+    identically zero, because it resolves a Pokemon at (player, area, index) and
+    the deck is not an in-play area. **One fetch option differs from another
+    only by its card embedding and card type.** Everything situational has to
+    arrive through `srepr`, which is concatenated identically to every option
+    and can discriminate only through the head MLP's interaction term.
+
+    ⚠ **These rules are NOT derived from what the experts fetch**, and that is
+    deliberate: §8u measured that agreement with the FIELD predicts strength
+    while agreement with the EXPERT anti-predicts it, and E11 copied a sized,
+    ordering-free expert gap (0.80 plays/game) and measured **0.487**. Both
+    conditions below come from card text plus the board:
+
+    * `stadium` — Spikemuth Gym is the only Stadium in the 60 and our entire
+      evolution line is Marnie's, so it is a repeatable engine tutor for us and
+      much weaker for most opponents. Fetch it when **no Stadium is in play, or
+      the one in play is theirs** — i.e. when playing it both starts our engine
+      and removes theirs. Sized at **0.461 firings/game** over our 76 ladder
+      games, the largest rate anything in this seam has had.
+    * `scrapper` — Tool Scrapper does *nothing* unless a Tool is attached. So
+      fetch it only when a Tool is on THEIR board. Sized at 0.171/game.
+      ⚠ Under the 0.5 gate; included because an n=2,000 mirror A/B costs
+      ~6 min here, so the gate's original cost model (arena time is scarce)
+      does not bind. Rule 14 gates what is worth BUILDING, not what is
+      affordable to measure.
+
+    ⛔ Gated on `select.effect` being Petrel itself, so Poke Pad's Supporter
+    search and Night Stretcher's discard recovery are untouched — they cannot
+    reach a Stadium anyway, and a rule that fires on selects it was not sized
+    on is measuring something other than what was sized.
+
+    Returns a single-element order (maxCount is 1 here and minCount is 0, so
+    declining is legal and one index is a complete answer), or None to leave the
+    select entirely to the net.
+    """
+    sel = obs.get("select") or {}
+    if (sel.get("context") or 0) != FETCH:
+        return None
+    eff = sel.get("effect")
+    if not isinstance(eff, dict) or eff.get("id") != PETREL:
+        return None
+    options = sel.get("option") or []
+    if len(options) < 2:
+        return None
+    state = obs.get("current") or {}
+    try:
+        me = state["yourIndex"]
+        opp = state["players"][1 - me]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+    want = None
+    if scrapper:
+        tools = 0
+        for where in ("active", "bench"):
+            for pk in (opp.get(where) or []):
+                if pk:
+                    tools += len((pk or {}).get("tools") or [])
+        if tools:
+            want = TOOL_SCRAPPER
+    if want is None and stadium:
+        stad = state.get("stadium") or []
+        if (not stad) or (stad[0] or {}).get("playerIndex") != me:
+            want = SPIKEMUTH
+    if want is None:
+        return None
+
+    # The card an option names, via the NET'S OWN extractor -- p76's lesson:
+    # a PLAY option carries no `area`, and a hand-rolled mapping produced a
+    # table that E11's own measurement contradicted outright.
+    from .optfeat import option_features
+    for i, o in enumerate(options):
+        try:
+            if int(option_features(obs, o)[1] or 0) == want:
+                return [i]
+        except Exception:  # noqa: BLE001
+            continue
     return None
