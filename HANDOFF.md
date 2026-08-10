@@ -21,10 +21,15 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 27 (2026-08-09): three seams measured, all null — no blunder signature, no latent plan, no bench-symmetry gain. Then the 3rd session **built the instrument this project never had**: real positions fork out of replays and their options score by rollout (§N.0, EVIDENCE §8bw). **E16 is pre-registered and awaiting a go/no-go.**
+> # ▶ START HERE — DAY 28 (2026-08-10): the imitation thread is **CLOSED** (E16 null, arm C null — §N.0b/§N.0c). The project has a **new instrument** (fork any real position, score its options by rollout — §8bw) and **one live lead**: the 600 s clock, whose sizing gate **PASSED** (§N.0d, ROADMAP §2.7).
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
-> **📌 USER DIRECTIVE (day 27, end of 2nd session): CONTINUE THE "IMITATION WITHOUT A PLAN" THREAD IN A NEW SESSION.** Everything it needs is §N.
+> **📌 USER DIRECTIVE (day 28): the imitation thread was run until dead; NEXT SESSION TAKES UP THE CLOCK.** Design, price, kill gate and blockers are in **ROADMAP §2.7**; the gate that licenses it is §N.0d.
+>
+> **▶ Read in this order:** §N.0b (E16) → §N.0c (arm C, thread closed) → §N.0d (the lead) → ROADMAP §2.7 (the clock, in full).
+>
+> ⚠ **Two things owed before new work:** a **rule-2 settling read on `55382430`** (submitted 15:04 UTC 08-09, never read — §N.5's pair is stale), and a decision on the **draw-rolling protocol** (roll while your worst active is your oldest; ~12 draws by the 08-15 last-safe-day; costs no local CPU).
+> ⛔ **Do NOT re-open:** latent plans (§8bv), expert move-quality (§8bx), coherence/commitment via imitation (arm C), demonstrator selection (§8t/§8u), and the rest of §N.2's kill list.
 >
 > ---
 >
