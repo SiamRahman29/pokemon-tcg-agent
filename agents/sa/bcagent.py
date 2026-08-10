@@ -59,6 +59,17 @@ def health_line() -> str:
                  f" ({s['flips'] / s['flip_eligible']:.1%})")
     if s["first_error"]:
         line += f" first_error={s['first_error'][:200]!r}"
+    # The oracle spends real wall-clock time, so "did it fire, how often, and
+    # what did it cost" has to be readable without per-move logging -- E15's
+    # null was only interpretable because `sym8` could be shown firing on 8.36%
+    # of selects, and a component that silently never fires reads as a null.
+    try:
+        from .oracle import STATS as OSTATS, health_line as ohealth
+
+        if OSTATS:
+            line += " | " + ohealth()
+    except Exception:
+        pass
     return line
 
 
@@ -77,7 +88,11 @@ class PolicyAgent:
                  sequencer: bool = False, seq_k: int = 8, seq_dets: int = 4,
                  seq_budget: float = 0.35, seq_reply: bool = False,
                  flip_margin: float | None = None,
-                 poffin_force: bool = False, sym_k: int = 0):
+                 poffin_force: bool = False, sym_k: int = 0,
+                 oracle: bool = False, orc_probe: int = 10,
+                 orc_sel: int = 20, orc_arms: int = 3,
+                 orc_wp: float = 0.85, orc_maxopt: int = 5,
+                 orc_tau: float = 0.0, orc_cap: float = 12.0):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -200,6 +215,20 @@ class PolicyAgent:
         # construction -- confirmed at 0.521 [0.490, 0.552] n=1000, containing
         # 0.5. `bc:<label>,noWall` turns it off. See report/EVIDENCE.md §8c.
         self.chip_wall_defer = chip_wall_defer
+        # E17 / ROADMAP §2.7 — the clock. A two-stage rollout oracle over the
+        # net's OWN top-k options, gated to the decisions E17 measured value at
+        # (option count <= orc_maxopt, and not already won). OFF by default and
+        # opt-in via `bc:<label>,orc` until it clears an arena A/B: it is an
+        # experiment, not a shipped component, and it is the only component
+        # here that can spend real wall-clock time. See sa/oracle.py.
+        self.orc = None
+        if oracle:
+            from .oracle import RolloutOracle
+
+            self.orc = RolloutOracle(
+                decklist, net=self.net, arms=orc_arms, probe=orc_probe,
+                r_sel=orc_sel, wp_skip=orc_wp, max_opts=orc_maxopt,
+                tau=orc_tau, decision_cap_s=orc_cap)
 
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
@@ -324,6 +353,14 @@ class PolicyAgent:
                 planned = self.seq.plan(obs, list(picked))
                 if planned is not None:
                     return planned
+            # The oracle goes LAST, for the same reason the sequencer does: it
+            # is the only component that scores an option by simulated OUTCOME
+            # rather than by resemblance to the corpus. It returns None -- keep
+            # `picked` -- on any doubt, any budget pressure and any exception.
+            if self.orc is not None:
+                better = self.orc.choose(obs, list(picked))
+                if better is not None:
+                    return better
             return picked
         except Exception:
             STATS["fallbacks"] += 1

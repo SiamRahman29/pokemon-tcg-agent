@@ -224,6 +224,12 @@ def build_agent(spec: str, deck: list[int],
         # in behaviour to what it was before the probe existed.
         flip_margin = None
         sym_k = 0
+        # E17 / §2.7 -- the clock. Opt-in, unproven, and the only bc component
+        # that spends real wall-clock time. Defaults are E17's measured design
+        # (probe 10, skip win-prob > 0.85, options <= 5, 20 pairs x 3 arms).
+        oracle = False
+        orc_probe, orc_sel, orc_arms = 10, 20, 3
+        orc_wp, orc_maxopt, orc_tau, orc_cap = 0.85, 5, 0.0, 12.0
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -289,6 +295,22 @@ def build_agent(spec: str, deck: list[int],
                 # 0.559 for unconditional chip_target, n=2000 each, and it
                 # cannot fire in the mirror. `noWall` restores the old behaviour.
                 wall = f == "wall"
+            elif f == "orc":
+                oracle = True
+            elif f.startswith("op"):
+                orc_probe = int(f[2:])      # stage-1 probe rollouts
+            elif f.startswith("os"):
+                orc_sel = int(f[2:])        # stage-2 pairs per arm
+            elif f.startswith("oa"):
+                orc_arms = int(f[2:])       # arms (top-k of the net)
+            elif f.startswith("ow"):
+                orc_wp = float(f[2:])       # skip above this win probability
+            elif f.startswith("om"):
+                orc_maxopt = int(f[2:])     # the free trigger: option count
+            elif f.startswith("ot"):
+                orc_tau = float(f[2:])      # min margin to overrule (POST-HOC)
+            elif f.startswith("oc"):
+                orc_cap = float(f[2:])      # per-decision seconds cap
             elif f in ("poffin", "noPoffin"):
                 # E11: play Buddy-Buddy Poffin when the bench has >=2 free
                 # slots. Default OFF until its own A/B clears the bar
@@ -317,7 +339,11 @@ def build_agent(spec: str, deck: list[int],
                                 seq_k=seq_k, seq_dets=seq_dets,
                                 seq_budget=seq_budget, seq_reply=seq_reply,
                                 flip_margin=flip_margin,
-                                poffin_force=poffin, sym_k=sym_k)
+                                poffin_force=poffin, sym_k=sym_k,
+                                oracle=oracle, orc_probe=orc_probe,
+                                orc_sel=orc_sel, orc_arms=orc_arms,
+                                orc_wp=orc_wp, orc_maxopt=orc_maxopt,
+                                orc_tau=orc_tau, orc_cap=orc_cap)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and
