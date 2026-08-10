@@ -49,6 +49,30 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ Read in this order:** **§N.6c + §8ca (E19 closed the clock — start here, it retracts §8by's headline)** → `docs/experiments/E20-value-lookahead.md` (the live thread) → §8by (E17, for what E19 retracted and what survives) → ROADMAP §2.7 → §N.0d (how the lead arose).
 >
+> ## 🔴 N.8 DAY 30 (2026-08-11): E21 RAN — the clone's board-blind fetch BEATS a board-aware rule, 0.4405, z=−5.36 (§8cc)
+>
+> Pre-registered at `5be502d` before either cell. `bc:e21,fstad` (fetch Spikemuth
+> Gym when no Stadium is ours) in the mirror, byte-identical nets, n=2,000:
+> **0.4405 [0.4187, 0.4623]** — the pre-registered **HARMFUL** branch, not a null.
+> ✅ Control 1 passed hard: **1,439/3,023 fetches redirected, 0.72/game**, so the
+> intervention happened and lost.
+> - ⚡ **Realized firing is 1.6× the offline sizing** (0.72 vs 0.461/game): rule-14
+>   estimates from recorded games under-predict, because the rule changes the
+>   trajectory it is measured on.
+> - 🔴 **Arm 2 (`fscrap`) is VOID: `fetch=0/3082`.** Our 60 runs **no Pokémon
+>   Tool**, so in the mirror the condition is unsatisfiable *by construction* —
+>   §8aj said this about the same card and I did not apply it. ⇒ **SIZE THE
+>   CONDITION IN THE MATCHUP THE CELL WILL RUN IN.** Its accidental payoff: with
+>   zero firings the arms are identical, giving a clean **C0 at 0.5175 [0.496,
+>   0.539]**, CI containing 0.500.
+> - 🔬 **Audit (diagnostic only): the harm does NOT generalise.** Against
+>   `rule:v10` on `lucario_v10`, `fstad` − `base` = **+0.014 [−0.028, +0.056]**,
+>   and the mirror's −0.060 sits outside it. Spikemuth Gym is **symmetric in the
+>   mirror** (both sides run Marnie's), so we pay a scarce tutor to hand both
+>   players the same engine — and it is a **4-of** displacing a 1-of ACE SPEC.
+> - ✅ **Tradeoff rules 0-for-6**, on the class's largest-ever firing rate.
+> - ⛔ Nothing ships; both flags default OFF. E20 owns the submission slots.
+>
 > ## ⚡ N.7 DAY 30 (2026-08-11): the two named Petrel scenarios — §8cb
 >
 > Both close by sizing, but **§8br's verdict is sharper and worse-sounding now.**

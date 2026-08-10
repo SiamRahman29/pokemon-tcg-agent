@@ -4403,6 +4403,110 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8cc. 🔴 E21 — THE CLONE'S BOARD-BLIND FETCH BEATS A BOARD-AWARE RULE, DECISIVELY (0.4405, z=−5.36) — and the second arm never fired at all (2026-08-11, day 30)
+
+Pre-registered in `docs/experiments/E21-petrel-fetch.md`, frozen at **`5be502d`
+before the first arena game of either cell**, prediction included. Driver
+`scripts/p87_e21_run.sh`, logs `out/logs/p87_e21_*.txt`, archives
+`out/arena/e21/`. User-directed: *"test in the arena to see if the experiments
+pan out instead of comparing if the experiments make us similar to the experts."*
+
+**H-fetch:** §8br showed a Petrel fetch option's vector carries **no board at
+all**; supplying the board fact directly, at the one select that cannot see it,
+should beat the clone. Two conditions, both from card text rather than expert
+behaviour (§8u: agreement with the expert anti-predicts strength):
+
+* `fstad` — fetch Spikemuth Gym when no Stadium is in play or the one in play is
+  theirs. Sized offline at **0.461 firings/game**, the largest rate this seam
+  has produced.
+* `fscrap` — fetch Tool Scrapper only when a Tool is on THEIR board. 0.171/game.
+
+### 🔴 The primary cell: not a null, a LOSS
+
+Mirror, byte-identical weights both sides (`out/policy_v5_s2.npz#4790c469`),
+4 shards × 500 games, pooled from arena's own printed W/D/L (rule 18):
+
+| cell | score | 95% CI | n | verdict |
+|---|---|---|---|---|
+| **`fstad` vs `base`** | 🔴 **0.4405** | [0.4187, 0.4623] | 2,000 | **HARMFUL branch — z = −5.36** |
+
+✅ **Control 1 passed decisively**, which is what makes this readable: the rule
+fired **1,439 / 3,023 fetches = 47.6%, 0.72 per game**. This is not the §8be
+family — the intervention happened and it lost.
+
+⚡ **The realized firing rate is 1.6× the offline sizing (0.72 vs 0.461/game),**
+because off-policy replay sizing cannot see that the rule changes the
+trajectory it is measured on. **Sizing from recorded games under-predicts
+on-policy firing** — worth carrying into every future rule-14 estimate.
+
+### 🔴 The second cell is VOID, and it is rule 16 in a new costume
+
+`fscrap` reads **0.5175 [0.4956, 0.5394]** — and **`fetch=0/3082 (0.0%)`. It
+never fired once.** Per this experiment's own control 1, *"a null with a zero
+firing count is a statement about the wiring, not about H-fetch"*, so the score
+is not a result about the rule.
+
+🔴 **The cause was already in this file and I did not apply it.** `decks/grimmsnarl.py`
+runs Tool Scrapper and **zero Pokémon Tools**, so in the MIRROR neither side can
+ever put a Tool on the board and the rule's condition is unsatisfiable *by
+construction*. §8aj recorded exactly this for the same card — *"Tool Scrapper is
+played 0.00 times per mirror game, so a mirror A/B would return 'cutting it is
+free' by construction — rule 16 in deck clothing"* — and §8br's own addendum
+lists the tools our real opponents carry (Air Balloon 178, Hero's Cape 87 for
+the experts). **The 0.171/game sizing came from ladder games against a mixed
+field and does not transfer to the mirror.** ⇒ **Size the condition IN THE
+MATCHUP THE CELL WILL RUN IN**, not on the corpus that suggested it.
+
+⚡ **The one thing it did buy:** with zero firings the two arms are behaviourally
+identical, so the cell is an accidental **C0 control** — identical agents should
+read 0.500, and it reads 0.5175 with the CI containing 0.500. The harness is
+sound, which is worth having under E21a's −5.36.
+
+### 🔬 The audit the "harmful" branch demanded — and the harm does NOT generalise
+
+Diagnostic, **not a ship path** (no confirmation cell, no anchor sweep, and no
+threshold tuning is permitted — the pre-registration forbids it). Both arms
+against `rule:v10,noS` on `lucario_v10`, where Spikemuth Gym is **asymmetric**
+because the opponent runs no Marnie's line:
+
+| arm | score | 95% CI | n |
+|---|---|---|---|
+| `fstad` vs `rule:v10` | 0.6670 | [0.6378, 0.6962] | 1,000 |
+| `base` vs `rule:v10` | 0.6530 | [0.6235, 0.6825] | 1,000 |
+| **delta** | **+0.0140** | **[−0.0275, +0.0555]** | — |
+
+🔴 **The mirror's −0.0595 lies outside the audit's interval.** The injected fact
+is not wrong in general — **forcing it is wrong where the Stadium is
+SYMMETRIC.** In the mirror both players run Marnie's lines, so Spikemuth Gym
+tutors for the opponent exactly as much as for us, and we spend a Petrel — a
+scarce tutor — to hand both sides the same engine. ⚠ Two-cell delta, so its
+width is √2× a single cell's (§8aw); it separates the two matchups, it does not
+license anything.
+
+⚡ **The deeper reading, and it is about scarcity rather than symmetry:**
+Spikemuth Gym is a **4-of** that arrives on its own, while the cards the rule
+displaces are a **1-of ACE SPEC** (Unfair Stamp) and a 3-of (Night Stretcher).
+Spending the deck's only any-Trainer tutor on its most plentiful card is the
+error, and the net had already learned not to do it (5.1% take rate, §8br).
+
+### What this closes
+
+- 🔴 **H-fetch is REFUTED in the mirror, which is 71.4% of our field above
+  rating 1000 (§8ac).** The clone's board-blind fetch is **better** than the
+  board-aware rule, by 6 points of win rate at z=−5.36.
+- ⚡ **This is the first rule in this family to produce a DECISIVE signal rather
+  than a null, and the sign is negative.** §8br called the fetch "not a worse
+  judgement but the absence of one"; E21 shows that where we can express a
+  judgement cheaply, the clone's is better. ⇒ **The Petrel seam is closed a
+  second time, now on strength rather than on sizing.**
+- ✅ **Tradeoff rules go 0-for-6**, and this is the class's strongest test: the
+  largest firing rate it has ever had (0.72/game), so *"too rare to matter"* was
+  unavailable as an excuse. The prediction written before the run (§E21, "my
+  prediction, written first: `fstad` reads NULL") was **wrong in magnitude and
+  right in direction** — it lost by more than predicted.
+- ⛔ **Nothing ships.** Both flags stay in the tree, OFF by default. E20 owns the
+  submission slots.
+
 ## 8cb. ⚡ THE TWO NAMED PETREL SCENARIOS: one is a NON-EVENT, the other is a REAL blind spot the experts do not share — and both die at the sizing gate anyway (2026-08-11, day 30)
 
 **Hypothesis (user, day 30):** §8br closed Petrel *by sizing*, on a marginal
