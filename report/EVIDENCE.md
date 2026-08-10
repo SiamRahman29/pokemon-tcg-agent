@@ -4403,6 +4403,96 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8ca. 🔴 E19 CELL A KILLS THE CLOCK, AND IT KILLS E17's HEADLINE WITH IT: at exactly one deviation per game the rollout's +0.035 delivers nothing (2026-08-10, day 29)
+
+Pre-registered in `docs/experiments/E19-clock-mechanism.md`, frozen at `aa19968`
+**before either cell's first game**. Driver `scripts/p85_e19_run.sh A`, log
+`out/logs/p85_e19_capA.txt`. `bc:cap,orc,od1` vs `bc:base`, mirror, net
+`#4790c469` on both sides.
+
+| cell | reading |
+|---|---|
+| **score, one overrule per game** | **0.4963 [0.4719, 0.5207]**, n=1,608 |
+| overrules actually taken | **0.93/game** (cap held: `skip_capped`=49,578) |
+| rollout errors | **0.0%** over 137,158 rollouts |
+| worst remaining 600 s pool | 502.1 s ✅ |
+
+### The two hypotheses, and the one that survives
+
+E18 left the puzzle: search picks the genuinely better option (67% best-arm,
+z=5.5, +0.035 per overrule against stored ground truth) and the win rate reads
+0.4828. Two explanations, pre-registered with **point** predictions:
+
+| | claim | predicted | observed |
+|---|---|---|---|
+| **H-compound** | the value is real but only for a ONE-STEP deviation; E18 deviated 3.32×/game and played a policy it never evaluated | **0.535** | ❌ **3.1σ away** |
+| **H-fusion** | the rollout value is biased and never transferred | **≈0.500** | ✅ **0.4963** |
+
+🔴 **At cap=1 the one-step assumption is EXACTLY satisfied and the effect is
+still zero.** That is the whole point of the design: a +0.035 gain in win
+probability at one decision *is*, by definition, +0.035 on that game's win rate
+if the estimate is unbiased. It is not there. ⇒ **the estimate is biased.**
+
+⚠ **Stated at the right strength.** The upper bound is **+0.021** against a
+predicted +0.035, so the one-step value is overstated by **at least ~40%** and
+is consistent with **zero**. We can exclude +0.035; we cannot exclude +0.01.
+
+### 🔴 What this retracts, and it is more than the agent
+
+**E17's headline measured the same biased quantity.** §8by's +0.0139/decision,
+§8bz's +0.0353/overrule, the 67% best-arm rate and the +0.120 scale bar (§8bw)
+are all *rollout* values under clone-vs-clone continuation. E19 is the first
+test of whether that currency converts to won games, and **it does not**. ⇒
+**ROADMAP §2.7's entire sizing framework rested on an unvalidated assumption**,
+and the E17 gate it passed should be read as "the rollout says there is value
+here", not "there is value here".
+
+⚡ **The instrument was verified and still measured the wrong thing.** Every
+control held — C0 99.8%, C1 100%, identical arms read zero, the autopsy showed
+selection working at z=5.5 against stored truth. **A component can be correct
+in every internal check and still not measure the quantity you want**, and no
+amount of internal validation substitutes for the end-to-end test.
+
+### The leading mechanism, named but not isolated
+
+**Determinization.** We sample the opponent's *whole deck* from a library by
+best overlap, then inside each sampled world the rollout plays as if the hidden
+cards were known — the classic strategy-fusion failure of perfect-information
+Monte Carlo. A line that only works because the simulation "knows" the world
+scores well and gains nothing in a real game. Supporting sign from §8bz: **37%
+of overrules take an option the net scores >3 worse**, i.e. lines the field-mode
+clone would never choose, which is exactly where a fused evaluation would be
+most wrong. ⛔ **Not isolated by experiment** — the alternative (the opponent
+model is simply wrong) is untested, and distinguishing them needs an
+information-set-aware rollout that does not exist here.
+
+### ⛔ The pre-registered consequence: cell B is CANCELLED
+
+E19 §"Ordering and dependency" says it in advance: *"If A supports H-fusion, the
+per-decision value never transferred and no trigger can help."* **Cell B — the
+validated half of the user's `wp<0.50` trigger — would have measured a dead
+premise at ~8 h of compute, and is not run.** ⚡ Its offline finding stands on
+its own as a report result and is worth keeping: *"we are losing"* concentrates
+the (rollout-measured) value at **+0.0150/decision on 22% of firings**, while
+*"the net is confused"* is **refuted** — adding `margin<1.5` lowers it to
++0.0108, because the wins come from options the net scored **>3 worse**, where
+it was confident and *wrong*, not where it was torn.
+
+### ⚠ A comparison that does NOT support what it looks like
+
+E18 (no cap) 0.4828 → cell A (cap=1) 0.4962 looks like capping helped. It is
+**+0.0134 [−0.0414, +0.0682], z=0.48** — an interval four times the effect.
+⛔ **Do not report capping as an improvement.** The informative contrast is not
+cap-vs-no-cap (two noisy runs differenced) but cap **against its own point
+prediction**, which is why E19 was designed to make a point prediction at all.
+
+⇒ **The clock is CLOSED as a Round-1 axis.** ⚡ What survives for Round 2 is
+narrower and honest: the failure is in the **evaluator**, not the idea. A
+search whose rollouts are information-set-aware, or a *learned* value function
+trained on real outcomes rather than determinized simulations, is untouched by
+this result — and that is the value-based policy-iteration family §2.7 already
+names as never-tried.
+
 ## 8bz. 🟡 E18 — THE CLOCK PLAYS THE GAME AND WINS NOTHING: search selects demonstrably better options (z=5.5) and the win rate reads 0.476 (2026-08-10, day 29)
 
 Pre-registered in `docs/experiments/E18-clock-arena.md`, frozen at `cc070b0`

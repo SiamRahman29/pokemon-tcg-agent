@@ -486,6 +486,30 @@ last safe day ~08-15**; EVIDENCE §8bh+ entries the session each item concludes.
 
 ---
 
+## 2.7 THE CLOCK — 🔴 CLOSED FOR ROUND 1 (day 29, 2026-08-10). Built, A/B'd, and killed by its own evaluator
+
+> 🔴 **VERDICT (day 29, `EVIDENCE` §8ca): the clock is CLOSED.** It was built
+> (`agents/sa/oracle.py`), it ran (E18: 0.4828, n=408), and E19 cell A settled
+> why: at **one overrule per game** — where the one-step assumption every
+> rollout rests on is *exactly* satisfied — it reads **0.4963 [0.4719, 0.5207]**
+> at n=1,608, against a pre-registered point prediction of **0.535**. A +0.035
+> gain in win probability at one decision *is* +0.035 on that game's win rate if
+> the estimate is unbiased. **It is not there ⇒ the rollout estimate is biased**,
+> most likely by determinization (strategy fusion), which is named but not
+> isolated.
+>
+> 🔴 **And this retracts the section's own sizing framework.** Everything below
+> — and E17's +0.0139/decision, and §8bx's dispersion, and §8bw's +0.120 scale
+> bar — is denominated in **rollout value under clone-vs-clone continuation**.
+> E19 is the first test of whether that currency buys games and it does not.
+> Read the gate that "passed" as *"the rollout says there is value here"*.
+>
+> ⚡ **What survives, narrower and honest:** the failure is in the **evaluator**,
+> not the idea. An information-set-aware search, or a **learned value function
+> trained on real outcomes** rather than determinized simulations, is untouched
+> by this result — which is exactly the value-based policy-iteration family
+> named at the end of this section as never-tried.
+
 ## 2.7 THE CLOCK — parked with a design, a price and a kill gate (day 28, 2026-08-10)
 
 > 🟡 **UPDATED DAY 29 — E17 RAN AND THIS SECTION IS NOW PART WRONG.** Its own

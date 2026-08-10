@@ -43,6 +43,55 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ Read in this order:** §8by (E17, the whole verdict) → **§N.6 (the clock is BUILT and its A/B is in flight)** → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
 >
+> ## 🔴 N.6c E19 CELL A CLOSES THE CLOCK — and retracts E17's headline (§8ca)
+>
+> `bc:cap,orc,od1` — **at most ONE overrule per game**, so the one-step
+> assumption every rollout rests on is **exactly** satisfied.
+>
+> | | predicted | observed |
+> |---|---|---|
+> | **H-compound** (value real, multi-deviation destroys it) | 0.535 | ❌ **3.1σ away** |
+> | **H-fusion** (the rollout value never transferred) | ≈0.500 | ✅ **0.4963 [0.4719, 0.5207]**, n=1,608 |
+>
+> 🔴 **A +0.035 gain in win probability at one decision IS +0.035 on that
+> game's win rate if the estimate is unbiased. It is not there ⇒ the estimate
+> is biased.** Upper bound +0.021 against a predicted +0.035, and consistent
+> with zero. Controls all held: cap 0.93 overrules/game, 0.0% rollout errors
+> over 137,158, worst pool 502 s.
+>
+> 🔴 **This retracts more than the agent.** §8by's +0.0139/decision, §8bz's
+> +0.0353/overrule, the 67% best-arm rate and §8bw's +0.120 scale bar are ALL
+> rollout values under clone-vs-clone continuation. E19 is the first test of
+> whether that currency buys games and **it does not**. ⇒ **ROADMAP §2.7's
+> sizing framework rested on an unvalidated assumption.**
+> ⚡ **The lesson to carry:** every internal control passed — C0 99.8%, C1 100%,
+> identical arms at zero, selection verified at z=5.5 against stored truth —
+> and the instrument still measured the wrong quantity. **Internal validity is
+> not external validity, and only the end-to-end test can tell you.**
+>
+> **Leading mechanism (named, NOT isolated):** determinization. We sample the
+> opponent's whole deck and each simulated world is played as if the hidden
+> cards were known — textbook strategy fusion. Sign: 37% of overrules take an
+> option the net scores >3 worse. ⛔ The rival ("the opponent model is just
+> wrong") is untested; separating them needs an information-set-aware rollout
+> that does not exist here.
+>
+> ⛔ **CELL B IS CANCELLED, by E19's own pre-registered dependency** — no firing
+> policy can rescue value that was never there, and it would have cost ~8 h.
+> ⚡ Its **offline** result stands and is a report finding: `wp<0.50` ("we are
+> losing") holds +0.0150/decision at 22% of firings, while "the net is confused"
+> is **refuted** (adding `margin<1.5` drops it to +0.0108) — the wins come from
+> options the net scored **>3 worse**, where it was confident and *wrong*.
+>
+> ⚠ **Do NOT report capping as an improvement.** E18 0.4828 → cap 0.4962 is
+> **+0.0134 [−0.0414, +0.0682], z=0.48**, an interval four times the effect.
+> The informative contrast is cap vs its own **point prediction**.
+>
+> ⇒ **The clock is CLOSED for Round 1.** What survives is narrower: the failure
+> is in the **evaluator**, not the idea. An information-set-aware search, or a
+> *learned* value function trained on real outcomes rather than determinized
+> simulations, is untouched — the policy-iteration family §2.7 already names.
+>
 > ## 🟡 N.6b E18 RAN: 0.4764 [0.4281, 0.5252], n=403 — INCONCLUSIVE, and NOTHING SHIPS
 >
 > `EVIDENCE` §8bz, log `out/logs/p83_e18.txt`. **The clock plays the game and

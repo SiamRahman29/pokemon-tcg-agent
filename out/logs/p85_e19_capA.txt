@@ -1,0 +1,18 @@
+out/arena/e19/capA_*.jsonl -- vs the shipped agent, mirror, byte-identical net
+  n = 1608 games
+  score = 0.4963 [0.4719, 0.5207]   (Wilson)
+    as P0: 0.5224  (420.0/804)
+    as P1: 0.4701  (378.0/804)
+
+  worst remaining 600 s pool over all games: 502.1 s
+  ✅ every game stayed above the reserve.
+
+  [firing] aborted=5109  errors=0  fired=2886  overruled=1490  probed=3637  rollouts=137158  skip_capped=49578  skip_thin=8  skip_trigger=11657  skip_won=743
+    ⇒ 1.79 fires/game, 0.93 overrules/game
+    ⇒ rollout error rate 0.0%
+
+====================================================================
+PRE-REGISTERED DECISION RULE (E18 §3, frozen at cc070b0)
+  ⇒ 🟡 INCONCLUSIVE (0.4963), which §3 named as the EXPECTED outcome. n=400 has SE≈0.025 and detects a true +0.03 with probability 0.34. **A null here is not a kill.**
+====================================================================
+⚠ The mirror flatters this agent: the oracle rolls out with the clone piloting both seats, and here the opponent IS the clone.
