@@ -4403,6 +4403,122 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8bz. 🟡 E18 — THE CLOCK PLAYS THE GAME AND WINS NOTHING: search selects demonstrably better options (z=5.5) and the win rate reads 0.476 (2026-08-10, day 29)
+
+Pre-registered in `docs/experiments/E18-clock-arena.md`, frozen at `cc070b0`
+**before the first game**. Agent `agents/sa/oracle.py`, driver
+`scripts/p83_e18_run.sh`, scorer `scripts/p83_e18_score.py`, autopsy
+`scripts/p84_oracle_autopsy.py`. Net `#4790c469` on **both** sides — the only
+difference is whether the oracle runs, so the seed nuisance cancels.
+
+| cell | reading |
+|---|---|
+| **score, oracle vs the shipped agent, mirror** | **0.4764 [0.4281, 0.5252]**, n=403 |
+| as P0 / as P1 | 0.5248 / 0.4279 |
+| worst remaining 600 s pool | **251.6 s** ✅ never near the 45 s reserve |
+| rollout error rate | **0.0%** over 187,403 rollouts |
+
+🟡 **By the pre-registered rule this is INCONCLUSIVE, and §3 named that as the
+EXPECTED outcome**: n=400 carries SE ≈ 0.025 and detects a true +0.03 with
+probability **0.34**. ⛔ It is **not** a kill — the KILL branch required the
+interval to exclude 0.500 downward and it does not. ⛔ And it does not ship:
+the point estimate is below 0.500.
+
+### ✅ The component is NOT broken, and this is the part that makes the null mean something
+
+A sub-0.500 A/B has two incompatible readings — *the clock does not help* and
+*the clock is inverted* — and they demand opposite responses. `p84` separates
+them against ground truth the project already owns: **E17 stored 50 paired
+rollouts per arm at 300 real positions**, so each option's value is known to
+±0.04. Replay those exact positions through the **live** `RolloutOracle.choose()`
+and score the option it returns against E17's stored means.
+
+| | reading |
+|---|---|
+| **picked the genuinely best arm** | **40/60 = 67%** against a 1/3 null ⇒ **z = 5.5** |
+| value of the live oracle's picks | +0.0112 [−0.0016, +0.0239] |
+| uniform choice over the same arms | −0.0119 |
+| perfect oracle over the same arms | +0.0243 ⇒ it captures **46%** |
+
+⚡ **The agreement rate is the decisive statistic, not the mean gain.** The mean
+is diluted by every position where the arms are genuinely close — most of them
+— so it is underpowered by construction; picking the best of three at 67%
+against 33% is not. ⇒ **selection works, so the null is a fact about the CLOCK,
+not the wiring.**
+
+### 🔴 What the extra time actually CHANGES — the diagnostic that makes the null readable
+
+Without this, a null reads identically whether search agreed with the net
+everywhere (nothing could move) or overruled it constantly and gained nothing.
+It is the latter.
+
+| | reading |
+|---|---|
+| decisions where search chose **differently** | **19/60 = 32%** (live A/B: **3.32 overrules/game** of 7.98 fires) |
+| true gain **when it overruled** | **+0.0353 [−0.0035, +0.0740]** |
+| overrules that were genuine improvements | **13/19 = 68%** |
+| how the **pre-search net** scored the option search took | **3.01 below its own top-1** |
+| …overrules taking an option the net scored **>3 worse** | **37%** |
+| value **left on the table** when it kept the net's pick | **+0.0090 [+0.0036, +0.0145]** |
+
+⇒ Search overrules a third of the time, is right about two thirds of those,
+takes options the clone actively dislikes, and is if anything **under**-firing
+(the "left on the table" interval excludes zero).
+
+### 🔴 The mechanism the null most likely reveals, named rather than hand-waved
+
+Every number above measures **Q^π(s,a) — the value of a ONE-STEP deviation**,
+with the clone playing everything afterwards. That is exactly what E17 measured
+and what the rollout computes. **But the deployed agent deviates 3.32 times per
+game**, so it is not a one-step deviation from π — it is a different policy, and
+the estimate is strictly valid only for the first switch. E17's pre-registration
+flagged the symptom (*"per-decision gains do not add"*) without naming the
+mechanism; this is the mechanism.
+
+⚠ **A second, sharper worry the diagnostics raise.** 37% of overrules take an
+option the net scores **>3 below** its own top-1. Those look good *under a clone
+continuation* — and the clone is precisely what plays them out in the rollout.
+A line that only works because the simulated continuation mishandles it will
+score well here and gain nothing in a real game. **This is strategy fusion's
+cousin and it is untested.**
+
+### ⚡ Confirmed: the 6.9% rollout error rate was a MEMORY LEAK, not a logic bug
+
+`fs.release(root)` reclaims **one** search node; a rollout creates a fresh id at
+each of up to `ROLLOUT_CAP` steps. Measured **1.68 GB in 8 minutes and climbing**
+per process, against **0.063 GB flat** after switching to `fs.end()` — a 23×
+reduction, and six shards went from ~10 GB (unrunnable on a 7.9 GB box) to
+0.39 GB. **The clean run reports 0.0% errors over 187,403 rollouts**, which
+confirms the diagnosis. ⛔ **160 games collected before the fix were DISCARDED,
+not pooled** — a memory-starved oracle fires less and declines silently, so
+those games measure a different agent.
+
+### ⛔ Three process defects, each of which would have produced a confident wrong number
+
+1. **`arena.py` defaults to the `sample` deck**, where **79% of decisions carry
+   ≥12 options against 19.7% on grimmsnarl** — so the free trigger fired on
+   **0.7%** of decisions instead of 24%. A `sample` A/B measures a component
+   that barely fires and returns a null. **Rule 20 / §8ax one seat over**,
+   caught by the option-count histogram in the health line.
+2. **A `python -c` process killer matches its own command line *and its parent
+   shell's*** — a kill loop SIGTERM'd the bash that was about to write the E18
+   runner, so the "launch" produced nothing and a later check reported four
+   phantom shards by matching itself. `scripts/killarena.py` now lives in a file
+   and excludes its own parents.
+3. **A tool-level 600 s timeout killed the first attempt at 160 of 408 games** —
+   and killing the wrapper does **not** kill the python grandchildren, so a
+   half-dead run keeps writing rows. Long runs launch with no timeout, and
+   completion is verified by counting shard files, never by the wrapper's own
+   "done" message.
+
+### What is owed next
+
+⚠ **The diagnostics make a falsifiable prediction and it is the natural next
+cell:** if over-deviation is the mechanism, an oracle that overrules **less**
+should score **better**. E17's τ sweep keeps the full per-decision value at
+**7% of decisions instead of 38%** (τ=0.15: +0.0146 corrected vs +0.0139). ⛔ τ
+is **post-hoc** and must be pre-registered before it is run.
+
 ## 8by. 🟡 E17 — THE CLOCK'S OWN GATE: a budgeted rollout oracle over the net's OWN options is worth +0.014/decision, the 600 s is not the resource, and 57% of our decisions carry nothing (2026-08-10, day 29)
 
 Pre-registered in `docs/experiments/E17-self-oracle-value.md`, frozen at

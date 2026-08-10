@@ -1,0 +1,18 @@
+E18 -- the clock vs the shipped agent, mirror, byte-identical net
+  n = 404 games
+  score = 0.4777 [0.4295, 0.5264]   (Wilson)
+    as P0: 0.5248  (106.0/202)
+    as P1: 0.4307  (87.0/202)
+
+  worst remaining 600 s pool over all games: 251.6 s
+  ✅ every game stayed above the reserve.
+
+  [firing] aborted=3907  errors=0  fired=3215  overruled=1336  probed=4213  rollouts=187403  skip_thin=13  skip_trigger=9672  skip_won=985
+    ⇒ 7.96 fires/game, 3.31 overrules/game
+    ⇒ rollout error rate 0.0%
+
+====================================================================
+PRE-REGISTERED DECISION RULE (E18 §3, frozen at cc070b0)
+  ⇒ 🟡 INCONCLUSIVE (0.4777), which §3 named as the EXPECTED outcome. n=400 has SE≈0.025 and detects a true +0.03 with probability 0.34. **A null here is not a kill.**
+====================================================================
+⚠ The mirror flatters this agent: the oracle rolls out with the clone piloting both seats, and here the opponent IS the clone.

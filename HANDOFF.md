@@ -43,7 +43,39 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ Read in this order:** §8by (E17, the whole verdict) → **§N.6 (the clock is BUILT and its A/B is in flight)** → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
 >
-> ## 🔨 N.6 THE CLOCK IS BUILT — `agents/sa/oracle.py`, and E18 is RUNNING
+> ## 🟡 N.6b E18 RAN: 0.4764 [0.4281, 0.5252], n=403 — INCONCLUSIVE, and NOTHING SHIPS
+>
+> `EVIDENCE` §8bz, log `out/logs/p83_e18.txt`. **The clock plays the game and
+> wins nothing**, and the diagnostics say precisely why it is not a wiring bug:
+>
+> | | |
+> |---|---|
+> | score (mirror, byte-identical net both sides) | **0.4764 [0.4281, 0.5252]** |
+> | live oracle picks the genuinely best arm | **40/60 = 67%** vs a 1/3 null ⇒ **z=5.5** |
+> | overrules | **3.32/game** of 7.98 fires (32% of decisions) |
+> | true gain **when it overrules** | **+0.0353**, and **68% were real improvements** |
+> | the pre-search net's opinion of what search took | **3.01 below its own top-1**; 37% were >3 worse |
+> | value left on the table when it KEEPS the net's pick | **+0.0090 [+0.0036, +0.0145]** ⇒ it under-fires |
+> | rollout errors | **0.0%** over 187,403 rollouts ✅ the 6.9% was the memory leak |
+> | worst 600 s pool | 251.6 s ✅ never near the reserve |
+>
+> ⛔ **Not a kill** (the KILL branch needed the CI to exclude 0.500 downward)
+> and ⛔ **not a ship** (point estimate below 0.500). Per the pre-registration,
+> a null at n=400 is **uninformative**: SE≈0.025, power 0.34 against a true +0.03.
+>
+> 🔴 **The mechanism, named:** every measurement — E17's and the autopsy's —
+> is **Q^π(s,a), the value of a ONE-STEP deviation** with the clone continuing.
+> The deployed agent deviates **3.32 times a game**, so it is a different policy
+> and the estimate is strictly valid only for the first switch. ⚠ Second worry:
+> 37% of overrules take an option the net scores >3 worse, and those look good
+> *under a clone continuation* — which is exactly what simulates them.
+>
+> ⚠ **The falsifiable next cell, unrun and NOT yet pre-registered:** if
+> over-deviation is the mechanism, an oracle that overrules **less** should score
+> **better**. E17's τ sweep holds the per-decision value at **7% of decisions
+> instead of 38%** (τ=0.15). ⛔ τ is post-hoc — pre-register before running.
+>
+> ## 🔨 N.6 THE CLOCK IS BUILT — `agents/sa/oracle.py`
 >
 > **📌 USER DECISIONS (day 29):** *(a)* build the agent and run **n=400**, and
 > **submit if it reads well** — recorded as a deviation in `E18-clock-arena.md`

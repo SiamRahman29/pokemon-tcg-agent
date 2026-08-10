@@ -55,3 +55,21 @@ bc:orc,orc,net=out/policy_v5_s2.npz#4790c469 [grimmsnarl] vs bc:base,net=out/pol
   match 26 seat1: winner=0 turns=11 selects=181
   match 27 seat0: winner=0 turns=17 selects=209
   match 27 seat1: winner=1 turns=14 selects=238
+  match 28 seat0: winner=1 turns=10 selects=177
+  match 28 seat1: winner=0 turns=11 selects=179
+  match 29 seat0: winner=1 turns=12 selects=224
+  match 29 seat1: winner=0 turns=13 selects=218
+  match 30 seat0: winner=1 turns=18 selects=279
+  match 30 seat1: winner=0 turns=13 selects=198
+  match 31 seat0: winner=0 turns=13 selects=158
+  match 31 seat1: winner=1 turns=12 selects=214
+  match 32 seat0: winner=0 turns=17 selects=175
+  match 32 seat1: winner=1 turns=16 selects=255
+  match 33 seat0: winner=1 turns=12 selects=231
+  match 33 seat1: winner=1 turns=10 selects=181
+
+A=bc:orc,orc,net=out/policy_v5_s2.npz#4790c469: score=0.500 [0.384, 0.616] W34/D0/L34 over 68 games
+  as P0: W/D/L=(19, 0, 15)  as P1: W/D/L=(15, 0, 19)
+  elapsed 6865.5s; archived 68 rows -> out\arena\e18\shard_2.jsonl
+  pool left (bc:orc,orc,net=out/policy_v5_s2.npz#4790c469): min 278s of 600s
+  [health] OK calls=14645 fallbacks=0 net_missing=0 deck=136 | [oracle] fired=662 probed=872 skip_won=207 skip_trigger=1947 skip_noclock=0 skip_thin=3 skip_shape=3158 overruled=253 aborted=790 errors=0 rollouts=39526 secs=6838.3 | nopt 02:161 03:253 04:298 05:321 06:302 07:278 08:234 09:227 10:156 11:144 12:445
