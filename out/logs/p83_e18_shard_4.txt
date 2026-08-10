@@ -63,3 +63,13 @@ bc:orc,orc,net=out/policy_v5_s2.npz#4790c469 [grimmsnarl] vs bc:base,net=out/pol
   match 30 seat1: winner=0 turns=13 selects=232
   match 31 seat0: winner=1 turns=14 selects=231
   match 31 seat1: winner=1 turns=14 selects=244
+  match 32 seat0: winner=0 turns=13 selects=226
+  match 32 seat1: winner=1 turns=12 selects=218
+  match 33 seat0: winner=0 turns=13 selects=168
+  match 33 seat1: winner=1 turns=16 selects=261
+
+A=bc:orc,orc,net=out/policy_v5_s2.npz#4790c469: score=0.441 [0.329, 0.559] W30/D0/L38 over 68 games
+  as P0: W/D/L=(15, 0, 19)  as P1: W/D/L=(15, 0, 19)
+  elapsed 7460.1s; archived 68 rows -> out\arena\e18\shard_4.jsonl
+  pool left (bc:orc,orc,net=out/policy_v5_s2.npz#4790c469): min 252s of 600s
+  [health] OK calls=14529 fallbacks=0 net_missing=0 deck=136 | [oracle] fired=737 probed=947 skip_won=210 skip_trigger=1846 skip_noclock=0 skip_thin=0 skip_shape=3152 overruled=290 aborted=846 errors=0 rollouts=44384 secs=7434.6 | nopt 02:164 03:264 04:328 05:355 06:329 07:248 08:188 09:160 10:138 11:119 12:500

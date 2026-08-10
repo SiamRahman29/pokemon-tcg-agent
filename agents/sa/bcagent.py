@@ -92,7 +92,8 @@ class PolicyAgent:
                  oracle: bool = False, orc_probe: int = 10,
                  orc_sel: int = 20, orc_arms: int = 3,
                  orc_wp: float = 0.85, orc_maxopt: int = 5,
-                 orc_tau: float = 0.0, orc_cap: float = 12.0):
+                 orc_tau: float = 0.0, orc_cap: float = 12.0,
+                 orc_maxdev: int = 0):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -228,7 +229,8 @@ class PolicyAgent:
             self.orc = RolloutOracle(
                 decklist, net=self.net, arms=orc_arms, probe=orc_probe,
                 r_sel=orc_sel, wp_skip=orc_wp, max_opts=orc_maxopt,
-                tau=orc_tau, decision_cap_s=orc_cap)
+                tau=orc_tau, decision_cap_s=orc_cap,
+                cap=orc_maxdev)
 
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
@@ -287,6 +289,11 @@ class PolicyAgent:
         try:
             if obs.get("select") is None:
                 STATS["deck_returns"] += 1
+                # The deck registration is the only reliable game boundary an
+                # agent sees -- arena builds the agent ONCE and plays every
+                # match through it, so per-game oracle state must reset here.
+                if self.orc is not None:
+                    self.orc.new_game()
                 return list(self.decklist)
             sel = obs["select"]
             n = len(sel.get("option") or [])

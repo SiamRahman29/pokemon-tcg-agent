@@ -78,7 +78,8 @@ def health_line() -> str:
     return (f"[oracle] fired={s['fired']} probed={s['probed']} "
             f"skip_won={s['skip_won']} skip_trigger={s['skip_trigger']} "
             f"skip_noclock={s['skip_noclock']} skip_thin={s['skip_thin']} "
-            f"skip_shape={s['skip_shape']} overruled={s['overruled']} "
+            f"skip_shape={s['skip_shape']} skip_capped={s['skip_capped']} "
+            f"overruled={s['overruled']} "
             f"aborted={s['aborted']} errors={s['errors']} "
             f"rollouts={s['rollouts']} secs={s['secs_x1000'] / 1000.0:.1f}"
             + (f" first_error={ERR['err']!r}" if 'err' in ERR else "")
@@ -123,7 +124,15 @@ class RolloutOracle:
                  probe: int = 10, r_sel: int = 20, wp_skip: float = 0.85,
                  max_opts: int = 5, min_opts: int = 3, tau: float = 0.0,
                  decision_cap_s: float = 12.0, reserve_s: float = RESERVE_S,
-                 min_turn: int = 2, seed: int = 0):
+                 min_turn: int = 2, seed: int = 0, cap: int = 0):
+        # E19a: at most `cap` overrules per GAME (0 = unlimited). This exists to
+        # test the one-step-deviation hypothesis: every value this component
+        # acts on is Q^π(s,a), the worth of deviating ONCE with the clone
+        # continuing, and E18 deviated 3.32 times a game. At cap=1 the
+        # assumption is exactly satisfied, so the measured +0.035 should arrive
+        # intact -- or not, which would mean the rollout value never transferred.
+        self.cap = int(cap)
+        self._used = 0
         self.decklist = list(decklist)
         self.net = net
         self.arms = int(arms)
@@ -137,6 +146,15 @@ class RolloutOracle:
         self.reserve_s = float(reserve_s)
         self.min_turn = int(min_turn)
         self.rng = random.Random(seed)
+
+    def new_game(self) -> None:
+        """Reset per-game state. 🔴 Called from `PolicyAgent.__call__` on the
+        deck-registration select, which is the only reliable game boundary the
+        agent sees: `arena.py` constructs the agent ONCE and plays every match
+        through it, so a cap that never reset would fire once per SHARD -- a
+        null by construction, and one that would have looked like a result.
+        """
+        self._used = 0
 
     # -- the fork, one rollout to terminal ------------------------------
     def _rollout(self, obs: dict, world, first: list[int], me: int, net,
@@ -237,6 +255,9 @@ class RolloutOracle:
             if cur.get("result", -1) != -1 or cur.get("turn", 0) < self.min_turn:
                 STATS["skip_shape"] += 1
                 return None
+            if self.cap and self._used >= self.cap:
+                STATS["skip_capped"] += 1     # spend nothing once capped out
+                return None
             n = len(sel.get("option") or [])
             STATS[f"nopt_{min(n, 12):02d}"] += 1   # live option-count histogram
             if not (self.min_opts <= n <= self.max_opts):
@@ -318,6 +339,7 @@ class RolloutOracle:
             if best == 0 or gaps[best] <= self.tau:
                 return None                       # not earned: keep the pick
             STATS["overruled"] += 1
+            self._used += 1
             # ── what did the extra time actually CHANGE? ──────────────────
             # A null is uninterpretable without this: it separates "search
             # agreed with the net, so of course nothing moved" from "search

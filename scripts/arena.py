@@ -230,6 +230,7 @@ def build_agent(spec: str, deck: list[int],
         oracle = False
         orc_probe, orc_sel, orc_arms = 10, 20, 3
         orc_wp, orc_maxopt, orc_tau, orc_cap = 0.85, 5, 0.0, 12.0
+        orc_maxdev = 0          # E19a: max overrules per GAME, 0 = unlimited
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -311,6 +312,8 @@ def build_agent(spec: str, deck: list[int],
                 orc_tau = float(f[2:])      # min margin to overrule (POST-HOC)
             elif f.startswith("oc"):
                 orc_cap = float(f[2:])      # per-decision seconds cap
+            elif f.startswith("od"):
+                orc_maxdev = int(f[2:])     # E19a: max overrules per game
             elif f in ("poffin", "noPoffin"):
                 # E11: play Buddy-Buddy Poffin when the bench has >=2 free
                 # slots. Default OFF until its own A/B clears the bar
@@ -343,7 +346,8 @@ def build_agent(spec: str, deck: list[int],
                                 oracle=oracle, orc_probe=orc_probe,
                                 orc_sel=orc_sel, orc_arms=orc_arms,
                                 orc_wp=orc_wp, orc_maxopt=orc_maxopt,
-                                orc_tau=orc_tau, orc_cap=orc_cap)
+                                orc_tau=orc_tau, orc_cap=orc_cap,
+                                orc_maxdev=orc_maxdev)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and
