@@ -43,6 +43,29 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ Read in this order:** §8by (E17, the whole verdict) → **§N.6 (the clock is BUILT and its A/B is in flight)** → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
 >
+> ## ⚡ N.7 DAY 30 (2026-08-11): the two named Petrel scenarios — §8cb
+>
+> Both close by sizing, but **§8br's verdict is sharper and worse-sounding now.**
+> - ⛔ **Tool Scrapper into their Active's tool is a NON-EVENT.** Ours 1/9
+>   (11.1%), **experts 5/149 (3.4%) against a 2.2% no-tool baseline** — nobody
+>   conditions on it, and the situation arises **0.12/game**. Both sides fetch
+>   Unfair Stamp / Night Stretcher / Boss's Orders instead.
+> - 🔴 **Unfair Stamp is not a decision our agent makes: 56 of 56 legal turns,
+>   including 18/18 opening with a hand of ≥7.** Experts 508/530 (95.8%), and
+>   their 22 declines are legible — bigger hand (6.82 vs 5.72), more legal plays
+>   (4.00 vs 2.67), **smaller opponent hand** (5.82 vs 8.45).
+> - ⛔ **Sizing: 0.031 declines/game** (4.2% of 0.74 legal turns/game), 16× under
+>   the gate. And the unconditional policy is right **55/56** on card
+>   differential (mean **+8.32**, 0/56 dominated) because Stamp's own legality
+>   condition already proxies "we are rebuilding".
+> - ⚡ **The reusable finding: a marginal take-rate table cannot tell a bad
+>   policy from NO policy.** §8br's "+17.8% Unfair Stamp" was the shadow of a
+>   decision the net never makes.
+> - 🔴 **RULE 21, THIRD VICTIM.** Per-select this reads 56/172 = 32.6% taken with
+>   mean hand 4.73 played vs 5.48 declined — selective-looking, in the expected
+>   direction, and pure within-turn ordering (3.1 offers per turn). **Pick the
+>   unit before reading the number.**
+>
 > ## 🔴 N.6c E19 CELL A CLOSES THE CLOCK — and retracts E17's headline (§8ca)
 >
 > `bc:cap,orc,od1` — **at most ONE overrule per game**, so the one-step

@@ -4403,6 +4403,123 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8cb. ⚡ THE TWO NAMED PETREL SCENARIOS: one is a NON-EVENT, the other is a REAL blind spot the experts do not share — and both die at the sizing gate anyway (2026-08-11, day 30)
+
+**Hypothesis (user, day 30):** §8br closed Petrel *by sizing*, on a marginal
+take-rate distribution. A marginal rate can hide a conditional policy that is
+simply absent. Two spots were named where the fetch might be not-merely-different
+but **wrong**: (A) their Active carries a Tool — do we fetch Tool Scrapper?
+(B) do we fetch and play Unfair Stamp on a **strong hand** merely because it is
+legal?
+
+`scripts/p86_petrel_scenarios.py`, log `out/logs/p86_petrel_scenarios.txt`.
+Corpus: our 76 ladder games (`replays/submission_v5_s2`) and, as the control
+that decides whether any gap is a *defect*, 1,972 games from three current
+Grimmsnarl pilots at `avg_score` ≥1100 (§8bq). Card ids come from
+`optfeat.option_features`; the mapping control is p76's and it re-ran clean at
+**1331/1375 = 96.8%**.
+
+### 🔴 A. Tool Scrapper — a non-event, and the experts are WORSE at it than we are
+
+§8br's bucket was "a tool anywhere on THEIR board", pooling the Active (where
+scrapping changes this turn's maths) with the bench (where it usually does not).
+Split, over fetches where Scrapper was still in the deck:
+
+| board at the fetch | ours | took | rate | experts | took | rate |
+|---|---|---|---|---|---|---|
+| **THEIR ACTIVE has a tool** | 9 | 1 | **11.1%** | 149 | 5 | **3.4%** |
+| their bench only | 5 | 0 | 0.0% | 47 | 2 | 4.3% |
+| no tool anywhere | 73 | 5 | 6.8% | 409 | 9 | 2.2% |
+
+⛔ **Neither side conditions on it.** The experts' own lift for a live target is
+**3.4% vs 2.2%** on n=149 — the honest read of "does a 1150 pilot fetch Scrapper
+when there is something to scrap" is **no**. Our 11.1% is 1 event on n=9 (95% CI
+≈ [0.3%, 48%]) and cannot be distinguished from either.
+
+⚠ **And the situation barely arises: 9 fetches in 76 games = 0.12/game**, against
+the 0.5/game gate — before any rule's take rate is applied. What we fetched
+instead: Unfair Stamp ×5, Poké Pad, Lillie's, Rare Candy. The experts, given the
+same board, took Unfair Stamp 43×, Night Stretcher 26×, Boss's Orders 23×,
+Spikemuth Gym 20×. **Tool Scrapper loses the slot to tempo and disruption for
+everybody**, which is §8br's Scrapper addendum arriving from the other direction.
+
+### 🔴 B. Unfair Stamp — the net makes NO decision here, and this one the experts DO make
+
+⚠ **The per-select denominator says the opposite and it is an ORDERING artifact
+(rule 21, third instance).** Counting every MAIN select where Stamp was legal:
+56 plays / 172 offers = **32.6% taken**, mean hand **4.73** when played vs
+**5.48** when "declined" — which reads as a policy that plays Stamp on small
+hands. It is not. There are **3.1 such selects per turn**, and we decline holding
+8, play four other cards, then Stamp holding 4. The ordering-free unit is the
+**turn**, scored at its first offer:
+
+| | turns Stamp legal | played that turn | rate |
+|---|---|---|---|
+| **ours** | 56 | 56 | **100.0%** |
+| ours, turn opens H≥7 | 18 | 18 | **100.0%** |
+| **experts** | 530 | 508 | **95.8%** |
+| experts, turn opens H≥7 | 175 | 163 | **93.1%** |
+| experts, turn opens H≤4 | 157 | 154 | 98.1% |
+
+🔴 **56 of 56. Unfair Stamp is not a decision for our agent — legal implies
+played**, which is exactly what §8br's structural addendum predicts (a fetch
+option's vector carries no board; everything situational must survive the head
+MLP's interaction with a shared state vector).
+
+⚡ **And the experts' 22 declines are legible, which is what makes this a real
+gap rather than noise.** At the turn's first offer, declining turns have a
+**bigger** hand (6.82 vs 5.72), **more legal plays** (4.00 vs 2.67) and a
+**smaller opponent hand** (5.82 vs 8.45) — precisely "I have a working hand and
+there is nothing over there to strip". The user's hypothesised condition exists,
+is used by stronger players, and is absent from our policy.
+
+### ⛔ Rule 14 kills both, and the card maths says the unconditional policy is nearly right anyway
+
+Unfair Stamp shuffles both hands away; we draw 5, they draw 2. At a play with our
+hand H (Stamp included) and theirs O, our net is `5−(H−1)` and theirs `2−O`.
+
+| | ours (56 plays) | experts (508 plays) |
+|---|---|---|
+| mean card differential (our net − their net) | **+8.32** | +7.96 |
+| plays that lost the exchange on raw cards | **1/56** | 6/508 |
+| plays strictly DOMINATED (we lose cards, they do not) | **0/56** | 3/508 |
+
+🔴 **The unconditional policy is right 55 times in 56** — because the card's own
+legality condition (*a Pokémon of ours was KO'd during their last turn*) is
+already a strong proxy for "we are rebuilding and they just spent resources".
+The single bad play is H=9 into O=3 (−3 against −1). **1 event in 76 games =
+0.013/game.**
+
+⛔ **Sizing the expert-matching rule:** they decline on **4.2%** of legal turns,
+and Stamp is legal on **0.74 turns/game** for us ⇒ **0.031 declines/game**, 16×
+under the gate that killed Morgrem (0.2), Pokégear (0.27), Archaludon (0.187),
+Petrel-as-a-whole (0.29) and the WP-regret seam (0.039). Scenario A is 0.12/game
+before a take rate is applied, 4× under.
+
+### What this closes, and what it does not
+
+- ⛔ **Both named scenarios close by sizing**, joining §8bm/§8bp/§8br/§8bs. Six
+  user-named seams, six kills, still no arena time spent on any of them.
+- 🔴 **But §8br's verdict is now sharper and worse-sounding: on Unfair Stamp the
+  policy is not a worse judgement, it is the ABSENCE of a judgement (56/56).**
+  §8br said "we over-fetch Unfair Stamp +17.8%" — that gap is the marginal shadow
+  of a decision the net never makes. **A marginal take-rate table cannot
+  distinguish a bad policy from no policy**, and this is the first place the
+  project has separated them.
+- ⚡ **Method, and the reason the first table was wrong:** rule 21 caught a third
+  victim. A per-select rate over a 3.1-select turn measured within-turn ordering
+  and reported it as judgement, with a plausible mean-hand gap (4.73 vs 5.48) in
+  the *expected direction* to make it convincing. **Sixth "confident but wrong
+  first table" in this project, and the first one caught by choosing the unit
+  before reading the number rather than after.**
+- ⚠ **A script defect worth recording because it is a class:** `--us` used
+  argparse `action="append"` with `default=["Scio"]`, and **append does not
+  replace a default** — so `--us flg` meant `{Scio, flg}` and the first expert
+  run carried our own seat under the experts' label. It changed nothing here
+  (Scio contributes 0 rows to dumps floored at `avg_score` 1100, §8bq — the B0
+  counts were 272/278 both before and after the fix), but the same pattern on a
+  corpus we *do* appear in silently pools the arms of a comparison.
+
 ## 8ca. 🔴 E19 CELL A KILLS THE CLOCK, AND IT KILLS E17's HEADLINE WITH IT: at exactly one deviation per game the rollout's +0.035 delivers nothing (2026-08-10, day 29)
 
 Pre-registered in `docs/experiments/E19-clock-mechanism.md`, frozen at `aa19968`

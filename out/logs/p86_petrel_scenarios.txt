@@ -1,0 +1,280 @@
+=== p86_petrel_scenarios.py — day 30 (2026-08-11) ===
+--- mapping control (p76 --verify) ---
+
+=== POSITIVE CONTROL: a played hand card leaves the hand ===
+  matched 1331/1375 (96.8%)   [59 had no later record for our seat]
+  ⚠ Not a clean 100% even when correct: between our two records we may DRAW
+     another copy of the same id, which masks the decrement. Read this as a
+     floor on the mapping's accuracy, not as an exact rate.
+  ✅ mapping holds; the counts below rest on it.
+
+--- OURS: replays/submission_v5_s2 (76 games) ---
+
+=== A. THEIR ACTIVE HAS A TOOL — do we fetch Tool Scrapper? [Scio] ===
+  denominator: Petrel fetches where Scrapper was STILL IN THE DECK
+
+  board state at the fetch          fetches   took Scrapper     rate
+  THEIR ACTIVE has a tool                 9               1    11.1%
+  their BENCH only                        5               0     0.0%
+  only OUR tools                          0               -        -
+  no tool anywhere                       73               5     6.8%
+  --------------------------------       87               6     6.9%
+  [34 fetches excluded: Scrapper already out of the deck]
+
+  what we fetched INSTEAD when their active had a tool:
+    Unfair Stamp                     5
+    Poké Pad                         1
+    Lillie's Determination           1
+    Rare Candy                       1
+
+=== B0. FETCHING Unfair Stamp — does hand size gate it? [Scio] ===
+  denominator: Petrel fetches where Stamp was legal AND in the deck
+  (hand size is measured AT the fetch select, i.e. Petrel already played)
+
+  took Stamp           n=34   mean hand 4.59   hand>=5: 16/34   dist [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 8, 9]
+  passed on Stamp      n=20   mean hand 4.15   hand>=5: 6/20   dist [1, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 6, 6, 8]
+
+=== B1a. THE TURN-LEVEL DECISION (rule 21: ordering-free) ===
+  turns where Stamp was legal at some MAIN select: 56   played that turn: 56   (100.0%)
+  (the per-SELECT denominator would have been 172 -- 3.1 selects per turn)
+
+  measured at the turn's FIRST offer, so ordering cannot move it:
+                            n  mean hand  mean legal plays  mean THEIR hand
+  played this turn         56       5.54              2.61             9.05
+
+  🔎 turns opening with a BIG hand (H>=7): 18   played anyway: 18  (100.0%)
+     turns opening with a SMALL hand (H<=4): 20   played: 20  (100.0%)
+
+=== B1b. PLAYING Unfair Stamp — the card maths at the moment we played ===
+  'Each player shuffles their hand into their deck. Then you draw 5,
+   your opponent draws 2.'  We hold H (Stamp included), they hold O.
+   our net = 5 - (H-1)      their net = 2 - O
+
+
+   our hand H  their hand O  our net  their net    n
+            1             4       +5         -2    1
+            2             5       +4         -3    3
+            2             7       +4         -5    1
+            3             4       +3         -2    1
+            3             6       +3         -4    1
+            3             7       +3         -5    1
+            3             8       +3         -6    1
+            3            12       +3        -10    2
+            3            14       +3        -12    1
+            3            18       +3        -16    2
+            3            19       +3        -17    1
+            4             3       +2         -1    3
+            4             5       +2         -3    1
+            4             6       +2         -4    3
+            4             8       +2         -6    1
+            4             9       +2         -7    2
+            4            10       +2         -8    1
+            4            16       +2        -14    1
+            4            19       +2        -17    1
+            4            20       +2        -18    1
+            5             4       +1         -2    1
+            5             6       +1         -4    1
+            5             7       +1         -5    2
+            5             8       +1         -6    1
+            5             9       +1         -7    2
+            5            11       +1         -9    1
+            5            17       +1        -15    1
+            5            19       +1        -17    1
+            6             3       +0         -1    1
+            6             7       +0         -5    1
+            6            13       +0        -11    2
+            6            19       +0        -17    1
+            7             3       -1         -1    1
+            7             4       -1         -2    2
+            7             6       -1         -4    1
+            7             7       -1         -5    2
+            7            20       -1        -18    1
+            8             4       -2         -2    1
+            8             7       -2         -5    1
+            8            10       -2         -8    1
+            8            13       -2        -11    1
+            9             3       -3         -1    1
+
+  plays where WE lose cards (H-1 > 5): 12/56
+  plays that are DOMINATED (we lose cards AND they do not): 0/56  = 0.0%
+  plays where both sides lose cards (a real trade): 12/56
+  mean card DIFFERENTIAL (our net - their net): +8.32   plays that lost the exchange on raw cards: 1/56
+  mean hand when we played it: 4.73   (max 9)
+
+--- EXPERTS: 2026-08-03..07, Raihan Ramadistra / flg / Sixth Sense ---
+
+=== A. THEIR ACTIVE HAS A TOOL — do we fetch Tool Scrapper? [Raihan Ramadistra/Sixth Sense/flg] ===
+  denominator: Petrel fetches where Scrapper was STILL IN THE DECK
+
+  board state at the fetch          fetches   took Scrapper     rate
+  THEIR ACTIVE has a tool               149               5     3.4%
+  their BENCH only                       47               2     4.3%
+  only OUR tools                          4               0     0.0%
+  no tool anywhere                      409               9     2.2%
+  --------------------------------      609              16     2.6%
+  [458 fetches excluded: Scrapper already out of the deck]
+
+  what we fetched INSTEAD when their active had a tool:
+    Unfair Stamp                    43
+    Night Stretcher                 26
+    Boss’s Orders                   23
+    Spikemuth Gym                   20
+    Rare Candy                      12
+    Poké Pad                        12
+    Lillie's Determination           5
+    Jumbo Ice Cream                  1
+
+=== B0. FETCHING Unfair Stamp — does hand size gate it? [Raihan Ramadistra/Sixth Sense/flg] ===
+  denominator: Petrel fetches where Stamp was legal AND in the deck
+  (hand size is measured AT the fetch select, i.e. Petrel already played)
+
+  took Stamp           n=272  mean hand 3.96   hand>=5: 102/272   dist [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9]
+  passed on Stamp      n=278  mean hand 4.27   hand>=5: 112/278   dist [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 10]
+
+=== B1a. THE TURN-LEVEL DECISION (rule 21: ordering-free) ===
+  turns where Stamp was legal at some MAIN select: 530   played that turn: 508   (95.8%)
+  (the per-SELECT denominator would have been 1612 -- 3.0 selects per turn)
+
+  measured at the turn's FIRST offer, so ordering cannot move it:
+                            n  mean hand  mean legal plays  mean THEIR hand
+  played this turn        508       5.72              2.67             8.45
+  never played it          22       6.82              4.00             5.82
+
+  🔎 turns opening with a BIG hand (H>=7): 175   played anyway: 163  (93.1%)
+     turns opening with a SMALL hand (H<=4): 157   played: 154  (98.1%)
+
+=== B1b. PLAYING Unfair Stamp — the card maths at the moment we played ===
+  'Each player shuffles their hand into their deck. Then you draw 5,
+   your opponent draws 2.'  We hold H (Stamp included), they hold O.
+   our net = 5 - (H-1)      their net = 2 - O
+
+
+   our hand H  their hand O  our net  their net    n
+            1             3       +5         -1    1
+            1             6       +5         -4    1
+            1             7       +5         -5    5
+            1             8       +5         -6    2
+            1             9       +5         -7    1
+            1            10       +5         -8    1
+            1            11       +5         -9    1
+            1            20       +5        -18    1
+            2             4       +4         -2    4
+            2             5       +4         -3    8
+            2             6       +4         -4    9
+            2             7       +4         -5   12
+            2             8       +4         -6    6
+            2             9       +4         -7    7
+            2            10       +4         -8    5
+            2            11       +4         -9    1
+            2            12       +4        -10    1
+            2            13       +4        -11    3
+            2            14       +4        -12    1
+            2            16       +4        -14    1
+            2            18       +4        -16    3
+            2            19       +4        -17    2
+            2            21       +4        -19    1
+            3             3       +3         -1    2
+            3             4       +3         -2   12
+            3             5       +3         -3    8
+            3             6       +3         -4   18
+            3             7       +3         -5   14
+            3             8       +3         -6    9
+            3             9       +3         -7    8
+            3            10       +3         -8    3
+            3            12       +3        -10    3
+            3            13       +3        -11    3
+            3            14       +3        -12    3
+            3            16       +3        -14    4
+            3            18       +3        -16    4
+            3            19       +3        -17    1
+            3            20       +3        -18    3
+            3            23       +3        -21    1
+            4             2       +2         +0    1
+            4             3       +2         -1    3
+            4             4       +2         -2   11
+            4             5       +2         -3    8
+            4             6       +2         -4   13
+            4             7       +2         -5   20
+            4             8       +2         -6   14
+            4             9       +2         -7    9
+            4            10       +2         -8    3
+            4            11       +2         -9    2
+            4            12       +2        -10    4
+            4            13       +2        -11    3
+            4            18       +2        -16    4
+            4            19       +2        -17    1
+            4            20       +2        -18    2
+            4            21       +2        -19    1
+            5             1       +1         +1    1
+            5             2       +1         +0    3
+            5             3       +1         -1    4
+            5             4       +1         -2    6
+            5             5       +1         -3   12
+            5             6       +1         -4   12
+            5             7       +1         -5   12
+            5             8       +1         -6   13
+            5             9       +1         -7    7
+            5            10       +1         -8    3
+            5            11       +1         -9    2
+            5            12       +1        -10    3
+            5            13       +1        -11    3
+            5            14       +1        -12    2
+            5            16       +1        -14    2
+            5            18       +1        -16    5
+            5            19       +1        -17    3
+            6             3       +0         -1    2
+            6             4       +0         -2    4
+            6             5       +0         -3    6
+            6             6       +0         -4    6
+            6             7       +0         -5   15
+            6             8       +0         -6    2
+            6             9       +0         -7   10
+            6            10       +0         -8    5
+            6            11       +0         -9    5
+            6            12       +0        -10    5
+            6            13       +0        -11    1
+            6            14       +0        -12    3
+            6            17       +0        -15    1
+            6            18       +0        -16    5
+            6            21       +0        -19    1
+            7             2       -1         +0    1  🔴 DOMINATED — we lose cards, they gain
+            7             3       -1         -1    1
+            7             4       -1         -2    1
+            7             5       -1         -3    7
+            7             6       -1         -4    4
+            7             7       -1         -5    5
+            7             8       -1         -6    6
+            7             9       -1         -7    2
+            7            12       -1        -10    3
+            7            14       -1        -12    1
+            7            15       -1        -13    1
+            7            17       -1        -15    1
+            7            19       -1        -17    1
+            8             2       -2         +0    2  🔴 DOMINATED — we lose cards, they gain
+            8             3       -2         -1    2
+            8             4       -2         -2    2
+            8             5       -2         -3    1
+            8             6       -2         -4    1
+            8             7       -2         -5    3
+            8             8       -2         -6    2
+            8             9       -2         -7    3
+            8            10       -2         -8    4
+            8            11       -2         -9    2
+            8            16       -2        -14    1
+            8            20       -2        -18    1
+            8            23       -2        -21    1
+            9             3       -3         -1    1
+            9             5       -3         -3    2
+            9             8       -3         -6    2
+            9            10       -3         -8    1
+           10             6       -4         -4    3
+           10             7       -4         -5    1
+           11             8       -5         -6    1
+           11            20       -5        -18    1
+           12            13       -6        -11    1
+
+  plays where WE lose cards (H-1 > 5): 72/508
+  plays that are DOMINATED (we lose cards AND they do not): 3/508  = 0.6%
+  plays where both sides lose cards (a real trade): 69/508
+  mean card DIFFERENTIAL (our net - their net): +7.96   plays that lost the exchange on raw cards: 6/508
+  mean hand when we played it: 4.49   (max 12)
