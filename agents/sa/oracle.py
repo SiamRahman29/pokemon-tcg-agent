@@ -41,9 +41,10 @@ measured that **57% of our decisions carry no value at all** (win probability
 - `tau` (a minimum margin before overruling) is **post-hoc** — six values swept,
   none pre-registered. Default 0.0 = the pre-registered behaviour.
 
-⛔ **Never call `fs.end()` here.** It frees ALL search memory, and this runs
-*inside* a live game. Release the root instead, which is what `sequencer.py`
-does and why it survives long games.
+🔴 **Frees with `fs.end()` per rollout.** The first version released only the
+root search id and LEAKED ~1 MB per rollout — 1.68 GB in 8 minutes, against
+0.12 GB for E17's collection doing the same work through `p80.rollout`. See
+`_rollout` for the invariant that makes `end()` safe inside a live game.
 """
 from __future__ import annotations
 
@@ -114,9 +115,23 @@ class RolloutOracle:
                  deadline: float):
         """-> win probability in {0, 0.5, 1} from `me`'s view, or None.
 
-        ⛔ Releases the ROOT search id, never `fs.end()` — see the module
-        docstring. `fs.step` returns ids nested under the root, so releasing
-        the root frees the chain (`sequencer.py` relies on the same thing).
+        🔴 **Frees with `fs.end()`, and the first version's `fs.release(root)`
+        was a LEAK.** Measured: an arena process running this at
+        `release`-per-rollout reached **1.68 GB in 8 minutes** (~1 MB per
+        rollout, unbounded), while E17's collection processes — identical work
+        through `p80.rollout`, which calls `fs.end()` — sat flat at **0.12 GB**.
+        Six shards of the leaking version do not fit in 8 GB.
+
+        `release` frees one search id; the rollout creates a fresh id at every
+        one of up to `ROLLOUT_CAP` steps, so releasing the root reclaims one
+        node out of ~100. `end()` frees the whole arena, which the C library
+        then reuses for the next search — that is its documented behaviour and
+        it costs nothing measurable (p80 ran at the same 76–100 ms/rollout).
+
+        ⚠ **Invariant this relies on:** no other `fs` search may be live across
+        an oracle rollout. True here — the harness drives the real game through
+        `ptcg.env`, not `fs`, and `sequencer.plan()` has already returned and
+        released its own roots before the oracle is consulted.
         """
         sel = obs["select"]
         root = None
@@ -153,7 +168,7 @@ class RolloutOracle:
             STATS["rollouts"] += 1
             if root is not None:
                 try:
-                    fs.release(root)
+                    fs.end()          # the whole arena, not one node -- see above
                 except Exception:
                     pass
 
