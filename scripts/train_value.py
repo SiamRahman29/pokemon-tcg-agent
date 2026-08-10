@@ -157,8 +157,15 @@ def main() -> int:
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--patience", type=int, default=3)
     ap.add_argument("--val-frac", type=float, default=0.15)
-    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=0,
+                    help="init + data order. Ensemble members vary THIS.")
+    ap.add_argument("--split-seed", type=int, default=None,
+                    help="game split. Ensemble members must SHARE this, or "
+                         "each member holds out different games and the "
+                         "ensemble's spread confounds init variance with "
+                         "data variance. Defaults to --seed.")
     args = ap.parse_args()
+    split_seed = args.split_seed if args.split_seed is not None else args.seed
 
     paths = sorted(Path(p) for d in args.data
                    for p in glob.glob(f"{d}/**/shard_*.npz", recursive=True))
@@ -171,8 +178,8 @@ def main() -> int:
     # share a label exactly; a row-wise split puts both sides of the same game
     # in train and val and reports a val number that means nothing.
     gids = np.unique(data.gid)
-    rng = np.random.default_rng(args.seed)
-    rng.shuffle(gids)
+    np.random.default_rng(split_seed).shuffle(gids)
+    rng = np.random.default_rng(args.seed)      # batch order only
     n_val = max(1, int(len(gids) * args.val_frac))
     val_g = set(gids[:n_val].tolist())
     is_val = np.fromiter((g in val_g for g in data.gid), dtype=bool,
