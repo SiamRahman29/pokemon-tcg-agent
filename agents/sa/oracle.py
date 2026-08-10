@@ -82,7 +82,35 @@ def health_line() -> str:
             f"aborted={s['aborted']} errors={s['errors']} "
             f"rollouts={s['rollouts']} secs={s['secs_x1000'] / 1000.0:.1f}"
             + (f" first_error={ERR['err']!r}" if 'err' in ERR else "")
+            + _change_line()
             + (f" | nopt {hist}" if hist else ""))
+
+
+def _change_line() -> str:
+    """What the extra time CHANGED, not merely that it was spent.
+
+    Without this a null reads the same whether search agreed with the net at
+    every decision (nothing to change) or overruled it constantly and gained
+    nothing (the interesting failure). Reports the overrule rate, which rank
+    search promoted, and how far down the NET's own ranking the promoted
+    option sat.
+    """
+    s = STATS
+    o = s["overruled"]
+    if not o:
+        return ""
+    parts = [f" | CHANGED {o}/{s['fired']} fired ({o / max(s['fired'], 1):.0%})"]
+    ranks = [f"r{k}:{s[f'promoted_rank{k}']}" for k in (2, 3, 4)
+             if s.get(f"promoted_rank{k}")]
+    if ranks:
+        parts.append("promoted " + ",".join(ranks))
+    parts.append(f"net-margin mean {s['margin_x1000'] / 1000.0 / o:+.2f}")
+    buckets = [f"{b}:{s[f'netmargin_{b}']}" for b in
+               ("lt0p5", "lt1p5", "lt3", "ge3") if s.get(f"netmargin_{b}")]
+    if buckets:
+        parts.append("(" + " ".join(buckets) + ")")
+    parts.append(f"rollout-gap mean {s['gap_x1000'] / 1000.0 / o:+.3f}")
+    return "  ".join(parts)
 
 
 def reset_stats() -> None:
@@ -290,6 +318,24 @@ class RolloutOracle:
             if best == 0 or gaps[best] <= self.tau:
                 return None                       # not earned: keep the pick
             STATS["overruled"] += 1
+            # ── what did the extra time actually CHANGE? ──────────────────
+            # A null is uninterpretable without this: it separates "search
+            # agreed with the net, so of course nothing moved" from "search
+            # overruled the net constantly and still gained nothing".
+            STATS[f"promoted_rank{best + 1}"] += 1
+            try:
+                sc = np.asarray(net.scores(obs), dtype=float)
+                # how far down the NET's own ranking was the option we took?
+                margin = float(sc[arms[0]] - sc[arms[best]])
+                STATS["margin_x1000"] += int(margin * 1000)
+                # bucket it: a switch the net nearly agreed with is a very
+                # different event from one it scored far worse.
+                b = ("lt0p5" if margin < 0.5 else "lt1p5" if margin < 1.5
+                     else "lt3" if margin < 3.0 else "ge3")
+                STATS[f"netmargin_{b}"] += 1
+            except Exception:
+                pass
+            STATS["gap_x1000"] += int(gaps[best] * 1000)
             return [arms[best]]
         except Exception as e:
             STATS["errors"] += 1
