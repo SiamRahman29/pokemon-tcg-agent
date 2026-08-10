@@ -25,7 +25,21 @@ it lets any team name in a replay be joined to its rating.
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
 >
-> **▶ THE ONE NUMBER THAT DECIDES THE NEXT SESSION** — *does `arena.py` parallelise across the 6 local cores?* An n=2,000 mirror A/B of the oracle agent is **≈85 core-hours** (17 firings/game × 90 rollouts × 100 ms = 153 s/game). Parallel ⇒ **one overnight run**, and the build fits before the 08-15 last-safe-day. Serial ⇒ **~4 days**, and it does not. **Measure this BEFORE writing any agent** — it is a 10-minute check that decides a multi-day commitment.
+> **✅ THE VALIDATION COST IS MEASURED, AND THE A/B IS AFFORDABLE.** `arena.py`
+> has **no built-in parallelism** (no `Pool`, no `--jobs`) — but it does not need
+> a code change: **process-sharding works**, verified 6 shards × 40 rows with
+> separate `--archive` files and a random `run_id` per process (`battle_start`
+> takes no seed, so shards do not replay each other). ⚠ **The speedup is ~3.6×,
+> not 6×** — E17's own contention measured it (76 ms/rollout solo → 127 ms at
+> 6-way), and startup is ~6 s per process, which only amortises on long runs.
+> ⇒ **n=2,000 oracle mirror A/B ≈ 85 core-hours ≈ 24 h wall.** One long run,
+> inside the 08-15 last-safe-day, with no room for a second attempt.
+> ⛔ **Shard to separate archives and merge** — never let 6 processes append to
+> `out/arena/games.jsonl`, and never let a throughput test touch it at all.
+> ⚡ **The obvious optimisation, unbuilt: early stopping.** τ does NOT save
+> compute (the rollouts are what produce the margin), but a racing / successive-
+> elimination schedule would — 57% of decisions have essentially zero gap and
+> could be abandoned after a handful of rollouts.
 >
 > **▶ Read in this order:** §8by (E17, the whole verdict) → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
 >
