@@ -173,8 +173,28 @@ def main() -> int:
     if kept_gain:
         ci(kept_gain, "value LEFT ON THE TABLE when it kept the net's pick")
 
+    # 🔴 The AGREEMENT RATE is the decisive test of "does selection work", not
+    # the mean gain. The mean is diluted by every position where the arms are
+    # genuinely close (most of them), so it is underpowered by construction;
+    # picking the best of 3 arms at 67% against a 33% null is not.
+    k3 = len(gains)
+    p_hit = agree / k3
+    z = (p_hit - 1 / 3) / math.sqrt((1 / 3) * (2 / 3) / k3)
+    print(f"\n  selection test: {agree}/{k3} best-arm picks vs a 1/3 null "
+          f"⇒ z = {z:.1f}")
+
     print("\n" + "=" * 70)
-    if lo > 0:
+    if z > 3.0 and m > 0:
+        print(f"✅ THE ORACLE SELECTS BETTER OPTIONS (z={z:.1f}). The "
+              f"implementation is sound, so a null A/B is a fact about the "
+              f"CLOCK — per-decision value not composing into a win rate — "
+              f"not about the wiring.")
+    elif hi < 0 or (z > 3.0 and m < 0):
+        print("🔴 INVERTED. The live code systematically prefers the WORSE "
+              "option. Check the rollout's win/loss orientation (`me` vs "
+              "`current.result`) and the arm ordering before reading the A/B "
+              "as evidence about the clock at all.")
+    elif lo > 0:
         print("✅ THE ORACLE SELECTS BETTER OPTIONS. The implementation is "
               "sound, so a null A/B is a fact about the CLOCK — per-decision "
               "value not composing into a win rate — not about the wiring.")

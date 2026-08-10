@@ -40,3 +40,21 @@ bc:orc,orc,net=out/policy_v5_s2.npz#4790c469 [grimmsnarl] vs bc:base,net=out/pol
   match 19 seat0: winner=0 turns=15 selects=243
   match 19 seat1: winner=0 turns=9 selects=145
   match 20 seat0: winner=0 turns=15 selects=207
+  match 20 seat1: winner=0 turns=15 selects=233
+  match 21 seat0: winner=0 turns=15 selects=271
+  match 21 seat1: winner=0 turns=9 selects=168
+  match 22 seat0: winner=0 turns=13 selects=145
+  match 22 seat1: winner=0 turns=15 selects=239
+  match 23 seat0: winner=1 turns=12 selects=184
+  match 23 seat1: winner=0 turns=15 selects=228
+  match 24 seat0: winner=1 turns=14 selects=215
+  match 24 seat1: winner=1 turns=16 selects=254
+  match 25 seat0: winner=1 turns=12 selects=185
+  match 25 seat1: winner=1 turns=18 selects=235
+  match 26 seat0: winner=1 turns=14 selects=219
+  match 26 seat1: winner=1 turns=10 selects=160
+  match 27 seat0: winner=0 turns=11 selects=184
+  match 27 seat1: winner=1 turns=12 selects=210
+  match 28 seat0: winner=0 turns=13 selects=227
+  match 28 seat1: winner=1 turns=12 selects=150
+  match 29 seat0: winner=0 turns=11 selects=186
