@@ -21,7 +21,13 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 29 (2026-08-10): **E17 RAN. The clock's own gate reads 🟡 NARROW and its trigger PASSES** (§8by) — a build is licensed, and the decision left is SCHEDULE, not evidence. Both owed items are closed.
+> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca) and E20 — a learned V(s) + one-ply engine lookahead — is PRE-REGISTERED and running.** Two agents are working this repo; see the routing note below before editing a shared file.
+>
+> ⚠ **ROUTING CORRECTED DAY 30.** The header below this line read *"E17 RAN … a build is licensed"* and the read-order pointed at *"the clock is BUILT and its A/B is in flight"* — **both were superseded by E19 on day 29** (§8ca: 0.4963 [0.4719, 0.5207], n=1,608, the clock closed and E17's +0.0139/decision retracted with it). Failure mode 2 from ROADMAP's own doc-discipline audit: additive updates leave a stale claim load-bearing in the entry point. Corrected as *routing only* — no verdict here is restated or revised.
+>
+> **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document. ⚠ **Written here from the pre-registration by the other agent's co-worker, not by its owner — outcome is UNKNOWN and nothing about it should be quoted as a result.**
+>
+> ⛔ **CONCURRENCY, day 30.** `HANDOFF.md`, `report/EVIDENCE.md` and `ROADMAP.md` are edited by both agents. **Commit before a long run, not after** — 140 lines of §8cb/§N.7 sat uncommitted through four commits from the other agent and only luck kept them. **And check the next free `EVIDENCE` section letter before writing one** (`grep -oE "^## 8[a-z]+\." report/EVIDENCE.md | sort -u | tail -3`); §8cb is taken.
 >
 > **📌 USER DECISION: report/`STRATEGY.md` stays SUSPENDED until the sim closes 08-17** (report due 09-14 has runway). Track A only.
 >
@@ -41,7 +47,7 @@ it lets any team name in a replay be joined to its rating.
 > elimination schedule would — 57% of decisions have essentially zero gap and
 > could be abandoned after a handful of rollouts.
 >
-> **▶ Read in this order:** §8by (E17, the whole verdict) → **§N.6 (the clock is BUILT and its A/B is in flight)** → ROADMAP §2.7 (now carrying E17's three corrections) → §N.0d (how the lead arose).
+> **▶ Read in this order:** **§N.6c + §8ca (E19 closed the clock — start here, it retracts §8by's headline)** → `docs/experiments/E20-value-lookahead.md` (the live thread) → §8by (E17, for what E19 retracted and what survives) → ROADMAP §2.7 → §N.0d (how the lead arose).
 >
 > ## ⚡ N.7 DAY 30 (2026-08-11): the two named Petrel scenarios — §8cb
 >
