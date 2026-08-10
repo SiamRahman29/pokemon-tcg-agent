@@ -43,6 +43,31 @@ Why each prior death does not transfer:
 reads ≈ 0.500, then "the evaluator was the broken part" is wrong, and the
 synthesis that unifies three deaths in this repo fails with it.
 
+### 🔴 The adverse prior, recorded before the build rather than discovered after
+
+**§8az (E1) already trained an outcome head on this encoder and it OVERFIT
+AFTER ITS FIRST EPOCH.** That section's closing sentence is the one that binds:
+*"E4 does not inherit a validated value representation."*
+
+E20 must not pretend that finding away. What differs, precisely:
+
+| | E1 (§8az) | E20 |
+|---|---|---|
+| data | human BC corpus, 248,985 rows | **self-play `won`**, ~720k rows / 20k games |
+| role | auxiliary gradient, weight 0.1, shared encoder | **the decision-maker** |
+| what was measured | the *policy's* strength | V's own ranking, end-to-end |
+| label distribution | outcomes of *human* games | outcomes of games **our policy actually played** — the on-policy value the search needs |
+
+⇒ E1 is a null about *auxiliary multi-task training*, not about whether a value
+function can evaluate a position. But its overfitting warning transfers
+directly: **V gets early stopping on a `gid`-disjoint split, and the export rule
+is pinned in advance** (rule 18's `--export-last` corollary — an arm that picks
+its own checkpoint is measuring training length).
+
+⚠ If V cannot separate won from lost states on held-out self-play at all, E20
+stops at the orientation check and reports §8az's finding as replicated on
+self-play data. That is a cheap, honest outcome and it is written here first.
+
 ---
 
 ## Cost — this is the reason E20 is a Round-1 candidate at all
