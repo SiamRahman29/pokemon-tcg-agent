@@ -4403,7 +4403,7 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
-## 8cd. 🔴 E20's FIRST READING IS VOID — the value net's live path computed a DIFFERENT FUNCTION than was trained, and the check that finds it in ten minutes ran after 2,000 games (2026-08-11, day 30)
+## 8cd. 🔴 E20 IS REFUTED — a learned V + one-ply argmax reads 0.0065 at n=2,000; a real train/inference defect was found on the way and turned out NOT to be the cause (2026-08-11, day 30)
 
 Pre-registered in `docs/experiments/E20-value-lookahead.md`, frozen at
 `5811b9a` **before V was trained and before any arena game**. Kaggle harness
@@ -4470,12 +4470,35 @@ options that spend resources.
 
 | cell | reading | status |
 |---|---|---|
-| E20 primary, broken path | **0.0040 [−0.0179, +0.0259]**, n=2,000 | 🔴 **VOID** — measured a mismatched component |
-| E20 primary, corrected path | *(pending — `e20b-fixed`)* | — |
+| E20 primary, broken path | **0.0040 [−0.0179, +0.0259]**, n=2,000 | 🔴 VOID — measured a mismatched component |
+| **E20 primary, corrected path** | **0.0065 [−0.0154, +0.0284]**, n=2,000 | ⚠ **the pre-registered HARMFUL branch** |
 
-⛔ **The 0.0040 must not be quoted as a result about H-eval.** It trips the
-pre-registered *harmful* branch, but the branch's own instruction is "audit
-before interpreting", and the audit found the instrument.
+🔴 **THE DEFECT WAS REAL AND IT WAS NOT THE CAUSE.** Repairing a mismatch worth
+0.126 on 7% of evaluations moved the win rate **0.0040 → 0.0065** — nothing.
+⇒ **H-eval, in E20's pre-registered form (argmax over a learned V across every
+option), is REFUTED on a valid measurement.** 13 wins in 2,000 games.
+
+⚡ **And that ordering is the reusable lesson: finding a real defect is not the
+same as finding the explanation.** The fix was mandatory for correctness and
+irrelevant to the result, and only re-running distinguished the two. Had the
+corrected cell not been run, "we found the bug" would have stood in for a
+verdict — the §8ah shape (a genuine defect, correctly repaired, that changed
+no published number) one level over.
+
+### ✅ The withdrawn diagnosis is REINSTATED, weaker, on the corrected path
+
+`p87` re-run through the fixed evaluator, 16 games:
+
+| | broken path | **corrected path** | chance |
+|---|---|---|---|
+| V's argmax == the clone's pick | 6.1% / 8.5% | **11.1%** | **20.5%** |
+| within-position spread / across | 0.215 | 0.183 | — |
+
+**Still below chance**, so the anti-selection is real and "one-sided
+extrapolation error under a max" survives — but the defect inflated it, and the
+published 6.1% overstated the effect by roughly half. ⚠ The AUC figure from
+that probe stays retracted at any n this small; **only the per-decision
+agreement statistic is quoted, because it is not clustered by game.**
 
 ### 🔴 Two method failures, both already in this file's own catalogue
 
@@ -4508,8 +4531,17 @@ may well survive re-measurement; they are not evidence today.
   changes seat only **1%** of the time, so a pre-step seat stays valid — which
   refuted the seat hypothesis written into `vlook.py`'s own docstring.
 - **E22** (`docs/experiments/E22-pessimistic-lookahead.md`, renumbered from E21
-  because §8cc owned that number) is pre-registered and **NOT run**. It cannot
-  be interpreted until the corrected E20 baseline reads.
+  because §8cc owned that number) is pre-registered and **NOT run**. Its
+  5-seed V ensemble is trained (`out/value_e0..4.npz`, AUC 0.827-0.829). Its
+  baseline now exists: **0.0065**.
+- ⚠ **What E20 does NOT refute.** It tested ONE consumer of V — an unconstrained
+  argmax. V ranks *games* at AUC 0.827 and the failure is in how the search
+  reads it, not in whether the state is evaluable. E22's two changes (LCB
+  pessimism, top-k coverage) target exactly the measured mechanism, and the
+  honest prior after E20 is that they must clear **0.530 from 0.0065**, which is
+  an enormous distance. ⛔ **If E22 also fails, the axis closes**: the evaluator
+  is not the missing piece the three dead searches lacked, and that is the
+  report chapter.
 
 
 ## 8cc. 🔴 E21 — THE CLONE'S BOARD-BLIND FETCH BEATS A BOARD-AWARE RULE, DECISIVELY (0.4405, z=−5.36) — and the second arm never fired at all (2026-08-11, day 30)
