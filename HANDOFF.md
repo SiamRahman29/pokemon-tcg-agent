@@ -25,7 +25,45 @@ it lets any team name in a replay be joined to its rating.
 >
 > ⚠ **ROUTING CORRECTED DAY 30.** The header below this line read *"E17 RAN … a build is licensed"* and the read-order pointed at *"the clock is BUILT and its A/B is in flight"* — **both were superseded by E19 on day 29** (§8ca: 0.4963 [0.4719, 0.5207], n=1,608, the clock closed and E17's +0.0139/decision retracted with it). Failure mode 2 from ROADMAP's own doc-discipline audit: additive updates leave a stale claim load-bearing in the entry point. Corrected as *routing only* — no verdict here is restated or revised.
 >
-> **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document. ⚠ **Written here from the pre-registration by the other agent's co-worker, not by its owner — outcome is UNKNOWN and nothing about it should be quoted as a result.**
+> **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document.
+>
+> ## 🔴 N.9 DAY 30 — **E20's FIRST READING IS VOID, and the reason is an instrument defect I introduced** (§8cd)
+>
+> **The value net's live path computed a different function than was trained.**
+> `train_value.py` pads an empty card bag with row 0; `sa/valuenet.py`
+> substituted **zeros**. `p88_value_equivalence.py`: max \|diff\| **0.126** on the
+> **7.0%** of rows with an empty bag, against a within-position sibling range of
+> **0.186** — comparable to the whole signal an argmax uses, and **structured**,
+> because hands empty exactly when played out. Fixed; the shipped path now
+> matches the trainer at **2.7e-7**.
+> - 🔴 **`0.0040 [−0.0179, +0.0259]`, n=2,000, is VOID** — it measured a
+>   mismatched component. ⛔ **Do not quote it as a result about H-eval.**
+>   Re-run `e20b-fixed` was in flight at session end; **read it before anything else.**
+> - ⛔ **WITHDRAWN with it:** the "extrapolation error under a max" diagnosis,
+>   the 6.1%-vs-20.3% argmax-agreement figure, and the top-3 coverage result
+>   (37.9%). All were measured through the defective evaluator.
+> - ✅ **What stands:** the Kaggle harness, **commissioned on two controls**
+>   (C0 identical arms **0.5082** contains 0.500; C1 `s2` v `s1` **0.4996**
+>   contains §8bh's 0.510, n=2,800 each); **V itself — AUC 0.827 held out BY
+>   GAME**, now verified equivalent through the path that plays; and `p86`'s
+>   structural fact that after one `fs.step` players are indexed **absolutely**
+>   (98%) and the mover changes seat only **1%** of the time.
+> - ⚡ **A by-product:** C1 is the third reading of `s2` v `s1` (0.537 → 0.510 →
+>   0.4996). Pooled with §8bh: **0.5031 [0.488, 0.518] ⇒ ≈ +2 Elo, CI containing
+>   zero.** The shipped net's seed edge is gone; any seed-harvest plan is weaker.
+> - 🔬 **Two method failures, both already in §2's catalogue:** a 2,000-game A/B
+>   ran on a component never reconciled with its trainer (**rule 18**, and the
+>   check cost ten minutes); and a **clustered** AUC (~1,000 decisions from 15
+>   games) was read as evidence — it re-ran at 0.5222 against 0.7042. **§8bw's
+>   own lesson, repeated.**
+> - ⏭ **E22** (`docs/experiments/E22-pessimistic-lookahead.md`, **renumbered from
+>   E21** because §8cc owns that number) is pre-registered and **NOT run**. A
+>   5-seed V ensemble is training (`out/value_e0..4.npz`, 4 of 5 done at session
+>   end). ⛔ **It cannot be interpreted until the corrected E20 baseline reads.**
+> - ⚡ **Harness usage:** `scripts/kaggle/pack.py --push` (one zip, repo-relative
+>   paths — `--dir-mode zip` 400s), `launch.py push/status/pull`, `score.py --job
+>   <j> --expect <v>`. ⛔ **Never hardcode `/kaggle/input/<slug>`** — Kaggle
+>   mounted this dataset under `/kaggle/input/datasets/`; the runner searches.
 >
 > ⛔ **CONCURRENCY, day 30.** `HANDOFF.md`, `report/EVIDENCE.md` and `ROADMAP.md` are edited by both agents. **Commit before a long run, not after** — 140 lines of §8cb/§N.7 sat uncommitted through four commits from the other agent and only luck kept them. **And check the next free `EVIDENCE` section letter before writing one** (`grep -oE "^## 8[a-z]+\." report/EVIDENCE.md | sort -u | tail -3`); §8cb is taken.
 >
