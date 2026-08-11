@@ -21,7 +21,7 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), E20 is REFUTED (§N.9/§8cd), E21+E24 closed the Petrel seam (§N.8/§N.10), and E22 is now RUN, AUDITED and CLOSED (§N.11/§8cf). ⛔ NOTHING is pre-registered-and-unrun. The live question is the one §N.11 names: is V's 12% recovery a fixed FRACTION of the deviation cost at every rate?** Two agents are working this repo; see the routing note below before editing a shared file.
+> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), the Petrel seam is CLOSED (§N.8/§N.10), and ⛔ THE ENTIRE "OVERRIDE THE CLONE WITH A BETTER EVALUATOR" FAMILY IS CLOSED BY E25 (§N.12/§8cg) — E20, E22, E25, the clock, the sequencer and §2's search now fall under ONE statement, and V's edge over a coin flip FLIPS SIGN as you tighten it. ⛔ NOTHING is pre-registered-and-unrun, and no further cell on this axis is licensed.** Two agents are working this repo; see the routing note below before editing a shared file.
 >
 > ⚠ **ROUTING, day 30, third correction.** This header read *"the only pre-registered-but-unrun thread is E22"* and the line below it read *"▶ The live thread is E20"* — **both stale**, E20 having been refuted (§8cd) and E22 having reported and been audited (§8cf). This is failure mode 2 from ROADMAP's own doc-discipline audit for the third time in one day, which is itself the finding: **an additive entry point decays faster than the experiments it indexes.** Corrected as **routing only** — no verdict here is restated or revised.
 >
@@ -30,6 +30,61 @@ it lets any team name in a replay be joined to its rating.
 > ⚠ **ROUTING CORRECTED DAY 30.** The header below this line read *"E17 RAN … a build is licensed"* and the read-order pointed at *"the clock is BUILT and its A/B is in flight"* — **both were superseded by E19 on day 29** (§8ca: 0.4963 [0.4719, 0.5207], n=1,608, the clock closed and E17's +0.0139/decision retracted with it). Failure mode 2 from ROADMAP's own doc-discipline audit: additive updates leave a stale claim load-bearing in the entry point. Corrected as *routing only* — no verdict here is restated or revised.
 >
 > **▶ The E20/E22 thread is CLOSED — read §N.11 first, then §N.9.** Its artefacts stand and are reusable regardless: V trainer `scripts/train_value.py`, inference `agents/sa/valuenet.py` (verified against the trainer at 2.7e-7), the one-ply search `agents/sa/vlook.py` (including `vrnd`, the rate-matched control), the Kaggle harness `scripts/kaggle/`, and `score.py --dir` for local sharded runs. Bars and void conditions are frozen by `docs/experiments/E20-value-lookahead.md` and `E22-pessimistic-lookahead.md`.
+>
+> ## 🔴 N.12 DAY 30 (2026-08-11): **E25 closes the ENTIRE "override the clone with a better evaluator" family — V's edge over a coin flip FLIPS SIGN as you tighten the threshold** (§8cg)
+>
+> Pre-registered `docs/experiments/E25-deviation-cost-curve.md` at `8176ac1`
+> before either cell, with a **point prediction** (A = 0.436, B = 0.427).
+> **Missed by ~9σ.**
+>
+> | arm (all n=2,000, mirror, health clean) | changed/game | rate/firing | net-margin | score |
+> |---|---|---|---|---|
+> | `bc:base` (C0) | 0 | — | — | 0.5082 |
+> | coin flip @ 55% | 18.21 | 0.554 | +2.55 | 0.1115 |
+> | V-guided @ 55% | 16.24 | 0.551 | +2.34 | **0.1580** |
+> | coin flip @ 13% | 4.56 | 0.129 | +2.40 | **0.3650** |
+> | V-guided @ 13% (`vtau0.08`) | 4.02 | 0.130 | +2.77 | **0.3300** |
+>
+> **f = (V-guided − rate-matched coin flip) / (0.500 − coin flip):**
+>
+> | rate | V − coin flip | z | f | 95% CI |
+> |---|---|---|---|---|
+> | 55% | +0.0465 | +2.94 | **+0.120** | [+0.040, +0.199] |
+> | 13% | −0.0350 | −2.21 | **−0.259** | [−0.489, −0.030] |
+> | change | −0.0815 | **−3.64** | | |
+>
+> - 🔴 **Tightening on V's own confidence makes it WORSE than a coin flip over
+>   the same arms at the same rate.** The pre-registered escape (f > 1 at a low
+>   rate) is refuted **with the sign wrong**. ⚡ The control even deviates *more*
+>   per game (4.56 vs 4.02) and still wins.
+> - 🔴 **THE MECHANISM: V's confidence and its distance from the clone are the
+>   same variable.** Filtering to high-gap overrides raises net-margin
+>   +2.34 → +2.77. **V is confident precisely where it disagrees most with the
+>   clone, and it disagrees most where it is extrapolating — so the ranking
+>   signal IS the damage signal, and no threshold separates them.**
+> - ⚠ **Stated as a limit:** because they are the same quantity, this cell
+>   **cannot** decompose "confidence is anti-informative" from "distance costs".
+>   The licensed claim is the composite — *no confidence threshold isolates good
+>   deviations* — which is the operationally decisive one.
+> - ⛔ **CLOSED AS A FAMILY, not as configurations:** §2's rollout search (0.323),
+>   B4/E5's `evalfn` sequencer (−89 Elo), the clock (0.4963, §8ca), E20 (0.0065),
+>   E22 (0.1580), E25 (0.3300 and worse-than-random). **One statement: the clone
+>   sits at a sharp local optimum, and any evaluator's score for an off-policy
+>   option is contaminated by extrapolation in proportion to how far off-policy
+>   it is. Better evaluators do not fix this, because the contamination grows
+>   with exactly the signal you would rank by.**
+> - ⛔ **E23 (value iteration) is now MORE clearly unlicensed**, not less: its
+>   premise was that better data at search-selected successors fixes selection,
+>   and those successors are chosen by the same contaminated ranking.
+> - ⛔ **No third tau, no fourth arm.**
+> - ⚡ **The point prediction is what did the work.** A bar ("≥ 0.530") would have
+>   filed this as one more null; a *missed prediction* is what forced the control
+>   that found the sign flip.
+> - ⚠ **Defect in my own frozen rule:** branch ⚠ keyed on `A < 0.41` — cell A
+>   alone, against a linear cost-vs-rate model. Only cell B can separate
+>   nonlinearity-in-rate from bad selection. It fired correctly for a reason its
+>   own condition did not establish. **Key a reading rule on the comparison, not
+>   on one arm.**
 >
 > ## ⚡ N.11 DAY 30 (2026-08-11): **E22 fails at 0.1580 — and its audit arm produces the number the whole search thread was missing: deviating from the clone costs −0.389, and the best evaluator we can build recovers 12% of it** (§8cf)
 >

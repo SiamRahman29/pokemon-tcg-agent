@@ -4561,6 +4561,131 @@ because the primary is a clean null and nothing here can ship.
    off a partial sweep — and the defence that worked was the same one: freeze
    the reading rule before the resolving data exists.
 
+## 8cg. 🔴 E25 CLOSES THE WHOLE "OVERRIDE THE CLONE WITH A BETTER EVALUATOR" FAMILY — V's advantage over a coin flip FLIPS SIGN as you tighten the threshold (+0.120 → −0.259, z = −3.64), because V's confidence IS its distance from the clone (2026-08-11, day 30)
+
+**Pre-registered** `docs/experiments/E25-deviation-cost-curve.md` at `8176ac1`,
+after a threshold probe and **before either cell**, carrying a **point
+prediction** (cell A = 0.436, cell B = 0.427) in E19's idiom.
+
+### The question §8cf left
+
+§8cf measured **f = (V-guided − rate-matched coin flip) / (0.500 − coin flip)**,
+the fraction of the deviation cost the evaluator buys back, and got **+0.12 at
+one rate.** If f is a constant of the setup the net effect is −(1 − f) × cost,
+negative everywhere, and the family dies at once. **The escape was f > 1 at a
+low deviation rate** — if V's *confidence* ranks its own overrides, the few it is
+surest about could be net-positive.
+
+⛔ Random subsampling could not answer this: it holds average deviation quality
+fixed, so f is invariant **by construction**. The rate had to be lowered by V's
+own gap (`vtau`), with the threshold fixed at **0.08** from an 80-game probe of
+the gap distribution, to hit a pre-registered *rate* — never by looking at a
+score. **No tau was swept.**
+
+### Four cells, all n = 2,000, mirror, byte-identical policy net, health clean
+
+| arm | changed/game | rate per firing | net-margin | score | 95% CI |
+|---|---|---|---|---|---|
+| `bc:base` (C0, Kaggle) | 0 | — | — | 0.5082 | [0.4897, 0.5267] |
+| coin flip @ 55% | 18.21 | 0.554 | +2.55 | 0.1115 | [0.0896, 0.1334] |
+| **V-guided @ 55%** | 16.24 | 0.551 | +2.34 | **0.1580** | [0.1361, 0.1799] |
+| coin flip @ 13% | 4.56 | 0.129 | +2.40 | **0.3650** | [0.3431, 0.3869] |
+| **V-guided @ 13% (`vtau0.08`)** | 4.02 | 0.130 | +2.77 | **0.3300** | [0.3081, 0.3519] |
+
+🔴 **The point prediction is MISSED by ~9σ.** Predicted 0.436; observed 0.3300.
+Re-stating it at the *realised* rate (13.0%, not the probed 10.4%) only moves it
+to 0.418.
+
+### 🔴 THE RESULT: f flips sign
+
+| rate | V − coin flip | z | **f** | 95% CI |
+|---|---|---|---|---|
+| 55% of firings | **+0.0465** | **+2.94** | **+0.120** | [+0.040, +0.199] |
+| 13% of firings | **−0.0350** | **−2.21** | **−0.259** | [−0.489, −0.030] |
+| change | **−0.0815** | **−3.64** | | |
+
+⚠ **Branch ⚠ ANTI-INFORMATIVE CONFIDENCE fires** (pre-registered condition
+A < 0.41). ⛔ The pre-registered escape — f > 1 at a low rate — is refuted **with
+the sign wrong**: tightening the threshold does not merely fail to help, it
+makes V **worse than a coin flip over the same arms at the same rate**.
+
+⚡ **And the control deviates MORE per game than the treatment (4.56 vs 4.02) and
+still wins**, which is the opposite of what the deviation-count story alone
+predicts.
+
+### 🔴 THE MECHANISM: V's confidence and its distance from the clone are the same variable
+
+Filtering to high-gap overrides **raises** the average net-margin from
+**+2.34 → +2.77**. That is not a nuisance to be controlled away — it is the
+finding:
+
+> **V is confident precisely where it disagrees most with the clone, and it
+> disagrees most with the clone precisely where it is extrapolating.** So
+> thresholding on V's confidence selects, with increasing purity, the overrides
+> furthest outside the data V was fitted on. **The ranking signal IS the damage
+> signal**, and no threshold can separate them.
+
+⚠ **Stated as a limit, not hidden:** because the two are the same quantity, this
+cell **cannot** decompose "V's confidence is anti-informative" from "distance
+from the clone is what costs". A design that held net-margin fixed while varying
+V's gap is not available — the correlation is intrinsic to what a value gap
+means. **The licensed claim is about the composite**, and it is the one that
+matters operationally: *there is no confidence threshold that isolates good
+deviations.*
+
+This is §8cd's one-sided-extrapolation diagnosis confirmed from the opposite
+direction, and it explains why E22's pessimism helped: the LCB penalty and the
+coverage constraint both pull *toward* the clone. They worked to the exact extent
+that they did that, and E25 shows what happens when you instead select *away*
+from it.
+
+### What this closes
+
+⛔ **THE FAMILY, not a configuration.** Every axis in this repo that tried to
+improve on the clone by scoring options with a better evaluator and substituting
+the argmax now falls under one statement, rather than five separate nulls:
+
+| axis | evaluator | result |
+|---|---|---|
+| §2's search | terminal 0/1 rollouts | 0.323 |
+| B4 / E5 sequencer | handcrafted `evalfn` | −89 Elo |
+| the clock, E17–E19 | determinized terminal rollouts | 0.4963 (§8ca) |
+| E20 | learned V, argmax over all options | 0.0065 (§8cd) |
+| E22 | learned V, LCB + top-3 coverage | 0.1580 (§8cf) |
+| **E25** | **the same, thresholded on V's own confidence** | **0.3300, and WORSE than random at that rate** |
+
+🔴 **The unifying statement: the clone sits at a sharp local optimum, and the
+score any evaluator assigns to an off-policy option is contaminated by
+extrapolation in proportion to how far off-policy it is. Better evaluators do
+not fix this, because the contamination grows with exactly the signal you would
+rank by.**
+
+⛔ **E23 (value iteration) remains unlicensed** and is now *more* clearly so:
+its premise was that better value data at search-selected successors would fix
+selection. E25 says the selection signal is structurally compromised, not
+data-starved — the successors it would generate data at are chosen by the same
+contaminated ranking.
+
+⛔ **No third tau. No fourth arm.** The pre-registration says so and the sign
+flip removes the motive.
+
+### Method notes
+
+- ⚡ **The point prediction earned its keep.** A bar ("≥ 0.530") would have read
+  this as one more null. A prediction of 0.436 that came back 0.3300 is what
+  forced the control that found the sign flip.
+- ⚠ **A defect in my own frozen rule, recorded.** Branch ⚠ was written to
+  trigger on `A < 0.41` — i.e. on cell A alone, against a *linear* cost-vs-rate
+  model. A alone cannot separate nonlinearity-in-rate from bad selection; only
+  cell B can. The branch fired correctly, but for a reason its own condition did
+  not establish. **A reading rule should key on the comparison, not on one arm.**
+- ⚠ **Per-game deviation counts are endogenous to losing** and are reported
+  alongside per-firing rates for that reason (§8cf). The per-firing rates
+  matched to 3 decimal places (0.130 vs 0.129); the per-game counts did not
+  (4.02 vs 4.56), because the better arm plays longer games.
+- log-odds cost per changed pick: coin flip @55% **−0.114**, V @55% **−0.103**,
+  coin flip @13% **−0.121**, V @13% **−0.176**.
+
 ## 8cf. ⚡ E22 FAILS ITS BAR AT 0.1580 — and its audit arm turns the failure into the most transferable number this project has: **deviating from the clone costs −0.389, and the best evaluator we can build recovers 12% of it** (2026-08-11, day 30)
 
 **Pre-registered** `docs/experiments/E22-pessimistic-lookahead.md` at `527e26a`,
