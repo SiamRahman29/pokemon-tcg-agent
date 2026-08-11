@@ -24,7 +24,11 @@ NET=out/policy_v5_s2.npz
 case "$CELL" in
   a) ANCHOR="rule:v10,noS"; DECKB=lucario_v10;   M=500 ;;   # 4,000 games/arm
   b) ANCHOR="rule:archaludon"; DECKB=archaludon_ex; M=250 ;; # 2,000 games/arm
-  *) echo "cell must be a or b"; exit 2 ;;
+  # b2: an exact REPLICATION of cell b on fresh games -- same anchor, same deck,
+  # same n, nothing tuned. Added after b read -0.0317 (z=-2.24) on the harmful
+  # branch, under the decision rule frozen in the experiment doc BEFORE it ran.
+  b2) ANCHOR="rule:archaludon"; DECKB=archaludon_ex; M=250 ;;
+  *) echo "cell must be a, b or b2"; exit 2 ;;
 esac
 
 for ARM in fscrap base; do

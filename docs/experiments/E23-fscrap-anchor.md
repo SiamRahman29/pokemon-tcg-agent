@@ -131,6 +131,31 @@ a knob.
 5. `rule:v10` runs **`noS`** — its MCTS budgets on wall-clock and the shards
    contend for cores, which would make the anchor itself a function of load.
 
+## ➕ Added 2026-08-11 AFTER cell b read, BEFORE the replication ran
+
+Cell a (primary) read **+0.0041 [−0.0168, +0.0250]** — the pre-registered KILL
+branch, controls clean (0.261 changed picks/game). Cell b (exploratory) read
+**−0.0317 [−0.0596, −0.0039], z = −2.24**, which trips the harmful branch by
+0.0017 with the CI clearing zero by 0.0039, and whose stated response is
+*"audit the condition before anything else"*.
+
+**The audit is a REPLICATION, and its reading rule is frozen here before it
+runs** (cell `b2`: same anchor, same deck, same n, fresh games, nothing tuned):
+
+| outcome | reading |
+|---|---|
+| b2's CI contains 0 **and** the pooled b+b2 delta's CI contains 0 | cell b was a sampling artifact. Verdict for the whole experiment is the primary's: **KILL**, no matchup-specific harm claimed |
+| b2 reproduces ≤ −0.030 with CI excluding 0 | the harm is real and archaludon-specific ⇒ report it as such, and it is a **second** instance of a board-fact rule losing where the clone's blindness was better |
+| b2 positive with CI excluding 0 | the two cells disagree at n=2,000 ⇒ **the anchor cell is under-powered for this effect size** and neither b nor b2 is quotable |
+
+⚠ **Why I do not believe cell b as it stands, written before b2 exists.** The
+implied per-changed-pick effect is **−0.0317 / 0.168 = −0.19 win probability per
+fetch**, against cell a's **+0.0041 / 0.261 = +0.016**. A 12× disagreement in
+magnitude and a disagreement in sign, between two cells of the same rule, is the
+signature of noise rather than of a matchup. It is also the second of two cells
+and carries no multiplicity correction. **z = −2.24 is not a finding; it is a
+reason to spend ten more minutes.**
+
 ## ⛔ Void / out of scope
 
 * **Nothing here may be submitted**, whatever it reads. E20/E22 own the
