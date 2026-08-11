@@ -21,13 +21,83 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), E20 is REFUTED (§N.9/§8cd), E21+E24 closed the Petrel seam (§N.8/§N.10), and the only pre-registered-but-unrun thread is E22.** Two agents are working this repo; see the routing note below before editing a shared file.
+> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), E20 is REFUTED (§N.9/§8cd), E21+E24 closed the Petrel seam (§N.8/§N.10), and E22 is now RUN, AUDITED and CLOSED (§N.11/§8cf). ⛔ NOTHING is pre-registered-and-unrun. The live question is the one §N.11 names: is V's 12% recovery a fixed FRACTION of the deviation cost at every rate?** Two agents are working this repo; see the routing note below before editing a shared file.
+>
+> ⚠ **ROUTING, day 30, third correction.** This header read *"the only pre-registered-but-unrun thread is E22"* and the line below it read *"▶ The live thread is E20"* — **both stale**, E20 having been refuted (§8cd) and E22 having reported and been audited (§8cf). This is failure mode 2 from ROADMAP's own doc-discipline audit for the third time in one day, which is itself the finding: **an additive entry point decays faster than the experiments it indexes.** Corrected as **routing only** — no verdict here is restated or revised.
 >
 > ⚠ **ROUTING, day 30, second correction.** This header previously read *"E20 … is PRE-REGISTERED and running"*; E20 reported and was refuted, so the line was stale in the same way §8ca left the one below it stale. Corrected as **routing only** — no verdict here is restated or revised.
 >
 > ⚠ **ROUTING CORRECTED DAY 30.** The header below this line read *"E17 RAN … a build is licensed"* and the read-order pointed at *"the clock is BUILT and its A/B is in flight"* — **both were superseded by E19 on day 29** (§8ca: 0.4963 [0.4719, 0.5207], n=1,608, the clock closed and E17's +0.0139/decision retracted with it). Failure mode 2 from ROADMAP's own doc-discipline audit: additive updates leave a stale claim load-bearing in the entry point. Corrected as *routing only* — no verdict here is restated or revised.
 >
-> **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document.
+> **▶ The E20/E22 thread is CLOSED — read §N.11 first, then §N.9.** Its artefacts stand and are reusable regardless: V trainer `scripts/train_value.py`, inference `agents/sa/valuenet.py` (verified against the trainer at 2.7e-7), the one-ply search `agents/sa/vlook.py` (including `vrnd`, the rate-matched control), the Kaggle harness `scripts/kaggle/`, and `score.py --dir` for local sharded runs. Bars and void conditions are frozen by `docs/experiments/E20-value-lookahead.md` and `E22-pessimistic-lookahead.md`.
+>
+> ## ⚡ N.11 DAY 30 (2026-08-11): **E22 fails at 0.1580 — and its audit arm produces the number the whole search thread was missing: deviating from the clone costs −0.389, and the best evaluator we can build recovers 12% of it** (§8cf)
+>
+> **E22 was the last pre-registered-but-unrun thread.** It is now run, audited,
+> and closed. `docs/experiments/E22-pessimistic-lookahead.md` (frozen `527e26a`;
+> its audit rule frozen separately at `b4dbe14`, after the cell reported and
+> before the audit arm ran).
+>
+> | arm | score | 95% CI |
+> |---|---|---|
+> | `bc:base` — identical arms (C0, Kaggle) | 0.5082 | [0.4897, 0.5267] |
+> | E20 — argmax over one V, every option | 0.0065 | [−0.0154, +0.0284] |
+> | **coin flip over top-3 @ 55.5% (audit control)** | **0.1115** | [0.0896, 0.1334] |
+> | **E22 — LCB K=1.0 + top-3 coverage, 5 nets** | **0.1580** | [0.1361, 0.1799] |
+>
+> All n = 2,000, mirror, byte-identical policy net both sides, health clean.
+>
+> - ⚠ **E22 lands on the HARMFUL branch, NOT the KILL branch** (KILL needs the CI
+>   to *contain* 0.500; this misses by 16σ). The doc routes ⚠ to *audit before
+>   interpreting* — so the KILL text is not invoked, and the audit is what
+>   produced the finding.
+> - ⚡ **Both pre-registered changes worked on the internal gate.** Agreement with
+>   the clone went from **0.92× its chance rate to 1.35×** — crossing from below
+>   chance to above it, the pre-registered signature that §8cd's mechanism was
+>   correctly identified. ⛔ And it bought a rout anyway. **E19's standing
+>   constraint holds: no internal gate licenses anything.**
+> - 🔴 **The audit arm is the entry: a coin flip over the SAME covered arms at a
+>   MATCHED deviation rate** (55.4% vs 55.1% of firings; 23.6% vs 23.2% of
+>   visited decisions). Rate-matching is the design — an unmatched random arm
+>   deviates on 2/3 of firings and re-measures the confound.
+>   ⇒ **V beats the coin flip by +0.0465 [+0.0155, +0.0775], z = 2.94.**
+> - 🔴 **THE TRANSFERABLE NUMBER: deviating at 23% of decisions costs
+>   0.500 → 0.1115 = −0.389. V recovers +0.0465 of it = 12.0%.**
+>   **The binding constraint is deviation from the clone, not evaluator
+>   quality.** A V verified against its trainer at 2.7e-7, AUC 0.827 held out by
+>   game, 5-net ensembled, pessimism-penalised and coverage-restricted, recovers
+>   one eighth of the damage that deviating does at all.
+> - ⚠ **Two faults in my own rule, recorded.** (1) The pre-registered criterion
+>   was "CIs disjoint" and they are disjoint **by 0.0027** — a criterion that
+>   could flip on 3 games of noise should have named the two-sample test (z=2.94
+>   agrees, which is why the reading stands). (2) The control's override carries
+>   net-margin +2.55 vs E22's +2.34, so **~20% of V's edge may be margin rather
+>   than selection** on a crude two-point extrapolation.
+> - ⛔ **CLOSED: H-eval in every cheap form.** ⛔ **E23 (value iteration) is NOT
+>   licensed** — its dependency clause was written for the 🟡 *alive but short*
+>   branch, and harmful is not partial. ⛔ **No `tau` knob** — that is E17's
+>   post-hoc arm selection, which E19 priced.
+> - ⚡ **THE ONE QUESTION LEFT, and it is sharper than what closed.** If V's
+>   benefit is a fixed fraction f ≈ 0.12 of the deviation cost **at every rate**,
+>   the net effect is −(1−f)×cost, **negative at every rate** — and the entire
+>   "override the clone with a better evaluator" family dies at once instead of
+>   one configuration at a time. The escape is **f > 1 near a low deviation
+>   rate**. That is **one number**: one more rate point plus its matched control,
+>   ~45 min. **Pre-register it before running it.**
+> - 🔬 **It also reframes E16–E19 / §8bw–§8ca.** Fifteen days searched for a
+>   better *decision rule*; this cell says the clone sits at a **sharp** local
+>   optimum where off-policy movement is catastrophic **independent of how it is
+>   chosen**.
+>
+> ⚠ **Seat trap, one layer out:** an interim read off raw `winner=` counts showed
+> 428/384 — a near coin flip — because those are **seat**-indexed and the arena
+> alternates seats. Arm A's wins are `winner == seat` (pooled 0.167 at that
+> point). Verified against the smoke's official W3/L7 before use. Rule 18.
+>
+> ✅ `scripts/kaggle/score.py --dir` pools LOCAL sharded runs through the same
+> scorer as the Kaggle cells. ⛔ `out/kaggle_pack/` is now git-ignored — a 45 MB
+> zip of the licensed engine entered a commit via `git add -A` and was amended
+> out.
 >
 > ## 🔴 N.10 DAY 30 (2026-08-11): **E24 closed E21's VOID arm — the board fact reaches 1,045 decisions and buys +0.0041** (§8ce)
 >

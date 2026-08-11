@@ -4561,6 +4561,160 @@ because the primary is a clean null and nothing here can ship.
    off a partial sweep — and the defence that worked was the same one: freeze
    the reading rule before the resolving data exists.
 
+## 8cf. ⚡ E22 FAILS ITS BAR AT 0.1580 — and its audit arm turns the failure into the most transferable number this project has: **deviating from the clone costs −0.389, and the best evaluator we can build recovers 12% of it** (2026-08-11, day 30)
+
+**Pre-registered** `docs/experiments/E22-pessimistic-lookahead.md` at `527e26a`,
+before the V-ensemble existed and before any arena game. **The audit's reading
+rule was frozen separately at `b4dbe14`, after the primary cell reported and
+before the audit arm ran** — E24's discipline (`7d576da`), applied to my own
+experiment.
+
+### The primary cell
+
+`bc:e22,vlp,vlcb1.0,varm3` over 5 value nets vs `bc:base`, mirror, byte-identical
+policy net both sides, n = 2,000 (5 shards × 400):
+
+| | score | 95% CI |
+|---|---|---|
+| E20 — argmax over one V, every option | 0.0065 | [−0.0154, +0.0284] |
+| **E22 — LCB pessimism (K=1.0) + top-3 coverage** | **0.1580** | **[0.1361, 0.1799]** |
+
+⚠ **HARMFUL branch** (point ≤ 0.470, CI excludes 0.500). ⛔ **Not** the 🔴 KILL
+branch, which requires the CI to *contain* 0.500 — this misses by 16σ in the
+wrong direction. The doc routes ⚠ to *audit before interpreting*, and the KILL
+text is therefore **not** invoked.
+
+Health clean on all 5 shards: `fallbacks=0 net_missing=0 skip_noclock=0
+skip_thin=0 errors=0`.
+
+### Both pre-registered changes did exactly what the theory predicted
+
+🔴 **Read these per VISITED DECISION, never per game. Per-game rates are
+ENDOGENOUS TO LOSING** — E20 lost 99.4% and its games ran **3.3× shorter**, so
+it fired 8.4/game against E22's 29.5/game for reasons that have nothing to do
+with the treatment. I had the per-game version written out before catching it.
+
+| | E20 (corrected) | E22 |
+|---|---|---|
+| score | 0.0065 | **0.1580** |
+| changed picks / visited decision | 32.4% | **23.2%** |
+| argmax agrees with the clone | 18.8% | **44.9%** |
+| … vs its OWN arm set's chance rate | 20.5% (all options) | **33.3%** (top-3) |
+| **ratio to chance** | **0.92** | **1.35** |
+| net-margin of the average override | +6.02 | **+2.34** |
+
+⚠ **The chance rate must be recomputed per arm set.** Coverage shrinks the
+candidate set, so quoting E22's 44.9% against E20's 20.5% would flatter it. On
+each arm set's own chance rate, agreement crossed from **below** chance to
+**above** it — the pre-registered signature that the §8cd mechanism
+(one-sided extrapolation error under a max) was correctly identified.
+
+### 🔴 THE CONFOUND, and why the internal gate could not settle it
+
+E20 → E22 changed **two things at once** and 0.1580 is consistent with either:
+
+1. **Better selection** — agreement 0.92× → 1.35× chance.
+2. **Smaller deviation** — the average override's net-margin fell +6.02 → +2.34
+   and it fires on a quarter fewer decisions. The arm simply moved **closer to
+   the clone**, and `bc:base` sits at 0.500.
+
+Every published number in this repo that read strength off an agreement
+statistic was wrong for a version of reason 2 (§8u, §8bt). This one is testable.
+
+### The audit arm: a rate-matched coin flip
+
+`bc:e22ctl,vlp,varm3,vrnd0.555` — **identical in every respect except that V's
+argmax is replaced by a uniform draw over the same covered arms**, at a
+deviation rate matched to E22's measured 0.555. No fork, no V (`evals=0`).
+
+⚠ **Rate-matching is the whole design.** An unmatched random arm deviates on 2/3
+of firings against E22's 0.551 and would re-measure the confound it exists to
+remove. The match held: **55.4% of firings vs 55.1%; 23.6% of visited decisions
+vs 23.2%.**
+
+| arm | score | 95% CI |
+|---|---|---|
+| `bc:base` (identical arms, C0 on Kaggle) | 0.5082 | [0.4897, 0.5267] |
+| **coin flip over top-3 @ 55.5%** | **0.1115** | **[0.0896, 0.1334]** |
+| **V-guided over top-3 @ 55.1%** | **0.1580** | **[0.1361, 0.1799]** |
+
+⚡ **Branch ⚡ fires: V IS REAL BUT INSUFFICIENT.** V beats the coin flip by
+**+0.0465 [+0.0155, +0.0775], z = 2.94**.
+
+⚠ **The pre-registered criterion was "CIs disjoint" and they are disjoint by
+0.0027.** That is a knife edge, and it is a fault in the rule I wrote: a
+criterion that could have flipped on 3 games of noise should have been a
+two-sample test from the start. The direct test agrees (z = 2.94), which is why
+the reading stands — but the rule was fragile and the next one should name the
+statistic, not the picture.
+
+### 🔴 THE NUMBER THAT OUTLIVES THE EXPERIMENT
+
+```
+deviating from the clone at 23% of decisions      0.500 -> 0.1115   =  -0.389
+what the best evaluator we can build recovers            +0.0465    =   12.0%
+```
+
+**The binding constraint is not evaluator quality. It is deviation from the
+clone itself.** A learned V, trained on 20,000 self-play outcomes, verified
+against its trainer at 2.7e-7, reading AUC 0.827 held out by game, ensembled
+five ways and penalised by one standard deviation, restricted to options the
+policy net already ranks top-3 — **recovers one eighth of the damage that
+deviating does at all.**
+
+⚠ **Residual confound, stated rather than buried.** The control's average
+override carries net-margin **+2.55** against E22's **+2.34**, so it deviates
+slightly *further* in policy space. A crude two-point extrapolation from the
+E20→E22 slope (Δmargin 3.68 bought Δscore 0.1515, i.e. ~0.041/unit) prices that
+0.21 residual at **~0.009**, or **~20% of V's measured edge**. ⛔ That is an
+extrapolation through two points, not a measurement. The honest statement is
+**+0.0465 with roughly a fifth of it possibly attributable to margin, not
+selection.**
+
+### What this closes and what it opens
+
+⛔ **H-eval — a learned value function consumed by inference-time option
+substitution — is closed in every cheap form.** E20 (naive argmax) 0.0065; E22
+(pessimism + coverage, the textbook remedy, both changes named in advance)
+0.1580. Neither is within 0.34 of its bar.
+
+⛔ **E23 (value iteration) is NOT licensed.** The dependency clause makes it
+conditional on this cell, and it was written for the 🟡 *alive but short* branch
+("the remedy is partial ⇒ the indicated next step is DATA"). A harmful branch is
+not partial. Generating outcome data at search-selected successors is a large
+spend justified by a premise this cell refutes.
+
+⛔ **No `tau` (margin) knob.** It is the obvious next patch and it is precisely
+E17's post-hoc arm selection, which E19 priced.
+
+⚡ **What IS opened, and it is sharper than what closed.** If V's benefit is a
+roughly fixed *fraction* f ≈ 0.12 of the deviation cost at every rate, then the
+net effect is −(1 − f) × cost, **negative at every rate**, and the entire family
+of "override the clone using a better evaluator" dies at once rather than one
+configuration at a time. The escape is f > 1 near a low deviation rate. **That
+is one number, and it needs one more rate point plus its matched control.** It
+also reframes 15 days of per-decision work (E16–E19, §8bw–§8ca): those
+experiments searched for a better *decision rule* and this one says the clone
+sits at a **sharp** local optimum where off-policy movement is catastrophic
+independent of how it is chosen.
+
+### Method notes
+
+- ⚡ **X0 (buy the compute) is the swing that paid.** This entry is two n=2,000
+  A/Bs plus a smoke, decided in one sitting on a 12-core desktop, against a
+  §2.7 that budgeted 85 core-hours for a single A/B.
+- `scripts/kaggle/score.py --dir` now pools local sharded runs through the same
+  scorer as the Kaggle cells — from the arena's own seat-corrected `score=`
+  line, never re-derived from the archives (rule 18).
+- ⚠ **A near-miss worth recording: I read an interim tally off the raw
+  `winner=` counts and they showed 428/384, a near coin flip.** Those are
+  **seat**-indexed and the arena alternates seats every game; arm A's wins are
+  `winner == seat`, which pools to 0.167 at that point. Same seat-indexing trap
+  as rule 18, one layer out — verified against the smoke's official W3/L7
+  before use.
+- ⛔ A 45 MB `out/kaggle_pack/ptcg_code.zip` (the licensed engine) entered a
+  commit via `git add -A` and was amended out; the directory is now git-ignored.
+
 ## 8cd. 🔴 E20 IS REFUTED — a learned V + one-ply argmax reads 0.0065 at n=2,000; a real train/inference defect was found on the way and turned out NOT to be the cause (2026-08-11, day 30)
 
 Pre-registered in `docs/experiments/E20-value-lookahead.md`, frozen at
