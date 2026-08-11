@@ -33,8 +33,16 @@ STATS = {
     # nothing -- the §8be family, and control 2 of every pre-registration since.
     # `fetch_seen` counts Petrel fetches reached; `fetch_fired` counts those the
     # rule actually redirected.
+    #
+    # ⚡ E23 (day 30): `fetch_fired` is NOT the treatment size. The rule can fire
+    # on a fetch the net would have made anyway, and then the two arms of an A/B
+    # are identical at that decision. `fetch_diff` counts the firings where the
+    # rule's pick differs from `net.choose` -- the only ones that can move a
+    # score. Diagnostic only: it costs one extra forward pass per firing (~0.3
+    # per game), and it never changes what is returned.
     "fetch_seen": 0,
     "fetch_fired": 0,
+    "fetch_diff": 0,
 }
 
 
@@ -62,7 +70,8 @@ def health_line() -> str:
             f"net_missing={s['net_missing']} deck={s['deck_returns']}")
     if s["fetch_seen"]:
         line += (f" fetch={s['fetch_fired']}/{s['fetch_seen']}"
-                 f" ({s['fetch_fired'] / s['fetch_seen']:.1%})")
+                 f" ({s['fetch_fired'] / s['fetch_seen']:.1%})"
+                 f" diff={s['fetch_diff']}")
     if s["flip_eligible"]:
         line += (f" flips={s['flips']}/{s['flip_eligible']}"
                  f" ({s['flips'] / s['flip_eligible']:.1%})")
@@ -89,7 +98,7 @@ def health_line() -> str:
 def reset_stats() -> None:
     STATS.update(calls=0, fallbacks=0, net_missing=0, deck_returns=0,
                  first_error=None, flip_eligible=0, flips=0,
-                 fetch_seen=0, fetch_fired=0)
+                 fetch_seen=0, fetch_fired=0, fetch_diff=0)
 
 
 class PolicyAgent:
@@ -369,6 +378,17 @@ class PolicyAgent:
                     obs, self.fetch_stadium, self.fetch_scrapper)
                 if order is not None:
                     STATS["fetch_fired"] += 1
+                    # Diagnostic only (E23): a firing that agrees with the net
+                    # is a no-op for the A/B, so `fired` overstates the
+                    # treatment. Never allowed to change the return value, and
+                    # never allowed to raise -- §8bz's lesson is that a counter
+                    # is what makes a null readable, not a reason to forfeit.
+                    try:
+                        _n = self.net or policynet.get()
+                        if _n is not None and _n.choose(obs)[:want] != order[:want]:
+                            STATS["fetch_diff"] += 1
+                    except Exception:  # noqa: BLE001
+                        pass
                     return order[:want]
             net = self.net or policynet.get()
             if net is None:
