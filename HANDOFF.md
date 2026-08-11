@@ -21,11 +21,54 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca) and E20 — a learned V(s) + one-ply engine lookahead — is PRE-REGISTERED and running.** Two agents are working this repo; see the routing note below before editing a shared file.
+> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), E20 is REFUTED (§N.9/§8cd), E21+E24 closed the Petrel seam (§N.8/§N.10), and the only pre-registered-but-unrun thread is E22.** Two agents are working this repo; see the routing note below before editing a shared file.
+>
+> ⚠ **ROUTING, day 30, second correction.** This header previously read *"E20 … is PRE-REGISTERED and running"*; E20 reported and was refuted, so the line was stale in the same way §8ca left the one below it stale. Corrected as **routing only** — no verdict here is restated or revised.
 >
 > ⚠ **ROUTING CORRECTED DAY 30.** The header below this line read *"E17 RAN … a build is licensed"* and the read-order pointed at *"the clock is BUILT and its A/B is in flight"* — **both were superseded by E19 on day 29** (§8ca: 0.4963 [0.4719, 0.5207], n=1,608, the clock closed and E17's +0.0139/decision retracted with it). Failure mode 2 from ROADMAP's own doc-discipline audit: additive updates leave a stale claim load-bearing in the entry point. Corrected as *routing only* — no verdict here is restated or revised.
 >
 > **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document.
+>
+> ## 🔴 N.10 DAY 30 (2026-08-11): **E24 closed E21's VOID arm — the board fact reaches 1,045 decisions and buys +0.0041** (§8ce)
+>
+> Pre-registered at `2d36ce8` before any cell. §8cc's `fscrap` read 0.5175 with
+> `fetch=0/3082` — a wiring statement, because our 60 runs zero Pokémon Tools
+> and the condition is unsatisfiable in the mirror. Re-run where a Tool exists,
+> after **on-policy sizing** across five anchors (0.300/game vs `lucario_v10`
+> down to 0.115 vs `crustle_v1`, **0.000** in the mirror):
+>
+> | cell | anchor | delta | 95% CI | n/arm |
+> |---|---|---|---|---|
+> | **a (primary)** | `rule:v10,noS`@`lucario_v10` | **+0.0041** | [−0.0168, +0.0250] | 4,000 |
+> | b (exploratory) | `rule:archaludon` | −0.0317 | [−0.0596, −0.0039] | 2,000 |
+> | b2 (replication) | same, fresh games | −0.0055 | [−0.0334, +0.0224] | 2,000 |
+> | b+b2 pooled | — | −0.0186 | [−0.0383, **+0.0011**] | 4,000 |
+>
+> - ✅ **Controls passed everywhere** — 0.261 changed picks/game in cell a
+>   (1,045 of 1,123 firings), and the control arms printed **no `fetch=` field at
+>   all**. This is the reading E21b could not produce.
+> - ⚡ **New counter, and it is the transferable bit: `fetch_diff`.** A firing the
+>   net agrees with is **not a treatment**. `fired` overstates it by ~7% here and
+>   could overstate it by any amount elsewhere. `bcagent.STATS` now prints both.
+> - 🔬 **Cell b tripped the harmful branch by 0.0017 and dissolved on
+>   replication.** The reading rule was frozen and committed (`7d576da`) BEFORE
+>   b2 ran, on two grounds available in advance: b implied **−0.19 per changed
+>   fetch** against cell a's **+0.016**, and it was the second of two cells.
+>   ⚠ **Pooled b+b2 clears zero by 0.0011** — say *"not resolved as harm at
+>   n=4,000"*, never *"archaludon is clean"*. A third cell is **not indicated**.
+> - ⚡ **Sizing does not predict on-policy firing in a fixed direction.** Realized
+>   came in **under** here (0.261 vs 0.300) and **1.6× over** for `fstad` (§8cc).
+> - 🔴 **The finding that outlives the cells: E21 filed `fscrap` as
+>   "dominated-class" and it is not** — it promotes Scrapper over Unfair Stamp
+>   and Night Stretcher, all live cards. The genuinely dominated version (delete
+>   Scrapper when no Tool is anywhere) sizes at **0.066–0.08/game** and is
+>   unmeasurable. ⇒ **On this seam the winning class is too rare to test and the
+>   losing class is the only one big enough.** Tradeoff rules: **0-for-7**.
+> - ⛔ Nothing ships; both flags stay OFF. The rule **cannot fire in the mirror**
+>   (71.4% of our field above 1000), so even a win was matchup tech.
+> - ⚠ **Numbering: renumbered E23 → E24 before write-up**, because E22's frozen
+>   doc reserves **E23 for value iteration**. Scripts/logs/archives keep their
+>   `p90_e23_*` names — they are the receipts the runs wrote.
 >
 > ## 🔴 N.9 DAY 30 — **E20 IS REFUTED: 0.0065 at n=2,000. A real instrument defect was found on the way and was NOT the cause** (§8cd)
 >

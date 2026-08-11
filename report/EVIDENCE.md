@@ -4403,6 +4403,116 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8ce. 🔴 E24 — E21's VOID ARM RE-RUN WHERE THE CONDITION CAN EXIST: the board fact reaches 1,045 decisions and buys +0.0041. Tradeoff rules go 0-for-7 (2026-08-11, day 30)
+
+Pre-registered in `docs/experiments/E24-fscrap-anchor.md`, frozen at **`2d36ce8`
+before the first arena game of any cell** (renumbered E23 → E24 before write-up:
+E22's frozen doc reserves E23 for value iteration). Sizing
+`scripts/p89_fscrap_sizing.sh`, driver `scripts/p90_e23_run.sh`, scorer
+`scripts/p90_e23_score.py`, logs `out/logs/p89_*.txt` / `out/logs/p90_e23_*.txt`,
+archives `out/arena/e23/`.
+
+**Why it exists: a VOID cell is a debt, not a result.** §8cc ran `fscrap` in the
+mirror and it read 0.5175 with **`fetch=0/3082`** — our 60 runs zero Pokémon
+Tools, so "a Tool is on THEIR board" is unsatisfiable there *by construction*.
+§8cc's own verdict was **"size the condition IN THE MATCHUP THE CELL WILL RUN
+IN"**. This is that verdict executed, and nothing else about the rule changed.
+
+### The sizing, run first and ON-POLICY
+
+The flag is ON in every sizing run, so `fetch_fired` is what the rule really
+does. 200 games per anchor, each rule pilot on its own tuned 60 (rule 20); Tool
+counts from the card DB (`cardType == 2`):
+
+| anchor | deck | Tools in the 60 | fired/game |
+|---|---|---|---|
+| `rule:v10,noS` | `lucario_v10` | 1 | **0.300** |
+| `rule:lucario` | `mega_lucario_ex` | 1 | 0.270 |
+| `rule:archaludon` | `archaludon_ex` | 1 | **0.225** |
+| `rule:dragapult` | `dragapult_ex` | 1 | 0.200 |
+| `rule:crustle` | `crustle_v1` | 1 | 0.115 |
+| mirror (§8cc) | `grimmsnarl` | **0** | **0.000** |
+
+⚡ **`fetch_fired` is NOT the treatment size, and this experiment adds the
+counter that says so.** A firing the net agrees with is a no-op for the A/B.
+`bcagent.STATS` now carries **`fetch_diff`** — firings whose pick differs from
+`net.choose` — and it ran at **93%** of firings, consistent with §8br's
+off-policy "conditioned on a target existing we take Scrapper 1 time in 14".
+
+### The cells — two-cell deltas, treatment vs a byte-identical control
+
+Same net (`policy_v5_s2#4790c469`), shipped rule config, differing **only** by
+the flag; the anchor is identical in both arms, so the delta's interval is √2× a
+single cell's (§8aw) and the scorer prints that width.
+
+| cell | anchor | treatment | control | **delta** | 95% CI | z | n/arm |
+|---|---|---|---|---|---|---|---|
+| **a (primary)** | `rule:v10,noS`@`lucario_v10` | 0.6512 | 0.6471 | **+0.0041** | [−0.0168, +0.0250] | +0.39 | 4,000 |
+| **b (exploratory)** | `rule:archaludon`@`archaludon_ex` | 0.7033 | 0.7350 | −0.0317 | [−0.0596, −0.0039] | −2.24 | 2,000 |
+| **b2 (replication)** | same as b, fresh games | 0.7165 | 0.7220 | −0.0055 | [−0.0334, +0.0224] | −0.39 | 2,000 |
+| **b + b2 pooled** | — | 0.7099 | 0.7285 | **−0.0186** | **[−0.0383, +0.0011]** | −1.85 | 4,000 |
+
+✅ **Both controls passed in every cell, which is the whole point of re-running
+it.** Treatment reached **0.261 changed picks/game** in cell a (1,045 of 1,123
+firings over 5,619 fetches) and 0.168 / 0.179 in b / b2 — all far above the
+pre-registered 0.10 VOID bar. And **the control arms printed no `fetch=` field
+at all**, so the arms differed only in the flag.
+
+⚡ **Realized firing came in slightly UNDER the sizing** (0.261 vs 0.300; 0.168
+vs 0.225), which is the *opposite* direction from §8cc's `fstad` (0.72 realized
+vs 0.461 sized, 1.6× over). ⇒ **On-policy firing is not biased in a fixed
+direction against replay sizing — it is simply a different quantity.** §8cc's
+"sizing under-predicts" should be read as "sizing does not predict", which is
+the claim the two measurements jointly support.
+
+### 🔬 The harmful branch fired on cell b, and the frozen rule dissolved it
+
+Cell b tripped the pre-registered harmful branch by **0.0017**, with its CI
+clearing zero by **0.0039**. Before running anything else I wrote the reading
+rule into the pre-registration and committed it (`7d576da`), because the reasons
+to disbelieve it were available *before* the replication existed:
+
+* the implied effect is **−0.19 win probability per changed fetch** against cell
+  a's **+0.016** — a 12× disagreement in magnitude and a disagreement in sign,
+  for the same rule and the same card;
+* it is the **second of two cells**, with no multiplicity correction.
+
+**b2 replicated it unchanged on fresh games and read −0.0055, CI containing 0.**
+Per the frozen rule (b2's CI contains 0 **and** the pooled CI contains 0) ⇒
+**cell b was a sampling artifact and no matchup-specific harm is claimed.**
+
+⚠ **Stated rather than smoothed: the pooled interval clears zero by 0.0011.**
+Pooled b+b2 is −0.0186 [−0.0383, **+0.0011**], z = −1.85. That is a *hair*, and
+the honest summary is **"not resolved as harm at n=4,000"**, not "archaludon is
+clean". The rule was frozen before the data existed and it is not being moved
+after the fact; a third archaludon cell would settle it and is **not indicated**,
+because the primary is a clean null and nothing here can ship.
+
+### What this closes
+
+- 🔴 **H-scrap is refuted on the primary anchor**: the board fact reached
+  **1,045 decisions** and moved the score **+0.0041 [−0.0168, +0.0250]**. E21b's
+  0.5175 is now retired as the wiring statement it was, with a measured
+  counterexample beside it.
+- ✅ **Tradeoff rules go 0-for-7** (§3's discriminator). E21a's `fstad` lost at
+  z = −5.36; `fscrap` merely does nothing. **The class has now failed at both
+  ends of the firing-rate range it can reach** — 0.72/game and 0.26/game.
+- 🔴 **A correction to E21's own filing, and it is the reusable half.** E21 filed
+  `fscrap` as *"closer to the dominated column"*. It is not: as implemented it
+  **promotes** Tool Scrapper over Unfair Stamp and Night Stretcher, all live
+  cards, which is a tradeoff. The genuinely dominated version — *delete* Scrapper
+  from the fetch when no Tool is anywhere — sizes at **0.066/game** (§8br) and
+  **~0.08/game** in the mirror. ⇒ **On this seam, the rule class the discriminator
+  says WINS is an order of magnitude too rare to measure, and the class it says
+  LOSES is the only one large enough to test.** That is why the seam produces
+  nulls and losses and never a win, and it is a stronger statement than either
+  cell.
+- ⛔ **Scope, written before the result and unchanged by it:** our 60 runs no
+  Pokémon Tool, so this rule **cannot fire in the mirror** — 71.4% of our field
+  above rating 1000 (§8ac). Even a win would have been matchup tech, not a ladder
+  lever.
+- ⛔ **Nothing ships.** Both E21 flags stay in the tree, OFF by default.
+
 ## 8cd. 🔴 E20 IS REFUTED — a learned V + one-ply argmax reads 0.0065 at n=2,000; a real train/inference defect was found on the way and turned out NOT to be the cause (2026-08-11, day 30)
 
 Pre-registered in `docs/experiments/E20-value-lookahead.md`, frozen at

@@ -1,9 +1,15 @@
-# E23 — E21's VOID arm, re-run where the condition can exist. Pre-registered.
+# E24 — E21's VOID arm, re-run where the condition can exist. Pre-registered.
 
 **Status: PRE-REGISTERED 2026-08-11 (day 30), before the first arena game of any
-cell.** Frozen at the commit that adds this file. Numbered E23 because E21 is the
-Petrel fetch experiment this one repairs and E22 is the pessimistic-lookahead
-pre-registration.
+cell.** Frozen at `2d36ce8`, the commit that added this file as `E23-*`.
+
+⚠ **RENUMBERED E23 → E24 on day 30, before any result was written up.** E22's
+frozen doc reserves **E23 for value iteration** ("generate outcome data at the
+successors the search selects, retrain, repeat"), conditional on E22 reading —
+the same collision that forced the E21 → E22 renumber hours earlier (§8cc).
+**Content is unchanged.** The driver, scorer, logs and archives keep their
+`p90_e23_*` / `out/arena/e23/` names on purpose: they are the receipts the runs
+actually wrote, and renaming a receipt after the fact is worse than a stale tag.
 
 ---
 
