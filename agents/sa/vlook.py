@@ -62,6 +62,9 @@ def health_line() -> str:
         out += f" first_error={ERR['err']!r}"
     if s["sd_n"]:
         out += f" ens_sd={s['sd_x1000'] / 1000.0 / s['sd_n']:.3f}"
+    for e in (0.01, 0.02, 0.04, 0.08, 0.16, 0.32):
+        if s[f"gapge_{e}"]:
+            out += f" ge{e}={s[f'gapge_{e}']}"
     if s["fired"]:
         # E21's decisive diagnostic: E20 kept the clone's pick 23% of the time
         # here and 6.1% over p87's wider decision set, both under a ~20% chance
@@ -317,6 +320,13 @@ class ValueLookahead:
             except Exception:
                 pass
             STATS["gap_x1000"] += int(gap * 1000)
+            # E25 probe: the DISTRIBUTION of V's own confidence in its
+            # overrides. `vtau` is set from this to hit a pre-registered
+            # deviation RATE, never to maximise a score -- the distinction
+            # between a measurement and E17's post-hoc arm selection.
+            for edge in (0.01, 0.02, 0.04, 0.08, 0.16, 0.32):
+                if gap >= edge:
+                    STATS[f"gapge_{edge}"] += 1
             return [best]
         except Exception as e:
             STATS["errors"] += 1
