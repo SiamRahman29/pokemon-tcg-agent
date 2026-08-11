@@ -78,6 +78,7 @@ class Probe:
         self.tag = tag
         self.rng = random.Random(0)
         self.mine: list[dict] = []
+        self.mixed: list[tuple[float, float]] = []
 
     def __call__(self, obs):
         net = pnet.get()
@@ -100,7 +101,7 @@ class Probe:
 
             # one ply into every sibling, on ONE shared world
             w = determinize(obs, self.decklist, [], self.rng)
-            vals = []
+            vals, passed = [], []
             for j in range(len(opts)):
                 root = None
                 try:
@@ -112,14 +113,16 @@ class Probe:
                     _s, o2 = fs.step(root, [j])
                     c2 = o2.get("current")
                     if c2 is None:
-                        vals.append(None)
+                        vals.append(None); passed.append(False)
                     elif c2.get("result", -1) != -1:
                         r = c2["result"]
                         vals.append(0.5 if r == 2 else (1.0 if r == me else 0.0))
+                        passed.append(False)
                     else:
                         vals.append(float(self.V.win_prob(c2, me)))
+                        passed.append(c2.get("yourIndex") != me)
                 except Exception:
-                    vals.append(None)
+                    vals.append(None); passed.append(False)
                 finally:
                     if root is not None:
                         try:
@@ -129,6 +132,17 @@ class Probe:
             good = [v for v in vals if v is not None]
             if len(good) < 2:
                 return picked
+            # 🔴 ARE THE SIBLINGS EVEN COMPARABLE? A MAIN select mixes options
+            # that END our turn (attack) with options that do not (play a
+            # card). Their successors sit at different points in the turn
+            # cycle, and V was fitted to a distribution where that is highly
+            # informative. If V carries a systematic offset between the two,
+            # argmax is not choosing the better move -- it is choosing the
+            # later turn phase, every time, and would never attack.
+            ends = [v for v, p_ in zip(vals, passed) if v is not None and p_]
+            stay = [v for v, p_ in zip(vals, passed) if v is not None and not p_]
+            if ends and stay:
+                self.mixed.append((float(np.mean(stay)), float(np.mean(ends))))
             self.mine.append({
                 "v_here": v_here,
                 "sib_sd": float(np.std(good)),
@@ -159,6 +173,7 @@ def main() -> int:
     deckmod = importlib.import_module("decks.grimmsnarl")
     deck = [cid for cid, n in deckmod.DECKLIST.items() for _ in range(n)]
 
+    MIXED: list[tuple[float, float]] = []
     for g in range(args.games):
         a = Probe(deck, V, "a")
         b = Probe(deck, V, "b")
@@ -168,6 +183,7 @@ def main() -> int:
             for row in pr.mine:
                 row["won"] = won
                 ROWS.append(row)
+            MIXED.extend(pr.mixed)
         print(f"game {g}: winner={r.winner} rows={len(ROWS)}", flush=True)
 
     y = np.array([r["won"] for r in ROWS], dtype=float)

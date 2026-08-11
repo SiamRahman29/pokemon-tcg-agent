@@ -57,12 +57,28 @@ class Net:
 
     def win_prob(self, state: dict, me: int) -> float:
         dense, bags = featurize(state, me)
+        return self.forward(dense, bags)
+
+    def forward(self, dense, bags) -> float:
+        """The scoring path, split out so it can be tested against the trainer
+        on raw corpus rows (`p88_value_equivalence.py`). `win_prob` is then
+        only `featurize` + this, and the equivalence test exercises the code
+        that actually plays rather than a reimplementation of it."""
         parts = [dense, self.slot_emb[bags["slots"]].reshape(-1)]
         for name in _BAGS:
             b = bags[name]
+            # 🔴 EMPTY BAG -> row 0, NOT zeros. `train_value.py` pads an empty
+            # bag with row 0 (EmbeddingBag mode="mean" returns NaN on a truly
+            # empty bag), so the weights were fitted against `bag_emb[0]`.
+            # Substituting zeros here computes a DIFFERENT FUNCTION from the
+            # one that was trained: p88 measured max |diff| 0.126 on the 7.0%
+            # of rows with an empty bag, against a within-position sibling
+            # range of 0.186 -- i.e. comparable to the whole signal an argmax
+            # depends on, and structured, because hands empty exactly when we
+            # have played them out. E20 spent 2,000 games before this was
+            # checked. Rule 18: compute it a second way and reconcile FIRST.
             parts.append(self.bag_emb[b].mean(axis=0) if len(b)
-                         else np.zeros(self.bag_emb.shape[1],
-                                       dtype=np.float32))
+                         else self.bag_emb[0])
         x = np.concatenate(parts)
         h = np.maximum(self.w1 @ x + self.b1, 0.0)
         h = np.maximum(self.w2 @ h + self.b2, 0.0)
