@@ -27,7 +27,7 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ The live thread is E20**, `docs/experiments/E20-value-lookahead.md`, pre-registered at `5811b9a` **before V was trained and before any arena game**; V trainer `scripts/train_value.py`, Kaggle harness `scripts/kaggle/`. Bars, void conditions and W=4 are frozen by that document.
 >
-> ## 🔴 N.9 DAY 30 — **E20's FIRST READING IS VOID, and the reason is an instrument defect I introduced** (§8cd)
+> ## 🔴 N.9 DAY 30 — **E20 IS REFUTED: 0.0065 at n=2,000. A real instrument defect was found on the way and was NOT the cause** (§8cd)
 >
 > **The value net's live path computed a different function than was trained.**
 > `train_value.py` pads an empty card bag with row 0; `sa/valuenet.py`
@@ -36,12 +36,21 @@ it lets any team name in a replay be joined to its rating.
 > **0.186** — comparable to the whole signal an argmax uses, and **structured**,
 > because hands empty exactly when played out. Fixed; the shipped path now
 > matches the trainer at **2.7e-7**.
-> - 🔴 **`0.0040 [−0.0179, +0.0259]`, n=2,000, is VOID** — it measured a
->   mismatched component. ⛔ **Do not quote it as a result about H-eval.**
->   Re-run `e20b-fixed` was in flight at session end; **read it before anything else.**
-> - ⛔ **WITHDRAWN with it:** the "extrapolation error under a max" diagnosis,
->   the 6.1%-vs-20.3% argmax-agreement figure, and the top-3 coverage result
->   (37.9%). All were measured through the defective evaluator.
+>
+> 🔴 **THE VERDICT: broken path 0.0040 → corrected path `0.0065 [−0.0154,
+> +0.0284]`, n=2,000. Repairing a 0.126 mismatch on 7% of evaluations moved
+> NOTHING.** 13 wins in 2,000 games ⇒ **H-eval in E20's pre-registered form —
+> argmax over a learned V across every option — is REFUTED**, on the
+> pre-registered HARMFUL branch.
+> ⚡ **The reusable lesson: a real defect is not automatically the explanation.**
+> Only re-running separated them; otherwise "we found the bug" would have stood
+> in for a verdict.
+> - ⚡ **The anti-selection diagnosis is REINSTATED, weaker:** argmax agrees with
+>   the clone **11.1% against a 20.5% chance rate** on the corrected path (was
+>   6.1% on the broken one). Real, and previously overstated by ~half.
+> - ⛔ **Still retracted: the "live AUC" figure.** It is clustered by game
+>   (~15 effective units) and swung 0.7042 → 0.5222. Quote only the
+>   per-decision agreement statistic from `p87`.
 > - ✅ **What stands:** the Kaggle harness, **commissioned on two controls**
 >   (C0 identical arms **0.5082** contains 0.500; C1 `s2` v `s1` **0.4996**
 >   contains §8bh's 0.510, n=2,800 each); **V itself — AUC 0.827 held out BY
@@ -57,9 +66,12 @@ it lets any team name in a replay be joined to its rating.
 >   games) was read as evidence — it re-ran at 0.5222 against 0.7042. **§8bw's
 >   own lesson, repeated.**
 > - ⏭ **E22** (`docs/experiments/E22-pessimistic-lookahead.md`, **renumbered from
->   E21** because §8cc owns that number) is pre-registered and **NOT run**. A
->   5-seed V ensemble is training (`out/value_e0..4.npz`, 4 of 5 done at session
->   end). ⛔ **It cannot be interpreted until the corrected E20 baseline reads.**
+>   E21** because §8cc owns that number) is pre-registered and **NOT run**. Its
+>   5-seed ensemble is **trained** (`out/value_e0..4.npz`, AUC 0.827–0.829,
+>   shared `--split-seed 0` so spread is epistemic). Baseline is **0.0065**.
+>   ⚠ **Read the distance honestly before spending on it: E22 must clear 0.530
+>   from 0.0065.** ⛔ **If it fails, the axis closes** — the evaluator is not the
+>   missing piece the three dead searches lacked, and that becomes the chapter.
 > - ⚡ **Harness usage:** `scripts/kaggle/pack.py --push` (one zip, repo-relative
 >   paths — `--dir-mode zip` 400s), `launch.py push/status/pull`, `score.py --job
 >   <j> --expect <v>`. ⛔ **Never hardcode `/kaggle/input/<slug>`** — Kaggle
