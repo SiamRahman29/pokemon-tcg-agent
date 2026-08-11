@@ -4403,6 +4403,115 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8cd. 🔴 E20's FIRST READING IS VOID — the value net's live path computed a DIFFERENT FUNCTION than was trained, and the check that finds it in ten minutes ran after 2,000 games (2026-08-11, day 30)
+
+Pre-registered in `docs/experiments/E20-value-lookahead.md`, frozen at
+`5811b9a` **before V was trained and before any arena game**. Kaggle harness
+`scripts/kaggle/`, V trainer `scripts/train_value.py`, agent `agents/sa/vlook.py`,
+probes `p86`/`p87`/`p88`.
+
+### ✅ First, the instrument: a Kaggle arena harness, commissioned on two controls
+
+`arena.py` sharded across Kaggle kernels (4 vCPU each, two concurrent), pulled
+back and pooled from **the `score=` line the arena already prints** — never
+re-derived from the archives, because `agent0`/`agent1` are seat-indexed and
+re-deriving is rule 18's exact bug.
+
+| control | pooled, n=2,800 | pre-registered | |
+|---|---|---|---|
+| **C0** identical arms (`s2` v `s2`) | **0.5082** [0.4897, 0.5267] | 0.500 | ✅ |
+| **C1** `s2` v `s1` | **0.4996** [0.4811, 0.5182] | 0.510 (§8bh) | ✅ |
+
+Health clean on all 8 shards (`fallbacks=0 net_missing=0`), net hash archived.
+⚡ **A by-product worth carrying:** C1 is the *third* independent reading of
+`s2` v `s1` — screen **0.537** → §8bh fresh games **0.510** → here **0.4996**.
+Pooling §8bh's 1,400 with these 2,800 gives **0.5031 [0.488, 0.518]** ⇒ the
+shipped net's seed edge is **≈ +2 Elo with a CI containing zero**. §8bh took it
+from +25.8 to +7.0; this takes it to nothing, and it further weakens any
+seed-harvest plan.
+
+### ✅ V(s) trains, and it reproduces §8az's warning on self-play data
+
+`scripts/train_value.py` — **the trainer `sa/valuenet.py` has cited in its own
+docstring since day 1 and which had never existed.** 1,914,025 rows / 20,000
+self-play games from B8's corpus, on the `won` column, split **by `gid`**:
+
+```
+ep 1  val 0.5037  AUC 0.8258
+ep 2  val 0.5026  AUC 0.8270   <- best, exported
+ep 3  val 0.5082  AUC 0.8273
+ORIENTATION  V|won 0.7089  vs  V|lost 0.3602
+```
+
+**AUC 0.827 held out by game** against `evalfn`'s 0.685 early (§8m). And E1's
+overfit-after-one-epoch warning (§8az) reproduces on self-play data — val turns
+up at epoch 3 — which is why early stopping and the export rule were pinned in
+the pre-registration rather than chosen afterwards.
+
+### 🔴 The defect, and it invalidates the cell
+
+`train_value.py` pads an **empty card bag** with row 0 (`EmbeddingBag(mode="mean")`
+returns NaN on a truly empty bag). `sa/valuenet.py` substituted **zeros**. The
+weights were therefore fitted against `bag_emb[0]` and the agent scored with a
+different vector. `p88_value_equivalence.py`, 3,000 corpus rows:
+
+| | max \|diff\| | verdict |
+|---|---|---|
+| `valuenet.py` **as shipped** (empty → zeros) | **0.126210** | 🔴 not equivalent |
+| after the fix (empty → `bag_emb[0]`) | **0.00000027** | ✅ equivalent |
+
+**7.0% of rows carry an empty bag**, and the within-position spread across
+sibling successors is only **0.186** — so the perturbation is comparable to the
+entire signal an argmax depends on. ⚠ **And it is structured, not random:** a
+hand empties exactly when it has been played out, so the error lands on the
+options that spend resources.
+
+### The readings
+
+| cell | reading | status |
+|---|---|---|
+| E20 primary, broken path | **0.0040 [−0.0179, +0.0259]**, n=2,000 | 🔴 **VOID** — measured a mismatched component |
+| E20 primary, corrected path | *(pending — `e20b-fixed`)* | — |
+
+⛔ **The 0.0040 must not be quoted as a result about H-eval.** It trips the
+pre-registered *harmful* branch, but the branch's own instruction is "audit
+before interpreting", and the audit found the instrument.
+
+### 🔴 Two method failures, both already in this file's own catalogue
+
+1. **A 2,000-game A/B ran on a component whose inference path had never been
+   reconciled with its trainer.** Two implementations of one function is
+   precisely the situation **rule 18** covers — *compute the headline a second
+   way and reconcile before writing a word*. The check cost ten minutes.
+2. **A clustered statistic was read as evidence.** "Live AUC 0.7042 ⇒ plumbing
+   is sound" pooled ~1,000 decisions from **15 games**; the effective n is
+   games. Re-running the same probe read **0.5222**. §8bw caught this exact
+   clustering in its own estimator (intervals widen 4.1×) and it was repeated
+   two messages after being quoted.
+
+### ⛔ What is WITHDRAWN, not merely unconfirmed
+
+The diagnosis published from the broken path — *"one-sided extrapolation error
+under a max"*, supported by argmax agreeing with the clone at **6.1%** against a
+20.3% chance rate, and by a top-3 coverage constraint lifting it to **37.9%** —
+was measured through the same defective evaluator. **Both are withdrawn.** They
+may well survive re-measurement; they are not evidence today.
+
+### What stands
+
+- The Kaggle harness, commissioned (C0/C1), and the pooling discipline in
+  `scripts/kaggle/score.py`.
+- V itself: AUC 0.827 by game, and now **verified equivalent** through the path
+  that plays.
+- `p86`'s structural fact: after one `fs.step` the observation indexes players
+  **absolutely** (`players[me]` is still ours 505/517 = 98%) and the mover
+  changes seat only **1%** of the time, so a pre-step seat stays valid — which
+  refuted the seat hypothesis written into `vlook.py`'s own docstring.
+- **E22** (`docs/experiments/E22-pessimistic-lookahead.md`, renumbered from E21
+  because §8cc owned that number) is pre-registered and **NOT run**. It cannot
+  be interpreted until the corrected E20 baseline reads.
+
+
 ## 8cc. 🔴 E21 — THE CLONE'S BOARD-BLIND FETCH BEATS A BOARD-AWARE RULE, DECISIVELY (0.4405, z=−5.36) — and the second arm never fired at all (2026-08-11, day 30)
 
 Pre-registered in `docs/experiments/E21-petrel-fetch.md`, frozen at **`5be502d`

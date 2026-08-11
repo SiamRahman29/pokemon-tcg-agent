@@ -1,6 +1,6 @@
-# E21 — pessimism + coverage, against a MEASURED mechanism. Pre-registered.
+# E22 — pessimism + coverage, against a MEASURED mechanism. Pre-registered.
 
-**Status: PRE-REGISTERED 2026-08-11 (day 30), before the V-ensemble finished
+**Status: PRE-REGISTERED 2026-08-11 (day 30); renumbered E21→E22 on day 30 because `E21-petrel-fetch.md` already owned that number (§8cc). Content unchanged from the frozen version at `527e26a`, before the V-ensemble finished
 training and before the first arena game.** Frozen at the commit adding this
 file.
 
@@ -29,14 +29,14 @@ clone's pick *is* the on-distribution option, so argmax avoids it.
 
 ⚠ **Two things this does NOT license.** It does not license calling V broken —
 AUC 0.70 through the live path says the plumbing is sound and the evaluator
-ranks games. And it does not license a sweep. E21 changes **two** things, both
+ranks games. And it does not license a sweep. E22 changes **two** things, both
 of which are the textbook response to this exact mechanism and both of which
 were named *before* any variant was run.
 
 ⚠ **E20's own design error, recorded.** E20 froze "no trigger, all options"
 specifically to avoid E17's post-hoc arm selection. The clock's `arms=3` was
 doing real work — it kept successors near-distribution — and removing it
-dodged one bias into another. E21 restores it as a *coverage* constraint with a
+dodged one bias into another. E22 restores it as a *coverage* constraint with a
 stated reason, not as a tuned parameter.
 
 ---
@@ -71,18 +71,18 @@ sides so the seed nuisance cancels.
 
 ## Bars, written before the ensemble exists
 
-**Primary cell — mirror, n = 2,000**, `bc:e21,vlp,vlcb1.0,varm3,vnet=<5 nets>`
+**Primary cell — mirror, n = 2,000**, `bc:e22,vlp,vlcb1.0,varm3,vnet=<5 nets>`
 vs `bc:base`. SE ≈ 0.0112.
 
 | branch | condition | reading |
 |---|---|---|
 | ✅ **screen passes** | point ≥ **0.530**, CI excludes 0.500 | go to fresh-games confirmation, then weighted anchors. ⛔ a screen never ships (§8bh) |
-| 🟡 **alive but short** | CI excludes 0.500, point in [0.505, 0.530) | the mechanism is real and the remedy is partial ⇒ **the indicated next step is DATA (E22 value iteration), not a larger K** |
+| 🟡 **alive but short** | CI excludes 0.500, point in [0.505, 0.530) | the mechanism is real and the remedy is partial ⇒ **the indicated next step is DATA (E23 value iteration), not a larger K** |
 | 🔴 **KILL** | CI contains 0.500 | pessimism + coverage does not rescue it. **H-eval is refuted in every cheap form**, and the axis closes with a report chapter |
 | ⚠ **harmful** | point ≤ 0.470, CI excludes 0.500 | audit before interpreting |
 
 **The diagnostic that decides what a null MEANS**, recorded but not a gate:
-`p87`'s agreement statistic re-run under E21. If argmax-agreement moves from
+`p87`'s agreement statistic re-run under E22. If argmax-agreement moves from
 **6.1%** up toward or past the **20.3%** chance rate, the mechanism was
 correctly identified even if the win rate does not follow — and that sends the
 work to data coverage rather than to more inference-time patching. If agreement
@@ -99,7 +99,7 @@ licenses anything — only the end-to-end A/B does.**
 
 ## Dependency
 
-**E22 (value iteration — generate outcome data AT the successors the search
+**E23 (value iteration — generate outcome data AT the successors the search
 selects, retrain, repeat) is conditional on this cell.** It is the family
 ROADMAP §2.7 names as *"declined for cost, never tested"*, and E20's result is
 its motivation: a measured demonstration that on-policy value data does not
