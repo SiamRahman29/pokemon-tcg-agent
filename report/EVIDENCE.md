@@ -4465,6 +4465,38 @@ direction against replay sizing — it is simply a different quantity.** §8cc's
 "sizing under-predicts" should be read as "sizing does not predict", which is
 the claim the two measurements jointly support.
 
+### ⚠ What the null EXCLUDES, in the units the rule operates in
+
+A delta null is only as strong as its resolution, and quoting it in win-rate
+points hides that. Cell a's half-width is **±0.0209** over **0.261 changed
+picks/game**:
+
+```
+±0.0209 / 0.261  =  ±0.080 win probability per changed fetch
+```
+
+⇒ **The primary excludes per-decision effects larger than ~0.08 and nothing
+smaller.** For scale, §8cc's `fstad` measured **−0.0595 / 0.72 = −0.083 per
+firing** — so this cell was *just barely* powerful enough to have caught an
+`fstad`-sized effect, and would have missed half of one. **Any future rule cell
+should print this number**: it is the difference between "the rule does nothing"
+and "the rule does nothing we can see".
+
+### ⛔ The √2 two-cell penalty was unavoidable here — do not apply §8av's fix
+
+§8av's method rule says to screen on the mirror's **direct** arm, which is 2×
+tighter for the same games. **It cannot apply to this rule.** The condition is
+*"a Tool is on THEIR board"*, so the opponent must be a deck that runs Tools,
+which excludes the mirror by construction — the very fact that made E21b void.
+A flag-toggled direct comparison therefore does not exist for `fscrap`, and the
+treatment-vs-control two-cell delta is the tightest available design, not a
+lapse. ⚡ **The general instrument fix — common random numbers, which would make
+the ~77% of games where the rule never fires cancel exactly — is NOT buildable
+here:** the engine is a C library exposing `BattleStart` / `Select` /
+`GetBattleData` / `BattleFinish` / `VisualizeData`, and none takes a seed
+(§8bw). Worth recording because CRN would be worth roughly **4× the games** on
+every rule A/B this project runs, and it is unavailable rather than unconsidered.
+
 ### 🔬 The harmful branch fired on cell b, and the frozen rule dissolved it
 
 Cell b tripped the pre-registered harmful branch by **0.0017**, with its CI
@@ -4512,6 +4544,22 @@ because the primary is a clean null and nothing here can ship.
   above rating 1000 (§8ac). Even a win would have been matchup tech, not a ladder
   lever.
 - ⛔ **Nothing ships.** Both E21 flags stay in the tree, OFF by default.
+
+### 🔬 Two design faults in THIS experiment, named because they cost real time
+
+1. 🔴 **The exploratory cell was run at half the primary's n, and it was the only
+   thing that misfired.** 2,000/arm gives ±0.028 on a delta, wide enough that a
+   0.5σ wobble reaches the −0.030 harmful bar — which is exactly what happened,
+   and it cost a 4,000-game replication to undo. ⇒ **Give a branch-eligible cell
+   the primary's n, or declare it diagnostic-only.** A cell too small to be
+   believed should not be able to trip a branch.
+2. 🔴 **Multiplicity was named in the prior and not handled in the bars.** Three
+   cells against a two-sided 0.05 branch is ~0.14 expected false trips, and one
+   tripped. The fix costs one sentence at pre-registration time: **only the
+   primary cell is branch-eligible; exploratory cells report a number and
+   nothing else.** ⚠ This is §8i's failure in a new costume — a verdict written
+   off a partial sweep — and the defence that worked was the same one: freeze
+   the reading rule before the resolving data exists.
 
 ## 8cd. 🔴 E20 IS REFUTED — a learned V + one-ply argmax reads 0.0065 at n=2,000; a real train/inference defect was found on the way and turned out NOT to be the cause (2026-08-11, day 30)
 
