@@ -68,3 +68,7 @@ kaggle.json
 # --- Replay files ---
 replay_miner/replays/**
 replay_miner/manifests/**
+
+# Kaggle upload staging: a 45 MB rebuildable zip of the licensed engine.
+# `scripts/kaggle/pack.py` regenerates it; it must never enter git history.
+out/kaggle_pack/

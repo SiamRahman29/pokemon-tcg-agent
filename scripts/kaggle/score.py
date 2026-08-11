@@ -31,11 +31,21 @@ def main() -> int:
     ap.add_argument("--job", required=True)
     ap.add_argument("--expect", type=float, default=None,
                     help="pre-registered value the CI must contain")
+    # A sharded run does not have to have been on Kaggle. E22 ran as 5 local
+    # processes writing out/logs/e22a_s*.txt, and the pooling argument is the
+    # same one the docstring makes -- independent games of one configuration,
+    # each scored by the arena's own seat-corrected line. `--dir` points at
+    # those logs so a local run is read by this scorer rather than by a
+    # one-off, which is where re-derivation creeps back in.
+    ap.add_argument("--dir", default=None,
+                    help="directory of shard logs (default out/kaggle_out/<job>)")
     args = ap.parse_args()
 
-    logs = sorted((ROOT / "out" / "kaggle_out" / args.job).rglob("*_s*.txt"))
+    root = Path(args.dir) if args.dir else ROOT / "out" / "kaggle_out" / args.job
+    logs = sorted(p for p in root.rglob("*_s*.txt")
+                  if args.dir is None or p.name.startswith(args.job))
     if not logs:
-        sys.exit(f"no shard logs for job {args.job} -- pull it first")
+        sys.exit(f"no shard logs for job {args.job} under {root}")
 
     W = D = L = 0
     names, unhealthy = set(), []

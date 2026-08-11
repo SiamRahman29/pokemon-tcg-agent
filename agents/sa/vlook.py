@@ -94,7 +94,7 @@ class ValueLookahead:
                  max_opts: int = 12, min_opts: int = 2, tau: float = 0.0,
                  decision_cap_s: float = 5.0, reserve_s: float = RESERVE_S,
                  min_turn: int = 2, seed: int = 0, vnet_path: str | None = None,
-                 lcb: float = 0.0, arms: int = 0):
+                 lcb: float = 0.0, arms: int = 0, rand_p: float = 0.0):
         self.decklist = list(decklist)
         self.net = net
         # E21: `vnet=a.npz+b.npz+...` is an ENSEMBLE. Its members must all load
@@ -116,6 +116,22 @@ class ValueLookahead:
         # COVERAGE constraint: successors of options the clone ranks last are
         # precisely the ones V never saw.
         self.arms = int(arms)
+        # E22 AUDIT ARM. `rand_p` replaces V's argmax with a coin flip over the
+        # SAME covered arms, at a MATCHED deviation rate, and is the control
+        # that decides what E22's 0.1580 means. E20 -> E22 moved the win rate
+        # 0.0065 -> 0.1580 while the average override's net-margin fell
+        # +6.02 -> +2.33: the deviations got CLOSER TO THE CLONE at the same
+        # time as they got better-selected, and the arm cannot separate those.
+        # Rate-matching is the whole point -- an unmatched random arm deviates
+        # on 2/3 of firings against E22's 0.555 and would be measuring the
+        # deviation rate, which is the confound it exists to remove.
+        self.rand_p = float(rand_p)
+        if self.rand_p > 0.0 and self.arms <= 0:
+            # The control is defined only relative to a covered arm set -- with
+            # `arms=0` it would deviate uniformly over EVERY option, which is a
+            # different treatment than the one E22 ran.
+            raise ValueError("vrnd requires varm>0: the control is a coin flip "
+                             "over the SAME covered arms, not over all options")
         self.worlds = int(worlds)
         self.max_opts = int(max_opts)
         self.min_opts = int(min_opts)
@@ -234,6 +250,26 @@ class ValueLookahead:
                     return None
             else:
                 arms = list(range(n))
+            if self.rand_p > 0.0:
+                # No fork and no V: the arm set above is already the whole
+                # treatment being controlled for. Fires on the identical
+                # decision set (every gate above is pre-fork), so `fired` is
+                # comparable to E22's counter by construction.
+                STATS["fired"] += 1
+                others = [j for j in arms if j != a0]
+                if not others or self.rng.random() >= self.rand_p:
+                    return None
+                best = int(self.rng.choice(others))
+                STATS["overruled"] += 1
+                try:
+                    margin = float(sc0[a0] - sc0[best])
+                    STATS["margin_x1000"] += int(margin * 1000)
+                    b = ("lt0p5" if margin < 0.5 else "lt1p5" if margin < 1.5
+                         else "lt3" if margin < 3.0 else "ge3")
+                    STATS[f"netmargin_{b}"] += 1
+                except Exception:
+                    pass
+                return [best]
             base = self.rng.randrange(1 << 30)
 
             tot = {j: 0.0 for j in arms}

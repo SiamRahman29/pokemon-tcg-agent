@@ -241,7 +241,7 @@ def build_agent(spec: str, deck: list[int],
         vlk_worlds, vlk_maxopt, vlk_cap = 4, 12, 5.0
         vlk_path = None
         # E21: 0.0/0 reproduce E20 exactly; E21 freezes 1.0 and 3.
-        vlk_lcb, vlk_arms = 0.0, 0
+        vlk_lcb, vlk_arms, vlk_rand = 0.0, 0, 0.0
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -338,6 +338,8 @@ def build_agent(spec: str, deck: list[int],
                 vlk_lcb = float(f[4:])      # E21: K in mean - K*sd
             elif f.startswith("varm"):
                 vlk_arms = int(f[4:])       # E21: coverage, net's top-k
+            elif f.startswith("vrnd"):
+                vlk_rand = float(f[4:])     # E22 audit: rate-matched coin flip
             elif f.startswith("vc"):
                 vlk_cap = float(f[2:])      # per-decision seconds cap
             elif f in ("fstad", "noFstad"):
@@ -386,7 +388,7 @@ def build_agent(spec: str, deck: list[int],
                                 vlook=vlook, vlk_worlds=vlk_worlds,
                                 vlk_maxopt=vlk_maxopt, vlk_cap=vlk_cap,
                                 vlk_path=vlk_path, vlk_lcb=vlk_lcb,
-                                vlk_arms=vlk_arms)
+                                vlk_arms=vlk_arms, vlk_rand=vlk_rand)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

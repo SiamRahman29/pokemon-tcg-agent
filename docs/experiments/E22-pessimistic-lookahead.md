@@ -104,3 +104,79 @@ selects, retrain, repeat) is conditional on this cell.** It is the family
 ROADMAP §2.7 names as *"declined for cost, never tested"*, and E20's result is
 its motivation: a measured demonstration that on-policy value data does not
 cover the action space a search explores. ⛔ It is not started until E21 reads.
+
+---
+
+# ADDENDUM — the cell read ⚠ HARMFUL, and this is the audit it routes to
+
+**Written 2026-08-11 (day 30) AFTER the primary cell reported and BEFORE the
+audit arm ran.** The reading rule below is frozen by this commit, on E24's
+lesson (`7d576da`): a rule written after the number it reads is not a rule.
+
+## The primary cell
+
+| | value |
+|---|---|
+| `bc:e22,vlp,vlcb1.0,varm3` over 5 nets vs `bc:base` | **0.1580 [0.1361, 0.1799]** |
+| n | 2,000 (5 shards x 400, local) |
+| health | OK on all 5 — `fallbacks=0 net_missing=0 skip_noclock=0 skip_thin=0 errors=0` |
+
+⚠ **Branch: HARMFUL** (point <= 0.470, CI excludes 0.500). Not the 🔴 KILL
+branch, which requires the CI to *contain* 0.500. The doc routes ⚠ to *audit
+before interpreting*, so the KILL text is NOT invoked here.
+
+## What moved, normalised per decision rather than per game
+
+⚠ Per-*game* rates are ENDOGENOUS TO LOSING — E20 lost 99.4% and its games were
+3.3x shorter, so it "fired" 8.4/game against E22's 29.5/game for reasons that
+have nothing to do with the treatment. Per *visited decision* is the honest unit.
+
+| | E20 (corrected) | E22 |
+|---|---|---|
+| score | 0.0065 | **0.1580** |
+| changed picks / vlook-visited decision | 32.4% | **23.2%** |
+| argmax agrees with the clone | 18.8% | **44.9%** |
+| ... vs its OWN arm set's chance rate | 20.5% (all options) | **33.3%** (top-3) |
+| ratio to chance | 0.92 | **1.35** |
+| net-margin of the average override | **+6.02** | **+2.33** |
+| ensemble sd (the pessimism term) | n/a | 0.051 |
+
+## 🔴 The confound this audit exists to remove
+
+E20 -> E22 changed **two things at once**, and the win rate is consistent with
+either:
+
+1. **Better selection.** Agreement went from 0.92x chance to 1.35x chance.
+2. **Smaller deviation.** The average override's net-margin fell +6.02 -> +2.33,
+   i.e. the arm now departs from the clone by a third as much in policy space,
+   and it departs on 23.2% of decisions instead of 32.4%.
+
+⚠ **If (2) is the whole story, V is contributing nothing and E22's 0.1580 is a
+point on a "distance from the clone" curve whose other end is `bc:base` at
+0.500.** Every axis in this repo that measured strength by agreement was wrong
+for a version of this reason; this one is testable.
+
+## The audit arm
+
+`bc:e22ctl,vlp,varm3,vrnd0.555` — **identical in every respect except that V's
+argmax is replaced by a uniform coin flip over the same covered arms, at a
+deviation rate matched to E22's measured 0.555.** Rate-matching is the point: an
+unmatched random arm deviates on 2/3 of firings and would re-measure the
+confound instead of removing it. n = 2,000, mirror, same policy net both sides.
+
+⛔ **This is a CONTROL, not a candidate. It cannot ship whatever it reads.**
+
+## Reading rule — frozen before the arm runs
+
+Let `R` = the control's score, `E` = 0.1580 [0.1361, 0.1799].
+
+| branch | condition | reading |
+|---|---|---|
+| 🔴 **V IS WORTHLESS** | R's CI overlaps E's | The learned evaluator does not beat a coin flip among covered arms. **E20's entire improvement was deviating less, not choosing better** — and H-eval closes for the strongest available reason rather than the weakest. The §8cd anti-selection diagnosis is then also retired: there is nothing to anti-select |
+| ⚡ **V IS REAL BUT INSUFFICIENT** | R < E, CIs disjoint | V selects genuinely better than chance within coverage and *still* loses 5:1 ⇒ the binding cost is **deviation from the clone itself**, not evaluator quality. That is a result about behaviour cloning, not about value functions, and it is the one worth a report chapter |
+| 🔬 **V ANTI-SELECTS INSIDE COVERAGE** | R > E, CIs disjoint | Coverage did not fix the extrapolation problem, it only shrank it. The §8cd diagnosis survives in full |
+
+⛔ **No fourth arm is licensed by any of these.** In particular a `tau` (margin)
+threshold is the obvious next patch and it is exactly E17's post-hoc arm
+selection; if the ⚡ branch fires, the indicated move is a *pre-registered*
+experiment about deviation cost, not a knob on this one.
