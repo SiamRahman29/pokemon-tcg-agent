@@ -31,6 +31,37 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ The E20/E22 thread is CLOSED — read §N.11 first, then §N.9.** Its artefacts stand and are reusable regardless: V trainer `scripts/train_value.py`, inference `agents/sa/valuenet.py` (verified against the trainer at 2.7e-7), the one-ply search `agents/sa/vlook.py` (including `vrnd`, the rate-matched control), the Kaggle harness `scripts/kaggle/`, and `score.py --dir` for local sharded runs. Bars and void conditions are frozen by `docs/experiments/E20-value-lookahead.md` and `E22-pessimistic-lookahead.md`.
 >
+> ## ✅ N.13 DAY 31 (2026-08-12): **E26 — a TRAINED POLICY's deviations cost a quarter of what ARBITRARY ones cost, at matched rate, depth and location: f = 0.758 [0.703, 0.814] against the evaluator family's 0.12** (§8ch)
+>
+> | arm (n=2,000, mirror, v3 both sides, health clean) | score | 95% CI | changed/game | mean depth |
+> |---|---|---|---|---|
+> | **A — expert policy substituted** | **0.4053** | [0.384, 0.427] | 20.19 | 1.92 |
+> | **B — rate/depth/location-matched random** | **0.1080** | [0.095, 0.122] | 19.06 | 1.85 |
+>
+> **z(A − B) = 22.9. f = (A−B)/(0.500−B) = 0.758, ratio to E25's f_eval 6.3×.**
+>
+> - ✅ **THE FIRST POSITIVE-SIGNED, WELL-CONTROLLED RESULT SINCE §8z.** The
+>   deviation cost that closed six axes (§8cg) is **overwhelmingly a property of
+>   deviating INCOHERENTLY**. ⇒ **the sharp local optimum forbids JUMPS, not
+>   PATHS.** That is the licence E27 runs on.
+> - ⚡ **E25's cost law replicated OUT OF SAMPLE**: predicted 0.1025 at cell B's
+>   realised rate, measured 0.1080 — fitted on v5 in the `vlook` harness, tested
+>   on v3 with a rank-histogram sampler. **It is a law of this game, not one
+>   configuration.**
+> - 🔴 **"Rate-matched" was two things short of matched, both biased toward the
+>   hypothesis.** Pooled-histogram sampling ran the control at depth 1.59 vs 1.92
+>   with 17% clipped; and deviation *rate* is a function of option count (9.4% at
+>   2 options, ~50% at 10), so a flat-rate control deviates in the wrong places.
+>   Fixed by sampling both from the treatment's own per-option-count histogram.
+>   **Carry this into every future matched control.**
+> - ⚠ **The limit, stated first not last: this does NOT separate sequential
+>   coherence from per-decision plausibility.** The licensed claim is the
+>   composite. And it is measured at **v3**.
+> - ⛔ **Nothing ships** — cell A is 0.4053, still a rout, and §8u is untouched.
+> - 🔬 Two sizing finds that cost no games: phase is **flat** on our own states
+>   (0.265/0.257/0.268), which killed the original design; and `policy_b7_ntum`
+>   is a **v3-era net**, which would have confounded generation with policy.
+>
 > ## 📌 STANDING USER DIRECTIVES — day 31 (2026-08-12). **Live, not yet executed.**
 >
 > **Priority order given by the user: (1) escape the local optimum and improve

@@ -1,6 +1,13 @@
 # E26 — is a COHERENT policy's deviation cheaper than an incoherent one at the same rate? Pre-registered.
 
-**Status: PRE-REGISTERED 2026-08-12 (day 31), after the p91 sizing probe and
+**Status: ✅ CONCLUDED 2026-08-12 (day 31). Branch "COHERENCE IS THE VARIABLE"
+fired.** `A = 0.4053`, `B = 0.1080`, n = 2,000 each, **f = 0.758 [0.703, 0.814]**
+against the pre-registered comparator of 0.12, z(A−B) = 22.9. Full write-up and
+the two control defects it had to fix first: **`report/EVIDENCE.md` §8ch**.
+⚠ **Read §8ch's limit before quoting f**: this cell does not separate sequential
+coherence from per-decision plausibility, so the licensed claim is the composite.
+
+**Originally: PRE-REGISTERED 2026-08-12 (day 31), after the p91 sizing probe and
 BEFORE any arena game.** Frozen at the commit adding this file.
 
 ---

@@ -4403,6 +4403,111 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8ch. ✅ E26 — DEVIATING WITH A TRAINED POLICY COSTS A QUARTER OF WHAT DEVIATING AT RANDOM COSTS: f = 0.758 [0.703, 0.814] against the evaluator family's 0.12, at matched rate, depth and location (2026-08-12, day 31)
+
+**Pre-registered** `docs/experiments/E26-coherence-at-matched-rate.md`, frozen at
+**`3b8371b` before any arena game**; cell B's point prediction frozen separately
+at **`6cf4628`**, after cell A reported and before cell B ran (E24's discipline,
+`7d576da`, applied again).
+
+### The result
+
+| arm | what deviates | score | 95% CI | dev rate | changed/game | mean depth |
+|---|---|---|---|---|---|---|
+| baseline | — | 0.500 | — | 0 | 0 | — |
+| **A — expert policy** | a net trained on ntumlnoob (#2, 1163) | **0.4053** | [0.384, 0.427] | 28.67% | 20.19 | 1.92 |
+| **B — matched random** | rank/rate/location-matched noise | **0.1080** | [0.095, 0.122] | 27.3% | 19.06 | 1.85 |
+
+n = 2,000 per cell, mirror, `policy_b1_v3` on both sides, health clean
+(`fallbacks=0 net_missing=0 xerr=0 clipped=0`). **z(A − B) = 22.9.**
+
+```
+f = (A - B) / (0.500 - B) = 0.758  [0.703, 0.814]        <- a TRAINED policy's deviations
+E25's f_eval                      = 0.12                  <- the best EVALUATOR we can build
+                                                             ratio 6.3x
+```
+
+### ⚡ E25's cost law replicates out-of-sample, and that is the second finding
+
+Cell B was predicted **before it ran** from E25's own two points
+(`logit = -0.11148 x changed_per_game - 0.04545`). At cell B's *realised* 19.06
+changed picks/game the line predicts **0.1025**; it measured **0.1080**, well
+inside [0.095, 0.122].
+
+🔴 **That is a genuine out-of-sample confirmation**: E25's line was fitted on
+**v5**, inside the `vlook` harness, with a coin flip over top-3. Cell B is
+**v3**, a different harness, and a rank-histogram sampler. **The cost of
+incoherent deviation is a law of this game, not an artefact of one
+configuration** — which also retro-strengthens §8cg.
+
+### 🔴 What killed the ORIGINAL design, before it cost anything
+
+`scripts/p91_phase_disagree.py`, no arena games. Expert-vs-ours disagreement by
+phase, on **our own** state distribution: **0.265 / 0.257 / 0.268** (early / mid
+/ late) — **flat to 1.04×**. A phase-localized substitution is therefore only a
+rate knob, and E25 priced rate knobs. ⇒ the phase design was dropped unbuilt.
+⚡ The same probe found `policy_b7_ntum` is a **v3-era net** (496-wide, no
+`xdense`), so substituting it into a v5 agent would have confounded the expert's
+policy with a feature set worth ≈ +51 Elo. **Both faults were found by sizing,
+which is the fourth time rule 14 has paid this month.**
+
+### 🔴 TWO CONTROL DEFECTS, BOTH BIASED TOWARD THE HYPOTHESIS, BOTH FOUND BY MEASUREMENT
+
+This is the reusable half, because "rate-matched" was already this project's
+best control (§8cf) and it turns out to be two things short of matched:
+
+1. **Depth.** Sampling ranks from the *pooled* histogram and clipping to the
+   option count ran the control at mean rank **1.59** against the treatment's
+   **1.92**, with **17%** of draws clipped. Clipping can only make a control
+   shallower ⇒ cheaper ⇒ f larger.
+2. **Location — the bigger one.** The calibration pass measured that the
+   expert's deviation *rate is a function of option count*: **9.4% at 2 options,
+   ~50% at 10**. A flat-rate control deviates too often where §8bd measured
+   deviation as nearly free, and too rarely where the options are wide.
+
+Fixed by sampling **both rate and depth from the treatment's own per-option-count
+histogram** (`out/logs/e26_rank_hist.json`, a 300-game calibration pass). Result:
+**26.8%/1.87 against 28.5%/1.92, zero clipping** ⇒ only **direction** differs.
+⚠ **The residual runs AGAINST the hypothesis:** the control still deviates 1.13
+picks/game *less* than the treatment, so a perfectly matched control would read
+**0.0915** and f would be **0.768**, not 0.758. **The measured f is mildly
+conservative.**
+
+### ⚠ THE LIMIT ON THE CLAIM, AND IT IS NOT A SMALL ONE
+
+🔴 **This cell does NOT separate sequential coherence from per-decision
+plausibility.** Cell A's deviations come from a net trained on human games, so
+they are *both* individually sensible and sequentially consistent; cell B's are
+neither. H1's distinctive prediction is a **sequential** mechanism, and nothing
+here isolates it. ⇒ **The licensed claim is the composite: a trained policy's
+deviations cost ~a quarter of what arbitrary deviations of the same size, depth
+and location cost.** Say that, not "coherence is worth 0.76".
+⚡ **For what it licenses downstream the composite is the operative quantity
+anyway** — E27 needs "a trained policy's deviations are cheap", not a mechanism.
+
+⚠ Further limits: measured at **v3**, so applicability to the shipped v5 agent is
+an assumption; cell A is a *partial* substitution (single-pick decisions only,
+8,816 multi-selects fall through), which is why it reads 0.405 against §8u's
+0.370 — the expected direction, and **not** a claim that 0.370 replicated.
+
+### What it changes
+
+⛔ **Nothing ships. Cell A is 0.4053 — still a rout**, and §8u's ordering
+(agreement with the field predicts strength, agreement with the expert
+anti-predicts it) is untouched.
+✅ **What it licenses is a DIRECTION, and it is the first positive-signed,
+well-controlled result since §8z.** The deviation cost that closed six axes
+(§8cg) is **overwhelmingly a property of deviating incoherently**. A policy that
+moves *as a policy* pays ~1/4 of the price — so the sharp local optimum forbids
+**jumps**, not **paths**. ⇒ **E27** (`docs/experiments/E27-policy-iteration.md`).
+
+Archives: `out/arena/e26_cellA.jsonl`, `out/arena/e26_cellB.jsonl`,
+`out/arena/e26_cal.jsonl`; logs `out/logs/e26_cell{A,B}.txt`,
+`out/logs/e26_rank_hist.json`. ⚠ `out/arena/e26_cellB_partial_killed.jsonl` is a
+**1,601-game run that was killed before the arena printed its score line** —
+kept as a receipt and **never scored**, because reading an A/B at an unplanned n
+off a hand-derived count is rule 18 twice over.
+
 ## 8ce. 🔴 E24 — E21's VOID ARM RE-RUN WHERE THE CONDITION CAN EXIST: the board fact reaches 1,045 decisions and buys +0.0041. Tradeoff rules go 0-for-7 (2026-08-11, day 30)
 
 Pre-registered in `docs/experiments/E24-fscrap-anchor.md`, frozen at **`2d36ce8`
