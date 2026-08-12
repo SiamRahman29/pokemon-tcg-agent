@@ -244,7 +244,7 @@ def build_agent(spec: str, deck: list[int],
         vlk_lcb, vlk_arms, vlk_rand, vlk_tau = 0.0, 0, 0.0, 0.0
         # E26: 0/None reproduce the plain agent exactly.
         xnet_path, x_rand, x_rank = None, 0.0, ""
-        x_rankfile, x_dump = "", ""
+        x_rankfile, x_dump, x_accept = "", "", 1.0
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -350,6 +350,10 @@ def build_agent(spec: str, deck: list[int],
             elif f.startswith("xnet="):
                 # E26 treatment: play THIS net's pick instead of ours.
                 xnet_path = f[5:]
+            elif f.startswith("xsub"):
+                # E27 cell 0: accept only this FRACTION of the substitute's
+                # deviations, walking the coherent cost curve down in rate.
+                x_accept = float(f[4:])
             elif f.startswith("xrankfile="):
                 # E26 control: the treatment's rank histogram CONDITIONED on
                 # option count, written by a calibration pass. This is the
@@ -426,7 +430,7 @@ def build_agent(spec: str, deck: list[int],
                                 vlk_tau=vlk_tau,
                                 xnet_path=xnet_path, x_rand=x_rand,
                                 x_rank=x_rank, x_rankfile=x_rankfile,
-                                x_dump=x_dump)
+                                x_dump=x_dump, x_accept=x_accept)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

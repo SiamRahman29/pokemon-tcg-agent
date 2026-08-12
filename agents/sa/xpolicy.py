@@ -92,7 +92,8 @@ class Substitute:
                  rank_hist: list[float] | None = None, seed: int = 26,
                  rank_by_n: dict[int, list[float]] | None = None,
                  dump_path: str | None = None,
-                 cal_ranks: list[float] | None = None):
+                 cal_ranks: list[float] | None = None,
+                 accept: float = 1.0):
         LIVE.append(self)
         self.xnet = xnet
         self.rand_rate = float(rand_rate or 0.0)
@@ -121,6 +122,8 @@ class Substitute:
         # loaded, `rand_rate` stops being a probability and becomes a SCALE on
         # the treatment's own per-option-count rate, so 1.0 means "match".
         self.scaled = bool(self.rank_by_n)
+        # E27 cell 0: P(accept a deviation the substitute proposes). 1.0 is E26.
+        self.accept = float(accept)
         self._rng = random.Random(seed)
         # rank of the played option under OUR net's ordering; index 0 = our own
         # pick, so `ranks[0]` counts the firings where nothing changed.
@@ -196,6 +199,16 @@ class Substitute:
                 if len(xp) != 1 or not 0 <= int(xp[0]) < len(options):
                     return picked
                 new = int(xp[0])
+                # E27 cell 0: accept the substitute's DEVIATIONS only a
+                # fraction of the time, which walks the same policy's cost
+                # curve down in rate without changing WHICH decisions or HOW
+                # DEEP -- the two axes E26 had to fix. Agreements are
+                # unaffected because accepting them changes nothing.
+                if (self.accept < 1.0 and new != int(picked[0])
+                        and self._rng.random() >= self.accept):
+                    self._record(0, len(order))
+                    self.ranks[0] += 1
+                    return picked
             elif self.rand_rate > 0.0:
                 if self._rng.random() >= self._dev_p(len(order)):
                     self._record(0, len(order))

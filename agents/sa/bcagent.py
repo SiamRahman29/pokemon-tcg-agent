@@ -143,7 +143,8 @@ class PolicyAgent:
                  vlk_lcb: float = 0.0, vlk_arms: int = 0,
                  vlk_rand: float = 0.0, vlk_tau: float = 0.0,
                  xnet_path: str | None = None, x_rand: float = 0.0,
-                 x_rank: str = "", x_rankfile: str = "", x_dump: str = ""):
+                 x_rank: str = "", x_rankfile: str = "", x_dump: str = "",
+                 x_accept: float = 1.0):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -337,7 +338,7 @@ class PolicyAgent:
             self.xsub = Substitute(xnet=xnet, rand_rate=x_rand,
                                    rank_hist=parse_rank_hist(x_rank),
                                    rank_by_n=by_n, dump_path=x_dump,
-                                   cal_ranks=cal_ranks)
+                                   cal_ranks=cal_ranks, accept=x_accept)
 
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
