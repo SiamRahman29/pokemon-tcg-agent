@@ -1,0 +1,64 @@
+
+=== 1/3 policy evaluation (V on this round's own games) ===
+$ scripts/train_value.py --data artifacts/e27_r2k --out out/e27/value_e27r2.npz --epochs 30 --split-seed 0
+loading 28 shards ...
+rows 1,493,754  games 8,000  train 1,268,412 / val 225,342  base rate 0.5621
+ep  1  train 0.4724  val 0.5036  AUC 0.8311  26s
+ep  2  train 0.4128  val 0.5301  AUC 0.8261  26s
+ep  3  train 0.3698  val 0.5716  AUC 0.8194  26s
+ep  4  train 0.3367  val 0.6063  AUC 0.8145  26s
+early stop at epoch 4 (best val 0.5036)
+
+ORIENTATION  mean V | won = 0.7011   mean V | lost = 0.3358   AUC 0.8311
+wrote out/e27/value_e27r2.npz  (val logloss 0.5036, AUC 0.8311)
+
+=== 2/3 per-decision TD advantage (reconciled before writing) ===
+$ scripts/p92_td_advantage.py --data artifacts/e27_r2k --value out/e27/value_e27r2.npz
+value net out/e27/value_e27r2.npz
+28 shards
+  w0/shard_000.npz: 60,000 rows  V=0.547  adv mean=+0.00204 sd=0.0720  |adv|=0.0365  recon=3.57e-07
+  w0/shard_001.npz: 60,000 rows  V=0.542  adv mean=+0.00227 sd=0.0720  |adv|=0.0368  recon=3.25e-07
+  w0/shard_002.npz: 60,000 rows  V=0.545  adv mean=+0.00181 sd=0.0720  |adv|=0.0365  recon=3.64e-07
+  w0/shard_003.npz: 60,000 rows  V=0.542  adv mean=+0.00231 sd=0.0734  |adv|=0.0372  recon=3.98e-07
+  w0/shard_004.npz: 60,000 rows  V=0.541  adv mean=+0.00200 sd=0.0738  |adv|=0.0377  recon=3.81e-07
+  w0/shard_005.npz: 60,000 rows  V=0.544  adv mean=+0.00192 sd=0.0702  |adv|=0.0353  recon=3.21e-07
+  w0/shard_006.npz: 12,219 rows  V=0.530  adv mean=+0.00324 sd=0.0726  |adv|=0.0372  recon=2.68e-07
+  w1/shard_000.npz: 60,000 rows  V=0.543  adv mean=+0.00225 sd=0.0713  |adv|=0.0364  recon=3.21e-07
+  w1/shard_001.npz: 60,000 rows  V=0.544  adv mean=+0.00211 sd=0.0718  |adv|=0.0364  recon=3.33e-07
+  w1/shard_002.npz: 60,000 rows  V=0.538  adv mean=+0.00246 sd=0.0736  |adv|=0.0376  recon=3.69e-07
+  w1/shard_003.npz: 60,000 rows  V=0.544  adv mean=+0.00202 sd=0.0732  |adv|=0.0369  recon=4.15e-07
+  w1/shard_004.npz: 60,000 rows  V=0.542  adv mean=+0.00233 sd=0.0733  |adv|=0.0373  recon=2.99e-07
+  w1/shard_005.npz: 60,000 rows  V=0.541  adv mean=+0.00260 sd=0.0721  |adv|=0.0363  recon=3.40e-07
+  w1/shard_006.npz: 12,947 rows  V=0.537  adv mean=+0.00242 sd=0.0749  |adv|=0.0380  recon=5.08e-07
+  w2/shard_000.npz: 60,000 rows  V=0.543  adv mean=+0.00205 sd=0.0735  |adv|=0.0375  recon=2.99e-07
+  w2/shard_001.npz: 60,000 rows  V=0.544  adv mean=+0.00195 sd=0.0725  |adv|=0.0370  recon=3.29e-07
+  w2/shard_002.npz: 60,000 rows  V=0.536  adv mean=+0.00244 sd=0.0738  |adv|=0.0380  recon=3.50e-07
+  w2/shard_003.npz: 60,000 rows  V=0.545  adv mean=+0.00200 sd=0.0711  |adv|=0.0358  recon=4.35e-07
+  w2/shard_004.npz: 60,000 rows  V=0.546  adv mean=+0.00215 sd=0.0694  |adv|=0.0349  recon=3.27e-07
+  w2/shard_005.npz: 60,000 rows  V=0.543  adv mean=+0.00227 sd=0.0716  |adv|=0.0363  recon=3.67e-07
+  w2/shard_006.npz: 14,632 rows  V=0.540  adv mean=+0.00222 sd=0.0724  |adv|=0.0367  recon=4.16e-07
+  w3/shard_000.npz: 60,000 rows  V=0.545  adv mean=+0.00235 sd=0.0709  |adv|=0.0361  recon=3.47e-07
+  w3/shard_001.npz: 60,000 rows  V=0.546  adv mean=+0.00145 sd=0.0726  |adv|=0.0366  recon=3.77e-07
+  w3/shard_002.npz: 60,000 rows  V=0.543  adv mean=+0.00230 sd=0.0718  |adv|=0.0367  recon=3.05e-07
+  w3/shard_003.npz: 60,000 rows  V=0.542  adv mean=+0.00231 sd=0.0741  |adv|=0.0378  recon=2.90e-07
+  w3/shard_004.npz: 60,000 rows  V=0.542  adv mean=+0.00230 sd=0.0719  |adv|=0.0365  recon=3.02e-07
+  w3/shard_005.npz: 60,000 rows  V=0.546  adv mean=+0.00169 sd=0.0710  |adv|=0.0358  recon=3.65e-07
+  w3/shard_006.npz: 13,956 rows  V=0.549  adv mean=+0.00129 sd=0.0723  |adv|=0.0370  recon=2.98e-07
+
+1,493,754 rows, reconciliation max |diff| 5.08e-07 (tol 1e-05)
+mean V 0.5425; mean advantage +0.002162
+
+=== 3/3 policy improvement ===
+$ scripts/train_policy.py --ds artifacts/e27_r2k --init out/policy_e27_r1.npz --opt-cols 37 --state-h 512,256 --head-h 256,128 --pool --loss listwise --bs 1024 --advantage-col 0.5 --epochs 3 --lr 2e-4 --export-last --out out/e27/policy_e27r2.npz
+--advantage-col 0.5: adv mean=+0.00214 sd=0.0722; weights [0.3425, 2.530]; ratio(+1sd/-1sd)=2.72
+  anchor rows 0 at 1.0
+  effective sample size 1,289,511 of 1,493,754 RL rows (86.3%)
+28 shards, 1493754 rows -> 1418572 train / 75182 val (8000 games)
+warm-started from /kaggle/working/repo/out/policy_e27_r1.npz
+arch: state[512, 256] head[256, 128] loss=listwise opt_cols=37/46 extra=True pool=True attr=False vocab=False pad=False emb_params=88,000 aux_outcome=0 aux_count=0 adapters=[] device=cpu params=702913
+epoch 0: train=0.3590 val_top1=0.8737 val_top1@1120+=0.0000 (n=0) (210s)
+epoch 1: train=0.3521 val_top1=0.8719 val_top1@1120+=0.0000 (n=0) (211s)
+epoch 2: train=0.3478 val_top1=0.8721 val_top1@1120+=0.0000 (n=0) (209s)
+exported -> /kaggle/working/repo/out/e27/policy_e27r2.npz
+
+=== round e27r2 complete: out/e27/value_e27r2.npz, out/e27/policy_e27r2.npz ===

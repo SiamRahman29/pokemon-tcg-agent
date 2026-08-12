@@ -72,3 +72,8 @@ replay_miner/manifests/**
 # Kaggle upload staging: a 45 MB rebuildable zip of the licensed engine.
 # `scripts/kaggle/pack.py` regenerates it; it must never enter git history.
 out/kaggle_pack/
+
+# Kaggle job staging + pulled outputs: regenerable, and the nets are
+# large. Receipts that matter are copied into out/logs/ instead.
+out/kaggle_jobs/
+out/kaggle_out/

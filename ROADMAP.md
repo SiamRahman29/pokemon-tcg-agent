@@ -666,6 +666,71 @@ candidate we have, and E16's dispersion is its sizing gate too.
 
 ---
 
+## 2.8 DAY 31 (2026-08-12) — THE TRAP IS CHARACTERISED: we can MOVE cheaply, we cannot AIM
+
+Two pre-registered experiments, both concluded the same session. Together they
+replace *"the clone sits at a sharp local optimum"* (§8cg) with something
+sharper and more useful.
+
+### ✅ E26 — a trained policy's deviations cost a QUARTER of arbitrary ones (§8ch)
+
+| arm (n=2,000, mirror, v3 both sides) | score | 95% CI |
+|---|---|---|
+| expert policy substituted | **0.4053** | [0.384, 0.427] |
+| rate/depth/location-matched random | **0.1080** | [0.095, 0.122] |
+
+**f = 0.758 [0.703, 0.814]** against the evaluator family's **0.12** — 6.3×.
+⇒ **the local optimum forbids JUMPS, not PATHS.** ⚡ E25's cost law also
+replicated **out of sample** (predicted 0.1025, measured 0.1080) on a different
+generation and a different mechanism, so it is a law of this game rather than
+one configuration. ⚠ **The licensed claim is the composite** — this cell cannot
+separate sequential coherence from per-decision plausibility.
+
+### 🔴 E27 — and moving in an AIMED direction buys nothing (§8ci, §8cj)
+
+On-policy policy iteration: per-decision TD advantage from a critic retrained
+each round on that round's own games, corpus anchor **removed**, **all**
+702,913 parameters trainable, iterated — the four things B8 was not.
+
+| | round 1 | round 2 |
+|---|---|---|
+| V, held out by game | AUC 0.7963 | **AUC 0.8311** |
+| gate vs its null | +1.5σ | **−0.35σ** |
+| **f_round** | 0.895 [0.605, 1.185] | **0.718 [0.450, 0.985]** |
+| **ship vs `v5_s2`** | **0.5010** | **0.4805** |
+
+🔴 **Two consecutive MOVEMENT ONLY ⇒ closed by its own pre-registered rule.**
+Both `f_round` intervals **contain E26's 0.758**, i.e. **a policy aimed by a
+verified critic deviates no better than one merely trained to imitate a
+different human.** ⛔ No round 3, no β sweep.
+
+### 🔬 What the pair establishes, and it is the report's spine
+
+**This is not an optimiser failing to escape a basin — it is a
+CREDIT-ASSIGNMENT failure.** Movement is cheap (E26) and directionless (E27).
+Seven aiming signals are now measured dead: field imitation (→ the mode),
+expert imitation (−55/−92), handcrafted eval, rollout search, learned-V
+off-policy ranking, learned-V on-policy TD, terminal outcome.
+
+⚡ **And the optimum is the FIELD's, not ours.** §8r put agreement's peak at
+rating 1050–1100 falling in *both* directions, so a clone of this field lands
+at ~1000 by construction; §0 records that **nothing at the top of this board is
+learned.** The 1145–1166 agents are not at a better point in our landscape,
+they are in a different one.
+
+⇒ **The one axis that ever paid was neither optimisation nor data but NEW
+INFORMATION** (§8f `opt["index"]` +115, §8z the state block +37). **That is why
+§3.5's BO3 log channel is the structurally interesting Round-2 lever** — a
+strictly new input, the same shape as the only two interventions that ever
+worked. ⚠ Not a compute lever.
+
+⚠ **NOT closed: value-based policy iteration under R2 hardware.** E27 ran
+16,000 games on 2 vCPU-equivalents. The honest claim is *"at this scale, on this
+board, measured nothing"*, and §2.7's naming of it as the strongest R2 candidate
+survives — weakened by exactly this measurement.
+
+---
+
 ## 3. Calendar (sim closes 2026-08-17; report due 2026-09-14)
 
 | window | Track A (LB) | Track B/C (dossier) | gate |
@@ -692,6 +757,7 @@ candidate we have, and E16's dispersion is its sizing gate too.
 | **08-08 – 08-14** | 🔴 **RE-REVISED day 25 (2nd session) — THE WINDOW IS THE FINAL PUSH (§2.6), superseding day 23's "report only".** Two premises of that verdict expired: the user re-opened Track A with a final-push directive, and §8bg then measured the seed as a **±25 Elo nuisance sampled only four times** — so "nothing left to integrate" was true of *ideas*, not of *draws from a distribution we own*. ⚠ Its eviction warning is also stale: `55160229` (990.7) was already evicted on 08-07; the next submission evicts `55321893` (ens2, 934.7). The window, per `E10-final-push.md`: **08-08** F3 gate + F2 screens (s4, s2 fresh-game confirmation) + F1 sizing gate + rule-2 reads on `55326513` · **08-09–08-11** F1 mining, F2 seed training/screens in background · **08-12–08-14** any F1 rule A/B'd, F2 confirmation, ship decision · **08-15** last safe submission, twice if shipping | E10 (frozen pre-registration); EVIDENCE §8bh+ same-session; `STRATEGY` §7b.4 (the one user-authorised edit) states the mirror thesis for the report | a shipped improvement **confirmed on fresh games**, OR three written kills (F1/F2/F3) that close the project's last open questions before the freeze — either outcome is a report chapter |
 | **08-08 – 08-09** (days 26–27) 🔴 | **FOUR USER-NAMED SEAMS MEASURED, FOUR KILLS, NO ARENA TIME SPENT ON ANY OF THEM — and then two designed experiments, both null.** Days 26: passive-damage targeting (§8bm, 0.09/0.20 per game), KO-setup (§8bp, 0.04 — and the *mechanism* measured FALSE for the experts too), Petrel's fetch (§8br, 0.29 ceiling). Day 27: **the WP-regret autopsy** (§8bs) — no blunder signature in the 27 losses (our worst decision −0.069 vs −0.070 in our wins vs −0.078 for the players who beat us; 0.039 events/game at \|ΔWP\|≥0.20, **13× under the gate**) and, more usefully, **a realized trajectory is PROVABLY BLIND to errors of omission** (§8bm's seven known dominated plays score **+0.002…+0.005** and rank mid-pack). Then **R2/E15** — averaging out the bench-slot nuisance the net demonstrably reads (§8bt: 16.9% of decisions flip under a null relabelling) — **0.513 [0.492, 0.535] vs a pre-registered 0.500, NULL**; and **R1 killed at its sizing gate before a net was trained** (§8bv: plan clusters carry ≤+0.090 bits against a **+0.372** estimator control). ⚡ **By-product, and the most reusable fact of the two days: conditioned on the board, WINNERS AND LOSERS PLAY THE SAME** (−0.0024 bits), which retires outcome-conditioned cloning before it is built. ✅ **Submitted `55382430`**, a byte-identical `v5_s2` duplicate, so both active slots are now our best agent (max-of-two-draws, §8ak) | `EVIDENCE` §8bs/§8bt/§8bu/§8bv; `p77_wp_regret.py`, `p78_symmetry_probe.py`, `p79_plan_audit.py`, `agents/sa/symavg.py`, `docs/experiments/E15-symmetry-averaging.md`; **HANDOFF §N is the next session's entry point** | ✅ gate met in the honest sense: **six written kills**, two of them pre-registered, and three instrument defects found and repaired (`evalfn` undefined during setup; a diverging IRLS; a stale `inPlayIndex` in my own permutation). ⛔ Nothing shipped — no candidate cleared its bar |
 | **08-09** (day 27, 3rd session) ✅ | ⚡ **THE PROJECT GOT A NEW KIND OF INSTRUMENT, and the feasibility gate that guarded it passed 60/60.** Every eval we own is a **conformity** metric (§8r) or a weak evaluator (`evalfn`); neither can ask *"in THIS position, is their move better than ours?"*. `p80_rollout_feasibility.py` shows a real position **forks out of a replay** — an sbi captured in another process reconstructs it exactly, option list bitwise identical, expert seats 32/32 — and its options can be scored by rolling the clone out to terminal at **101 ms** a rollout. Positive control: the clone's own **top vs last** option reads **+0.120 [+0.052, +0.189]**, so it resolves, and that is the scale bar. 🔴 **Three of the design's own premises died in the process:** CRN is unavailable (the engine draws its own shuffles — a shared world is the only pairing, worth ρ≈0.53); "per-decision resolution is unaffordable" is **false**; and the fork **silently accepts a decklist the seat is not playing** (Crustle's 60 on a Grimmsnarl seat read identically to the correct deck). ⚡ **That last one nearly took the population with it:** the fix "restrict to the mirror" was itself wrong — **only 18 of 50 `mirror_experts` seats run our exact 60** — and the real fix reads each seat's registered list out of the replay (50/50 recovered, 20/20 validated on our own seat), which **lifts the scope constraint entirely**. 🔴 **Plus a defect in my own estimator caught by replication** — three runs of one cell read +0.130/+0.107/+0.120 against a nominal ±0.017, because pairs are **clustered inside positions**; clustering widens it 4.1× and all three then agree | `EVIDENCE` §8bw; `scripts/p80_rollout_feasibility.py`, `out/logs/p80_rollout_feasibility.txt`; **`docs/experiments/E16-counterfactual-move-value.md` pre-registered** (agreement control + a difference-in-differences arm on `policy_b7_ntum` that separates §N.3's H1 from H2) | ⚠ **gate deliberately NOT met: nothing was measured and E16 has NOT run.** This was the feasibility step §N.4.0 demanded first, and E16 awaits a user go/no-go on spending the pre-freeze days on it |
+| **08-12** (day 31) ✅ | ⚡ **E26 GIVES THE PROJECT ITS FIRST POSITIVE MECHANISM RESULT SINCE §8z, AND E27 SPENDS IT.** §8ch: a trained policy's deviations cost a quarter of matched-random ones (**f = 0.758 [0.703, 0.814]** vs the evaluator family's 0.12, z = 22.9) ⇒ the optimum forbids **jumps, not paths**; E25's cost law replicated out-of-sample (0.1025 predicted, 0.1080 measured). §8cj: two rounds of on-policy TD-advantage iteration — better critic each round (AUC 0.7963 → **0.8311**), corpus anchor removed, all parameters free — moved the policy **6.57 picks/game** and read **ship 0.5010 → 0.4805**, closing on **two consecutive MOVEMENT ONLY**. **Both `f_round` intervals contain 0.758 ⇒ a critic-aimed policy deviates no better than one imitating a stranger.** 🔬 Three controls found biased **toward** the hypothesis and fixed before their cells (pooled-histogram depth 1.59 vs 1.92 with 17% clipped; deviation rate scaling 9.4%→50% with option count; `null(c)` calibrated at depth 1.9 applied to a depth-1.33 step). 🔴 Two instrument defects fixed at the cause: `p26` never wrote the v6 `attr` block (stacked `None` → object array, breaking its own re-open **after** the shard was on disk); a mis-aimed `--collect` discarded a **completed** Kaggle round at `rc=0`, now a loud non-zero exit | `EVIDENCE` §8ch + §8ci + §8cj; `docs/experiments/E26-coherence-at-matched-rate.md`, `E27-policy-iteration.md`; `agents/sa/xpolicy.py`, `scripts/p91_phase_disagree.py`, `p92_td_advantage.py`, `e27_train_round.py`, `train_policy.py --advantage-col`, `kaggle/launch.py --then/--out-flag/--collect` | ✅ gate met in the honest sense: one positive result with a measured constant, one axis closed by its own pre-registered rule, and the 71.4% mirror premise corrected to **10 of 14 games** across the five files that quoted it. ⛔ **Nothing submitted — no candidate beat `v5_s2`** |
 | **08-14 – 08-17** | **freeze** — no risky submissions (latest-2 eviction trap) | — | sim track locked with the settled pair active |
 | **08-17 – 08-31** (continued play) | watch the final pair's rating — **this IS the rubric's "consistency under repeated matches" evidence**; record the trajectory | draft chapters 1–4 | continued-play data captured |
 | **09-01 – 09-14** | — | chapters 5–8, figures, full review pass, format for Kaggle, submit | report submitted well before 09-14 |

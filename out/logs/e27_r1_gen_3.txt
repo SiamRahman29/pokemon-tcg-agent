@@ -1,0 +1,42 @@
+  net=out/policy_v5_s2.npz tau=0.5 deck=grimmsnarl opp=self(tau=0.5)
+  -> E:\Kaggle\pokemon-tcg-simulation-2\artifacts\e27_r1\w3
+      50/1600 games      9583 rows  2.27 games/s  seat0=23 seat1=27 draw=0
+     100/1600 games     18925 rows  2.27 games/s  seat0=51 seat1=49 draw=0
+     150/1600 games     28132 rows  2.30 games/s  seat0=78 seat1=72 draw=0
+     200/1600 games     37666 rows  2.34 games/s  seat0=97 seat1=103 draw=0
+     250/1600 games     47080 rows  2.36 games/s  seat0=122 seat1=128 draw=0
+     300/1600 games     56309 rows  2.39 games/s  seat0=148 seat1=152 draw=0
+  wrote shard_000.npz: 60000 rows
+     350/1600 games     66116 rows  2.22 games/s  seat0=169 seat1=181 draw=0
+     400/1600 games     75506 rows  2.25 games/s  seat0=193 seat1=207 draw=0
+     450/1600 games     84556 rows  2.29 games/s  seat0=222 seat1=228 draw=0
+     500/1600 games     94280 rows  2.30 games/s  seat0=249 seat1=251 draw=0
+     550/1600 games    103628 rows  2.32 games/s  seat0=273 seat1=277 draw=0
+     600/1600 games    113072 rows  2.32 games/s  seat0=295 seat1=305 draw=0
+  wrote shard_001.npz: 60000 rows
+     650/1600 games    122759 rows  2.26 games/s  seat0=316 seat1=334 draw=0
+     700/1600 games    132564 rows  2.27 games/s  seat0=348 seat1=352 draw=0
+     750/1600 games    141942 rows  2.29 games/s  seat0=376 seat1=374 draw=0
+     800/1600 games    151502 rows  2.29 games/s  seat0=403 seat1=397 draw=0
+     850/1600 games    160473 rows  2.31 games/s  seat0=427 seat1=423 draw=0
+     900/1600 games    169425 rows  2.33 games/s  seat0=449 seat1=451 draw=0
+     950/1600 games    178710 rows  2.34 games/s  seat0=481 seat1=469 draw=0
+  wrote shard_002.npz: 60000 rows
+    1000/1600 games    187867 rows  2.31 games/s  seat0=504 seat1=496 draw=0
+    1050/1600 games    197631 rows  2.32 games/s  seat0=530 seat1=520 draw=0
+    1100/1600 games    206694 rows  2.34 games/s  seat0=554 seat1=546 draw=0
+    1150/1600 games    216047 rows  2.35 games/s  seat0=580 seat1=570 draw=0
+    1200/1600 games    225518 rows  2.36 games/s  seat0=605 seat1=595 draw=0
+    1250/1600 games    234725 rows  2.37 games/s  seat0=629 seat1=621 draw=0
+  wrote shard_003.npz: 60000 rows
+    1300/1600 games    244218 rows  2.34 games/s  seat0=658 seat1=642 draw=0
+    1350/1600 games    253561 rows  2.35 games/s  seat0=686 seat1=664 draw=0
+    1400/1600 games    262784 rows  2.36 games/s  seat0=716 seat1=684 draw=0
+    1450/1600 games    272600 rows  2.37 games/s  seat0=746 seat1=704 draw=0
+    1500/1600 games    281462 rows  2.38 games/s  seat0=777 seat1=723 draw=0
+    1550/1600 games    290649 rows  2.39 games/s  seat0=800 seat1=749 draw=1
+    1600/1600 games    299855 rows  2.41 games/s  seat0=819 seat1=780 draw=1
+  wrote shard_004.npz: 59855 rows
+
+  1600 games, 299855 rows, 11.2 min (2.39 games/s)
+  seat0=819 seat1=780 draw=1

@@ -21,7 +21,61 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 30 (2026-08-11): **the clock is CLOSED (§8ca), the Petrel seam is CLOSED (§N.8/§N.10), and ⛔ THE ENTIRE "OVERRIDE THE CLONE WITH A BETTER EVALUATOR" FAMILY IS CLOSED BY E25 (§N.12/§8cg) — E20, E22, E25, the clock, the sequencer and §2's search now fall under ONE statement, and V's edge over a coin flip FLIPS SIGN as you tighten it. ⛔ NOTHING is pre-registered-and-unrun, and no further cell on this axis is licensed.** Two agents are working this repo; see the routing note below before editing a shared file.
+> # ▶ START HERE — DAY 31 (2026-08-12): **THE TRAP IS NOW CHARACTERISED, NOT JUST NAMED — we can MOVE cheaply and we cannot AIM.**
+>
+> **Read in this order: §N.14 (E27 closed) → §N.13 (E26, the positive result it spends) → ROADMAP §2.8 → `EVIDENCE` §8ch/§8ci/§8cj.**
+>
+> - ✅ **E26 (§8ch): a trained policy's deviations cost a QUARTER of matched-random ones — f = 0.758 [0.703, 0.814] against the evaluator family's 0.12.** The local optimum forbids **jumps, not paths**. First positive result about a *mechanism* since §8z.
+> - 🔴 **E27 (§8cj): CLOSED by its own pre-registered rule at two consecutive MOVEMENT ONLY.** On-policy TD-advantage iteration, better critic each round (AUC 0.7963 → 0.8311), corpus anchor removed, all parameters free: ship **0.5010 → 0.4805**. Both `f_round` intervals contain 0.758 ⇒ **a critic-aimed policy deviates no better than one imitating a stranger.**
+> - ⛔ **NOTHING is pre-registered-and-unrun.** Seven aiming signals are measured dead. ⛔ No round 3, no β sweep, no eighth variant.
+> - ⛔ **NO SUBMISSION IS INDICATED** — no candidate this session beat `v5_s2`, and both active slots already hold it (max-of-two-draws, §8ak).
+> - 📌 **The premise for suspending `STRATEGY.md` has expired**: that decision was "Track A only", and Track A now has no open levers. **The report is the qualification gate** (top 8 advance on the Strategy Category), and day 31 produced two chapters that exist only in `EVIDENCE`.
+>
+> ⚠ **Superseded but NOT retracted:** day 30's header (below) closed the evaluator family via E25 (§8cg). That verdict stands unchanged; E26/E27 sit on top of it. Two agents are working this repo; see the routing note below before editing a shared file.
+>
+> ## 🔴 N.14 DAY 31 (2026-08-12): **E27 IS CLOSED — two rounds of on-policy policy iteration move the policy 6.57 picks/game and buy nothing** (§8cj)
+>
+> Pre-registered `docs/experiments/E27-policy-iteration.md` at `4070eb1`, before
+> any generation or training. Every subsequent rule frozen before the cell it
+> governs.
+>
+> | | round 1 (π₀→π₁) | round 2 (π₁→π₂) |
+> |---|---|---|
+> | V, held out by game | AUC 0.7963 | **AUC 0.8311** |
+> | step `c` (vs π_r) | 5.29 | 4.31 |
+> | **gate** | 0.4920 [0.470, 0.514] | **0.4760** [0.454, 0.498] |
+> | `null(c)` | 0.4753 | 0.4799 |
+> | matched-random control | 0.4240 | 0.4150 |
+> | **f_round** | 0.895 [0.605, 1.185] | **0.718 [0.450, 0.985]** |
+> | **ship vs `v5_s2`** | **0.5010** | **0.4805** |
+>
+> - 🔴 **Both gates contain their null ⇒ MOVEMENT ONLY twice ⇒ the frozen rule
+>   CLOSES the axis.** Pooled, the direction bought **+0.006 ± 0.008**.
+> - ⚡ **The sharpest statement: both `f_round` intervals contain E26's 0.758**,
+>   which is the value for a policy that is merely *different* (an expert clone
+>   67 Elo worse). **The outcome signal did not aim anything.**
+> - ⛔ **The obvious objections are all ruled out**: not the critic (0.8311, on
+>   par with the E20-era net E22 ensembled — and the *better* critic gave the
+>   *worse* round); not the corpus anchor (removed); not the frozen head (all
+>   702,913 params); not aggressiveness (weight ratio 2.72, identical to B8's);
+>   not entropy collapse (`val_top1` flat at 0.872, step fell only 5.29 → 4.31);
+>   not sampling luck (two independent 8,000-game draws from π₁ agree to 3 dp).
+> - ⚠ **NOT closed: the same family under R2 hardware.** This ran 16,000 games on
+>   2 vCPU-equivalents. Say *"at this scale, on this board, measured nothing"*.
+> - 🔬 **Three controls were found biased TOWARD the hypothesis and fixed before
+>   their cells ran** — carry this forward, it is the session's most reusable
+>   lesson: (1) a pooled rank histogram made the control 17% clipped at depth
+>   1.59 vs the treatment's 1.92; (2) deviation *rate* scales 9.4% → 50% with
+>   option count, so a flat-rate control deviates in the wrong places; (3)
+>   `null(c)` was calibrated at depth ~1.9 and round 1 deviated at 1.33.
+>   **"Rate-matched" is not matched.**
+> - 🔬 **Two instrument defects fixed at the cause, not papered over:**
+>   `p26_selfplay_gen` never passed `attr=` (it predates the day-20 v6 block), so
+>   the writer stacked `None` into an object array — breaking its own re-open
+>   **after** the shard was already on disk, and it would have made `--attr`
+>   train on nothing. And a mis-aimed `--collect` **discarded a completed Kaggle
+>   round at `rc=0`**; the runner now names every `.npz` the run wrote that
+>   nobody collects, checked before the tree is deleted, and exits non-zero.
 >
 > ⚠ **ROUTING, day 30, third correction.** This header read *"the only pre-registered-but-unrun thread is E22"* and the line below it read *"▶ The live thread is E20"* — **both stale**, E20 having been refuted (§8cd) and E22 having reported and been audited (§8cf). This is failure mode 2 from ROADMAP's own doc-discipline audit for the third time in one day, which is itself the finding: **an additive entry point decays faster than the experiments it indexes.** Corrected as **routing only** — no verdict here is restated or revised.
 >

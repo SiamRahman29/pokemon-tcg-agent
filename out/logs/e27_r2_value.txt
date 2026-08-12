@@ -1,0 +1,10 @@
+loading 27 shards ...
+rows 1,499,102  games 8,000  train 1,272,651 / val 226,451  base rate 0.5614
+ep  1  train 0.4700  val 0.5034  AUC 0.8322  36s
+ep  2  train 0.4094  val 0.5327  AUC 0.8238  35s
+ep  3  train 0.3668  val 0.5852  AUC 0.8219  34s
+ep  4  train 0.3357  val 0.6095  AUC 0.8168  34s
+early stop at epoch 4 (best val 0.5034)
+
+ORIENTATION  mean V | won = 0.7201   mean V | lost = 0.3472   AUC 0.8322
+wrote out/value_e27r2.npz  (val logloss 0.5034, AUC 0.8322)

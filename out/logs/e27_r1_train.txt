@@ -1,0 +1,10 @@
+--advantage-col 0.5: adv mean=-0.00261 sd=0.0877; weights [0.3419, 2.526]; ratio(+1sd/-1sd)=2.72
+  anchor rows 0 at 1.0
+  effective sample size 1,316,936 of 1,495,489 RL rows (88.1%)
+27 shards, 1495489 rows -> 1419515 train / 75974 val (8000 games)
+warm-started from E:\Kaggle\pokemon-tcg-simulation-2\out\policy_v5_s2.npz
+arch: state[512, 256] head[256, 128] loss=listwise opt_cols=37/46 extra=True pool=True attr=False vocab=False pad=False emb_params=88,000 aux_outcome=0 aux_count=0 adapters=[] device=cpu params=702913
+epoch 0: train=0.4907 val_top1=0.8190 val_top1@1120+=0.0000 (n=0) (416s)
+epoch 1: train=0.4804 val_top1=0.8191 val_top1@1120+=0.0000 (n=0) (377s)
+epoch 2: train=0.4762 val_top1=0.8184 val_top1@1120+=0.0000 (n=0) (382s)
+exported -> E:\Kaggle\pokemon-tcg-simulation-2\out\policy_e27_r1.npz

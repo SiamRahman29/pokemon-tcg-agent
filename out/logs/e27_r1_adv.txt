@@ -1,0 +1,32 @@
+value net out/value_e27r1.npz
+27 shards
+  w0/shard_000.npz: 60,000 rows  V=0.593  adv mean=-0.00289 sd=0.0881  |adv|=0.0414  recon=5.29e-07
+  w0/shard_001.npz: 60,000 rows  V=0.594  adv mean=-0.00305 sd=0.0898  |adv|=0.0421  recon=6.06e-07
+  w0/shard_002.npz: 60,000 rows  V=0.593  adv mean=-0.00290 sd=0.0887  |adv|=0.0417  recon=5.35e-07
+  w0/shard_003.npz: 60,000 rows  V=0.597  adv mean=-0.00249 sd=0.0853  |adv|=0.0391  recon=4.73e-07
+  w0/shard_004.npz: 60,000 rows  V=0.590  adv mean=-0.00285 sd=0.0901  |adv|=0.0424  recon=6.07e-07
+  w0/shard_005.npz: 313 rows  V=0.584  adv mean=-0.00360 sd=0.0867  |adv|=0.0386  recon=4.31e-07
+  w1/shard_000.npz: 60,000 rows  V=0.595  adv mean=-0.00252 sd=0.0877  |adv|=0.0405  recon=6.36e-07
+  w1/shard_001.npz: 60,000 rows  V=0.595  adv mean=-0.00268 sd=0.0866  |adv|=0.0407  recon=6.43e-07
+  w1/shard_002.npz: 60,000 rows  V=0.590  adv mean=-0.00243 sd=0.0900  |adv|=0.0425  recon=7.92e-07
+  w1/shard_003.npz: 60,000 rows  V=0.602  adv mean=-0.00332 sd=0.0916  |adv|=0.0421  recon=8.27e-07
+  w1/shard_004.npz: 57,392 rows  V=0.593  adv mean=-0.00281 sd=0.0879  |adv|=0.0415  recon=7.96e-07
+  w2/shard_000.npz: 60,000 rows  V=0.590  adv mean=-0.00241 sd=0.0848  |adv|=0.0396  recon=5.46e-07
+  w2/shard_001.npz: 60,000 rows  V=0.589  adv mean=-0.00203 sd=0.0872  |adv|=0.0410  recon=7.93e-07
+  w2/shard_002.npz: 60,000 rows  V=0.591  adv mean=-0.00217 sd=0.0870  |adv|=0.0406  recon=6.30e-07
+  w2/shard_003.npz: 60,000 rows  V=0.595  adv mean=-0.00268 sd=0.0880  |adv|=0.0415  recon=7.38e-07
+  w2/shard_004.npz: 57,722 rows  V=0.592  adv mean=-0.00271 sd=0.0885  |adv|=0.0415  recon=1.16e-06
+  w3/shard_000.npz: 60,000 rows  V=0.593  adv mean=-0.00236 sd=0.0895  |adv|=0.0421  recon=8.11e-07
+  w3/shard_001.npz: 60,000 rows  V=0.592  adv mean=-0.00246 sd=0.0884  |adv|=0.0416  recon=5.52e-07
+  w3/shard_002.npz: 60,000 rows  V=0.592  adv mean=-0.00271 sd=0.0873  |adv|=0.0406  recon=7.96e-07
+  w3/shard_003.npz: 60,000 rows  V=0.589  adv mean=-0.00195 sd=0.0870  |adv|=0.0407  recon=7.22e-07
+  w3/shard_004.npz: 59,855 rows  V=0.597  adv mean=-0.00287 sd=0.0860  |adv|=0.0400  recon=6.95e-07
+  w4/shard_000.npz: 60,000 rows  V=0.592  adv mean=-0.00262 sd=0.0876  |adv|=0.0414  recon=6.50e-07
+  w4/shard_001.npz: 60,000 rows  V=0.590  adv mean=-0.00252 sd=0.0872  |adv|=0.0413  recon=6.67e-07
+  w4/shard_002.npz: 60,000 rows  V=0.594  adv mean=-0.00304 sd=0.0879  |adv|=0.0403  recon=7.77e-07
+  w4/shard_003.npz: 60,000 rows  V=0.591  adv mean=-0.00222 sd=0.0849  |adv|=0.0394  recon=5.64e-07
+  w4/shard_004.npz: 60,000 rows  V=0.591  adv mean=-0.00256 sd=0.0851  |adv|=0.0398  recon=6.97e-07
+  w4/shard_005.npz: 207 rows  V=0.598  adv mean=-0.00232 sd=0.0608  |adv|=0.0297  recon=3.74e-07
+
+1,495,489 rows, reconciliation max |diff| 1.16e-06 (tol 1e-05)
+mean V 0.5927; mean advantage -0.002636
