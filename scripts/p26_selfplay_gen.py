@@ -102,7 +102,14 @@ class RLWriter(Writer):
         # Re-open and append. Cheaper than duplicating Writer.flush's 20-line
         # dict, and it cannot fall out of sync with it.
         path = out_dir / f"shard_{idx:03d}.npz"
-        z = dict(np.load(path))
+        # `allow_pickle=True` because the base writer now emits at least one
+        # object-dtype column (the team/submission id strings). This path ran
+        # clean for B8 on day 17 and raises today, so the corpus schema gained
+        # an object array since -- and the failure is at RE-OPEN, after the
+        # shard is already on disk, which is why `artifacts/<run>/shard_000.npz`
+        # exists and looks fine while the RL columns were never appended.
+        # Reading back a file we just wrote ourselves is not an untrusted load.
+        z = dict(np.load(path, allow_pickle=True))
         assert len(blogp) == n == len(z["gid"]), "RL columns out of step"
         z["behav_logp"] = blogp
         z["margin"] = margin
