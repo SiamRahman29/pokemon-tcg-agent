@@ -279,3 +279,126 @@ existing column — which is what makes the directed schedule feasible.
   Part B can see. ⇒ A confirming A1 with a null Part B is a coherent outcome and
   is **not** an instrument failure: it would mean the shortcut exists and does
   not cost enough to matter at our rating.
+
+---
+
+# ▶ RESULT — 2026-08-12, same day. 🔴 **NO COPYCAT PROBLEM. Part B does not run. Zero arena games.**
+
+`scripts/p93_e31_trace.py`, net `out/policy_v5_s2.npz`, corpus
+`artifacts/pds_v6`. **181,517 within-turn pairs**, 1,603 games split 801/802.
+
+## R1. ⚠ A third correction, found while wiring the probe: we were about to measure the wrong net
+
+`agents/sa/policy_net.npz` is a **pre-v5 net** (no pooling block, `state_in`
+496) and is **not** what plays. Hashing the npz inside `dist/submission.tar.gz`
+identifies the live agent as **`policy_v5_s2`**. `build_submission.py` overrides
+the bundled net via `--policy-net`, so the file sitting in the agent directory
+has been stale for days.
+
+⚡ **This is rule 20 again** (*"a `net=` path is not an identity"*) arriving from
+a new direction: **an agent-directory path is not an identity either.** Every
+offline probe defaulting to `agents/sa/policy_net.npz` — `context_accuracy.py`
+among them — reads a net the arena has not seen. 📌 Left for whoever owns
+`HANDOFF.md`: that default is a trap and should be named there.
+
+## R2. ✅ Both controls PASS — the first admissible numbers this instrument has produced
+
+| control | reading | pre-registered requirement | |
+|---|---|---|---|
+| ⬆ positive (synthetic trace-follower) | **Δ_synth − Δ_expert = +0.0452 [+0.0409, +0.0496]** | > 0, CI excluding 0 | ✅ **PASS** |
+| ⬇ negative (previous symbol permuted within select type) | Δ_expert **+0.0019**, Δ_net **−0.0013** | ≈ 0 both | ✅ **PASS** |
+
+⚡ E28 died here twice (0.8774, 0.8759 against an unreachable 0.90). §2's
+reachability argument held: **a difference of increments on identical rows is
+controllable where an absolute bar was not.**
+
+## R3. 🔴 The statistic is NEGATIVE and its CI excludes zero
+
+| | base | +trace | **Δ** |
+|---|---|---|---|
+| **expert** | 0.6656 | 0.7287 | **+0.0632** |
+| **net** | 0.6912 | 0.7375 | **+0.0464** |
+| synthetic follower | 0.6930 | 0.8014 | +0.1084 |
+
+> ## 🔴 **Δ_net − Δ_expert = −0.0168 [−0.0201, −0.0133]**, n = 90,591 scored pairs
+
+| arm | statistic | n |
+|---|---|---|
+| **primary** (all pairs) | **−0.0168 [−0.0201, −0.0133]** | 90,591 |
+| **robustness** (net's val split) | **−0.0381 [−0.0570, −0.0169]** | 9,977 |
+
+⇒ By §3.2's third row: **NO COPYCAT PROBLEM, and the net is LESS trace-driven
+than the humans it copied.** ⛔ Part B does not run. No retrain, no arena game.
+
+**Two internal checks, both of which the pre-registration named in advance:**
+
+1. ✅ **The arms agree in sign**, so §3.0's VOID condition did not fire.
+2. ⚡ **They disagree in MAGNITUDE in exactly the direction the amendment
+   predicted.** The primary arm was declared biased *toward the null* by
+   memorization on the ~95% of games the net trained on; the unbiased val arm
+   should therefore sit **further** from zero. It does — **−0.0381 against
+   −0.0168.** The bias analysis was written before the run and the data
+   reproduced it.
+
+⚡ **The shortcut was real and available and the clone declined it.** The
+experts' own Δ is **+0.0632** and a purely trace-driven agent reaches
+**+0.1084**, so trace dependence is a genuine regularity of this game sitting in
+plain view in `turnActionCount`. The net uses it **less** than its demonstrators.
+
+## R4. ⚡ The finding that outlives the null: the clone is MORE predictable, but not from the trace
+
+**Net base accuracy 0.6912 vs expert 0.6656.** From the option list alone —
+before any trace is supplied — **the clone's next action is more predictable
+than a human's.**
+
+⇒ Its excess predictability is **modality, not perseveration.** It is not
+repeating what it just did; it is playing the modal option more often than the
+people it learned from. 🔴 That is the *opposite* failure from copycat, and it
+is the same object as the standing `val_top1`/conformity result — **a perfect
+conformity score is compatible with being modal, and modal is ~1000** — reached
+here from an instrument that had nothing to do with agreement.
+
+## R5. A2 — localization. Both trace channels are mildly load-bearing; nothing dominates.
+
+Resampling one channel and counting argmax changes, n = 248,985 decisions:
+
+| channel | argmax changed | vs null reference |
+|---|---|---|
+| `my_discard` (reverted to the start-of-turn pile) | **1.93%** | 2.5× |
+| `turnActionCount` (resampled within select type) | **1.73%** | 2.3× |
+| `retreated` (legality calibration) | 0.83% | 1.1× |
+| `stadiumPlayed` (legality calibration) | 0.79% | 1.0× |
+| **`dense_ctl`** — matched-variance dense column, **null reference** | **0.76%** | — |
+
+- ⛔ **This changes no verdict.** §3.3 excluded A2 from every branch of §3.2: it
+  bounds **sensitivity, not harm**, and it is off-manifold.
+- Both trace channels separate from the null reference and from the legality
+  pair, so they are not inert — but **destroying either changes under 2% of
+  decisions**, which is a small lever to have been worth a retrain even if A1
+  had fired.
+- 🔴 **§0's prediction that `my_discard` would be the weaker channel was NOT
+  borne out** — it reads marginally higher. ⚠ But the two perturbations are
+  **not magnitude-matched** (a within-stratum resample of a scalar vs reverting
+  a whole pooled bag to its turn-start state), so this neither confirms nor
+  refutes §0. It is recorded as an open mismatch, not as a result.
+
+## R6. ⛔ What E31 does and does not license
+
+- ✅ **The copycat question is ANSWERED**, and answered in the negative. It moves
+  from *unmeasured* (E28 §R8) to *measured and refuted* on 181,517 pairs with
+  both controls passing.
+- 🔴 **No fix ships**, and this is the pre-registered outcome, not a retreat.
+  Coarsening `turnActionCount` would now be a retrain aimed at a defect measured
+  **absent**, removing a channel the net **under**-uses, against §8ab's −36 Elo
+  showing the v4 block is not free to disturb.
+- ⛔ **HANDOFF probe 2 (hysteresis) is now predicted NEGATIVE and should not be
+  run as written.** E28 §R8 reverted it to *unprioritised* because the
+  perseveration row never fired. It has now fired the **other way**: a net that
+  is *less* trace-driven than its demonstrators will not be improved by adding
+  stickiness. ⚡ This is the one place E31 closes standing work beyond itself.
+- 📌 **Add to the closed list**: copycat / causal confusion, refuted 2026-08-12.
+  Sixteen closed axes. ⛔ Do not re-open on a literature argument — §1 of the
+  charter, applied to the proposal that generated this cell.
+- ⚡ **R4 is the live thread**, and it is not this cell's: the clone is *more*
+  modal than its demonstrators. That is a statement about **which** option it
+  picks, not about **what it just did**, and it belongs to the conformity thread.
