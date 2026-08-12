@@ -4403,6 +4403,83 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8ci. 🔴 E27 ROUND 1 — POLICY ITERATION MOVES THE POLICY 5.3 PICKS/GAME AND BUYS NOTHING: gate 0.492 (contains its null), ship 0.501 against a 0.541 bar (2026-08-12, day 31)
+
+**Pre-registered** `docs/experiments/E27-policy-iteration.md` at **`4070eb1`,
+before any generation or training**; the instrument rule at `a0e1a2f`; the
+extrapolation void and the depth-matched control each frozen **before the cell
+they govern ran**.
+
+### The round
+
+| stage | result |
+|---|---|
+| generate | 8,000 self-play games from `v5_s2` at τ=0.5, **1,495,489 rows** |
+| evaluate | V trained on **this round's own games**, split by game: **AUC 0.7963**, early stop at epoch 2, orientation V\|won **0.742** vs V\|lost **0.411** |
+| advantage | per-decision TD residual, seat-corrected; **reconciled against the path that plays at 1.16e-06**; mean **−0.0026** (a telescoping sum should vanish) |
+| improve | all 702,913 params, 3 epochs, lr 2e-4, β=0.5 on standardised A, **ESS 88.1%**, weight ratio **2.72** — B8's, deliberately |
+
+### The verdict
+
+| arm (n = 2,000, mirror, health clean) | score | 95% CI | c | depth |
+|---|---|---|---|---|
+| **gate** — π₁ substituted via `xnet=` | **0.4920** | [0.470, 0.514] | 5.29 | 1.33 |
+| **matched-random control** | **0.4240** | [0.403, 0.446] | 5.34 | 1.32 |
+| pre-registered `null(c)` | 0.4753 | — | — | — |
+| **ship** — plain `net=` swap vs π₀ | **0.5010** | [0.479, 0.523] | — | — |
+
+🔴 **The gate's CI CONTAINS `null(c)` ⇒ the frozen 🔴 MOVEMENT ONLY branch: the
+policy moved and the direction was worth nothing.** It is also indistinguishable
+from break-even (z = −0.72 against 0.500). 🔴 **The ship arm reads 0.5010 against
+a 0.541 bar — π₁ is exactly as strong as π₀, neither better nor worse.**
+
+### ⚡ The depth-matched control is what stops this being read as a win
+
+Gate − control = **+0.0680, z = 4.33**, which is a large, highly significant
+number and **means almost nothing on its own**: §8ch already established that a
+trained policy beats matched-random deviation. The question is whether *this*
+policy is better **directed** than a merely-different one, and:
+
+```
+f_round = (0.4920 - 0.4240) / (0.500 - 0.4240) = 0.895   [0.605, 1.185]
+E26's f (a different-but-not-better policy)             = 0.758   [0.703, 0.814]
+```
+
+**The interval contains 0.758** — no evidence of better direction — **and also
+contains 1.0**, i.e. free deviation. At this step size it separates almost
+nothing.
+
+🔴 **And the control earned its place quantitatively: E25's incoherent line
+predicts 0.355 at this rate; the depth-matched control measured 0.424.** Round 1
+deviates at mean rank **1.33** (77% rank-1) where the null curve was calibrated
+at ~1.9, and shallow deviation is cheap (§8bd's near-tie band). ⇒ **without the
+depth correction, ~0.069 of win rate belonging to the near-tie band would have
+been credited to E27.** Third control-bias-toward-the-hypothesis caught this
+session, same direction every time.
+
+### What it does and does not close
+
+⚠ **This is ONE round.** The frozen rule makes it **strike one** (two consecutive
+MOVEMENT ONLY ⇒ stop), because iteration is the single thing B8 never did and a
+first small step is where it is least likely to show.
+⚠ **The power limit is real and was stated before the cells landed:** at c ≈ 5.3
+the whole scale is 0.500 − 0.424 = **0.076** against a per-cell SE of 0.011, so
+`f_round` cannot resolve 0.758 from 1.0. **A small trust-region step buys safety
+at the cost of resolution, and that trade was made deliberately.**
+🔴 **What it is evidence FOR, honestly: this looks like B8 at finer grain.** A
+per-decision TD signal from a verified V, on-policy, with the corpus leash
+removed and every parameter free, moved the policy and produced **zero**
+measurable strength. §8bv's −0.0024 bits is the standing explanation and nothing
+here contradicts it.
+⚡ **One non-null observation, and it is small:** π₁ deviates 5.3 picks/game and
+pays **0.008 ± 0.011** — a generic trained policy at that rate would pay 0.025.
+Not significant, and **not** to be quoted as a finding.
+
+Archives `out/arena/e27_r1_{gate,ctl,ship,cal,probe}.jsonl`; logs
+`out/logs/e27_r1_{gen_*,value,adv,train,gate,ctl,ship}.txt`; corpus
+`artifacts/e27_r1` (1.5M rows, `adv` column written); nets `out/value_e27r1.npz`,
+`out/policy_e27_r1.npz`.
+
 ## 8ch. ✅ E26 — DEVIATING WITH A TRAINED POLICY COSTS A QUARTER OF WHAT DEVIATING AT RANDOM COSTS: f = 0.758 [0.703, 0.814] against the evaluator family's 0.12, at matched rate, depth and location (2026-08-12, day 31)
 
 **Pre-registered** `docs/experiments/E26-coherence-at-matched-rate.md`, frozen at
