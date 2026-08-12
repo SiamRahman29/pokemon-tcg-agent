@@ -86,6 +86,42 @@ Fit through the origin (a policy identical to π₀ scores 0.500 by construction
   E27 rests on is weaker than §8ch suggested, and **that is a finding worth more
   than the round it would have gated.**
 
+### ▶ CELL 0a HAS RUN — the coherent cost curve is LINEAR in log-odds, and the null is now a measured object
+
+```
+cell 0a  bc:e27cal,...,xsub0.25   0.479 [0.458, 0.501]   n=2,000
+         c = 11,419 / 2,000 = 5.71 changed picks/game     mean depth 1.86 (cell A: 1.92)
+         health OK  fallbacks=0  xerr=0  clipped=0
+```
+
+| | c | score | logit | per-pick slope |
+|---|---|---|---|---|
+| origin (identical policy) | 0 | 0.500 | 0 | — |
+| **cell 0a** | 5.71 | **0.479** | −0.0841 | −0.0147 |
+| **E26 cell A** | 20.19 | **0.4053** | −0.3835 | −0.0190 |
+
+**Linear prediction for 0a was 0.4729; measured 0.479.** ⇒ **the LINEAR branch
+fires.** Pooled OLS through the origin over both points:
+
+```
+null(c) = sigmoid(-0.018677 * c)          <- E27's null, frozen
+```
+
+⚠ **Two honest qualifications, because this interval is wide.**
+1. At c = 5.71 the cost is **0.021, only 1.88σ from zero** (p ≈ 0.06). The slope's
+   own CI from cell 0a alone is **[−0.0295, +0.0007]** — it contains cell A's
+   −0.0190 comfortably, and it also contains **zero**. So "linear" here means
+   *not distinguishable from linear*, not *confirmed linear*.
+2. The point estimate leans mildly **sublinear** (−0.0147 vs −0.0190), which
+   would favour E27's premise. **It is not resolved and must not be quoted as
+   support.**
+
+⚡ **What it does establish, and it is what the gate needed:** a trained policy
+deviating at ~6 changed picks/game costs **about 2 points of win rate**. So a
+round-1 step of that size starts from ≈0.479, and the measurement SE at
+n = 2,000 is ≈0.011 — a workable gate, where "the direction paid" needs roughly
+**≥ 0.51** to exclude the null.
+
 ## The design
 
 Round *r* (π₀ = `out/policy_v5_s2.npz`, the shipped net):
