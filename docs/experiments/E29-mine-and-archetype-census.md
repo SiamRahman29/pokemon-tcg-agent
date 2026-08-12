@@ -180,3 +180,112 @@ the 71.4% problem this cell exists to fix.
   training on them buys Elo — E6→E7 is exactly that trap, and
   `PARKED-corpus-coverage.md` already carries the warning: *a compelling
   diagnosis is not a working repair.*
+
+---
+
+# ▶ RESULT — 2026-08-12
+
+Instruments: `scripts/p90_e29_band.py` (Q1), `fetch_top_episodes.py` +
+`p65_archetype_census.py` (Q2/Q3).
+
+## R0. ✅ Both Step-0 gates pass — and the feed's ceiling has MOVED
+
+**0a. Fresh LB, 6,771 rows.** ⚠ Board grew 6,483 → 6,771 and **the top
+reshuffled again**: `Luca` 1217.2 is now #1 (it was #7 on 07-31) and `LiamK`,
+#1 on 08-07 at 1166.0, is #8 at 1162.2.
+
+📌 **We read `Scio`, rank 254, 933.1** — against rank 129 / 990.7 on 08-07.
+⚠ **Stated with the repo's own two rules attached and NOT as a regression:**
+a −57.6 move is **inside the 63-point noise floor** (§8ak), and rank is not
+comparable across board sizes (§8p). **Nothing has gone wrong and nothing is
+confirmed.** It is flagged because it is an input to the 08-15 decision.
+
+**0b. Fresh population exists.** Datasets published for **08-08 … 08-11**
+(08-12 not yet up, 403):
+
+| date | episodes | `avg_score` min / median / max | ≥1100 |
+|---|---|---|---|
+| 08-08 | 4,669 | 988 / 1027 / **1300** | 617 |
+| 08-09 | 4,668 | 982 / 1021 / 1211 | 418 |
+| 08-10 | 4,603 | 984 / 1025 / 1210 | 420 |
+| 08-11 | 4,622 | 984 / 1027 / **1252** | 657 |
+
+**18,562 fresh episodes, 2,112 at ≥1100.**
+
+⚡ **§8i's censoring claim is stale and this matters for E30.** The feed was
+recorded as stopping at `avg_score` **~1055**; it now reaches **1300**. That is
+the single fact that could legitimately re-open the availability kill of §4 —
+and it is why Q3 is worth running rather than assumed.
+
+## R1. 🔴 Q1 — the 71.4% does not reproduce, and the MONOTONE CURVE is the bigger casualty
+
+76 of our ladder games (`submission_v5_s2`), opponents joined to the fresh LB
+(4 unmatched), banded on §8ac's own cut points:
+
+| opponent band | games | mirror | share | 95% Wilson | **§8ac (08-01)** |
+|---|---|---|---|---|---|
+| <800 | 13 | 0 | **0.0%** | [0.0%, 22.8%] | 5.3% |
+| 800–900 | 14 | 4 | **28.6%** | [11.7%, 54.6%] | 18.6% |
+| 900–1000 | 24 | 13 | **54.2%** | [35.1%, 72.1%] | 42.4% |
+| **1000+** | **21** | **6** | **28.6%** | **[13.8%, 50.0%]** | **71.4%** |
+
+### ⛔ The formal verdict is the pre-registered one: UNDERPOWERED BY SIZING
+
+The 1000+ band holds **21 games against the frozen ≥30 floor**, so by §6 the
+verdict is **UNDERPOWERED**, bands were **not** pooled to reach n, and neither
+endpoint may be quoted as hard. That rule stands as written.
+
+### ⚠ But the frozen gate was set on the wrong quantity, and the data is decisive anyway
+
+Recorded because suppressing it would be its own distortion. At the realised n
+the two-proportion comparison against 10/14 reads:
+
+**28.6% vs 71.4% — difference −42.9 pp, 95% CI [−73.4, −12.3], z = −2.75.**
+The interval **excludes zero**.
+
+✅ **Robust to the one confound available to check.** Banding 08-08 games by a
+08-12 LB dates opponents late; re-banding with `lb_snapshot_0801pm.json` gives
+**27.8% (5/18)** against 28.6% (6/21). **The choice of snapshot does not move
+it.**
+
+⚡ **The lesson is E28's, one day old and in a different cell: a gate on a fixed
+`n` is a gate on the wrong variable — power depends on the effect size.** A
+−42.9 pp effect is detectable at n=21; the ≥30 floor was written to guard
+against small-denominator overclaiming (the very disease 10/14 has) and it
+mis-fires when the effect is large.
+
+⇒ **Practical reading, stated with its status: 71.4% should not be quoted as a
+hard number anywhere.** The formal re-census is underpowered; every check that
+can be run points the same way; ⛔ and it is still **not** a licence to quote
+28.6% as hard either.
+
+### 🔴 The finding that outranks the number: the monotone curve is not there
+
+§8ac's planning claim was *"the mirror is the matchup that matters and **gets
+more so as we climb**"* — 5.3 → 18.6 → 42.4 → 71.4, monotone. The re-census
+reads **0.0 → 28.6 → 54.2 → 28.6**: it **rises and then falls**, peaking at
+900–1000, which is *our own band*, and **diversifying above it**.
+
+**The 1000+ band, in full (n=21):**
+
+| archetype | games | share |
+|---|---|---|
+| **Marnie's Grimmsnarl ex** | 6 | **28.6%** |
+| **Alakazam** | 6 | **28.6%** |
+| Mega Lucario ex | 2 | 9.5% |
+| Meowth ex | 2 | 9.5% |
+| Dragapult ex | 2 | 9.5% |
+| Teal Mask Ogerpon ex / Dudunsparce / Slowking | 1 each | 4.8% each |
+
+⇒ **At the top the mirror is not dominant — it is tied with Alakazam**, which
+day 26 already flagged as "back at 23.7% after being dropped from planning since
+day 9". ⚠ Every verdict re-weighted by §8ac's monotone shares inherits this.
+
+### ⛔ Why this cannot be powered up from the mine
+
+n can only rise with **more of our own ladder games**, and those are not
+API-reachable — `submission_v5_s2` was **supplied by the user** (day 26). ⛔ The
+fresh feed is the **wrong frame** (§3) *and* would bias the sample: the feed
+publishes only high-`avg_score` episodes, so our games in it are selected for
+strong opponents. **Q1 is blocked on a fresh dump of our own games, which is a
+user action, not a Kaggle call.**
