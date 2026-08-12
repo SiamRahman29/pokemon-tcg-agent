@@ -1376,6 +1376,68 @@ constraint — card × deck-context is**, and nothing we built measures that.
 > space, and the list survived it" is a deck result.** It is not an Elo lever,
 > and we do not present it as one.
 
+## 7d. The plan object: prize maps, and why the mirror is not the game the theory describes
+
+Competitive Pokémon TCG has a canonical vocabulary for "what is my plan": the
+**prize map** — the sequence of knockouts that takes six prizes, plus the
+resources to execute it. The standard maps are **2-2-2** (three two-prize KOs),
+**1-1-2-2** and **2-1-2-1**. A player who knows their map knows which attacker
+matters, what must be drawn, and which trades are acceptable.
+
+This is the object we wanted. An earlier attempt to recover "a plan" as a
+**latent cluster** over play sequences was killed on its own control (§8bv); the
+prize map is the alternative that does not need clustering, because it is
+**derivable from the board** — count the prize values of what has been knocked
+out. So we measured it directly on the replay corpus.
+
+**It does not describe our matchup.**
+
+| side | takes observed | 1-prize | 2-prize | **% two-prize** | takes/game |
+|---|---|---|---|---|---|
+| us | 851 | 689 | 146 | **17.2%** | 2.94 |
+| the three Grimmsnarl experts | 1,724 | 1,410 | 268 | **15.5%** | 3.05 |
+
+**~84% of observed prize takes are single-prize, and the two sides are
+indistinguishable on it.** All three canonical maps presuppose that two-prize
+knockouts carry the game. In the Grimmsnarl mirror they carry about a sixth of
+it. The realised map is a **six-single-prize grind**.
+
+⚠ **A truncation we state rather than correct.** The `visualize` stream ends at
+the last *decision*, so the finishing knockout is never observed — we saw a game
+that seat 0 won with three prizes still on its board. Full-sequence map
+classification is therefore not reliable from this extraction and we do not
+attempt it; only the take-*size* composition survives losing the tail. The bias
+runs one way — a finishing KO on an `ex` is the likeliest take to be truncated
+away — but not by the factor that would rescue a 2-2-2 reading.
+
+**Two consequences, and one thing we deliberately did not do.**
+
+First, it explains why commitment is not the lever here. Measured on the same
+corpus, neither side changes its mind more than the other: **attacker switches
+0.0133 vs 0.0126 per decision** (difference +0.0006 [−0.0010, +0.0022]) and
+**target switches 0.0392 vs 0.0393** (−0.0001 [−0.0029, +0.0027]), with
+KO-forced switches excluded by a liveness test. In a grind where almost every
+trade is one-for-one, there is no branch point at which a map commits you, so
+there is little for a "stick to the plan" heuristic to improve — and measurably,
+nobody sticks harder than anybody else.
+
+Second, it sharpens what our clone's weakness is **not**. We tested whether the
+clone latches onto its own previous action instead of the board — the copycat
+failure of behaviour cloning — and it does so **less** than the humans it copied
+(−0.0168 [−0.0201, −0.0133] on 181,517 within-turn pairs, both estimator
+controls passing). What it does do is play the **modal** option more often than
+its demonstrators: from the option list alone, before any history is supplied,
+the clone's next action is more predictable than a human's (**0.6912 vs
+0.6656**). Its failure is conformity, not perseveration.
+
+⛔ **We did not turn the prize map into a feature or a rule.** The encoding axis
+is closed (§4g), and our own dominated-options/tradeoffs discriminator (§3)
+predicts that a rule here loses: which prize to chase is a tradeoff, not a
+dominated choice, and every rule we shipped into a tradeoff has cost us. The
+prize map earns its place in this report as **vocabulary** — the thing that let
+us ask whether the mirror is the game the theory describes, and get back a clear
+no.
+
 ## 8. Negative results
 
 Honest nulls at n≥2000 are the section we are most confident in.
@@ -1547,6 +1609,38 @@ We declined most of it **on our own measurements rather than on taste**, and the
 disposition of each plank is tabulated in `ROADMAP.md`. The one plank our thesis
 predicted should work — richer state representation — is the one that produced the
 project's largest measured effect (§4).
+
+### A.1 — a second pass at the literature, and what it was worth
+
+Late in the project we went back to the literature deliberately — offline RL
+(IQL, AWR/AWAC), Suphx, DouZero, AlphaStar, ensemble behaviour cloning, and the
+copycat/causal-confusion result — looking for an idea we had missed. Seven
+candidates came out of it. The disposition is worth publishing exactly as it
+fell, because it is the clearest evidence we have that the measurement programme
+was doing its job:
+
+| proposed from the literature | our prior result | outcome |
+|---|---|---|
+| ensemble independently-fitted nets to cancel the initialisation term | E9 | already run and **retracted** |
+| Monte-Carlo evaluation by the clone (roll out on-distribution, no extrapolation) | E17–E19 | already run: 187,403 rollouts, selection provably works (67% best-arm, z = 5.5) and the score is still ≤ 0.500 |
+| advantage-weighted policy improvement inside a trust region | B8, then E27 | already run in a **stronger** form; two rounds, nothing bought |
+| copycat / causal confusion in the cloned policy | never tested | **tested, and refuted** (§7d) |
+| prize maps as the plan object | never tested | **tested; the maps do not describe our matchup** (§7d) |
+
+**Three of seven were closed on arrival, by opening our own files rather than by
+argument.** Each had arrived as a *mechanism* story — the optimizer's curse,
+extrapolation-free rollouts, in-sample reweighting — and each named a mechanism
+we had already priced. The remaining two were genuinely new, were run, and both
+came back negative.
+
+None of this raised our rating. What it did was convert an open question
+("are we suffering a known failure mode of behaviour cloning?") into a measured
+answer, and it did so at a cost of **zero arena games** — every cell in that
+round closed offline, on corpora we already held. The transferable lesson is the
+one we would put first if we ran this project again: **outside literature is a
+source of hypotheses, never of licences.** A paper can tell you what to measure.
+It cannot tell you what is true of your system, and in three cases out of seven
+our own logs had already answered it.
 
 ## Appendix B — reproducibility
 

@@ -21,7 +21,24 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 31 (2026-08-12): **THE TRAP IS NOW CHARACTERISED, NOT JUST NAMED — we can MOVE cheaply and we cannot AIM.**
+> # ▶ START HERE — DAY 31, LATE (2026-08-12): **FIVE CELLS CLOSED IN ONE DAY, ZERO ARENA GAMES SPENT, AND THE ROUND IS OUT OF LEVERS.**
+>
+> **Routing: `docs/experiments/ROUND-2026-08-12.md` is the charter for everything below and it EXPIRES on 08-17** — after that it is history, not routing. Read it before any experiment doc.
+>
+> - 🔴 **E31 (`E31-trace-reliance.md`): THE COPYCAT QUESTION IS ANSWERED, IN THE NEGATIVE.** **Δ_net − Δ_expert = −0.0168 [−0.0201, −0.0133]** on 181,517 within-turn pairs, **both estimator controls passing** — the clone leans on its own previous action **LESS** than the humans it copied. The shortcut was real and available (experts **+0.0632**, a pure trace-follower **+0.1084**, sitting in plain view in `turnActionCount`) and it declined it. ⛔ **Sixteenth closed axis. No fix shipped, no retrain, no arena game.**
+> - ⚡ **The finding that outlived the null (E31 §R4): the clone is MORE predictable than its demonstrators — 0.6912 vs 0.6656 from the option list ALONE, before any history.** Its excess predictability is **modality, not perseveration** — the *opposite* failure from copycat, and the conformity thread reached from an instrument that has nothing to do with agreement. **This is the only live diagnosis left and it has no intervention attached.**
+> - ⛔ **HANDOFF probe 2 (hysteresis) is now PREDICTED NEGATIVE — do not run it as written.** E28 reverted it to *unprioritised*; E31 fired it the other way. Adding stickiness to a net already less sticky than its demonstrators is aimed backwards.
+> - 🔴 **E28 closed without a copycat verdict** (reading 1 VOID on an unreachable control), but bought **§N.4.1 outright** on a tight null: attacker switches +0.0006 [−0.0010, +0.0022], target switches −0.0001 [−0.0029, +0.0027] ⇒ **we do NOT switch commitments more than the experts**, which excludes H1 **and** perseveration at once.
+> - 🔴 **E29 REFUTES the 71.4% mirror share** — 20.9% at n=67 in the 1000+ band, z = −3.81; **five documents quoting it as hard were overclaiming**, and the monotone curve is dead too (it FALLS at the top). The top is a **four-way field and we are fourth at 10.5%** (23.7% one week earlier, same frame).
+> - 🔴 **E30 VOID ON BUILD SIZE** — the reweighted corpus caps at 26,250 decisions against a pre-registered floor of 149,391. ⛔ The parked coverage lever is dead a second time, for a new reason.
+> - ⚠ **THE ROUND IS OUT OF LEVERS.** All four charter cells plus E31 are closed, four of them negative, **none spent an arena game**. Nothing is pre-registered-and-unrun.
+> - ⚠ **08-15 (two agents, two decks) LOST ITS SECOND DECK.** E29 was the input and it came back no: **no archetype in the target set clears the sizing gate to clone.** Directive 2 reverts to a pure variance hedge priced exactly as §8al prices it. ⚠ Both active slots already hold `v5_s2`.
+> - 🔴 **RULE 20, NEW DIRECTION — an agent-directory path is not an identity either.** `agents/sa/policy_net.npz` is a **stale pre-v5 net** (no pooling block, `state_in` 496). Hashing the npz inside `dist/submission.tar.gz` shows the live agent is **`policy_v5_s2`**; `build_submission.py` overrides the bundle via `--policy-net`. ⛔ **Every offline probe defaulting to `agents/sa/policy_net.npz` — `context_accuracy.py` included — reads a net the arena has never seen.**
+> - ✅ **Report track advanced** (the qualification gate): `STRATEGY.md` **§7d** (prize maps — ~84% of mirror takes are single-prize, so the canonical 2-2-2 / 1-1-2-2 / 2-1-2-1 maps do not describe this matchup) and **Appendix A.1** (the literature round: three of seven proposals closed on arrival by opening our own files).
+>
+> ⚠ **Superseded but NOT retracted:** the day-31 header below (E26/E27) stands unchanged; everything above sits on top of it.
+>
+> # ▶ DAY 31, EARLIER (2026-08-12): **THE TRAP IS NOW CHARACTERISED, NOT JUST NAMED — we can MOVE cheaply and we cannot AIM.**
 >
 > **Read in this order: §N.14 (E27 closed) → §N.13 (E26, the positive result it spends) → ROADMAP §2.8 → `EVIDENCE` §8ch/§8ci/§8cj.**
 >
