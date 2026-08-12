@@ -79,6 +79,7 @@ missing = [p for p in ("src/ptcg", "scripts/arena.py", "agents/sa", "decks",
 if missing:
     print("TREE:", sorted(p.name for p in REPO.iterdir()), flush=True)
     sys.exit(f"payload incomplete, missing: {{missing}}")
+t_unpack = time.time()
 (REPO / "out" / "logs").mkdir(parents=True, exist_ok=True)
 for c in CMDS:
     Path(REPO / c.split(OUTFLAG)[1].split()[0]).parent.mkdir(parents=True, exist_ok=True)
@@ -122,12 +123,34 @@ elif THEN:
           f"partial corpus would train on silently truncated data", flush=True)
 
 out = Path("/kaggle/working")
+missing = []
 for sub in COLLECT:
     s = REPO / sub
     if s.exists():
         shutil.copytree(s, out / sub, dirs_exist_ok=True)
     else:
-        print(f"collect: {{sub}} does not exist, skipped", flush=True)
+        # 🔴 A MISSING COLLECT DIR IS A LOST JOB, NOT A SKIPPED COPY. E27
+        # round 2 ran to completion on Kaggle -- 8,000 games, V, advantages,
+        # a fine-tune -- and returned 0.0 MB, because the payload held a
+        # PRE-PATCH driver that wrote to out/ while --collect looked in
+        # out/e27. Version skew between the pushed dataset and the local
+        # tree, which is rule 20 one layer out. Say so loudly.
+        missing.append(sub)
+        print(f"🔴 collect: {{sub}} DOES NOT EXIST -- nothing to pull from it",
+              flush=True)
+# What the job PRODUCED but nobody is collecting -- checked while the tree
+# still exists, because one line later it is deleted and the evidence with it.
+# ⚠ mtime > t_unpack is what makes this specific: the payload itself unpacks
+# ~40 nets into out/, and flagging those would make every job exit 64. copytree
+# and zip extraction both preserve the original mtimes, so only files this run
+# WROTE are newer than the moment unpacking finished.
+lost = sorted(str(f.relative_to(REPO)) for f in (REPO / "out").rglob("*.npz")
+              if f.stat().st_mtime > t_unpack
+              and not any(str(f.relative_to(REPO)).startswith(c) for c in COLLECT))
+if lost:
+    print(f"🔴 {{len(lost)}} .npz PRODUCED AND NOT COLLECTED -- this job is "
+          f"about to throw them away: {{lost[:8]}}", flush=True)
+    rc |= 64
 shutil.rmtree(REPO, ignore_errors=True)
 rows = sum(1 for f in (out / "out/arena").rglob("*.jsonl") for _ in f.open()) \\
     if (out / "out/arena").exists() else 0
