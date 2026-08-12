@@ -4403,6 +4403,102 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8cj. 🔴 E27 IS CLOSED BY ITS OWN RULE — round 2 is a SECOND consecutive MOVEMENT ONLY, and across two rounds an iterated policy's deviations are indistinguishable in quality from any other trained policy's (2026-08-12, day 31)
+
+**Pre-registered** `docs/experiments/E27-policy-iteration.md` at **`4070eb1`**.
+The frozen rule: *"🔴 MOVEMENT ONLY — CI contains `null(c)` … Two consecutive
+rounds here ⇒ STOP, and the axis closes with a number."* **Both rounds landed
+there. E27 closes. Round 3 is not licensed.**
+
+### The two rounds
+
+| | round 1 (π₀ → π₁) | round 2 (π₁ → π₂) |
+|---|---|---|
+| corpus | 8,000 games, 1,495,489 rows | 8,000 games, 1,493,754 rows |
+| V (held out by game) | AUC 0.7963 | **AUC 0.8311** |
+| advantage reconciliation | 1.16e-06 | 5.08e-07 |
+| ESS | 88.1% | 86.3% |
+| step `c` (vs π_r) | 5.29 | 4.31 |
+| **gate** | **0.4920** [0.470, 0.514] | **0.4760** [0.454, 0.498] |
+| `null(c)` | 0.4753 | 0.4799 |
+| gate − null | +0.0167 (+1.5σ) | **−0.0039 (−0.35σ)** |
+| matched-random control | 0.4240 | 0.4150 |
+| **f_round** | 0.895 [0.605, 1.185] | **0.718 [0.450, 0.985]** |
+| **ship vs `v5_s2`** | **0.5010** [0.479, 0.523] | **0.4805** [0.459, 0.502] |
+
+All cells n = 2,000, mirror, health clean (`fallbacks=0 net_missing=0 xerr=0
+clipped=0`), depth matched to within 0.01 rank between treatment and control.
+
+### The verdict, in one line
+
+🔴 **Two rounds of on-policy iteration moved the policy 6.57 changed picks/game
+away from π₀ and produced an agent that is, if anything, slightly worse:
+ship 0.5010 → 0.4805, i.e. +0.7 Elo → −13.6 Elo.** The gate sat +1.5σ above its
+null in round 1 and −0.35σ in round 2; pooled, the direction bought
+**+0.006 ± 0.008**, which is nothing.
+
+### ⚡ The sharpest statement this experiment supports
+
+`f_round` is the fraction of the deviation cost a policy's *direction* buys back,
+and §8ch measured **0.758** for a policy that is merely *different* (an expert
+clone that is 67 Elo WORSE). E27's rounds read **0.895 [0.605, 1.185]** and
+**0.718 [0.450, 0.985]** — **both intervals contain 0.758.**
+
+⇒ **A policy trained on per-decision TD advantages from a verified critic
+deviates no better than a policy trained to imitate a different human.** The
+outcome signal did not aim the deviations. That is a cleaner and more general
+statement than "B8 failed", and it is what E27 buys.
+
+### What was ruled out along the way, so the null cannot be explained away
+
+- ⛔ **Not the critic.** Round 2's V reads **AUC 0.8311** held out by game — on par
+  with the E20-era net (0.827) that E22 built a 5-net ensemble from. A better
+  critic produced a *worse* round.
+- ⛔ **Not the corpus anchor.** B8 (§8ao) held the human corpus at weight 1.0,
+  which by construction prevents leaving the clone's basin. E27 removed it
+  entirely.
+- ⛔ **Not the frozen head.** B8 trained 17.2% of parameters; E27 trained all
+  702,913.
+- ⛔ **Not the aggressiveness.** β was standardised so the weight ratio is
+  **2.72**, identical to B8's, and the clip was set from ESS (86–88%) rather
+  than from any score.
+- ⛔ **Not iteration being untried.** It is the one thing B8 never did, and it
+  is now done twice.
+- ⛔ **Not entropy collapse** — the mild worry raised when `val_top1` jumped
+  0.819 → 0.871. Round 2's `val_top1` was flat (0.8737/0.8719/0.8721) and the
+  step size fell only 5.29 → 4.31. The policy is not visibly starving its own
+  exploration; it simply has nothing to aim with.
+- ✅ **Not a fluke of one sample.** The lost `e27r2` run and the `e27r2b` rerun
+  are two independent 8,000-game draws from π₁ and agree closely (V AUC 0.8322
+  vs 0.8311, reconciliation 4.75e-07 vs 5.08e-07, ESS 86.2% vs 86.3%).
+
+### The standing explanation, unchanged and now better supported
+
+**§8bv: conditioned on the board, winners and losers play the same
+(−0.0024 bits.)** If the outcome label barely distinguishes actions given the
+board, then estimating *state* value better cannot manufacture *action*-level
+signal — and E27 is the direct test of that, because it built the best critic
+this project has had and fed it a per-decision residual rather than a game
+result. ⚠ It remains an explanation consistent with the data, not a proof.
+
+### ⛔ What is now closed, and what is NOT
+
+⛔ **E27 is closed by its own pre-registered rule. No round 3, no β sweep, no τ
+sweep** — B8 was denied a β sweep for the same reason and E17's post-hoc arm
+selection is what E19 priced.
+⚠ **What is NOT closed: value-based policy iteration under Round-2 hardware.**
+This ran 16,000 games on 2 vCPU-equivalents. The honest statement is *"iterated
+on-policy improvement with a verified critic, at this scale, on this board,
+measured nothing"* — not *"the family cannot work"*. ROADMAP §2.7's naming of it
+as the strongest R2 candidate survives, weakened by exactly this measurement.
+✅ **§8ch (E26) is untouched and remains the session's positive result**; E27 is
+in fact its first application, and the null is measured *against E26's own
+constant*.
+
+Archives `out/arena/e27_r2_{gate,ctl,ship,cal,probe}.jsonl`; Kaggle job
+`e27r2b` (`out/kaggle_out/e27r2b/`); nets `out/policy_e27_r{1,2}.npz`,
+`out/value_e27_r2.npz`.
+
 ## 8ci. 🔴 E27 ROUND 1 — POLICY ITERATION MOVES THE POLICY 5.3 PICKS/GAME AND BUYS NOTHING: gate 0.492 (contains its null), ship 0.501 against a 0.541 bar (2026-08-12, day 31)
 
 **Pre-registered** `docs/experiments/E27-policy-iteration.md` at **`4070eb1`,

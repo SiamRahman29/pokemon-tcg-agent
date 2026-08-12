@@ -1,6 +1,12 @@
 # E27 — on-policy policy iteration with a trust region on the PREVIOUS policy. Pre-registered.
 
-**Status: PRE-REGISTERED 2026-08-12 (day 31), BEFORE any generation, training or
+**Status: 🔴 CLOSED 2026-08-12 (day 31) by this document's own rule — two
+consecutive MOVEMENT ONLY rounds.** Round 1 gate 0.4920 (null 0.4753), round 2
+gate 0.4760 (null 0.4799); ship 0.5010 → 0.4805 against a 0.541 bar. Full
+write-up: **`report/EVIDENCE.md` §8cj** (round 1 alone: §8ci).
+⛔ **Round 3 is not licensed. No beta sweep, no tau sweep.**
+
+**Originally: PRE-REGISTERED 2026-08-12 (day 31), BEFORE any generation, training or
 arena game.** Frozen at the commit adding this file.
 
 ---
