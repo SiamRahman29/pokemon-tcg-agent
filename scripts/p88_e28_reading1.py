@@ -187,19 +187,33 @@ def t_identity(tr: list[dict]) -> list[dict]:
     return tr
 
 
-def t_repeat(tr: list[dict]) -> list[dict]:
+def t_repeat(tr: list[dict], fallback: bool = True) -> list[dict]:
     """⬆ POSITIVE CONTROL -- repeat the previous action wherever still legal.
 
     "Legal" is checked against the slot's OWN option list: the synthetic agent
     re-picks its previous card class iff an option of that class is offered
-    here. Otherwise it keeps what was actually chosen. An estimator that cannot
-    see this cannot see repetition at all.
+    here. An estimator that cannot see this cannot see repetition at all.
+
+    🔴 `fallback` is the correction re-registered in E28 §R4, and it exists
+    because the first construction FAILED THE BAR FOR A STRUCTURAL REASON.
+    **Repetition is legal at only 51.3% of within-turn pairs.** The original
+    trace kept the REAL action on the other 48.7%, so it was only ~half
+    synthetic and could not reach 0.90 however sensitive the estimator was --
+    it read 0.8774. With `fallback=True` an illegal slot takes the
+    **lowest-index option** instead, making the trace a deterministic function
+    of (previous action, option list). ⇒ the >=0.90 bar becomes a statement
+    about the ESTIMATOR, which is what it was always meant to be.
+
+    ⛔ The 0.90 threshold is UNCHANGED and there is no third construction.
     """
     out = [dict(r) for r in tr]
     for i in range(1, len(out)):
         prev = out[i - 1]["k"]
-        if out[i]["turn"] == out[i - 1]["turn"] and prev in out[i]["avail"]:
+        same_turn = out[i]["turn"] == out[i - 1]["turn"]
+        if same_turn and prev in out[i]["avail"]:
             out[i]["k"] = prev
+        elif fallback and out[i]["avail"]:
+            out[i]["k"] = out[i]["avail"][0]
     return out
 
 
@@ -311,14 +325,19 @@ def main() -> int:
 
     print(f"\n{'=' * 70}\n=== ⛔ ESTIMATOR CONTROLS (E28 §3) — both must pass ===\n")
     pos = evaluate([t_repeat(t) for t in data["us"]], random.Random(SEED))
+    old = evaluate([t_repeat(t, fallback=False) for t in data["us"]],
+                   random.Random(SEED))
     neg = evaluate([t_shuffle(t, random.Random(SEED + 1)) for t in data["us"]],
                    random.Random(SEED))
     obs = evaluate(data["us"], random.Random(SEED))
 
-    print(f"⬆ positive (repeat-when-legal)  held-out acc = {pos['acc']:.4f}"
+    print(f"⬆ positive (repeat-when-legal, deterministic fallback)"
+          f"  held-out acc = {pos['acc']:.4f}"
           f"   (n={pos['n']}, MI={pos['mi_mean']:.4f})")
     print(f"   pre-registered: >= 0.90        "
           f"{'✅ PASS' if pos['acc'] >= 0.90 else '🔴 FAIL => CELL IS VOID'}")
+    print(f"   [superseded construction, kept real action on the 48.7% of "
+          f"slots where repetition is illegal: {old['acc']:.4f} — E28 §R3]")
     print(f"\n⬇ negative (within-turn shuffle) held-out acc = {neg['acc']:.4f}"
           f"   vs marginal base rate {neg['base']:.4f}"
           f"   (MI={neg['mi_mean']:.4f})")

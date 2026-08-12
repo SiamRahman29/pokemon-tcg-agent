@@ -278,3 +278,96 @@ the same unspecified degree of freedom:
 VOID** — there is no third construction. ⚠ Reading 2 (commitment switches) does
 not depend on this estimator and is unaffected either way; §4's branches need
 both, so no verdict may be issued until reading 1 resolves.
+
+## R5. 🔴 The corrected control reads 0.8759 ⇒ READING 1 IS VOID, FINALLY. And §R3's diagnosis was wrong.
+
+| positive-control construction | held-out accuracy |
+|---|---|
+| original — keep the real action where repetition is illegal | 0.8774 |
+| **corrected (§R4)** — deterministic lowest-index fallback | **0.8759** |
+| pre-registered bar | **≥ 0.90** |
+
+**Making the trace fully deterministic changed nothing (−0.0015).** By §R4's own
+rule there is no third construction: **reading 1 is VOID and stays VOID.**
+
+⚠ **§R3's stated cause was wrong and is corrected here.** The shortfall is not
+the half-real mixture. It is that **the pre-registered cue cannot represent the
+target**: the cue is `(ctx_a, class_a)` — the previous symbol alone — while on
+the **48.7% of slots where repetition is illegal** the target is determined by
+*the option list at `b`*, which the cue excludes by construction. No estimator
+restricted to the pre-registered alphabet can exceed roughly the legality rate
+plus chance on the remainder. ⇒ **the ≥0.90 bar was unreachable a priori**, and
+it was written without anyone knowing repetition is legal only 51.3% of the time.
+
+⚡ **The real lesson, sharper than §R3's:** ⚠ **a control's threshold must be
+checked for reachability under the cue the estimator is actually given.** E25
+taught that a missed point prediction does the work a bar cannot; this adds the
+precondition — **the point prediction has to be attainable by the instrument
+being controlled**, or a VOID is a statement about the pre-registration rather
+than about the agent. That is what happened here, and it cost one replay pass.
+
+## R6. Reading 2 — a clean, well-powered NULL on both measures
+
+Same denominators both sides; 289 `us` seats / 29,868 decisions, 566 `them`
+seats / 52,604 decisions. A switch forced by a KO is excluded by a liveness test
+on the abandoned Pokémon, so these are **commitment changes, not forced ones**.
+
+| per decision | `us` | `them` | us − them | z |
+|---|---|---|---|---|
+| **attacker switches** | 0.0133 [0.0120, 0.0146] | 0.0126 [0.0117, 0.0136] | **+0.0006 [−0.0010, +0.0022]** | +0.77 |
+| **target switches** | 0.0392 [0.0371, 0.0415] | 0.0393 [0.0377, 0.0410] | **−0.0001 [−0.0029, +0.0027]** | −0.08 |
+
+Per game: attacker 1.37 vs 1.17, target 4.05 vs 3.65 — the small per-game gaps
+are **denominator effects** (our games run slightly longer), which is exactly
+why §3 required the per-decision rate.
+
+🔴 **§N.4.1 is answered on its own terms and closes: we do NOT switch
+commitments more often than the experts.** Both intervals contain zero and both
+are tight — the target-switch interval is ±0.0028 on a 0.039 base.
+
+⚡ **This kills BOTH standing predictions at once, which is what makes it
+informative despite the population confound.** §6 conceded that `us` and `them`
+sit at different ratings so the *level* is confounded, and rested the cell's
+defence on the *sign* — H1 predicted **ours > theirs**, copycat/perseveration
+predicted **ours < theirs**. The measured intervals **exclude both directions**.
+
+## R7. Reading 3 — the mirror is a single-prize grind, not a 2-2-2 race
+
+🔴 **Truncation, stated before the numbers:** the `visualize` stream ends at the
+**last decision**, so the finishing KO(s) are never observed — a game seat 0
+*won* was seen with 3 prizes still on its board. ⇒ **full-sequence map
+classification is not reliable from this extraction** and is not attempted. The
+take-**size** composition survives losing the tail.
+
+| side | takes seen | 1-prize | 2-prize | **% 2-prize** | mean takes/game |
+|---|---|---|---|---|---|
+| `us` | 851 | 689 | 146 | **17.2%** | 2.94 |
+| `them` | 1,724 | 1,410 | 268 | **15.5%** | 3.05 |
+
+⚡ **The canonical prize maps do not describe this matchup.** 2-2-2, 1-1-2-2 and
+2-1-2-1 all presuppose that two-prize KOs carry the game; **~84% of observed
+takes here are single-prize**, and the two sides are indistinguishable on it.
+⚠ Mildly under-counted, since a finishing KO on an `ex` is the likeliest take to
+be truncated away — but not by the factor that would rescue a 2-2-2 reading.
+
+⇒ **For the report track (charter cell 4), this is the usable output**: the
+prize map is the right *vocabulary*, and in the mirror the realised map is a
+six-single-prize grind. ⛔ Still not a feature and not a rule.
+
+## R8. ⛔ What E28 does and does not license
+
+- 🔴 **No verdict on copycat.** §4's branches are joint conditions on readings 1
+  and 2; reading 1 is VOID, so **no row applies**. Copycat is neither confirmed
+  nor refuted here — it is **unmeasured**, and saying otherwise would be the
+  §8bv error in reverse.
+- 🔴 **E31 is UNLICENSED** (§5 required reading 1 to fire). ⛔ No channel split,
+  no adversarial head, no retrain. E30 does not compete with it for arena time.
+- ⚠ **HANDOFF probe 2 (hysteresis) is NOT predicted negative** — that
+  prediction lived in the PERSEVERATION row, which did not fire. It reverts to
+  unprioritised rather than dead.
+- ✅ **§N.4.1 closes** on reading 2 alone, which is the one thing this pass
+  bought outright.
+- ✅ Reading 3 stands as report vocabulary (§R7).
+- 📌 **If reading 1 is ever re-attempted it needs a NEW pre-registration with a
+  cue that includes the option list at `b`** — and a reachability check on its
+  bar before the bar is frozen (§R5).
