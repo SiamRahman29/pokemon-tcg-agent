@@ -118,6 +118,43 @@ f_coh = (A - B) / (0.500 - B)          the fraction of the deviation cost that C
                                         E25 measured f_eval = 0.12 for the best evaluator we can build
 ```
 
+---
+
+## ▶ CELL A HAS RUN — the prediction for B, computed from A's realised counter and frozen BEFORE B runs
+
+```
+A = 0.405 [0.384, 0.427]   W809/D3/L1188 over 2,000 games   (n=2,000, mirror)
+    health OK  fallbacks=0 net_missing=0 xerr=0
+    x = 40,386 / 140,866 eligible single-pick decisions = 28.67% deviation rate
+    skip = 8,816 (multi-select: both arms fall through identically)
+    changed picks per game = 40,386 / 2,000 = 20.19
+    mean deviation rank = 1.92, clipped = 0, over = 0
+```
+
+✅ **Validity: 0.405 is inside the pre-registered band [0.33, 0.41]**, so the
+cell is NOT void — but it sits at the top edge and that deserves its mechanism
+rather than a shrug. §8u ran `b7_ntum` as the whole agent and read **0.370
+[0.349, 0.391]**; this arm substitutes the expert **only on single-pick
+decisions** and leaves 8,816 multi-selects to our own net. ⇒ **this treatment is
+deliberately weaker than §8u's**, and it landing slightly higher is the expected
+direction, not a discrepancy. The two CIs overlap in [0.384, 0.391]. ⚠ Quote
+this as *"a partial substitution replicating §8u in the expected direction"*,
+never as *"0.370 replicated"*.
+
+🔴 **The prediction for cell B, from E25's line at A's realised rate:**
+
+```
+logit(B) = -0.11148 x 20.19 - 0.04545 = -2.2963      ->   B_predicted = 0.0915
+f_coh    = (0.405 - 0.0915) / (0.500 - 0.0915)       ->   f_coh = 0.767 if B lands on prediction
+```
+
+⚡ For scale: **E25 measured f_eval = 0.12** for the best evaluator this project
+can build. If B lands near 0.09, coherence is worth **six times** what evaluator
+quality is worth.
+
+**Cell B is run as:**
+`bc:e26r,net=out/policy_b1_v3.npz,xrnd0.2867,xrank=<A's histogram, deviations only>`
+
 ## Reading rule — frozen before either cell
 
 | branch | condition | reading |
