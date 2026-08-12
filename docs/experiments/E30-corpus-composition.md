@@ -171,3 +171,60 @@ never ship — that is F2's paid-for lesson (`s7` screened 0.528 and confirmed
 - ⛔ **Two-agent repo:** this cell writes only this file, its staged corpora, and
   its arena logs. It does not edit `HANDOFF.md`, `ROADMAP.md` or
   `report/EVIDENCE.md`.
+
+---
+
+# ▶ RESULT — 2026-08-12. 🔴 VOID ON BUILD SIZE. The gate fired before a single game was played.
+
+⛔ **§4's build-size gate, frozen ~30 minutes before it was run, fires.** Zero
+arena games, zero training runs, zero corpus staged.
+
+| | decisions |
+|---|---|
+| `artifacts/pds_v4` (8 shards) | **248,985** |
+| pre-registered floor (60% of it) | **149,391** |
+| **E30's reweighted cap** — Alakazam-bound, 5,775 decisions at a 22% target | **26,250** |
+
+**26,250 is 10.5% of `pds_v4`, against a 60% floor.** ⇒ **VOID ON BUILD SIZE**,
+exactly as written.
+
+## ⚡ And the arithmetic closes the axis at EVERY composition, not just this one
+
+The gate is not a threshold that a different target weight would sneak past.
+Holding the corpus at the 149,391-decision floor, the largest Alakazam share
+5,775 decisions can support is
+
+```
+5,775 / 149,391 = 3.87%
+```
+
+⇒ **Alakazam can be lifted from its current 3.39% to at most 3.87% — half a
+percentage point — against a 22.0% field weight.** 🔴 **The lever cannot be
+pulled far enough to matter at any setting that leaves a trainable corpus.**
+That is a stronger statement than the pre-registered VOID and it does not depend
+on where the floor was set.
+
+## What this does and does not close
+
+- 🔴 **`PARKED-corpus-coverage.md` closes for the second time, on a NEW reason.**
+  Day 25 killed it on **availability** ("the games do not exist"). E29 §R3
+  showed that reason is now half false — Mega Lucario went 0 → 38 games, the
+  feed ceiling rose 1055 → 1300, and Alakazam cleared the availability gate at
+  77 games. **It dies instead on ARITHMETIC: the games exist and there are
+  nowhere near enough of them to change a 249k-decision corpus's composition.**
+- ⛔ **The round has no arena cell.** Nothing ships from E30 by 08-17, and the
+  08-15 submission is unaffected by it.
+- ⚠ **One variant survives and is NOT run here: upsampling** — repeating the
+  5,775 Alakazam decisions to reach a target share rather than capping the
+  corpus. ⛔ It is a **different and weaker intervention** (it raises exposure,
+  not coverage) and would repeat 77 games ~9.5×, which is a strong overfitting
+  risk on a sample that small. **It needs its own pre-registration and it is not
+  licensed by this cell.**
+- ⚡ **The cheap-gate discipline paid again.** This is the fifth axis closed at a
+  sizing gate before a build (§8bm / §8bp / §8br / §8bs, now E30). The cost of
+  the whole cell was one census and one `numpy` row count.
+
+⚠ **What would re-open it: materially more Alakazam data, not a different
+weighting.** At the current 5,775 decisions the answer is fixed; roughly **25×**
+more would be needed to hold 22% at full corpus size. Kaggle's 429 blocks
+further mining today, and the ceiling on what the feed can supply is unknown.
