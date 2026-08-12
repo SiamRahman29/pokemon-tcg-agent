@@ -31,6 +31,32 @@ it lets any team name in a replay be joined to its rating.
 >
 > **▶ The E20/E22 thread is CLOSED — read §N.11 first, then §N.9.** Its artefacts stand and are reusable regardless: V trainer `scripts/train_value.py`, inference `agents/sa/valuenet.py` (verified against the trainer at 2.7e-7), the one-ply search `agents/sa/vlook.py` (including `vrnd`, the rate-matched control), the Kaggle harness `scripts/kaggle/`, and `score.py --dir` for local sharded runs. Bars and void conditions are frozen by `docs/experiments/E20-value-lookahead.md` and `E22-pessimistic-lookahead.md`.
 >
+> ## 📌 STANDING USER DIRECTIVES — day 31 (2026-08-12). **Live, not yet executed.**
+>
+> **Priority order given by the user: (1) escape the local optimum and improve
+> the net we have; (2) the two notes below, which are for LATER and are recorded
+> here so they are not re-derived.**
+>
+> 1. ⛏ **MINE NEWER EPISODES.** The last corpus build (`pds_v4`) drew on four
+>    dumps, 1,603 games, `avg_score` 1057–1223, and nothing has been mined since
+>    day 25. ⚠ **ROADMAP §0's rules bind and have each been paid for:** pull
+>    **manifests broadly, episodes selectively**; keep manifests even when
+>    episodes are pruned; **NEVER let mining pick an anchor** (that is what
+>    retired `rule:v10`, which turned out to be 12.8% of our field); and Kaggle's
+>    datasets stop at `avg_score` 1055 while we play at ~976, so mined data
+>    describes a band above ours. ⚡ **What is genuinely new since the last mine:
+>    the top of the board reshuffled completely** (HANDOFF standing note), so
+>    fresh dumps are a different population, not more of the same.
+> 2. 🃏 **08-15 FINAL SUBMISSIONS: two agents on two DIFFERENT decks**, if a
+>    second deck can be justified — a variance hedge across matchup
+>    distributions rather than a claim that the second deck is stronger.
+>    ⚠ **Read against §8al/§8as before choosing it:** strength falls
+>    **monotonically** with distance from the consensus 60 (1 swap 0.4911, 2
+>    swaps 0.4757, 4 swaps 0.4637 against a same-deck control of 0.4980), and
+>    §8ar/§8as's 11-variant search was ≤ 0 throughout. ⇒ **the honest framing is
+>    "we are buying variance and paying Elo for it"**, and the price is roughly
+>    known. The decision is the user's and is scheduled for 08-15.
+>
 > ## 🔴 N.12 DAY 30 (2026-08-11): **E25 closes the ENTIRE "override the clone with a better evaluator" family — V's edge over a coin flip FLIPS SIGN as you tighten the threshold** (§8cg)
 >
 > Pre-registered `docs/experiments/E25-deviation-cost-curve.md` at `8176ac1`
