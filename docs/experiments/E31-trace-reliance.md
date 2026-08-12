@@ -93,9 +93,46 @@ causes are removed by construction, and this section is the reachability check
   half the `gid`s, score on the other half.
 - ⚠ **All CIs are paired bootstrap over GAMES** for the same reason.
 
-⛔ **Gate:** ≥50,000 held-out pairs pooled, and ≥500 pairs in a stratum for that
-stratum to be reported. Below the pooled floor the cell is **VOID**, not null.
-(Expected ~205k; the gate is a tripwire on an extraction bug, not a real risk.)
+### ⛔ AMENDMENT, 2026-08-12 — made BEFORE the probe existed and before any statistic was computed
+
+**The gate as first frozen was ≥50,000 held-out pairs. It was unreachable, and
+this is the second time in two cells that a bar was written without checking it
+against the instrument** (§2 was written about exactly this failure, and then
+committed it). Measured immediately after freezing:
+
+| | |
+|---|---|
+| corpus rows / games | 248,985 / **1,603** |
+| the trainer's val split (`gid % 20 == 0`) | 13,671 rows / **85 games** |
+| all within-turn pairs | **203,676** |
+| within-turn pairs *inside the val split* | **11,155** |
+
+🔴 A ≥50,000 floor read against the net's own val split would have VOIDed a
+perfectly good cell on arithmetic. **The bar is not lowered to rescue the cell —
+the frame is corrected, because the frame was wrong.**
+
+⚡ **Why the val split was the wrong frame.** `Δ_net` is **not an accuracy
+against a memorizable label**. It asks how predictable **the net's own argmax**
+is from the previous symbol — a property of the policy function, evaluated at
+states. What must be disjoint is the **symbol predictors' fit/score split**, and
+that has no reason to coincide with the *net's* train/val split.
+
+⇒ **Amended frame, two arms:**
+
+| arm | rows | fit/score split | gate |
+|---|---|---|---|
+| **primary** | all **203,676** pairs | the 1,603 games split in half by `gid` | **≥50,000** ✅ reachable |
+| **robustness** | the **11,155** pairs in the net's val split | same halving, restricted | **≥5,000** ✅ reachable |
+
+⚠ **The primary arm carries a stated bias, and it points AGAINST the
+hypothesis.** On the ~95% of games the net trained on, its argmax is pulled
+toward the expert's actual action, which drags `Δ_net` toward `Δ_expert` — i.e.
+**toward the null**. A confirming primary is therefore conservative. The
+robustness arm carries no such bias and is where the sign is checked; ⛔ if the
+two arms **disagree in sign**, the cell is **VOID** and neither is reported as a
+finding.
+
+⛔ **Stratum floor unchanged:** ≥500 pairs for a stratum to be reported.
 
 ### 3.1 The alphabet — coarse on purpose
 
