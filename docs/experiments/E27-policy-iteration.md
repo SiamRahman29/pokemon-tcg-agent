@@ -174,6 +174,47 @@ comparing an intervention against a curve calibrated on a weaker one.
 ⛔ **The gate arm never ships and the ship arm never gates.** Mixing them is
 E17's post-hoc arm selection with extra steps.
 
+## 🔴 ROUND 1's PROBE EXPOSES A DEPTH CONFOUND IN `null(c)` — a secondary control is added BEFORE either cell runs at n=2,000
+
+100-game probe of the gate arm (`net=v5_s2, xnet=policy_e27_r1`):
+
+```
+c = 1,056 / 200 games = 5.28 changed picks/game     <- inside [0, 20.19], no extrapolation void
+deviation rate 6.3% of eligible decisions
+mean deviation rank 1.32     <- E26 cell A: 1.92,  E27 cell 0a: 1.86
+rank histogram 1:0.781  2:0.148  3:0.050  ...
+```
+
+🔴 **`null(c)` is calibrated on deviations of mean depth ~1.9 and round 1
+deviates at depth 1.32** — 78% of its changes take the clone's *second* choice,
+which is the near-tie band §8bd measured as nearly free. **Shallower deviations
+are cheaper, so `null(c)` OVERSTATES the cost of this step, and the round could
+clear it by being shallow rather than by being well-directed.** That is the same
+class of error the E26 control had twice, and it runs in the direction of the
+hypothesis again.
+
+⇒ **Secondary control, declared now and run at the same n:** a rate- **and**
+rank-matched RANDOM arm at round 1's own histogram
+(`xrnd1.0,xrankfile=<round-1 probe histogram>`), giving the incoherent floor at
+*this* depth. Then, exactly parallel to §8ch:
+
+```
+f_round = (gate - matched_random) / (0.500 - matched_random)
+          compare against E26's f = 0.758 [0.703, 0.814]
+```
+
+- **f_round > 0.758, CI excluding it** ⇒ this policy's deviations are better
+  *directed* than a merely-different trained policy's — the thing E27 claims.
+- **f_round ≈ 0.758** ⇒ round 1 produced a different policy, not a better one.
+  ⚠ **This is the reading `null(c)` alone could not distinguish**, and it is why
+  the control is being added.
+
+⛔ **The pre-registered gate is UNCHANGED and remains primary.** This is an added
+control, not a substituted criterion. ⚠ **Disclosure: the probe printed a score
+(0.5475, n=200, SE≈0.035) and I saw it.** It did **not** inform this addendum —
+the depth confound is visible in the health line's `mean_dev_rank` alone — but
+**n=200 licenses nothing** and the probe is not pooled into any cell.
+
 ## Reading rule — frozen before any round
 
 Let `c` be π_{r+1}'s measured changed picks/game against π_r, and `null(c)` the
