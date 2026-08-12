@@ -70,7 +70,13 @@ def bag_means(z, name: str, n: int, emb: np.ndarray) -> np.ndarray:
     lens = np.diff(off)
     out = np.empty((n, emb.shape[1]), dtype=np.float32)
     if len(flat):
-        sums = np.add.reduceat(emb[flat], off[:-1], axis=0)
+        # ⚠ `reduceat` RAISES on a start index equal to len(flat), which is what
+        # an empty bag on the LAST row produces -- so the rows have to be
+        # clamped before the call, not zeroed after it. Every clamped row has
+        # lens == 0 and is overwritten with `emb[0]` below, so the clamp cannot
+        # leak a wrong value; it only keeps the call legal.
+        starts = np.minimum(off[:-1], len(flat) - 1)
+        sums = np.add.reduceat(emb[flat], starts, axis=0)
         sums[lens == 0] = 0.0
     else:
         sums = np.zeros((n, emb.shape[1]), dtype=np.float32)

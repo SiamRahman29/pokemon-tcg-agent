@@ -185,6 +185,17 @@ cell-0 curve.
 | 🔴 **MOVEMENT ONLY** | CI contains `null(c)` | the policy moved and the direction was worth nothing — **exactly the B8 result at finer grain.** Two consecutive rounds here ⇒ **STOP**, and the axis closes with a number |
 | 🔴 **WORSE THAN MOVING** | below `null(c)`, CI excluding it | the advantage signal is **anti-informative** ⇒ hypothesis 3 above (V laundering) is confirmed ⇒ **STOP IMMEDIATELY**, do not tune, do not sweep β |
 | ⚠ **VOID** | any health flag, or `c` = 0 | a fine-tune that changes no decisions is not a treatment |
+| ⚠ **VOID — EXTRAPOLATION** | `c` > 20.19 | `null(c)` is calibrated at c ∈ {0, 5.71, 20.19} only. Beyond cell A's rate the curve is an extrapolation, and §8by is this project's own warning about trusting a fitted shape off its support. **Re-run the round at fewer epochs; do not read the score.** |
+
+⚠ **How the trust region is actually implemented, stated rather than implied:**
+warm-start from π_r plus a limited optimisation budget (3 epochs, lr 2e-4 —
+B8's, so step size stays comparable), **not** an explicit KL penalty, which
+`train_policy.py` does not have. ⇒ **the step is not BOUNDED, it is MEASURED**:
+`c` is the observable the gate is a function of, so a step that turns out large
+is read against a correspondingly larger cost rather than silently exceeding a
+bound. That is why the extrapolation void above exists.
+⚡ **Trainable set: all parameters** (B8 froze all but the head, 17.2%) — one of
+the four named differences, and the one most likely to produce a large `c`.
 
 **Round budget: 3.** ⛔ **No β sweep, no τ sweep, no "one more round because it
 was trending" — B8 was declined a β sweep and E17's post-hoc arm selection is
