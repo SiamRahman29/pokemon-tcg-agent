@@ -242,6 +242,8 @@ def build_agent(spec: str, deck: list[int],
         vlk_path = None
         # E21: 0.0/0 reproduce E20 exactly; E21 freezes 1.0 and 3.
         vlk_lcb, vlk_arms, vlk_rand, vlk_tau = 0.0, 0, 0.0, 0.0
+        # E26: 0/None reproduce the plain agent exactly.
+        xnet_path, x_rand, x_rank = None, 0.0, ""
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -344,6 +346,16 @@ def build_agent(spec: str, deck: list[int],
                 vlk_rand = float(f[4:])     # E22 audit: rate-matched coin flip
             elif f.startswith("vc"):
                 vlk_cap = float(f[2:])      # per-decision seconds cap
+            elif f.startswith("xnet="):
+                # E26 treatment: play THIS net's pick instead of ours.
+                xnet_path = f[5:]
+            elif f.startswith("xrank="):
+                # E26 control: the treatment's measured rank histogram,
+                # `1:0.62,2:0.21,...`. Depth is matched, not assumed.
+                x_rank = f[6:]
+            elif f.startswith("xrnd"):
+                # E26 control: deviate at THIS rate, rank drawn from xrank.
+                x_rand = float(f[4:])
             elif f in ("fstad", "noFstad"):
                 # E21: fetch Spikemuth Gym when no Stadium is ours (0.461
                 # firings/game). Default OFF until its own A/B clears the bar.
@@ -370,6 +382,11 @@ def build_agent(spec: str, deck: list[int],
         for _p in (net_path.split("+") if net_path else []):
             if _p and not Path(_p).exists():
                 raise SystemExit(f"bc net not found: {_p}")
+        if xnet_path and not Path(xnet_path).exists():
+            raise SystemExit(f"bc xnet not found: {xnet_path}")
+        if x_rank and not x_rand:
+            raise SystemExit("xrank= without xrnd does nothing -- the rank "
+                             "histogram is the CONTROL's sampler")
         try:
             agent = PolicyAgent(deck, net_path, chip_targeting=chip,
                                 energy_spread=spread, drag_target=drag,
@@ -391,7 +408,9 @@ def build_agent(spec: str, deck: list[int],
                                 vlk_maxopt=vlk_maxopt, vlk_cap=vlk_cap,
                                 vlk_path=vlk_path, vlk_lcb=vlk_lcb,
                                 vlk_arms=vlk_arms, vlk_rand=vlk_rand,
-                                vlk_tau=vlk_tau)
+                                vlk_tau=vlk_tau,
+                                xnet_path=xnet_path, x_rand=x_rand,
+                                x_rank=x_rank)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and
@@ -408,6 +427,11 @@ def build_agent(spec: str, deck: list[int],
                 raise SystemExit("bc:...,vlp requires vnet=<path> so the value "
                                  "net's bytes enter the archived identity")
             nm += "/v" + _net_fp(vlk_path)[1:]
+        # Rule 20 again: a SUBSTITUTE policy's bytes are as much this agent's
+        # identity as its own net's are. Without this, E26's treatment arm and
+        # its control would archive under the same name.
+        if xnet_path:
+            nm += "/x" + _net_fp(xnet_path)[1:]
         return nm, agent
     raise SystemExit(f"unknown agent spec: {spec!r}")
 

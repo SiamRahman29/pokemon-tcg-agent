@@ -43,6 +43,16 @@ STATS = {
     "fetch_seen": 0,
     "fetch_fired": 0,
     "fetch_diff": 0,
+    # E26 (day 31). Same distinction one level up, for a whole substituted
+    # POLICY: `x_fired` is every eligible single-pick decision the wrapper
+    # visited, `x_diff` only those where the played option differs from ours.
+    # `x_diff / x_fired` IS the deviation rate cell B must be matched to, and
+    # it is realised on-policy -- offline sizing has missed in both directions
+    # (§8cc 1.6x over, §8ce under).
+    "x_fired": 0,
+    "x_diff": 0,
+    "x_skip": 0,     # multi-select or <2 options: both arms fall through here
+    "x_error": 0,    # must be 0; the wrapper is fail-soft, so this is silent harm
 }
 
 
@@ -75,6 +85,10 @@ def health_line() -> str:
     if s["flip_eligible"]:
         line += (f" flips={s['flips']}/{s['flip_eligible']}"
                  f" ({s['flips'] / s['flip_eligible']:.1%})")
+    if s["x_fired"]:
+        line += (f" x={s['x_diff']}/{s['x_fired']}"
+                 f" ({s['x_diff'] / s['x_fired']:.1%})"
+                 f" skip={s['x_skip']} xerr={s['x_error']}")
     if s["first_error"]:
         line += f" first_error={s['first_error'][:200]!r}"
     # The oracle spends real wall-clock time, so "did it fire, how often, and
@@ -90,6 +104,10 @@ def health_line() -> str:
 
         if VSTATS:
             line += " | " + vhealth()
+        from .xpolicy import LIVE as XLIVE, health_line as xhealth
+
+        if XLIVE:
+            line += " | " + xhealth()
     except Exception:
         pass
     return line
@@ -98,7 +116,8 @@ def health_line() -> str:
 def reset_stats() -> None:
     STATS.update(calls=0, fallbacks=0, net_missing=0, deck_returns=0,
                  first_error=None, flip_eligible=0, flips=0,
-                 fetch_seen=0, fetch_fired=0, fetch_diff=0)
+                 fetch_seen=0, fetch_fired=0, fetch_diff=0,
+                 x_fired=0, x_diff=0, x_skip=0, x_error=0)
 
 
 class PolicyAgent:
@@ -122,7 +141,9 @@ class PolicyAgent:
                  vlk_maxopt: int = 12, vlk_cap: float = 5.0,
                  vlk_path: str | None = None,
                  vlk_lcb: float = 0.0, vlk_arms: int = 0,
-                 vlk_rand: float = 0.0, vlk_tau: float = 0.0):
+                 vlk_rand: float = 0.0, vlk_tau: float = 0.0,
+                 xnet_path: str | None = None, x_rand: float = 0.0,
+                 x_rank: str = ""):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -282,6 +303,28 @@ class PolicyAgent:
                 vnet_path=vlk_path, lcb=vlk_lcb, arms=vlk_arms,
                 rand_p=vlk_rand, tau=vlk_tau)
 
+        # E26 — substitute a whole different POLICY's pick (`xnet=`), or a
+        # rate- and rank-matched RANDOM one (`xrnd`), so that coherence is the
+        # only difference between the two arms. Both arms construct this object
+        # and pay the same second forward pass. OFF by default.
+        self.xsub = None
+        if xnet_path or x_rand:
+            from .xpolicy import Substitute, parse_rank_hist
+
+            xnet = None
+            if xnet_path:
+                xnet = policynet.load(xnet_path)
+                if xnet is None:
+                    # Same guard, same reason as `net=`: a substitute that fails
+                    # to load would silently leave the treatment arm playing the
+                    # BASE policy, and the cell would read as a clean null.
+                    raise ValueError(
+                        f"xnet {xnet_path!r} exists but FAILED policynet.load's "
+                        f"guard. Refusing to run an E26 treatment arm that is "
+                        f"bitwise the control.")
+            self.xsub = Substitute(xnet=xnet, rand_rate=x_rand,
+                                   rank_hist=parse_rank_hist(x_rank))
+
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
 
@@ -402,6 +445,8 @@ class PolicyAgent:
                 picked = self._sym_choose(net, obs)
             else:
                 picked = net.choose(obs)
+            if self.xsub is not None:
+                picked = self.xsub.apply(net, obs, picked, want, STATS)
             if self.flip_margin is not None:
                 picked = self._flip_near_tie(net, obs, picked)
             if self.boss_veto:
