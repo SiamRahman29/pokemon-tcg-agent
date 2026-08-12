@@ -62,8 +62,12 @@ def main() -> int:
     ap.add_argument("--tag", required=True, help="e.g. e27r2")
     args = ap.parse_args()
 
-    vnet = f"out/value_{args.tag}.npz"
-    pnet = f"out/policy_{args.tag}.npz"
+    # Written under out/e27/ so a Kaggle job can `--collect out/e27` and pull
+    # back only what the round PRODUCED, not the ~117 MB of input nets the
+    # payload also unpacks into out/.
+    (ROOT / "out" / "e27").mkdir(parents=True, exist_ok=True)
+    vnet = f"out/e27/value_{args.tag}.npz"
+    pnet = f"out/e27/policy_{args.tag}.npz"
 
     run("1/3 policy evaluation (V on this round's own games)",
         ["scripts/train_value.py", "--data", args.data, "--out", vnet,

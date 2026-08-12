@@ -50,7 +50,10 @@ PAYLOAD = [
 # Nets live in out/ and are named per job; ship the whole v5 family plus the
 # shipped weights so a job spec can reference any of them without a re-pack.
 NET_GLOBS = ["out/policy_v5*.npz", "out/policy_v4.npz", "out/policy_b7_ntum.npz",
-             "out/value_*.npz"]
+             "out/value_*.npz",
+             # E27: each round's policy is the NEXT round's --init, so a round
+             # run on Kaggle needs its predecessor in the payload.
+             "out/policy_e27_*.npz"]
 
 IGNORE = shutil.ignore_patterns("__pycache__", "*.pyc", ".git", "*.log")
 
