@@ -259,6 +259,10 @@ hard number anywhere.** The formal re-census is underpowered; every check that
 can be run points the same way; ⛔ and it is still **not** a licence to quote
 28.6% as hard either.
 
+⚡ **And the feed frame agrees, from a completely independent sample** (§R2):
+our archetype is **10.5%** of 3,200 fresh top-band seats. Two different frames,
+two different denominators, both saying the mirror is not what it was.
+
 ### 🔴 The finding that outranks the number: the monotone curve is not there
 
 §8ac's planning claim was *"the mirror is the matchup that matters and **gets
@@ -289,3 +293,88 @@ fresh feed is the **wrong frame** (§3) *and* would bias the sample: the feed
 publishes only high-`avg_score` episodes, so our games in it are selected for
 strong opponents. **Q1 is blocked on a fresh dump of our own games, which is a
 user action, not a Kaggle call.**
+
+## R2. Q2 — the current top, from 1,600 fresh episodes (`avg_score` 1102–1300, mean 1153)
+
+Top-400 by `avg_score` from each of 08-08…08-11; 3,200 seats, both seats
+labelled by lower-bound reconstruction.
+
+| archetype | seats | share | | archetype | seats | share |
+|---|---|---|---|---|---|---|
+| **Dragapult ex** | 581 | **18.2%** | | Teal Mask Ogerpon ex | 228 | 7.1% |
+| **Mega Lucario ex** | 389 | **12.2%** | | Hydrapple ex | 179 | 5.6% |
+| **Alakazam** | 358 | **11.2%** | | Slowking | 151 | 4.7% |
+| **Marnie's Grimmsnarl ex (us)** | 337 | **10.5%** | | Mega Lopunny ex | 96 | 3.0% |
+| Dudunsparce | 239 | 7.5% | | Meganium | 94 | 2.9% |
+
+🔴 **The top is a four-way field and we are fourth in it.** ⚠ Against §8bq's
+**23.7%** for our archetype in the ≥1100 feed of 08-03…08-07, this reads
+**10.5%** — the share **more than halved in one week**, on the same frame.
+
+🔴 **The mirror is 1.1% of games (17 of 1,600)** in this band, and **11.6% of
+all Grimmsnarl-seat decisions**. ⚡ Set against the training corpus's **63.9% of
+opponent board slots**, the composition mismatch is **worse than
+`PARKED-corpus-coverage.md` measured**, not better.
+
+⚡ **Dragapult ex is the story of the week.** It is 18.2% of the top band and
+the single most common matchup pair in it (`Dragapult vs Mega Lucario`, 4.8% of
+all games). It held **5.3%** field weight in §8ac and **2.74%** of corpus slots.
+
+### ⇒ What Q2 hands the 08-15 decision
+
+Per §6's branch: **no current top archetype clears ≥50 games / ≥500 decisions**
+(§R3), so **directive 2 stays a variance hedge and is priced exactly as §8al
+prices it (~17–25 Elo).** ⛔ Q2 does **not** name a second deck, and mining
+never picks an anchor.
+
+⚠ **But the input to that decision has changed** and the user should have it:
+our archetype is no longer the top band's largest bucket in either frame, and
+the deck reads Tier 2 outside the sim. Nothing here says a second deck would
+score better — only that *"the mirror is where we live"* is no longer the
+premise it was on 08-01.
+
+## R3. 🔴 Q3 / E30's gate — no target archetype clears it, and one is still absent entirely
+
+Grimmsnarl-seat games in the 1,600 fresh episodes, against
+`PARKED-corpus-coverage.md`'s own target set — **under-represented by MORE than
+3×** (ratio < 0.33), which is the set that defines the lever:
+
+| archetype | field | corpus | ratio | **target?** | games | decisions | **gate** |
+|---|---|---|---|---|---|---|---|
+| **Alakazam** | 22.0% | 3.39% | **0.15×** | **yes** | 37 | 2,687 | 🔴 **FAIL** (games) |
+| **Archaludon ex** | 8.0% | 0.02% | **0.00×** | **yes** | **0** | **0** | 🔴 **FAIL** (absolute) |
+| **Cynthia's Garchomp ex** | 6.7% | 0.40% | **0.06×** | **yes** | 5 | 449 | 🔴 **FAIL** (both) |
+| **Mega Lucario ex** | 4.0% | 0.00% | **0.00×** | **yes** | 38 | 3,116 | 🔴 **FAIL** (games) |
+| Dragapult ex | 5.3% | 2.74% | 0.52× | no | 55 | 4,777 | passes — but never a target |
+| Crustle | 6.7% | 6.26% | 0.93× | no | 10 | 1,257 | — |
+
+⛔ **Nothing in the target set passes.** The one archetype clearing both
+thresholds is the one the parked file explicitly excluded: *"the 0.93× and 0.52×
+rows are not load-bearing; the 0.00× / 0.06× / 0.15× rows are unambiguous."*
+⛔ **E30 is not rescued by building on Dragapult** — that answers a question
+nobody asked — and the threshold is not relaxed after seeing the counts (§4).
+
+### ⚡ But the day-25 kill's REASON is now false, and the distinction matters
+
+| | day 25 (F3) | **today** |
+|---|---|---|
+| Mega Lucario ex | **0 games**, "cannot be obtained" | **38 games, 3,116 decisions** |
+| Archaludon ex | **0 games** | **0 games** |
+| feed ceiling (§8i) | `avg_score` ~1055 | **1300** |
+
+⇒ **The kill reason shifts from "these games do not exist" to "they exist and
+are still too thin to clone."** For **Archaludon** the original kill stands and
+is now confirmed on a second independent population — **0 of 1,600 top-band
+games.** ⚠ Recorded precisely because "killed on availability" has been quoted
+as settled, and half of it no longer is.
+
+### ⛔ The failure is a PULL-DEPTH limit, not an availability limit
+
+We pulled **1,600 of 18,562** available fresh episodes — **8.6%**. Alakazam
+needs **1.35×** and Mega Lucario **1.32×** the current depth to clear 50 games.
+**Deepening the pull MEETS the threshold; it does not relax it**, and mining is
+this cell's own remit. A pull to top-900/date is running.
+
+⚠ **Deeper pulls lower the `avg_score` cutoff**, moving the sample toward
+~1050–1100 — still above our ~933 band, and *closer* to it. That is a change in
+the sampled population and must be reported with any count it produces.
