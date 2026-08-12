@@ -231,6 +231,14 @@ and it is why Q3 is worth running rather than assumed.
 
 ### ⛔ The formal verdict is the pre-registered one: UNDERPOWERED BY SIZING
 
+> ⚠ **SUPERSEDED THE SAME DAY BY §R1b — read that for the verdict.** The user
+> supplied 330 fresh ladder games, the 1000+ band reached **n=67**, and Q1
+> **RESOLVED as REFUTED** (20.9%, z = −3.81). Everything below stands as
+> measured on the 76-game sample and none of it is retracted; it is simply no
+> longer the answer. ⚡ Note that this section's own worry — *"the gate was set
+> on the wrong quantity"* — was **right**: the effect was real and the n≥30
+> floor was what delayed it, not the data.
+
 The 1000+ band holds **21 games against the frozen ≥30 floor**, so by §6 the
 verdict is **UNDERPOWERED**, bands were **not** pooled to reach n, and neither
 endpoint may be quoted as hard. That rule stands as written.
@@ -293,6 +301,61 @@ fresh feed is the **wrong frame** (§3) *and* would bias the sample: the feed
 publishes only high-`avg_score` episodes, so our games in it are selected for
 strong opponents. **Q1 is blocked on a fresh dump of our own games, which is a
 user action, not a Kaggle call.**
+
+## R1b. ✅ Q1 RESOLVES — the user supplied the dump, and the premise is REFUTED
+
+**`replays/submission_replays_12-08-26`, 330 ladder games of `Scio`** (supplied
+2026-08-12). Deduped against `submission_v5_s2` — ⚠ **74 of those 76 games are
+already inside the new dump**, so it is a *superset*, not an independent sample,
+and pooling unguarded double-counted them. `p90` now dedupes by episode id
+always; the same defect was caught the same day in the expert dumps (E28 §R1).
+**332 unique games.**
+
+| opponent band | games | mirror | share | 95% Wilson | **§8ac (08-01)** |
+|---|---|---|---|---|---|
+| <800 | 64 | 11 | **17.2%** | [9.9%, 28.2%] | 5.3% |
+| 800–900 | 86 | 34 | **39.5%** | [29.9%, 50.1%] | 18.6% |
+| 900–1000 | 105 | 40 | **38.1%** | [29.4%, 47.6%] | 42.4% |
+| **1000+** | **67** | **14** | **20.9%** | **[12.9%, 32.1%]** | **71.4%** |
+
+### 🔴 VERDICT: REFUTED FROM BELOW — the 71.4% is an overclaim
+
+**n = 67 clears the pre-registered ≥30 floor**, so this is the frozen
+comparison, not a caveated one:
+
+**20.9% vs 71.4% — difference −50.5 pp, 95% CI [−76.1, −24.9], z = −3.81.**
+
+⇒ §6's first branch fires: **the premise is refuted; the five places quoting
+71.4% as hard are overclaims**, and the 08-15 decision is re-priced against the
+measured field.
+
+✅ **Every earlier read agrees, and none was powered enough to settle it alone:**
+the n=21 sample said 28.6% (z=−2.75), the 08-01 LB re-banding said 27.8%, and
+the independent feed frame said 10.5%. **Four samples, three frames, one
+direction.**
+
+### 🔴 And the monotone curve is dead on the larger sample too
+
+§8ac: 5.3 → 18.6 → 42.4 → **71.4**, monotone, and the planning claim was *"the
+mirror gets more so as we climb."* Measured: **17.2 → 39.5 → 38.1 → 20.9.** It
+**plateaus across our own bands and falls at the top** — the field *diversifies*
+as we climb, it does not concentrate.
+
+**The 1000+ band, in full (n=67):**
+
+| archetype | games | share |
+|---|---|---|
+| **Marnie's Grimmsnarl ex** | 14 | **20.9%** |
+| **Alakazam** | 13 | **19.4%** |
+| **Dragapult ex** | 10 | **14.9%** |
+| Dudunsparce | 6 | 9.0% |
+| Mega Lucario ex | 5 | 7.5% |
+| Teal Mask Ogerpon ex / Crustle | 4 each | 6.0% each |
+
+⚡ **This is the same three-way top the feed frame found independently**
+(Dragapult 18.2%, Mega Lucario 12.2%, Alakazam 11.2%, us 10.5%). ⚠ **Every
+verdict re-weighted by §8ac's shares inherits this** — including §8j's
+sign-flip, which was re-weighted on day-15 weights that no longer hold.
 
 ## R2. Q2 — the current top, from 1,600 fresh episodes (`avg_score` 1102–1300, mean 1153)
 

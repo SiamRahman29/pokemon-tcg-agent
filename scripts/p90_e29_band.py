@@ -71,7 +71,15 @@ def main() -> int:
     band_n: Counter = Counter()
     unmatched = 0
     total = 0
+    dup = 0
+    seen: set[str] = set()
 
+    # 🔴 DEDUPE BY EPISODE ID, ALWAYS. Our own dumps are re-cuts of each other,
+    # not independent pulls: `submission_replays_12-08-26` (330 games) already
+    # contains **74 of the 76** games in `submission_v5_s2`. Pooling them
+    # unguarded inflates every band and quietly double-weights the older
+    # sample. The same defect was caught the same day in the expert dumps
+    # (E28 §R1: `mirror_experts` re-cuts the other two, 32% duplicated).
     for dname in args.dirs:
         d = ROOT / dname
         if not d.is_dir():
@@ -80,6 +88,10 @@ def main() -> int:
         for path in sorted(d.glob("*.json")):
             if path.name == "manifest.json":
                 continue
+            if path.stem in seen:
+                dup += 1
+                continue
+            seen.add(path.stem)
             try:
                 got = scan(path)
             except Exception:  # noqa: BLE001
@@ -107,7 +119,8 @@ def main() -> int:
                     break
 
     print(f"\n{total} of our ladder games; {unmatched} opponents unmatched to "
-          f"the LB ({Path(args.lb).name})")
+          f"the LB ({Path(args.lb).name})"
+          + (f"; ⚠ {dup} DUPLICATE episodes skipped across dumps" if dup else ""))
     print(f"\n=== MIRROR SHARE BY OPPONENT RATING BAND (§8ac's frame) ===")
     print(f"  {'band':<10}{'games':>7}{'mirror':>8}{'share':>9}"
           f"{'95% Wilson CI':>22}")
