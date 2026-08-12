@@ -402,6 +402,7 @@ class Data:
         # B8. Present only in shards written by p26_selfplay_gen.py; a BC
         # corpus gets NaN, which is what `--advantage` refuses to weight.
         margin: list = []
+        adv: list = []
         self.rows_per_path: list[int] = []
         od, oc, oa, ot, om = [], [], [], [], []
         self.opt_rows: list[tuple[int, int]] = []  # (start,end) per row
@@ -435,6 +436,11 @@ class Data:
             self.rows_per_path.append(n)
             margin.append(z["margin"] if "margin" in z
                           else np.full(n, np.nan, dtype=np.float32))
+            # E27: the per-decision TD residual written by p92_td_advantage.py.
+            # NaN for every corpus built before it, which --advantage-col
+            # refuses to weight rather than treating as zero.
+            adv.append(z["adv"] if "adv" in z
+                       else np.full(n, np.nan, dtype=np.float32))
             # Corpora built before `--ratings` have no per-row demonstrator.
             rating.append(z["rating"] if "rating" in z
                           else np.full(n, np.nan, dtype=np.float32))
@@ -465,6 +471,7 @@ class Data:
         self.won = np.concatenate(won)
         self.rating = np.concatenate(rating)
         self.margin = np.concatenate(margin)
+        self.adv = np.concatenate(adv)
         self.w = np.ones(len(self.gid), dtype=np.float32)
         self.opt_dense = np.concatenate(od)
         self.opt_card = np.concatenate(oc).astype(np.int64)
@@ -528,6 +535,62 @@ class Data:
                    torch.from_numpy(self.xslots[sel]),
                    torch.from_numpy(self.attr[sel]),
                    torch.from_numpy(self.routes[sel]))
+
+
+def td_advantage_weights(data: "Data", is_rl: np.ndarray, beta: float,
+                         anchor_w: float) -> np.ndarray:
+    """E27: AWR over the PER-DECISION TD residual, not the game result.
+
+    `w = exp(beta * A / sd(A))` on RL rows. **The normalisation by sd(A) is the
+    part that has to be argued, and it is frozen in the pre-registration rather
+    than tuned**: a TD residual has sd ~0.07 while B8's `won - baseline` has
+    sd ~0.5, so passing the same beta to both would make this reweighting ~7x
+    gentler than the one that already measured null (§8ao). Dividing by sd puts
+    beta in units of "standard deviations of advantage", and **beta = 0.5
+    reproduces B8's weight RATIO of e ~ 2.72 between a +1sd and a -1sd
+    decision** -- so E27 differs from B8 in the SIGNAL, not in how hard it
+    pushes. Tuning beta afterwards is the shopping B8 was denied.
+
+    ⚠ Rows whose advantage is NaN (any corpus not passed through
+    `p92_td_advantage.py`) are refused outright rather than silently weighted 1,
+    because a half-annotated corpus would train mostly on unweighted rows and
+    report a perfectly ordinary loss curve.
+    """
+    if not is_rl.any():
+        raise SystemExit("--advantage-col needs RL shards from "
+                         "p26_selfplay_gen.py; every row came from --anchor-ds")
+    a = data.adv
+    bad = int(np.isnan(a[is_rl]).sum())
+    if bad:
+        raise SystemExit(
+            f"{bad:,} of {int(is_rl.sum()):,} RL rows have no `adv` column. "
+            f"Run scripts/p92_td_advantage.py over the corpus first -- "
+            f"training on a partly-annotated corpus is a silent null.")
+    sd = float(np.std(a[is_rl]))
+    if sd <= 0:
+        raise SystemExit("advantage column has zero variance -- nothing to weight")
+    w = np.ones(data.n, dtype=np.float32)
+    z = (a[is_rl] - float(np.mean(a[is_rl]))) / sd
+    # 🔴 Clip the STANDARDISED advantage at +/-2 sd, chosen on a property of
+    # the data and not of any score (E25's discipline for picking tau). The
+    # advantage distribution is a spike at zero plus a heavy tail -- the same
+    # shape §8by found for rollout value -- so an unclipped exponent hands a
+    # handful of outlier transitions enormous weight: at +/-4 the effective
+    # sample size measured 50.8% against B8's 91.3%, i.e. half the corpus
+    # thrown away to variance before any signal is asked for. At +/-2 the FULL
+    # weight range is [e^-1, e^+1], which is exactly B8's win-row/loss-row
+    # range end to end.
+    w[is_rl] = np.exp(beta * np.clip(z, -2.0, 2.0))
+    w[~is_rl] = anchor_w
+    w = (w / w.mean()).astype(np.float32)
+    print(f"--advantage-col {beta}: adv mean={np.mean(a[is_rl]):+.5f} "
+          f"sd={sd:.4f}; weights [{w.min():.4f}, {w.max():.3f}]; "
+          f"ratio(+1sd/-1sd)={np.exp(2 * beta):.2f}")
+    print(f"  anchor rows {int((~is_rl).sum()):,} at {anchor_w}")
+    ess = w[is_rl].sum() ** 2 / np.square(w[is_rl]).sum()
+    print(f"  effective sample size {ess:,.0f} of {int(is_rl.sum()):,} RL rows "
+          f"({ess / max(int(is_rl.sum()), 1):.1%})")
+    return w
 
 
 def advantage_weights(data: "Data", is_rl: np.ndarray, beta: float,
@@ -755,6 +818,10 @@ def main() -> int:
                          "so the fine-tune cannot drift off the clone it "
                          "started from. Rows from here are never "
                          "advantage-weighted.")
+    ap.add_argument("--advantage-col", type=float, default=0.0,
+                    help="E27: AWR beta over the per-decision TD residual "
+                         "written by p92_td_advantage.py, in units of sd(adv). "
+                         "0.5 reproduces B8's weight ratio (e ~ 2.72).")
     ap.add_argument("--advantage", type=float, default=0.0,
                     help="B8: AWR temperature. Weight = exp((won-baseline)/B) "
                          "on --ds rows. 0 disables (plain cloning).")
@@ -977,6 +1044,14 @@ def main() -> int:
               f"({ess / max(int(keep.sum()), 1):.1%})")
         print(f"  {int((~rated & keep).sum())} unrated rows held at the median "
               f"rating ({np.nanmedian(data.rating):.1f})")
+    if args.advantage_col > 0:
+        if args.advantage > 0:
+            raise SystemExit("--advantage-col and --advantage both set data.w; "
+                             "pick the terminal-outcome signal or the TD one")
+        if args.rating_temp > 0:
+            raise SystemExit("--advantage-col and --rating-temp both set data.w")
+        data.w = td_advantage_weights(data, is_rl, args.advantage_col,
+                                      args.anchor_w)
     if args.advantage > 0:
         if args.rating_temp > 0:
             raise SystemExit("--advantage and --rating-temp both set data.w; "

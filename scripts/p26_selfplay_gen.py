@@ -59,7 +59,7 @@ from ptcg.env import harness, sdk  # noqa: E402
 
 sdk.load()
 
-from sa.features import extra_feats, featurize  # noqa: E402
+from sa.features import attr_feats, extra_feats, featurize  # noqa: E402
 from sa.optfeat import option_features, OPT_DENSE  # noqa: E402
 from sa import policynet  # noqa: E402
 from build_policy_dataset import Writer, sel_features  # noqa: E402
@@ -102,13 +102,13 @@ class RLWriter(Writer):
         # Re-open and append. Cheaper than duplicating Writer.flush's 20-line
         # dict, and it cannot fall out of sync with it.
         path = out_dir / f"shard_{idx:03d}.npz"
-        # `allow_pickle=True` because the base writer now emits at least one
-        # object-dtype column (the team/submission id strings). This path ran
-        # clean for B8 on day 17 and raises today, so the corpus schema gained
-        # an object array since -- and the failure is at RE-OPEN, after the
-        # shard is already on disk, which is why `artifacts/<run>/shard_000.npz`
-        # exists and looks fine while the RL columns were never appended.
-        # Reading back a file we just wrote ourselves is not an untrusted load.
+        # `allow_pickle=True` is belt-and-braces on a file we just wrote
+        # ourselves. 🔴 The ROOT CAUSE it originally papered over is fixed
+        # above: this script predates the v6 attribute block (day 17 vs day
+        # 20) and never passed `attr=`, so the writer stacked a column of
+        # `None` into an OBJECT array. That broke this re-open, and it would
+        # also have made `--attr` train on nothing while reporting an ordinary
+        # loss curve. Every p26 corpus written before day 31 carries it.
         z = dict(np.load(path, allow_pickle=True))
         assert len(blogp) == n == len(z["gid"]), "RL columns out of step"
         z["behav_logp"] = blogp
@@ -289,6 +289,7 @@ def generate(args) -> int:
                 pending.append((dense, bags, sel_features(sel),
                                 (od, oc, oa, ot), mask,
                                 extra_feats(state, sel, me),
+                                attr_feats(state, me),
                                 logp, margin, me))
             return tap
 
@@ -305,7 +306,7 @@ def generate(args) -> int:
         tally[r.winner if r.winner in (0, 1) else 2] += 1
 
         gid = args.gid_base + g
-        for (dense, bags, seld, opts, mask, extra,
+        for (dense, bags, seld, opts, mask, extra, attr,
              logp, margin, me) in pending:
             n_seen += 1
             if args.keep_margin > 0 and margin > args.keep_margin:
@@ -319,8 +320,8 @@ def generate(args) -> int:
             else:
                 won = 1.0 if r.winner == me else 0.0
             writer.add_rl(dense, bags, seld, opts, mask, gid, won,
-                          extra=extra, behav_logp=logp, margin=margin,
-                          seat=me)
+                          extra=extra, attr=attr, behav_logp=logp,
+                          margin=margin, seat=me)
             n_rows += 1
         if (g + 1) % args.report == 0:
             el = time.time() - t0

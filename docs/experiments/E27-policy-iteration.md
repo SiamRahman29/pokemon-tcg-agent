@@ -140,6 +140,18 @@ Round *r* (π₀ = `out/policy_v5_s2.npz`, the shipped net):
    - the **A/B** π_{r+1} vs **π₀** — because rounds compound and the incumbent
      is what a submission must beat.
 
+## The configuration, frozen before round 1 — every value set on a property of the DATA, never on a score
+
+| knob | value | why this value and not another |
+|---|---|---|
+| AWR β | **0.5**, in units of sd(A) | a TD residual has sd ≈ 0.07 against B8's `won − base` sd ≈ 0.5, so the same β would push **7× more gently** than the run that already measured null. β = 0.5 after standardising reproduces **B8's weight ratio of e ≈ 2.72** between a +1sd and a −1sd decision ⇒ **E27 differs from B8 in the SIGNAL, not in how hard it pushes** |
+| advantage clip | **±2 sd** | the advantage is a spike at zero plus a heavy tail (§8by's shape). Unclipped at ±4 the **effective sample size measured 50.8%** against B8's 91.3% — half the corpus lost to variance before any signal is asked for. At ±2 the full weight range is `[e⁻¹, e⁺¹]`, **exactly B8's win-row/loss-row range end to end**, and ESS reads **85.5%** |
+| architecture | `--state-h 512,256 --head-h 256,128 --pool --opt-cols 37` | v5's recipe, verified against `policy_v5_s2.npz` (702,913 params, `n_pool=172`). ⚠ **`--opt-cols 37` is load-bearing**: the corpus now writes 46-wide option features and the v6 attribute block is *appended*, so 37 slices exactly the v5 layout `--init` requires |
+| V | retrained per round on that round's own games | policy **evaluation**, on-distribution for π_r |
+
+⛔ **None of these may be swept.** B8 was denied a β sweep and E17's post-hoc arm
+selection is what E19 priced. A different β requires a new pre-registration.
+
 ## Reading rule — frozen before any round
 
 Let `c` be π_{r+1}'s measured changed picks/game against π_r, and `null(c)` the
