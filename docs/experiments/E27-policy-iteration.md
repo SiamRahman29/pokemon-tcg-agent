@@ -152,6 +152,28 @@ Round *r* (π₀ = `out/policy_v5_s2.npz`, the shipped net):
 ⛔ **None of these may be swept.** B8 was denied a β sweep and E17's post-hoc arm
 selection is what E19 priced. A different β requires a new pre-registration.
 
+## ⚠ The gate arm must run through the SAME INSTRUMENT the null was calibrated on
+
+Recorded before round 1 produced any number, because it is the kind of mismatch
+that reads as a result.
+
+`null(c)` was fitted on **E26 cell A and E27 cell 0a, both of which ran through
+the `xnet=` wrapper** — which substitutes only on **single-pick** decisions and
+lets multi-selects fall through (8,816 of them in cell A). A round-1 A/B run as
+a plain `net=` swap would substitute on **every** decision, so its deviation
+rate is not the `c` the null is a function of, and comparing the two would be
+comparing an intervention against a curve calibrated on a weaker one.
+
+⇒ **Two arms per round, and they answer different questions:**
+
+| arm | spec | reads against |
+|---|---|---|
+| **gate** | `bc:…,net=π₀,xnet=π_{r+1}` | `null(c)` — *did the direction pay more than the cost of moving?* |
+| **ship** | `bc:…,net=π_{r+1}` vs `bc:…,net=π₀` | the 0.541 bar — *is this a better agent?* |
+
+⛔ **The gate arm never ships and the ship arm never gates.** Mixing them is
+E17's post-hoc arm selection with extra steps.
+
 ## Reading rule — frozen before any round
 
 Let `c` be π_{r+1}'s measured changed picks/game against π_r, and `null(c)` the
