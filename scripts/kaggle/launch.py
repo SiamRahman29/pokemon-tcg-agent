@@ -41,6 +41,9 @@ from pathlib import Path
 
 REPO = Path("/kaggle/working/repo")
 CMDS = {cmds!r}
+THEN = {then!r}
+COLLECT = {collect!r}
+OUTFLAG = {outflag!r}
 
 t0 = time.time()
 print("cpu_count =", os.cpu_count(), flush=True)
@@ -78,7 +81,7 @@ if missing:
     sys.exit(f"payload incomplete, missing: {{missing}}")
 (REPO / "out" / "logs").mkdir(parents=True, exist_ok=True)
 for c in CMDS:
-    Path(REPO / c.split("--archive")[1].split()[0]).parent.mkdir(parents=True, exist_ok=True)
+    Path(REPO / c.split(OUTFLAG)[1].split()[0]).parent.mkdir(parents=True, exist_ok=True)
 
 env = dict(os.environ, PYTHONPATH=f"{{REPO}}/src:{{REPO}}/agents:{{REPO}}", PYTHONUNBUFFERED="1")
 procs = []
@@ -100,14 +103,36 @@ for i, _, _ in procs:
     tail = [l for l in txt.splitlines() if "score=" in l or "Traceback" in l]
     print(f"--- shard {{i}} ---"); print("\\n".join(tail[-6:]) or "(no score line)", flush=True)
 
+# A post-command runs ONCE, after every shard, in the same kernel. This is what
+# lets generation and training share a job: a self-play corpus is gigabytes and
+# a trained net is megabytes, so training HERE and pulling only the net is the
+# difference between a feasible round and a download that outlasts the session.
+if THEN and rc == 0:
+    log = open(REPO / "out" / "logs" / f"{job}_then.txt", "w")
+    print("running --then:", THEN, flush=True)
+    p = subprocess.Popen([sys.executable, "-X", "utf8"] + THEN.split(),
+                         cwd=REPO, env=env, stdout=log, stderr=subprocess.STDOUT)
+    p.wait(); log.close()
+    rc |= p.returncode
+    print(f"then exit={{p.returncode}} t={{time.time()-t0:.0f}}s", flush=True)
+    tail = (REPO / "out" / "logs" / f"{job}_then.txt").read_text(errors="replace")
+    print("--- then (tail) ---"); print("\\n".join(tail.splitlines()[-25:]), flush=True)
+elif THEN:
+    print(f"SKIPPING --then: a shard failed (rc={{rc}}); a post-command over a "
+          f"partial corpus would train on silently truncated data", flush=True)
+
 out = Path("/kaggle/working")
-for sub in ("out/arena", "out/logs"):
+for sub in COLLECT:
     s = REPO / sub
     if s.exists():
         shutil.copytree(s, out / sub, dirs_exist_ok=True)
+    else:
+        print(f"collect: {{sub}} does not exist, skipped", flush=True)
 shutil.rmtree(REPO, ignore_errors=True)
-rows = sum(1 for f in (out / "out/arena").rglob("*.jsonl") for _ in f.open())
-print(f"=== job {job} done rc={{rc}} rows={{rows}} wall={{time.time()-t0:.0f}}s ===")
+rows = sum(1 for f in (out / "out/arena").rglob("*.jsonl") for _ in f.open()) \\
+    if (out / "out/arena").exists() else 0
+mb = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / 1e6
+print(f"=== job {job} done rc={{rc}} rows={{rows}} out={{mb:.1f}}MB wall={{time.time()-t0:.0f}}s ===")
 sys.exit(rc)
 '''
 
@@ -117,15 +142,26 @@ def job_dir(job: str) -> Path:
 
 
 def push(args: argparse.Namespace) -> None:
-    if "--archive" not in args.cmd:
-        sys.exit("--cmd must contain --archive (a shard needs its own file)")
-    if "{i}" not in args.cmd.split("--archive")[1].split()[0]:
-        sys.exit("the --archive path must contain {i} -- shards must not share a file")
+    # The guard is the one E18 paid for -- six processes appending to one file --
+    # and it is kept for every job type, not just arena play. What generalises is
+    # only WHICH flag names the per-shard output.
+    if args.out_flag not in args.cmd:
+        sys.exit(f"--cmd must contain {args.out_flag} (a shard needs its own "
+                 f"output path; pass --out-flag for a different one)")
+    if "{i}" not in args.cmd.split(args.out_flag)[1].split()[0]:
+        sys.exit(f"the {args.out_flag} path must contain {{i}} -- shards must "
+                 f"not share an output")
+    if args.then and "{i}" in args.then:
+        sys.exit("--then runs ONCE after all shards, so {i} is undefined in it")
 
     cmds = [args.cmd.replace("{i}", str(i)) for i in range(args.shards)]
+    collect = [c.strip() for c in args.collect.split(",") if c.strip()]
     d = job_dir(args.job)
     d.mkdir(parents=True, exist_ok=True)
-    (d / "run.py").write_text(RUNNER.format(job=args.job, cmds=cmds), encoding="utf-8")
+    (d / "run.py").write_text(
+        RUNNER.format(job=args.job, cmds=cmds, then=args.then,
+                      collect=collect, outflag=args.out_flag),
+        encoding="utf-8")
     (d / "kernel-metadata.json").write_text(json.dumps({
         "id": f"{USER}/ptcg-{args.job}",
         "title": f"ptcg-{args.job}",
@@ -183,6 +219,16 @@ def main() -> None:
     p.add_argument("--cmd", required=True, help="shard command; {i} = shard index")
     p.add_argument("--shards", type=int, default=4)
     p.add_argument("--gpu", action="store_true")
+    p.add_argument("--out-flag", default="--archive",
+                   help="the flag naming each shard's own output path "
+                        "(--archive for arena.py, --out for the generators)")
+    p.add_argument("--then", default="",
+                   help="one command run ONCE after every shard succeeds, in "
+                        "the same kernel -- e.g. train on what the shards just "
+                        "generated, so only the net is pulled back")
+    p.add_argument("--collect", default="out/arena,out/logs",
+                   help="comma-separated repo-relative dirs copied to "
+                        "/kaggle/working for `pull`")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=push)
 
