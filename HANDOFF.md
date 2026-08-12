@@ -74,7 +74,25 @@ it lets any team name in a replay be joined to its rating.
 > the net we have; (2) the two notes below, which are for LATER and are recorded
 > here so they are not re-derived.**
 >
-> 1. ⛏ **MINE NEWER EPISODES.** The last corpus build (`pds_v4`) drew on four
+> 1. ⛏ **MINE NEWER EPISODES — and the FIRST question it must answer is whether
+>    the mirror is still 71.4% of our field above rating 1000 (user, day 31).**
+>    🔴 **That figure is 10 of 14 games.** §8ac's band table reads `1000+ (n=14)`,
+>    so the Wilson 95% CI is roughly **[40%, 83%]**, and it was measured
+>    **2026-08-01** — before the top of the board reshuffled completely. It has
+>    since been quoted as a hard number in ROADMAP §2.6, §8bi, §8ce and **E27's
+>    pre-registration**, where it is the stated reason self-play is not fatally
+>    misaligned with our real opponent pool. ⚠ **A premise repeated in five
+>    places is not thereby verified — it is load-bearing (rule 15).**
+>    ⚡ **And there is a live tension to resolve, not just a stale number:**
+>    §8bq's mined top-of-ladder feed (08-03…08-07, `avg_score` ≥1100) puts our
+>    archetype at **23.7% of that population**, while §8ac's curve would predict
+>    *more* than 71.4% up there. The two measure different frames — opponents
+>    **we** faced vs the composition of a **censored published feed** — so they
+>    need not agree, but the gap is large enough that one of them is misleading
+>    about where we now play. **Re-census from our own recent replays
+>    (`p9_field_census.py --us`), which is the frame that governs anchor
+>    weights.**
+>    The last corpus build (`pds_v4`) drew on four
 >    dumps, 1,603 games, `avg_score` 1057–1223, and nothing has been mined since
 >    day 25. ⚠ **ROADMAP §0's rules bind and have each been paid for:** pull
 >    **manifests broadly, episodes selectively**; keep manifests even when

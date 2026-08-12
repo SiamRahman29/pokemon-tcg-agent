@@ -260,5 +260,14 @@ If it ships, **submit twice** (§8ak, max-of-two-draws). **Last safe day 08-15.*
 - Self-play measures strength **against ourselves**. §8ac's 71.4%-mirror field
   above rating 1000 is the reason that is not fatal here, and the anchor sweep is
   the guard — but it is a guard, not a proof.
+  🔴 **CORRECTED day 31, and it weakens this experiment's own justification:
+  that 71.4% is 10 of 14 games** (§8ac's band table reads `1000+ (n=14)`),
+  Wilson 95% CI ≈ **[40%, 83%]**, measured 2026-08-01 before the board's top
+  reshuffled. ⇒ **"self-play is well aligned with our real field" is a
+  plausible premise resting on 14 games, not a measured fact.** It does not
+  invalidate the design — the anchor sweep is what actually guards the mirror
+  result, and it does not depend on this number — but the alignment argument
+  must not be quoted as support. **Re-censusing it is the first item on the
+  standing mining directive (HANDOFF).**
 - The value net's own quality bounds everything, and it is trained on the same
   outcome labels §8bv found nearly uninformative about actions.
