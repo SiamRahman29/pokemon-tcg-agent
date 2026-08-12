@@ -171,3 +171,110 @@ control, and it competes with E30 for arena time before 08-17.
   wearing new clothes**, and the defence is the *direction*: H1 and copycat
   predict opposite signs on reading 2, so the sign is informative even though
   the level is not. **The level alone will not be quoted.**
+
+---
+
+# ▶ RESULT — 2026-08-12, same day. Step 0 PASSES; reading 1 is VOID on its own positive control.
+
+Instruments: `scripts/p87_e28_pairs.py` (gate), `scripts/p88_e28_reading1.py`
+(reading 1 + both controls). ⛔ **The comparison was never computed** — see §R3.
+
+## R1. ✅ Step 0 — the sizing gate PASSES, after a 32% double-count was removed
+
+| side | games | mirror seats | **within-turn pairs** |
+|---|---|---|---|
+| `us` (`submission_v5_s2` + `submission_optv3` + `ours_mirror_rec`) | 210 | 289 | **26,318** |
+| `them` (ntumlnoob / Raja Biswas / Sixth Sense / Dominic Peel) | 554 | 566 | **46,029** |
+
+Both are **>10× the 2,000-pair VOID floor**. **11 strata** clear ≥500 pairs on
+both sides (`ctx` 0, 3, 7, 13, 15, 16, 21, 22, 30, 40, 43), holding **97.3%** of
+`us` pairs and **96.2%** of `them`. Seven strata dropped and named. Adjacent-but-
+excluded (boundary/interleaved) pairs: 3,261 `us`, 6,009 `them`.
+
+🔴 **An instrument defect caught at the gate, before it could matter.** The three
+expert dumps **overlap**: `mirror_experts` is a *re-cut* of the other two, not an
+independent pull — `ntumlnoob ∩ mirror_experts = 148`, `sixth_sense ∩
+mirror_experts = 112`, union **555 against a naive sum of 816**. Pooling them
+unguarded double-counts **261 games (32%)** and would have passed the gate on
+duplicated data. Deduped by episode id; `mirror_experts` contributes **0** new
+games. ⚠ Also: `sixth_sense_31-07-2026` is mostly **Raja Biswas** (158 seats) and
+only 69 `Sixth Sense`, so matching on the dump's own name would have silently
+dropped 70% of it.
+
+## R2. ⬇ The negative control PASSES — the alphabet does not leak turn position
+
+Within-turn shuffle: held-out accuracy **0.6969** against a marginal base rate of
+**0.6939** — lift **+0.0030**, MI **0.0126**. ✅ Ordering carries essentially
+nothing once the marginal is matched.
+
+⚡ This also clears a worry raised at the gate: `ctx` 13 and 16 have *exactly*
+equal pair counts on both sides (1,921 / 3,237), which looked like a
+deterministic alternation that could leak position. The negative control says it
+does not.
+
+⚠ **The shuffle was made STRICTER than the text.** Permuting within `turn`
+alone would move a card class into a slot where it cannot legally occur, which
+*depresses* accuracy below base rate and lets the control pass trivially.
+Permuting within `(turn × ctx)` preserves each stratum's marginal exactly and
+destroys only the ordering. Recorded because it makes the control harder, not
+easier.
+
+## R3. 🔴 The positive control FAILS — 0.8774 against a pre-registered ≥0.90 ⇒ reading 1 is VOID, not null
+
+The frozen rule (§3): *"if it does not clear that, the estimator cannot see
+repetition and the cell is VOID."* **It reads 0.8774. The cell is VOID as
+written, and the bar has not been moved.**
+
+⛔ **The comparison was NOT computed.** `p88` exits before evaluating `them`;
+the gate is enforced in code, not left to the reader. Nothing about `them` is
+known, which is what makes §R4 legitimate rather than a rescue.
+
+**The cause is measured, and it is the control's construction, not the
+estimator's sensitivity:**
+
+| | |
+|---|---|
+| within-turn pairs in kept strata | 24,096 |
+| **repetition is LEGAL at `b`** | **12,365 — 51.3%** |
+| slots where it is illegal (control kept the *real* action) | 11,731 — **48.7%** |
+| the synthetic trace does repeat, where it can | 11,852 / 12,365 |
+| what `us` actually does | repeats the previous class **37.3%** of the time |
+
+⇒ **The "positive control" was only ~51% synthetic.** §3 specified *"repeats its
+previous action wherever it is still legal"* but left **unspecified what the
+trace does where repetition is illegal**; that gap was filled with *"keep the
+real action"*, which injects genuine unpredictable behaviour into half the
+trace. A trace that is half-real cannot reach 0.90 no matter how sensitive the
+estimator is — and reading **0.8774 while only half-deterministic is evidence
+the estimator sees repetition well**, not that it is blind.
+
+⚡ **The transferable lesson, and it is E25's in a new place:** a point
+prediction is only as good as the construction it is keyed to. **≥0.90 was set
+before anyone knew repetition is legal only 51.3% of the time.** A bar on a
+quantity whose ceiling is an unmeasured property of the data is a bar on the
+data, not on the instrument. ⚠ **This is the third session in a row in which a
+control was found mis-specified** (E27 found three biased *toward* its
+hypothesis); this one is biased *against*, which is why it surfaced as a VOID
+rather than as a false positive.
+
+## R4. ⛔ Pre-registered correction, frozen BEFORE it runs
+
+Re-registered because the defect is in the **control's construction** and is
+diagnosed from a structural fact (the 51.3% legality rate) that is **independent
+of the treatment** — and the treatment was never read. Two changes, both fixing
+the same unspecified degree of freedom:
+
+1. **The positive-control trace becomes fully synthetic.** Where repetition is
+   illegal, the trace takes a **deterministic fallback (lowest-index option)**
+   rather than the real action, so the trace is a deterministic function of
+   (previous action, option list). ⇒ **the ≥0.90 bar becomes a statement about
+   the estimator**, which is what it was always meant to be.
+2. **Reported alongside it: accuracy restricted to the legal-repetition
+   subset**, which is the bar's intent expressed on the slots where repetition
+   is even possible.
+
+⛔ **The ≥0.90 threshold is UNCHANGED**, and it now applies to construction 1.
+⛔ If the corrected control still misses 0.90, reading 1 is **VOID and stays
+VOID** — there is no third construction. ⚠ Reading 2 (commitment switches) does
+not depend on this estimator and is unaffected either way; §4's branches need
+both, so no verdict may be issued until reading 1 resolves.
