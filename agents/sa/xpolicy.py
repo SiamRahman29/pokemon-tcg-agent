@@ -39,14 +39,21 @@ import numpy as np
 
 
 def parse_rank_hist(spec: str) -> list[float] | None:
-    """`"1:0.62,2:0.21,3:0.10"` -> a normalised weight per rank (index 0 unused).
+    """`"1:0.62;2:0.21;3:0.10"` -> a normalised weight per rank (index 0 unused).
 
     Ranks are 1-based because rank 0 is our own pick, i.e. no deviation at all.
+
+    ⚠ **The separator is `;`, not `,`, and that is not cosmetic:** an agent spec
+    is itself comma-delimited (`arena.build_agent` splits on `,`), so a
+    comma-separated histogram is parsed as a run of unknown flags. It failed
+    loudly the first time it was run, which is what that guard exists for --
+    `,` is still accepted here so a histogram pasted from `hist_spec()` into a
+    script rather than a spec string does not silently mean something else.
     """
     if not spec:
         return None
     w: dict[int, float] = {}
-    for part in spec.split(","):
+    for part in spec.replace(",", ";").split(";"):
         part = part.strip()
         if not part:
             continue
@@ -82,18 +89,49 @@ class Substitute:
     """Holds whichever arm's machinery is in use, plus the shared counters."""
 
     def __init__(self, xnet=None, rand_rate: float = 0.0,
-                 rank_hist: list[float] | None = None, seed: int = 26):
+                 rank_hist: list[float] | None = None, seed: int = 26,
+                 rank_by_n: dict[int, list[float]] | None = None,
+                 dump_path: str | None = None,
+                 cal_ranks: list[float] | None = None):
         LIVE.append(self)
         self.xnet = xnet
         self.rand_rate = float(rand_rate or 0.0)
         self.rank_hist = rank_hist
+        # 🔴 THE MARGINAL HISTOGRAM IS NOT A MATCHED CONTROL, measured rather
+        # than assumed: sampling ranks from the pooled histogram and clipping
+        # them to the option count made the control's mean deviation rank 1.59
+        # against the treatment's 1.92, with 17% of draws clipped. Clipping can
+        # only make the control SHALLOWER, i.e. cheaper, i.e. it inflates the
+        # coherence effect this experiment is trying to measure -- a bias in
+        # the direction of the hypothesis, which is the kind this project has
+        # been burned by (§8cf's own recorded fault, one level up).
+        #
+        # The fix is to condition on what makes clipping necessary: a decision
+        # with 3 options cannot host a rank-5 deviation for EITHER arm, and the
+        # treatment's histogram already reflects that mix. Matching per option
+        # count removes the clipping entirely instead of counting it.
+        self.rank_by_n = rank_by_n or {}
+        self.cal_ranks = cal_ranks
+        # 🔴 AND THE RATE IS NOT FLAT EITHER -- measured in the same calibration
+        # pass, and it is the LARGER of the two mismatches. The expert deviates
+        # on 9.4% of 2-option decisions and ~50% of 10-option ones. A control
+        # deviating at the pooled 28.7% everywhere would therefore deviate in
+        # the WRONG PLACES: too often at 2-option decisions (which §8bd measured
+        # as nearly free) and too rarely at the wide ones. With `rank_by_n`
+        # loaded, `rand_rate` stops being a probability and becomes a SCALE on
+        # the treatment's own per-option-count rate, so 1.0 means "match".
+        self.scaled = bool(self.rank_by_n)
         self._rng = random.Random(seed)
         # rank of the played option under OUR net's ordering; index 0 = our own
-        # pick, so `ranks[0]` counts the firings where nothing changed. This
-        # histogram is the object cell B is matched to.
+        # pick, so `ranks[0]` counts the firings where nothing changed.
         self.ranks = [0] * 24
+        # rank counts split by how many options the decision offered -- the
+        # object cell B is actually matched to.
+        self.by_n: dict[int, list[int]] = {}
         self.rank_over = 0        # deviation deeper than the histogram is long
         self.clipped = 0          # sampled rank >= option count, clipped down
+        self.dump_path = dump_path
+        self._dump_due = 0
 
     # -- reporting -------------------------------------------------------
     def hist_spec(self) -> str:
@@ -103,7 +141,7 @@ class Substitute:
             return ""
         parts = [f"{r}:{self.ranks[r] / tot:.4f}"
                  for r in range(1, len(self.ranks)) if self.ranks[r]]
-        return ",".join(parts)
+        return ";".join(parts)
 
     def line(self) -> str:
         tot = sum(self.ranks)
@@ -113,6 +151,29 @@ class Substitute:
         return (f"x_ranks={self.ranks[:8]} over={self.rank_over} "
                 f"clipped={self.clipped} mean_dev_rank={mean_rank:.2f} "
                 f"xrank={self.hist_spec()}")
+
+    def dump(self) -> dict:
+        """The matched-control calibration: rank counts per option count."""
+        return {"by_n": {str(k): v for k, v in sorted(self.by_n.items())},
+                "ranks": self.ranks, "over": self.rank_over}
+
+    def _maybe_dump(self) -> None:
+        if not self.dump_path:
+            return
+        self._dump_due += 1
+        if self._dump_due % 1000:
+            return
+        # Written periodically rather than at exit: the arena has no per-agent
+        # finish hook, and a calibration file that only appears on a clean
+        # shutdown is one interrupted run away from not existing.
+        try:
+            import json
+            from pathlib import Path as _P
+            p = _P(self.dump_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps(self.dump()), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
 
     # -- the two arms ----------------------------------------------------
     def apply(self, base_net, obs: dict, picked: list[int],
@@ -136,7 +197,8 @@ class Substitute:
                     return picked
                 new = int(xp[0])
             elif self.rand_rate > 0.0:
-                if self._rng.random() >= self.rand_rate:
+                if self._rng.random() >= self._dev_p(len(order)):
+                    self._record(0, len(order))
                     self.ranks[0] += 1
                     return picked
                 new = int(order[self._sample_rank(len(order))])
@@ -144,6 +206,7 @@ class Substitute:
                 return picked
 
             r = rank_of.get(new, 0)
+            self._record(r, len(order))
             if r < len(self.ranks):
                 self.ranks[r] += 1
             else:
@@ -155,19 +218,44 @@ class Substitute:
             stats["x_error"] += 1
             return picked
 
-    def _sample_rank(self, n_opts: int) -> int:
-        """A deviation rank >= 1, drawn from the treatment's histogram.
+    def _dev_p(self, n_opts: int) -> float:
+        """P(deviate) at a decision offering `n_opts` options.
 
-        ⚠ Clipping is COUNTED, not silent. If the treatment's histogram has
-        mass at rank 5 and this decision offers 3 options, the draw lands on
-        the deepest available option -- which makes the control marginally
-        SHALLOWER than the treatment, in the direction that understates the
-        control's cost. Stating the sign is the point of the counter.
+        Without a calibration this is the flat `rand_rate` -- which is what E25
+        did and what this class now refuses to call matched. With one, it is
+        the treatment's OWN rate at this option count, scaled by `rand_rate`.
         """
-        h = self.rank_hist
+        if not self.scaled:
+            return self.rand_rate
+        h = self.rank_by_n.get(int(n_opts)) or self.cal_ranks
         if not h:
+            return self.rand_rate
+        tot = sum(h)
+        if tot <= 0:
+            return self.rand_rate
+        return self.rand_rate * (1.0 - h[0] / tot)
+
+    def _record(self, rank: int, n_opts: int) -> None:
+        row = self.by_n.setdefault(int(n_opts), [0] * 24)
+        row[rank if rank < 24 else 23] += 1
+        self._maybe_dump()
+
+    def _sample_rank(self, n_opts: int) -> int:
+        """A deviation rank >= 1, drawn from the treatment's histogram FOR THIS
+        OPTION COUNT.
+
+        Conditioning on `n_opts` is what makes the control matched: a 3-option
+        decision cannot host a rank-5 deviation for either arm, so the
+        treatment's own conditional distribution is the only sampler that
+        cannot be systematically shallower. Clipping remains as a fallback
+        (an option count the treatment never met) and is still COUNTED, because
+        clipping can only bias the control cheap.
+        """
+        h = self.rank_by_n.get(int(n_opts)) or self.rank_hist
+        if not h or sum(h[1:]) <= 0:
             return self._rng.randrange(1, n_opts)
-        r = self._rng.choices(range(len(h)), weights=h, k=1)[0]
+        w = [0.0] + list(h[1:])
+        r = self._rng.choices(range(len(w)), weights=w, k=1)[0]
         r = max(1, r)
         if r >= n_opts:
             self.clipped += 1

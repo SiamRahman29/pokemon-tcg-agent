@@ -244,6 +244,7 @@ def build_agent(spec: str, deck: list[int],
         vlk_lcb, vlk_arms, vlk_rand, vlk_tau = 0.0, 0, 0.0, 0.0
         # E26: 0/None reproduce the plain agent exactly.
         xnet_path, x_rand, x_rank = None, 0.0, ""
+        x_rankfile, x_dump = "", ""
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
@@ -349,9 +350,19 @@ def build_agent(spec: str, deck: list[int],
             elif f.startswith("xnet="):
                 # E26 treatment: play THIS net's pick instead of ours.
                 xnet_path = f[5:]
+            elif f.startswith("xrankfile="):
+                # E26 control: the treatment's rank histogram CONDITIONED on
+                # option count, written by a calibration pass. This is the
+                # matched sampler; the flat `xrank=` below is not.
+                x_rankfile = f[10:]
+            elif f.startswith("xdump="):
+                # E26 calibration: where the treatment writes that histogram.
+                x_dump = f[6:]
             elif f.startswith("xrank="):
-                # E26 control: the treatment's measured rank histogram,
-                # `1:0.62,2:0.21,...`. Depth is matched, not assumed.
+                # E26, flat fallback: `1:0.62;2:0.21;...` (SEMICOLONS -- an
+                # agent spec is comma-delimited). Pooled over option counts, so
+                # it clips and runs shallow; kept only as a fallback for option
+                # counts the calibration never saw.
                 x_rank = f[6:]
             elif f.startswith("xrnd"):
                 # E26 control: deviate at THIS rate, rank drawn from xrank.
@@ -384,9 +395,13 @@ def build_agent(spec: str, deck: list[int],
                 raise SystemExit(f"bc net not found: {_p}")
         if xnet_path and not Path(xnet_path).exists():
             raise SystemExit(f"bc xnet not found: {xnet_path}")
-        if x_rank and not x_rand:
-            raise SystemExit("xrank= without xrnd does nothing -- the rank "
-                             "histogram is the CONTROL's sampler")
+        if (x_rank or x_rankfile) and not x_rand:
+            raise SystemExit("xrank=/xrankfile= without xrnd does nothing -- "
+                             "the rank histogram is the CONTROL's sampler")
+        if x_rand and not (x_rank or x_rankfile):
+            raise SystemExit("xrnd without xrank=/xrankfile= samples UNIFORM "
+                             "ranks, which is not depth-matched to any "
+                             "treatment. E26 requires the calibration file.")
         try:
             agent = PolicyAgent(deck, net_path, chip_targeting=chip,
                                 energy_spread=spread, drag_target=drag,
@@ -410,7 +425,8 @@ def build_agent(spec: str, deck: list[int],
                                 vlk_arms=vlk_arms, vlk_rand=vlk_rand,
                                 vlk_tau=vlk_tau,
                                 xnet_path=xnet_path, x_rand=x_rand,
-                                x_rank=x_rank)
+                                x_rank=x_rank, x_rankfile=x_rankfile,
+                                x_dump=x_dump)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and

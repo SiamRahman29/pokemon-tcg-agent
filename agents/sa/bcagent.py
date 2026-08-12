@@ -143,7 +143,7 @@ class PolicyAgent:
                  vlk_lcb: float = 0.0, vlk_arms: int = 0,
                  vlk_rand: float = 0.0, vlk_tau: float = 0.0,
                  xnet_path: str | None = None, x_rand: float = 0.0,
-                 x_rank: str = ""):
+                 x_rank: str = "", x_rankfile: str = "", x_dump: str = ""):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -308,7 +308,7 @@ class PolicyAgent:
         # only difference between the two arms. Both arms construct this object
         # and pay the same second forward pass. OFF by default.
         self.xsub = None
-        if xnet_path or x_rand:
+        if xnet_path or x_rand or x_dump:
             from .xpolicy import Substitute, parse_rank_hist
 
             xnet = None
@@ -322,8 +322,22 @@ class PolicyAgent:
                         f"xnet {xnet_path!r} exists but FAILED policynet.load's "
                         f"guard. Refusing to run an E26 treatment arm that is "
                         f"bitwise the control.")
+            by_n, cal_ranks = None, None
+            if x_rankfile:
+                import json as _json
+                from pathlib import Path as _P
+                raw = _json.loads(_P(x_rankfile).read_text(encoding="utf-8"))
+                by_n = {int(k): list(v) for k, v in raw["by_n"].items()}
+                cal_ranks = list(raw.get("ranks") or [])
+                if not by_n:
+                    raise ValueError(
+                        f"xrankfile {x_rankfile!r} carries an EMPTY histogram; "
+                        f"the control would fall back to uniform ranks and "
+                        f"would not be depth-matched.")
             self.xsub = Substitute(xnet=xnet, rand_rate=x_rand,
-                                   rank_hist=parse_rank_hist(x_rank))
+                                   rank_hist=parse_rank_hist(x_rank),
+                                   rank_by_n=by_n, dump_path=x_dump,
+                                   cal_ranks=cal_ranks)
 
     def _flip_near_tie(self, net, obs: dict, picked: list[int]) -> list[int]:
         """Swap the boundary pair when their logit gap is under `flip_margin`.
