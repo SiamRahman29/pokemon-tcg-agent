@@ -4495,8 +4495,22 @@ an assumption; cell A is a *partial* substitution (single-pick decisions only,
 ⛔ **Nothing ships. Cell A is 0.4053 — still a rout**, and §8u's ordering
 (agreement with the field predicts strength, agreement with the expert
 anti-predicts it) is untouched.
-✅ **What it licenses is a DIRECTION, and it is the first positive-signed,
-well-controlled result since §8z.** The deviation cost that closed six axes
+✅ **What it licenses is a DIRECTION, and it is the first positive result about a
+MECHANISM since §8z.** ⚠ **Corrected in place, same session, before anything
+copied it (rule 15):** this entry first said *"the first positive-signed,
+well-controlled result since §8z"*, and that is **wrong**. Day 24's **seed
+swap** — `v5` → `v5_s1`, **0.549 [0.527, 0.571]**, n=2,000 mirror direct — is
+positive, well-controlled, and **still stands** (it was the *ensembling* half of
+that day that was retracted on day 25, when the vote stopped beating its better
+member in the shipped configuration). The distinction worth keeping is that the
+seed swap was **a better draw from a nuisance distribution we already owned**
+(§8bg: seed is ±25 Elo of pure nuisance; §8bh: between-seed sd 0.0190), not new
+capability — and the seed-harvest programme built on it then measured **null**
+(F2, §8bh/§8bk), with `s2` v `s1` pooling to **≈ +2 Elo, CI containing zero**
+(§8cd). **E26 is the first result since §8z that says something new about what
+CAN work, rather than which draw to ship.**
+
+The deviation cost that closed six axes
 (§8cg) is **overwhelmingly a property of deviating incoherently**. A policy that
 moves *as a policy* pays ~1/4 of the price — so the sharp local optimum forbids
 **jumps**, not **paths**. ⇒ **E27** (`docs/experiments/E27-policy-iteration.md`).

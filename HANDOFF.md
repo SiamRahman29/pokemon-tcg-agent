@@ -40,10 +40,16 @@ it lets any team name in a replay be joined to its rating.
 >
 > **z(A − B) = 22.9. f = (A−B)/(0.500−B) = 0.758, ratio to E25's f_eval 6.3×.**
 >
-> - ✅ **THE FIRST POSITIVE-SIGNED, WELL-CONTROLLED RESULT SINCE §8z.** The
+> - ✅ **THE FIRST POSITIVE RESULT ABOUT A MECHANISM SINCE §8z.** The
 >   deviation cost that closed six axes (§8cg) is **overwhelmingly a property of
 >   deviating INCOHERENTLY**. ⇒ **the sharp local optimum forbids JUMPS, not
 >   PATHS.** That is the licence E27 runs on.
+>   ⚠ **Corrected same session:** this first read *"the first positive-signed,
+>   well-controlled result since §8z"* and that is wrong — day 24's **seed swap**
+>   (`v5`→`v5_s1`, **0.549 [0.527, 0.571]**, n=2,000) is positive and **still
+>   stands**; it was *ensembling* that day 25 retracted. The seed swap was a
+>   better **draw** from a nuisance distribution (§8bg/§8bh), not new capability,
+>   and the harvest built on it measured null. §8ch carries the full wording.
 > - ⚡ **E25's cost law replicated OUT OF SAMPLE**: predicted 0.1025 at cell B's
 >   realised rate, measured 0.1080 — fitted on v5 in the `vlook` harness, tested
 >   on v3 with a rank-histogram sampler. **It is a law of this game, not one
