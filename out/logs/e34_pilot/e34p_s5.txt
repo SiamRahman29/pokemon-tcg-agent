@@ -1,0 +1,39 @@
+  10/60 games, 8 fired, 87s
+  20/60 games, 13 fired, 139s
+  30/60 games, 20 fired, 223s
+  40/60 games, 26 fired, 259s
+  50/60 games, 30 fired, 298s
+  60/60 games, 37 fired, 392s
+
+played 60 games in 392s (6.53s/game)
+eligible=1649 attempts=37 fired=37 (62% of games) thin=0 no_scores=0
+rollouts=1480 none=0 (0.0%)  <- control 3, VOID above 10%
+control 2: played_b=17 kept_a=20 (sum 37 == fired 37: OK) double_fire=0
+wrote out\logs\e34_pilot\e34p_s5.jsonl
+
+games (fired)      37   z=1 17  z=0 20   P(z=1) 0.459
+PREDICTED gap      -0.0824  [-0.1473, -0.0338]   = mean(p_B - p_A)
+REALIZED  gap      +0.0118  [-0.3294, +0.3273]   = mean(y|z=1) - mean(y|z=0)
+MISCAL             +0.0942  [-0.2396, +0.3471]   <- PRIMARY
+  realized (adj)   -0.1174  [-0.4008, +0.1942]   (ANCOVA on pre-randomization m)
+  shrinkage        -0.143  [-6.618, +3.381]   (1.0 = calibrated, 0.0 = illusory)
+
+control 1 -- balance across the coin:
+    phat_a  z=1    0.659   z=0    0.495   t +1.66
+      turn  z=1    6.824   z=0    6.900   t -0.06
+      nopt  z=1    7.941   z=0    8.750   t -0.66
+    margin  z=1    1.650   z=0    1.349   t +0.48
+
+control 4 -- AUC(p_A, y) on the z=0 arm   0.7031   (must clearly exceed 0.5)
+
+fired-position profile (descriptive):
+  turn [ 0, 4)   n    10   mean d -0.0975
+  turn [ 4, 8)   n    12   mean d -0.0854
+  turn [ 8,12)   n    10   mean d -0.1050
+  turn [12,99)   n     5   mean d +0.0000
+
+restricted to oracle's window 3<=nopt<=5   n=12
+  predicted -0.0979   realized +0.1667   MISCAL +0.2646  [-0.3015, +0.8153]
+
+⚠ UNRESOLVED: the interval contains both 0 and the fully-illusory
+   alternative. Report the width; do not narrate a null.

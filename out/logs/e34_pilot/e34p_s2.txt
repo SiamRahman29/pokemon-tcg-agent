@@ -1,0 +1,38 @@
+  10/60 games, 8 fired, 100s
+  20/60 games, 14 fired, 166s
+  30/60 games, 20 fired, 242s
+  40/60 games, 24 fired, 284s
+  50/60 games, 30 fired, 366s
+  60/60 games, 36 fired, 413s
+
+played 60 games in 413s (6.89s/game)
+eligible=1468 attempts=36 fired=36 (60% of games) thin=0 no_scores=0
+rollouts=1440 none=0 (0.0%)  <- control 3, VOID above 10%
+control 2: played_b=21 kept_a=15 (sum 36 == fired 36: OK) double_fire=0
+wrote out\logs\e34_pilot\e34p_s2.jsonl
+
+games (fired)      36   z=1 21  z=0 15   P(z=1) 0.583
+PREDICTED gap      -0.0069  [-0.0410, +0.0250]   = mean(p_B - p_A)
+REALIZED  gap      -0.2571  [-0.5619, +0.0667]   = mean(y|z=1) - mean(y|z=0)
+MISCAL             -0.2502  [-0.5645, +0.0857]   <- PRIMARY
+  realized (adj)   -0.1785  [-0.4974, +0.1002]   (ANCOVA on pre-randomization m)
+
+control 1 -- balance across the coin:
+    phat_a  z=1    0.526   z=0    0.617   t -0.95
+      turn  z=1    6.429   z=0    5.267   t +0.74
+      nopt  z=1    6.619   z=0    7.333   t -0.55
+    margin  z=1    2.062   z=0    0.465   t +2.23
+
+control 4 -- AUC(p_A, y) on the z=0 arm   0.7614   (must clearly exceed 0.5)
+
+fired-position profile (descriptive):
+  turn [ 0, 4)   n    16   mean d +0.0172
+  turn [ 4, 8)   n    12   mean d -0.0500
+  turn [ 8,12)   n     3   mean d +0.0417
+  turn [12,99)   n     5   mean d -0.0100
+
+restricted to oracle's window 3<=nopt<=5   n=13
+  predicted +0.0135   realized -0.2381   MISCAL -0.2516  [-0.8000, +0.4201]
+
+⛔ VOID: the predicted gap is not bounded away from 0, so there is nothing
+   to check the calibration OF. Narrow the population (see sizing).

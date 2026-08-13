@@ -1,0 +1,8 @@
+{"game": "99:0", "seat": 0, "turn": 3, "nopt": 13, "arm_a": 6, "arm_b": 1, "phat_a": 0.5, "phat_b": 0.75, "d": 0.25, "margin": -0.9691358804702759, "r_a": 4, "r_b": 4, "z": 0, "y": 0.0}
+{"game": "99:1", "seat": 1, "turn": 2, "nopt": 9, "arm_a": 2, "arm_b": 0, "phat_a": 0.0, "phat_b": 0.0, "d": 0.0, "margin": 0.6561287045478821, "r_a": 4, "r_b": 4, "z": 1, "y": 1.0}
+{"game": "99:2", "seat": 0, "turn": 3, "nopt": 7, "arm_a": 5, "arm_b": 4, "phat_a": 0.75, "phat_b": 0.5, "d": -0.25, "margin": 0.0, "r_a": 4, "r_b": 4, "z": 0, "y": 1.0}
+{"game": "99:3", "seat": 1, "turn": 2, "nopt": 3, "arm_a": 1, "arm_b": 0, "phat_a": 0.0, "phat_b": 0.5, "d": 0.5, "margin": 1.3197085708379745, "r_a": 4, "r_b": 4, "z": 0, "y": 0.0}
+{"game": "99:4", "seat": 0, "turn": 3, "nopt": 11, "arm_a": 8, "arm_b": 9, "phat_a": 0.75, "phat_b": 0.5, "d": -0.25, "margin": -1.1783156991004944, "r_a": 4, "r_b": 4, "z": 1, "y": 0.0}
+{"game": "99:5", "seat": 1, "turn": 2, "nopt": 4, "arm_a": 0, "arm_b": 3, "phat_a": 0.5, "phat_b": 0.5, "d": 0.0, "margin": 5.5556440353393555, "r_a": 4, "r_b": 4, "z": 1, "y": 0.0}
+{"game": "99:6", "seat": 0, "turn": 3, "nopt": 6, "arm_a": 4, "arm_b": 3, "phat_a": 0.5, "phat_b": 0.5, "d": 0.0, "margin": 2.27697217464447, "r_a": 4, "r_b": 4, "z": 0, "y": 0.0}
+{"game": "99:7", "seat": 1, "turn": 2, "nopt": 6, "arm_a": 2, "arm_b": 0, "phat_a": 0.0, "phat_b": 0.25, "d": 0.25, "margin": 3.642907738685608, "r_a": 4, "r_b": 4, "z": 0, "y": 1.0}
