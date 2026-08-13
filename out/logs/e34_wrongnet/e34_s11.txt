@@ -1,0 +1,7 @@
+  50/2700 games, 32 fired, 325s
+  100/2700 games, 65 fired, 669s
+  150/2700 games, 97 fired, 1041s
+  200/2700 games, 130 fired, 1435s
+  250/2700 games, 160 fired, 1760s
+  300/2700 games, 189 fired, 2040s
+  350/2700 games, 223 fired, 2382s
