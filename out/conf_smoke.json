@@ -1,0 +1,162 @@
+{
+ "games": 4,
+ "bands": {
+  "selects": [
+   44.6,
+   126.15
+  ],
+  "turns": [
+   5.2,
+   7.3
+  ],
+  "selects_per_turn": [
+   6.601111111111112,
+   18.01833333333333
+  ],
+  "attack_take_rate": [
+   0.799999,
+   1.200001
+  ],
+  "end_decline_rate": [
+   -1e-06,
+   1e-06
+  ],
+  "evolve": [
+   2.35,
+   3.4
+  ],
+  "attach": [
+   4.15,
+   6.6
+  ],
+  "ability": [
+   -2.85,
+   17.1
+  ],
+  "play": [
+   13.4,
+   22.85
+  ]
+ },
+ "results": [
+  {
+   "spec": "bc",
+   "name": "bc#a25b904d",
+   "deck": "grimmsnarl",
+   "games": 4,
+   "secs": 1.6,
+   "selects": 114.5,
+   "turns": 7.0,
+   "selects_per_turn": 16.387301587301586,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 3.25,
+   "attach": 4.5,
+   "ability": 14.25,
+   "play": 16.75,
+   "role": "ref"
+  },
+  {
+   "spec": "rule:v10",
+   "name": "rule:v10@lucario_v10",
+   "deck": "lucario_v10",
+   "games": 4,
+   "secs": 0.8,
+   "selects": 73.5,
+   "turns": 5.75,
+   "selects_per_turn": 12.791666666666666,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 2.5,
+   "attach": 5.5,
+   "ability": 4.5,
+   "play": 21.25,
+   "role": "ok"
+  },
+  {
+   "spec": "rule:dragapult",
+   "name": "rule:dragapult@dragapult_ex",
+   "deck": "dragapult_ex",
+   "games": 4,
+   "secs": 0.9,
+   "selects": 74.0,
+   "turns": 6.25,
+   "selects_per_turn": 12.120833333333334,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 3.0,
+   "attach": 5.25,
+   "ability": 3.5,
+   "play": 15.0,
+   "role": "ok"
+  },
+  {
+   "spec": "rule:lucario",
+   "name": "rule:lucario@mega_lucario_ex",
+   "deck": "mega_lucario_ex",
+   "games": 4,
+   "secs": 0.8,
+   "selects": 67.5,
+   "turns": 5.5,
+   "selects_per_turn": 12.308333333333334,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 2.5,
+   "attach": 6.25,
+   "ability": 4.25,
+   "play": 21.5,
+   "role": "ok"
+  },
+  {
+   "spec": "rule:archaludon",
+   "name": "rule:archaludon@archaludon_ex",
+   "deck": "archaludon_ex",
+   "games": 4,
+   "secs": 0.6,
+   "selects": 56.25,
+   "turns": 6.75,
+   "selects_per_turn": 8.232142857142858,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 2.5,
+   "attach": 5.75,
+   "ability": 0.0,
+   "play": 14.75,
+   "role": "ok"
+  },
+  {
+   "spec": "plan:pure",
+   "name": "plan:pure#a25b904d",
+   "deck": "grimmsnarl",
+   "games": 4,
+   "secs": 0.6,
+   "selects": 79.75,
+   "turns": 6.0,
+   "selects_per_turn": 13.485714285714286,
+   "attack_take_rate": 1.0,
+   "end_decline_rate": 0.0,
+   "evolve": 4.5,
+   "attach": 3.5,
+   "ability": 11.0,
+   "play": 6.0,
+   "role": "bad"
+  },
+  {
+   "spec": "random",
+   "name": "random",
+   "deck": "grimmsnarl",
+   "games": 4,
+   "secs": 1.1,
+   "selects": 105.0,
+   "turns": 19.0,
+   "selects_per_turn": 5.556232492997199,
+   "attack_take_rate": 0.36250000000000004,
+   "end_decline_rate": 0.015625,
+   "evolve": 4.75,
+   "attach": 7.5,
+   "ability": 8.75,
+   "play": 24.0,
+   "role": "bad"
+  }
+ ]
+}
