@@ -1,0 +1,6 @@
+net pinned to out/policy_v5_s2.npz #4790c469 (rollouts use the seat's own net)
+  25/250 games, 257 decisions, 356s
+  50/250 games, 511 decisions, 779s
+  75/250 games, 761 decisions, 1164s
+  100/250 games, 1018 decisions, 1510s
+  125/250 games, 1272 decisions, 1857s

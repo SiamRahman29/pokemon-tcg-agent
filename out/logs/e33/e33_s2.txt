@@ -1,0 +1,40 @@
+  10/165 games, 99 decisions, 165s
+  20/165 games, 175 decisions, 290s
+  30/165 games, 277 decisions, 462s
+  40/165 games, 384 decisions, 613s
+  50/165 games, 471 decisions, 742s
+  60/165 games, 575 decisions, 891s
+  70/165 games, 677 decisions, 1034s
+  80/165 games, 779 decisions, 1185s
+  90/165 games, 882 decisions, 1348s
+  100/165 games, 991 decisions, 1537s
+  110/165 games, 1098 decisions, 1723s
+  120/165 games, 1194 decisions, 1869s
+  130/165 games, 1302 decisions, 2037s
+  140/165 games, 1400 decisions, 2189s
+  150/165 games, 1505 decisions, 2357s
+  160/165 games, 1623 decisions, 2558s
+
+played 165 games in 2643s (16.02s/game)
+eligible=6975 measured=1683 rollouts=10098 none=0 (0.0%)
+control 3: returned_inner=17273/17273 (OK)
+wrote out\logs\e33\e33_s2.jsonl
+
+decisions      1683   over 165 games
+mean phat      0.5014
+mean y         0.4979
+BIAS           +0.0035  [-0.0555, +0.0624]  (clustered SE 0.0301)
+  naive SE     0.0113   (clustering widens it 2.66x)
+AUC(phat, y)   0.7588   <- control 1, must clearly exceed 0.5
+
+restricted to phat in [0.15, 0.85]   n=1066 over 164 games
+BIAS           +0.0045  [-0.0740, +0.0829]
+
+calibration curve (secondary -- attenuated by finite R):
+           bin      n  mean phat   mean y      gap
+  [0.00,0.10)    309      0.000    0.136   -0.136
+  [0.10,0.25)    177      0.167    0.333   -0.167
+  [0.25,0.50)    227      0.333    0.454   -0.121
+  [0.50,0.75)    470      0.577    0.526   +0.052
+  [0.75,0.90)    192      0.830    0.635   +0.195
+  [0.90,1.01)    308      1.000    0.860   +0.140
