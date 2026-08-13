@@ -453,6 +453,54 @@ def build_agent(spec: str, deck: list[int],
         if xnet_path:
             nm += "/x" + _net_fp(xnet_path)[1:]
         return nm, agent
+    if kind == "plan":
+        # plan[:label][,pure][,net=<path>] -- E32: the coherent, plan-conditioned
+        # policy (sa/planagent.py). NOT a rule bag bolted onto the clone: it
+        # computes one KO schedule per turn and scores every option against it.
+        #
+        # Two arms, and the difference between them is the experiment:
+        #   `plan`      -- the plan layer owns what it owns, the CLONE answers
+        #                  the rest. Ships as a hybrid; `share=` in the health
+        #                  line says how much of the game the plan holds.
+        #   `plan:x,pure` -- no net at all. Declined selects fall to index
+        #                  order, deliberately, so this arm measures the PLAN
+        #                  and not a second hidden policy.
+        from sa.bcagent import PolicyAgent
+        from sa.planagent import PlanAgent
+
+        tag = spec.split(":", 1)[1] if ":" in spec else ""
+        pure = False
+        net_path = None
+        for f in tag.split(",")[1:]:
+            f = f.strip()
+            if f == "pure":
+                pure = True
+            elif f.startswith("net="):
+                net_path = f[4:]
+            else:
+                raise SystemExit(
+                    f"unknown plan flag {f!r} in {spec!r}. The first token "
+                    f"after `plan:` is a LABEL, not a flag -- write "
+                    f"`plan:<label>,{f}`.")
+        if net_path and not Path(net_path).exists():
+            raise SystemExit(f"plan net not found: {net_path}")
+        fallback = None
+        if not pure:
+            # Shipped config: a PLAIN PolicyAgent, exactly what a submission
+            # runs (rules pinned off at build time, §7c.2). The fallback must
+            # not be a differently-configured clone or the two arms stop being
+            # comparable to every `bc` number in the archive.
+            try:
+                fallback = PolicyAgent(deck, net_path)
+            except ValueError as exc:
+                raise SystemExit(f"{spec}: {exc}")
+        agent = PlanAgent(deck, fallback=fallback, pure=pure)
+        # Rule 20: the fallback net's bytes are part of this agent's identity,
+        # because two `plan` runs over different nets are different agents. A
+        # pure run has no net and says so.
+        nm = f"plan:{tag}" if tag else "plan"
+        nm += "#pure" if pure else _net_fp(net_path)
+        return nm, agent
     raise SystemExit(f"unknown agent spec: {spec!r}")
 
 
@@ -511,6 +559,8 @@ def cmd_play(args: argparse.Namespace) -> int:
     # run and not whatever else the process did first
     if "sa.bcagent" in sys.modules:
         sys.modules["sa.bcagent"].reset_stats()
+    if "sa.planagent" in sys.modules:
+        sys.modules["sa.planagent"].reset_stats()
 
     games_path = Path(args.archive) if args.archive else GAMES_PATH
     games_path.parent.mkdir(parents=True, exist_ok=True)
@@ -609,6 +659,12 @@ def cmd_play(args: argparse.Namespace) -> int:
     # arms separately, not that the treatment is at fault.
     if "sa.bcagent" in sys.modules:
         print(f"  {sys.modules['sa.bcagent'].health_line()}")
+    # E32: the same discipline for the plan layer, and here it is not optional.
+    # `share=` IS the treatment size -- a plan policy that quietly deferred
+    # every select would score exactly like the clone and look like a null, the
+    # §8be failure one architecture up.
+    if "sa.planagent" in sys.modules:
+        print(f"  {sys.modules['sa.planagent'].health_line()}")
     # And the per-component detail, for any agent carrying a sequencer. ⚠ BOTH
     # blocks are kept deliberately (day-22 merge): `[health]` says whether the
     # AGENT degraded, this says whether the PLANNER did, and E5 needed the

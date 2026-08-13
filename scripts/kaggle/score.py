@@ -62,6 +62,13 @@ def main() -> int:
         for h in re.findall(r"\[health\][^\n]*", txt):
             if "OK" not in h or "fallbacks=0" not in h or "net_missing=0" not in h:
                 unhealthy.append(f"{f.name}: {h.strip()}")
+        # E32: the plan layer prints its own line and it carries the same
+        # obligation -- `fallbacks` non-zero means the catch-all fired and the
+        # agent was playing index order under an exception, which no score can
+        # reveal on its own (§8g had to infer exactly that indirectly once).
+        for h in re.findall(r"\[plan\][^\n]*", txt):
+            if "OK" not in h or "fallbacks=0" not in h:
+                unhealthy.append(f"{f.name}: {h.strip()}")
 
     n = W + D + L
     if n == 0:
