@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -433,8 +434,36 @@ def load(path) -> Net | None:
 
 
 def get() -> Net | None:
+    """The process-wide singleton, loaded from `SA_PNET_PATH` or the bundle.
+
+    🔴 **Announces WHICH net it just loaded, once, on stderr.** E33 rolled out
+    with this singleton (`policy_net.npz`, the v2 clone) while its seats played
+    `out/policy_v5_s2.npz`, published a calibration verdict, and had to
+    withdraw it; `p82` had already warned in writing that scoring one net's
+    options against another net's games *"returns a plausible number, not an
+    error"*. Which net a probe actually used was recoverable only by reading
+    the source and knowing the environment, so nothing in a log could ever
+    contradict a wrong assumption. Now every run says so itself.
+
+    ⚠ **stderr, not stdout, and that is load-bearing**: `kaggle/score.py` and
+    the p5x drivers parse stdout for the arena's score line and drop the rest,
+    so a notice printed there is a notice nobody reads -- the same reasoning
+    `arena.build_agent` gives for its deck-mismatch warning.
+    """
     global _net, _tried
     if not _tried:
         _tried = True
         _net = load(_PATH)
+        try:
+            tag = "MISSING"
+            if _net is not None:
+                import hashlib
+                tag = "#" + hashlib.md5(
+                    Path(_PATH).read_bytes()).hexdigest()[:8]
+            print(f"[policynet] singleton = {_PATH} {tag}"
+                  f"{'' if os.environ.get('SA_PNET_PATH') else '  (repo default'
+                    ' -- set SA_PNET_PATH to pin a different one)'}",
+                  file=sys.stderr, flush=True)
+        except Exception:
+            pass
     return _net
