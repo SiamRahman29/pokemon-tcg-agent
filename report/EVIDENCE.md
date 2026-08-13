@@ -4403,6 +4403,309 @@ on `crustle` (or v2/v3 on `crustle_v1`), which means restoring them from
 deck term, and both published comparisons straddling a deck change — are enough
 to retract the attributions without it.
 
+## 8cn. 🔴 §8cm IS WITHDRAWN THE SAME DAY: E33 ROLLED OUT WITH THE WRONG NET — the v2 clone #ce97c732 against the #4790c469 the seats played — so its "differ in exactly one thing: the world" isolation is false and §8ca goes back to OPEN (2026-08-13, day 32)
+
+`p94`'s observer fetched its rollout continuation policy from `pnet.get()`.
+That singleton returns `agents/sa/policy_net.npz` **#ce97c732**, the **v2**
+clone; both seats of the real game were played by `out/policy_v5_s2.npz`
+**#4790c469**. Verified by loading both and fingerprinting the weights.
+
+⇒ **§8cm measured `p̂` under one policy against `y` under another.** Its stated
+isolation — *"the rollout and the reality differ in exactly one thing: the
+world"* — is false as run, so the −0.0083 is determinization bias **plus**
+policy mismatch, and two errors that may cancel cannot be published as one
+error that is absent.
+
+🔴 **What this costs, itemised:**
+
+| claim in §8cm | status |
+|---|---|
+| bias −0.0083 [−0.0278, +0.0111] | ⛔ withdrawn — wrong instrument |
+| §8ca's determinization diagnosis is RETRACTED | ⛔ **the retraction is retracted; §8ca is OPEN again** |
+| dispersion ratio 1.1445 [1.1139, 1.1759] | ⛔ withdrawn, same defect |
+| AUC 0.7657, clustering ×2.67, `none` 0.0% | ✅ unaffected — properties of the run, not of the net choice |
+| §8cl (sharding, 3.12× at 6 shards) | ✅ unaffected — never used a net |
+
+⚡ **The live clock is NOT affected.** `bcagent` constructs
+`RolloutOracle(..., net=self.net)`, so the shipped oracle uses the correct net.
+⇒ E33 audited a rollout **nobody runs**. E17's **+0.0139** is also unaffected:
+`p82` pinned its net explicitly.
+
+⚠ **THE WARNING WAS ALREADY IN THE REPO, IN WRITING, AND I DID NOT READ IT.**
+`p82_e17_self_oracle.py` opens its net handling with *"🔴 PIN THE NET IN THE
+SCRIPT, not in the environment"* and states that the default is *"the v2 clone
+— three generations behind the agent that played `submission_v5_s2`"*. It
+records that scoring one net's options against another net's games *"returns a
+plausible number, not an error"*, and that only E17's **C0 control** separated
+them — **67.3% against 99.8%**. E33 shipped no equivalent control. ⇒ **the
+method lesson is not "check the net", it is that E17 paid for a control that
+catches this and E33 declined to inherit it.**
+
+⚠ **The tell sat in E34's pilot rows for an hour before I read it.** 51 of 220
+sampled decisions (**23%**) recorded the agent's own pick ranked *below* the
+net's argmax — impossible with rules off, where `oracle.py` verified
+`argmax(scores) == net.choose` at **106/106**. With the net pinned it is
+**0 of 8**. I ran that check as a routine integrity note, not because I
+suspected anything.
+
+🔬 **Method note, and it is the fifth instance of one pattern** (§8bd, §8cj,
+§8ax, §8ca, now this): *a number produced by an unverified instrument is not
+evidence, however carefully the statistics around it are done.* §8cm's
+statistics were sound — clustering, the mean-not-slope choice, the refusal to
+report the S-curve. None of that rescues a run whose two arms were different
+networks.
+
+**Both cells are re-running with the net pinned** (`p94`/`p96` now take the
+seat's own net object and assert identity; the singleton is loaded only to
+report that it differs). §8cm's verdict is void until the corrected run
+reproduces it.
+
+---
+
+## 8cm. ⛔ WITHDRAWN BY §8cn — E33 — THE ROLLOUT EVALUATOR IS CALIBRATED, SO §8ca's DIAGNOSIS IS RETRACTED: bias −0.0083 [−0.0278, +0.0111] over 1,484 games, and the over-dispersion that does exist is 7% of a standard deviation (2026-08-13, day 32)
+
+⛔ **Everything below is retained for the record and must not be cited. See
+§8cn: the rollouts ran on the v2 clone, not the net the seats played.**
+
+**Pre-registered** `docs/experiments/E33-rollout-calibration.md`, bars and
+branches written before the first measured game. User-directed.
+
+§8ca closed the clock on a cause it named and did not test: *"the rollout
+estimate is biased, most likely by determinization (strategy fusion), **which is
+named but not isolated**."* Everything downstream is denominated in that
+estimator — E17's **+0.0139**/decision, §8bx's dispersion, §8bw's **+0.120**
+scale bar, §2.7's whole sizing framework.
+
+### The design, and why the mirror makes it an isolation rather than a comparison
+
+A **pure observer** wraps the shipped clone: at sampled MAIN decisions it takes
+the clone's own pick, rolls **that pick** out to terminal `R=6` times over
+freshly determinized worlds, records the mean as `p̂`, **and returns the clone's
+pick unchanged**. The real game then finishes with the same clone on both seats
+and the realized outcome `y` is recorded from the deciding seat's view.
+
+⇒ **rollout and reality differ in exactly one thing: the world.** Same net, same
+position, same continuation policy. ⚡ And `oracle.py`'s own docstring supplies
+the other half of the isolation: *"In a mirror A/B the opponent **is** the clone,
+so the rollout model is exactly right there."* E19 cell A ran in the mirror, so
+continuation mismatch was already excluded and **determinization was the only
+suspect left.**
+
+| | 9 fully-verified shards | all 10 shards |
+|---|---|---|
+| games / decisions | **1,484 / 15,271** | 1,649 / 16,976 |
+| mean `p̂` / mean `y` | 0.5169 / 0.5252 | 0.5161 / 0.5262 |
+| **BIAS** | **−0.0083 [−0.0278, +0.0111]** | −0.0100 [−0.0284, +0.0083] |
+| half-width | **0.0195** ✅ (bar ≤0.020) | 0.0184 ✅ |
+| AUC(`p̂`, `y`) | **0.7657** | 0.7679 |
+
+**Controls: all three pass.** `none = 0.0%` of 90,000+ rollouts; `returned_inner
+== calls` on every verified shard (play provably unperturbed); AUC clearly above
+0.5. ⇒ **the CALIBRATED branch is met and §8ca's stated cause is RETRACTED.**
+
+⚠ **What is retracted is the CAUSE, not the result.** E19's **0.4963 [0.4719,
+0.5207]** stands; the clock does not reopen as built. What changes is that
+*"the evaluator is biased"* is no longer an available explanation, so the search
+family's problem is **re-specified rather than solved**.
+
+⚡ **The predicted sign did not appear.** Determinization bias was pre-registered
+to make `p̂` *optimistic* (bias > 0); the point estimate is **negative**. Even had
+it resolved, the mechanism §8ca named would have been falsified.
+
+### ⚠ The post-hoc half, labelled post-hoc: over-dispersion is REAL and far too SMALL
+
+The mean test rules out a **level** bias and cannot rule out inflated *spread*,
+which is what would inflate gap estimates. Under the null that rollouts are
+draws from the same conditional distribution as the real game,
+`Cov(p̂,y) = Var(p)` and `Var(p̂) = Var(p) + (Var(y) − Var(p))/R`:
+
+```
+Var(p_hat) observed   0.12528        RATIO  1.1445  [1.1139, 1.1759]
+Var(p_hat) predicted  0.10948               (bootstrap over GAMES, B=2000)
+```
+
+🔴 **Over-dispersed, and by 14% in variance ≈ 7% in sd.** A 7% sd inflation turns
+a true +0.033 into a claimed +0.035. **E19 measured ≈0, not +0.033** ⇒ the
+mechanism exists and is an order of magnitude too small to be the explanation.
+⚠ Two limits stated rather than buried: the excess cannot be split here between
+*a spurious positional component* and *wider-than-real playout variance*; and
+this is dispersion of the **level across positions**, which is related to but not
+identical with inflation of **arm gaps within** a position.
+
+### 🔬 What this does NOT establish, and it is the successor
+
+The observer rolls out **one** action — the clone's own. It shows the forked
+world plus clone continuation reproduces reality well *on average*. **It does not
+show the estimator ranks two ARMS correctly at one position**, which is the
+quantity E17 and E19 actually spend. ⇒ **E34, the randomized-overrule design:**
+at a position roll out arms A and B, then *actually play B* a pre-registered
+fraction of the time, and test whether the realized difference matches the
+predicted one. That measures the gap directly, where E19 could only infer it
+through a whole-game win rate.
+
+⚡ **Method note — the fourth instance of one pattern.** §8bd ("crediting an
+effect to the variable we named"), §8cj's three controls biased toward the
+hypothesis, §8ax's seven-defect audit, and now §8ca's untested cause. **A named
+mechanism that was never measured is not evidence, however plausible the
+mechanism.**
+
+### 🔬 Two instrument defects, both found before the verdict was written
+
+1. **Shard game-keys collided.** Every shard counts its games from 0, so pooling
+   by `--analyze` would have merged shard A's game 0 with shard B's, collapsing
+   independent clusters and reporting an SE too **tight**. Fixed by namespacing
+   keys with the seed, before the full run.
+2. 🔴 **A race in the launch command destroyed shard 10's log.** A backgrounded
+   `rm -f` ran concurrently with that shard's stdout redirect and unlinked the
+   file after it was opened; the process wrote to the unlinked inode, so the
+   **data survived and the CONTROL COUNTERS did not.** ⇒ shard 10 is excluded
+   from the headline and the result is reported on the nine shards whose
+   controls are verifiable. **Including it changes the bias by 0.0017 and the
+   dispersion ratio by 0.0000** — but "it would not have mattered" is not a
+   reason to report an uncontrolled shard as controlled.
+
+⚡ **Clustering replicated a third time: 2.67×.** Naive SE 0.0037 against a
+clustered 0.0099. Reported at every cell in this experiment because §8bw's
+lesson is now the most-repaid method finding in the project.
+
+## 8cl. ⚡ §2.7's NAMED BLOCKER IS MEASURED AT LAST, AND IT WAS MISSING INFRASTRUCTURE RATHER THAN MISSING COMPUTE: the arena never parallelised, this box has 12 logical cores, and sharding it is **3.1× — saturating at 6 processes, not 10** (2026-08-13, day 32)
+
+ROADMAP §2.7 closed the clock partly on validation cost and wrote the follow-up
+verbatim: *"at 153 s/game an n=2,000 mirror A/B is ≈85 core-hours, i.e. one
+overnight run **if** `arena.py` parallelises across the 6 local cores. **Measure
+that first — it is the number the build decision turns on.**"*
+
+🔴 **It was never measured, and both halves of the premise were wrong.**
+`arena.py` contains no `Pool`, no `multiprocessing`, no `--jobs` — it plays one
+game after another in one process — and the box has **12 logical cores**. So
+*"LARGE OR NOTHING"* was a verdict about a serial harness nobody had checked.
+
+⚡ **The pooling half already existed and was not the gap.**
+`scripts/kaggle/score.py --dir` sums the seat-corrected `score=` line each shard
+prints, refuses to pool shards whose arm identities disagree (rule 20), and
+flags unclean health lines; E22 already ran as five hand-started local
+processes. **Only the launcher was missing** — now `scripts/shard.py`.
+
+### The measured curve (1,000 games, `bc` vs `bc`, identical net both sides)
+
+| shards | wall clock | speed-up |
+|---|---|---|
+| 1 (serial) | **227.9 s** | 1.00× |
+| 3 | 130 s | 1.75× |
+| 6 | **73 s** | **3.12×** |
+| 10 | 70–76 s | 3.0–3.26× |
+
+🔴 **It saturates at 6 and more processes buy nothing** — consistent with 6
+physical cores behind 12 logical ones. ⚠ **Pinning BLAS threads changes
+essentially nothing** (10 shards: 76 s → 70 s with `OMP/MKL/OPENBLAS/NUMEXPR
+_NUM_THREADS=1`), so this is not thread oversubscription; it is core count plus
+memory bandwidth. Netting out ~14 s of per-shard startup, the *work* portion
+scales **3.6×**, i.e. ~60% parallel efficiency on 6 cores.
+
+### What that does to the decision it was supposed to inform
+
+§2.7's 85 core-hours per arm becomes **≈22–27 wall-hours per arm**, so a
+treatment-and-control pair is **~2 days**. That is *feasible but expensive* —
+not the "one overnight run" the section hoped for, and not the "LARGE OR
+NOTHING" it settled for. ⇒ **The honest restatement is: an expensive agent is
+now adjudicable at n=2,000 by committing ~2 days of wall clock per A/B**, which
+is a scheduling decision rather than a structural blocker.
+
+⚠ **And the bigger lever is the one §2.7 already identified and this does not
+touch:** `net.choose` is **80%** of a rollout and is Python/numpy *call
+overhead*, not matmul, so batching lockstep rollouts into one numpy call is
+worth an estimated 10–15× and **stacks multiplicatively with this 3.1×**.
+Sharding is the cheap half; batching is the half that decides whether search is
+affordable.
+
+⚠ **Guard, not documentation:** `arena.make_random_agent` is built with a
+hardcoded `seed=0`, so N shards of a `random` arm replay one RNG stream N times
+and pool to a CI that is too tight by √N. `shard.py` refuses to shard a
+`random` spec without an explicit override, and refuses to reuse a `--job` name
+whose shard logs already exist (the glob would silently pool old games with
+new ones — the archive-append defect one level up).
+
+## 8ck. 🔴 E32 — A COHERENT FROM-SCRATCH POLICY LOSES 0.035 IN THE MIRROR, and the mechanism is measured: it declines an available attack at 168 of 284 offers WITH ITS OWN ATTACKER ARMED, and assembles its win condition 0.84 times a game (2026-08-13, day 32)
+
+**Pre-registered** `docs/experiments/E32-coherent-policy.md`, bars written
+before the cells ran. **Both arms miss by a rout and both controls pass.**
+
+| arm (n=400, mirror, `grimmsnarl` both sides, shipped config) | score | 95% CI | bar |
+|---|---|---|---|
+| `plan:e32,pure` (no net at all) | **0.035** | [0.021, 0.058] | ≥0.25 🔴 |
+| `plan:e32h` + `v5_s2` fallback | **0.068** | [0.047, 0.096] | ≥0.45 🔴 |
+
+Controls: `share` = **0.783 / 0.780** (bar ≥0.30 — the plan layer owned ~78% of
+all selects, so this is not a treatment that failed to fire), `fallbacks` = **0**
+in both. Rung 0 passed at 0.900 vs `random`. ⇒ **the cell is valid and E32
+closes by its own pre-registered rule. ⛔ No tuning round, no second
+architecture.**
+
+### The thesis it was testing, and what the number says about it
+
+E32 asked whether rule 11 (**dominated 3/3, tradeoff 0/4**) is a fact about
+**patches** or about **policies**. Every hand-written thing this project shipped
+overrides the clone at ONE select; nobody had ever built one plan per turn with
+every option scored against it. §8ch licensed the attempt (a trained policy's
+deviations cost **f = 0.758** against matched-random's **0.12** ⇒ the optimum
+forbids **jumps, not paths**), §8bj shaped the target (the 1150s' mirror edge is
+*timing* — 6.42 Munkidori uses/game against our 6.23), and §2.8 supplied the
+ceiling (the 1145–1166 agents are rule agents in a different landscape).
+
+🔴 **The answer is that rule 11 generalises.** A coherent hand-built policy is
+not a *path* to the top of this board; on the evidence here it is a worse point
+than the clone by a margin no tuning constant closes.
+
+⚠ **Scale bar, stated carefully because it is not an identity.** §8ch's
+matched-random control — **a trained policy corrupted at 19 picks a game** —
+scored **0.108**. Our from-scratch policy scores **0.035**. These are different
+objects (a corrupted good policy vs a different policy), so this is a *reference*
+and not a like-for-like comparison. It is still the cheapest way to say how far
+0.035 is: **below the score of a clone playing 19 random moves per game.**
+
+### ⚡ The mechanism, and this is the part that outlives the null
+
+Instrumenting the top-ranked MAIN pick by band (50 games, 1,255 MAIN decisions)
+turns "it lost" into three specific, nameable failures:
+
+```
+attack offered at MAIN      284      declined 168 (59%)
+  ...of those declines, the plan said the attacker was ARMED   168 of 168 (100%)
+Grimmsnarl ex evolutions    42 over 50 games = 0.84 / game
+terminal choice per turn    attack 116  vs  END 146   -> 56% of our turns end with no attack
+mean game length            11.4 turns, 146 selects   (a normal game runs ~318 selects)
+```
+
+⇒ **The policy never assembles its own win condition.** The deck's entire clock
+is Shadow Bullet (180 + a 30 bench snipe) and the ladder gets Grimmsnarl ex into
+play **less than once per game** while dying in 11 turns. The proximate cause is
+a priority error the ladder makes on purpose: `_score_play` ranks **Munkidori
+20000 above Impidimp 19000 above Rare Candy 18000 above Poffin 17000**, so the
+bench fills with the support engine and the attacker line is never built. The
+100% figure on `readyNoAtk` is the same error one level down — every setup band
+outranks ATTACK (1000) by design, which is correct *only if* the turn still ends
+in an attack, and 56% of ours do not.
+
+⚠ **This is a design error in a hand-built ladder, which is exactly what the
+pre-registered bar exists to adjudicate.** §8u's *successful* clone of a
+1163-rated expert scored **0.370**; the rung-1 bar was set at **0.25** precisely
+so "undertuned" (0.25–0.40) could be told from "wrong object". **0.035 is not in
+the undertuned band**, and re-tuning the constants after seeing the score is the
+shopping a β-sweep was declined for (§8ao). **The mechanism is recorded so the
+question is answerable later, not so it is answered now.**
+
+### What survives for Round 2
+
+⚡ **The instrument, and the fact that the failure is NAMEABLE rather than
+diffuse.** `agents/sa/planagent.py` computes a real KO schedule from the card DB
+and the board; §3.5.6 measured that the expanded R2 pool damages *our*
+architecture most (134 distinct card ids in the corpus, every new card outside
+them, *"rules generalise to unseen cards and clones structurally cannot"*), and
+posture (b) of that section needs exactly this object. **E32 says the object as
+built is much weaker than the clone in the Round-1 mirror. It does not say a
+plan layer owning only the new cards' decisions is.** Those are different
+claims and the second one is untested.
+
 ## 8cj. 🔴 E27 IS CLOSED BY ITS OWN RULE — round 2 is a SECOND consecutive MOVEMENT ONLY, and across two rounds an iterated policy's deviations are indistinguishable in quality from any other trained policy's (2026-08-12, day 31)
 
 **Pre-registered** `docs/experiments/E27-policy-iteration.md` at **`4070eb1`**.
