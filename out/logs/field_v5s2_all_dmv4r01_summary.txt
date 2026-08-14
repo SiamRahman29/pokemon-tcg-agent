@@ -1,0 +1,88 @@
+﻿=== field sweep start 2026-08-13T23:25:01.7661145+06:00 ===
+npz verified: v5s2=True all=True dev_v4=True mid_v4=True
+Reuse: all vs field (exact noChip,noSpread,noSrc, health OK) from prior sweep
+No reuse: v5s2 field cells (none matching); dmv4 ready=0.1 (prior was ready=0.56)
+
+=== REUSE all vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.720 [0.679, 0.758] W360/D0/L140 over 500 games
+    [health] OK calls=41099 fallbacks=0 net_missing=0 deck=500
+
+=== REUSE all vs rule:crustle@crustle_v1 matches=200 ===
+bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.801 [0.759, 0.837] W320/D1/L79 over 400 games
+    [health] OK calls=42443 fallbacks=0 net_missing=0 deck=400
+
+=== REUSE all vs rule:alakazam5@alakazam5 matches=200 ===
+bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.868 [0.831, 0.897] W347/D0/L53 over 400 games
+    [health] OK calls=33730 fallbacks=0 net_missing=0 deck=400
+
+=== REUSE all vs rule:archaludon@archaludon_ex matches=200 ===
+bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.728 [0.682, 0.769] W291/D0/L109 over 400 games
+    [health] OK calls=37325 fallbacks=0 net_missing=0 deck=400
+
+=== REUSE all vs rule:dragapult@dragapult_ex matches=200 ===
+bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.848 [0.809, 0.879] W339/D0/L61 over 400 games
+    [health] OK calls=33319 fallbacks=0 net_missing=0 deck=400
+
+=== v5s2 vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469: score=0.608 [0.565, 0.650] W304/D0/L196 over 500 games
+    [health] OK calls=45314 fallbacks=0 net_missing=0 deck=500
+
+=== v5s2 vs rule:crustle@crustle_v1 matches=200 ===
+bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469: score=0.790 [0.747, 0.827] W316/D0/L84 over 400 games
+    [health] OK calls=42354 fallbacks=0 net_missing=0 deck=400
+
+=== v5s2 vs rule:alakazam5@alakazam5 matches=200 ===
+bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469: score=0.772 [0.729, 0.811] W309/D0/L91 over 400 games
+    [health] OK calls=36817 fallbacks=0 net_missing=0 deck=400
+
+=== v5s2 vs rule:archaludon@archaludon_ex matches=200 ===
+bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469: score=0.703 [0.656, 0.745] W281/D0/L119 over 400 games
+    [health] OK calls=39490 fallbacks=0 net_missing=0 deck=400
+
+=== v5s2 vs rule:dragapult@dragapult_ex matches=200 ===
+bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469: score=0.807 [0.766, 0.843] W323/D0/L77 over 400 games
+    [health] OK calls=36297 fallbacks=0 net_missing=0 deck=400
+
+=== dmv4_r01 vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9 [grimmsnarl] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9: score=0.516 [0.472, 0.560] W258/D0/L242 over 500 games
+    [health] OK calls=42714 fallbacks=0 net_missing=0 deck=500
+
+=== dmv4_r01 vs rule:crustle@crustle_v1 matches=200 ===
+bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9 [grimmsnarl] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9: score=0.651 [0.603, 0.696] W260/D1/L139 over 400 games
+    [health] OK calls=42363 fallbacks=0 net_missing=0 deck=400
+
+=== dmv4_r01 vs rule:alakazam5@alakazam5 matches=200 ===
+bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9 [grimmsnarl] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9: score=0.725 [0.679, 0.766] W290/D0/L110 over 400 games
+    [health] OK calls=37093 fallbacks=0 net_missing=0 deck=400
+
+=== dmv4_r01 vs rule:archaludon@archaludon_ex matches=200 ===
+bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9 [grimmsnarl] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9: score=0.635 [0.587, 0.681] W254/D0/L146 over 400 games
+    [health] OK calls=38554 fallbacks=0 net_missing=0 deck=400
+
+=== dmv4_r01 vs rule:dragapult@dragapult_ex matches=200 ===
+bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9 [grimmsnarl] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.1,noChip,noSpread,noSrc#152b89a9: score=0.740 [0.695, 0.781] W296/D0/L104 over 400 games
+    [health] OK calls=35814 fallbacks=0 net_missing=0 deck=400
+
+=== field sweep done 2026-08-13T23:42:34.6586933+06:00 fails=0 ===
+
+=== prior dmv4@0.56 (for delta) ===
+v10: A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.56,noChip,noSpread,noSrc#152b89a9: score=0.567 [0.523, 0.610] W283/D1/L216 over 500 games
+crustle: A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.56,noChip,noSpread,noSrc#152b89a9: score=0.762 [0.718, 0.802] W304/D2/L94 over 400 games
+alakazam5: A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.56,noChip,noSpread,noSrc#152b89a9: score=0.762 [0.718, 0.802] W305/D0/L95 over 400 games
+archaludon: A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.56,noChip,noSpread,noSrc#152b89a9: score=0.682 [0.635, 0.726] W273/D0/L127 over 400 games
+dragapult: A=bc:dmv4,net=out/policy_v5_s2_dev_v4.npz|out/policy_v5_s2_mid_v4.npz,ready=0.56,noChip,noSpread,noSrc#152b89a9: score=0.767 [0.724, 0.806] W307/D0/L93 over 400 games
