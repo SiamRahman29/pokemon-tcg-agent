@@ -460,9 +460,19 @@ def get() -> Net | None:
                 import hashlib
                 tag = "#" + hashlib.md5(
                     Path(_PATH).read_bytes()).hexdigest()[:8]
-            print(f"[policynet] singleton = {_PATH} {tag}"
-                  f"{'' if os.environ.get('SA_PNET_PATH') else '  (repo default'
-                    ' -- set SA_PNET_PATH to pin a different one)'}",
+            # ⚠ Build this OUTSIDE the f-string. Kaggle's episode runner is
+            # Python 3.11 (`kaggle_environments` under python3.11/dist-packages)
+            # even though Kaggle *notebooks* are 3.12, and a replacement field
+            # that spans lines is PEP 701 -- i.e. 3.12+ ONLY. As a multi-line
+            # f-string this raised `SyntaxError: unterminated string literal` at
+            # IMPORT, so `main.py`'s `from sa.bcagent import PolicyAgent` never
+            # completed, both seats died in 0.04s and submission 55489084 came
+            # back "Validation Episode failed." A logging nicety took the whole
+            # agent down, on the one path no local smoke could see.
+            note = ("" if os.environ.get("SA_PNET_PATH")
+                    else "  (repo default -- set SA_PNET_PATH to pin a "
+                         "different one)")
+            print(f"[policynet] singleton = {_PATH} {tag}{note}",
                   file=sys.stderr, flush=True)
         except Exception:
             pass

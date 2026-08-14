@@ -349,6 +349,41 @@ class PolicyNet(nn.Module):
         return torch.cat([mean, mx, scal], dim=1)
 
 
+def parse_episode_span(spec: str) -> tuple[float, float]:
+    """Parse `--episode-span START:END` into inclusive-exclusive fractions."""
+    if ":" not in spec:
+        raise SystemExit("--episode-span needs START:END (e.g. 0:0.5)")
+    a, b = (s.strip() for s in spec.split(":", 1))
+    try:
+        start, end = float(a), float(b)
+    except ValueError as exc:
+        raise SystemExit(f"--episode-span {spec!r}: {exc}") from exc
+    if not (0.0 <= start < end <= 1.0):
+        raise SystemExit("--episode-span requires 0 <= START < END <= 1")
+    return start, end
+
+
+def episode_span_mask(gid: np.ndarray, start: float, end: float) -> np.ndarray:
+    """True for rows in [floor(n*start), floor(n*end)) within each gid.
+
+    Row order is the order they appear in `gid` (shard-concat chronological
+    order from build_policy_dataset). Odd-length games put the middle row in
+    the second half when start=0.5 (floor splits)."""
+    keep = np.zeros(len(gid), dtype=bool)
+    # First pass: counts per gid in appearance order, without sorting the
+    # whole array (gids are not contiguous across day dirs).
+    order: dict[int, list[int]] = {}
+    for i, g in enumerate(gid.tolist()):
+        order.setdefault(g, []).append(i)
+    for idxs in order.values():
+        n = len(idxs)
+        lo = int(n * start)
+        hi = int(n * end)
+        for j in idxs[lo:hi]:
+            keep[j] = True
+    return keep
+
+
 def listwise_loss(out: torch.Tensor, chosen: torch.Tensor,
                   opt_row: torch.Tensor, n_rows: int,
                   w: torch.Tensor | None = None) -> torch.Tensor:
@@ -444,7 +479,16 @@ class Data:
             # Corpora built before `--ratings` have no per-row demonstrator.
             rating.append(z["rating"] if "rating" in z
                           else np.full(n, np.nan, dtype=np.float32))
-            od.append(z["opt_dense"])
+            # Pre-v6 corpora store OPT_DENSE_V3 (37) cols; current builds store
+            # OPT_DENSE (46). Pad the short layout with zeros so mixed --ds
+            # unions concatenate; --opt-cols then slices the prefix it needs.
+            od_arr = z["opt_dense"]
+            w = int(od_arr.shape[1])
+            if w < OPT_DENSE:
+                od_arr = np.pad(od_arr, ((0, 0), (0, OPT_DENSE - w)))
+            elif w > OPT_DENSE:
+                od_arr = od_arr[:, :OPT_DENSE]
+            od.append(od_arr)
             oc.append(z["opt_card"])
             oa.append(z["opt_attack"])
             ot.append(z["opt_target"] if "opt_target" in z
@@ -849,6 +893,11 @@ def main() -> int:
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--wd", type=float, default=1e-5)
     ap.add_argument("--winners-only", action="store_true")
+    ap.add_argument("--episode-span", default="",
+                    help="keep only a chronological fraction of each game's "
+                         "rows: START:END in [0,1] (e.g. 0:0.5 = first half, "
+                         "0.5:1 = last half). Split is by decision-row count "
+                         "per gid, in shard-concat order. Empty = full episode.")
     ap.add_argument("--loss", choices=("bce", "listwise", "both"),
                     default="listwise")
     ap.add_argument("--state-h", default="256",
@@ -1018,6 +1067,13 @@ def main() -> int:
         a_mask = apply_a_drop(data, [s.strip() for s in args.drop_a.split(",")
                                      if s.strip()])
     keep = np.ones(data.n, dtype=bool)
+    if args.episode_span:
+        start, end = parse_episode_span(args.episode_span)
+        span = episode_span_mask(data.gid, start, end)
+        keep &= span
+        print(f"--episode-span {start:g}:{end:g}: {int(span.sum())} of "
+              f"{data.n} rows kept ({int(span.sum()) / max(data.n, 1):.1%} "
+              f"by decision count per gid)")
     if args.winners_only:
         keep &= data.won > 0.5
     rated = ~np.isnan(data.rating)

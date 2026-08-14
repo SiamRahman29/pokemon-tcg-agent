@@ -245,10 +245,16 @@ def build_agent(spec: str, deck: list[int],
         # E26: 0/None reproduce the plain agent exactly.
         xnet_path, x_rand, x_rank = None, 0.0, ""
         x_rankfile, x_dump, x_accept = "", "", 1.0
+        # Phase handoff threshold for `net=dev|mid` (sa/readiness.py). None
+        # keeps DEFAULT_THRESHOLD (calibrated 0.56).
+        handoff_threshold = None
         for f in tag.split(",")[1:]:
             f = f.strip()
             if f.startswith("net="):
                 net_path = f[4:]
+            elif f.startswith("ready="):
+                # Dev→mid readiness gate. Only meaningful with net=early|mid.
+                handoff_threshold = float(f[6:])
             elif f == "noChip":
                 # disable the chip-damage targeting override (sa/targeting.py)
                 chip = False
@@ -393,8 +399,10 @@ def build_agent(spec: str, deck: list[int],
                     f"unknown bc flag {f!r} in {spec!r}. Note the first token "
                     f"after `bc:` is a LABEL, not a flag -- write "
                     f"`bc:<label>,{f}`.")
-        # `net=a.npz+b.npz` is an ensemble spec; every member must exist.
-        for _p in (net_path.split("+") if net_path else []):
+        # `net=a.npz+b.npz` is an ensemble; `net=dev|mid` is a phase handoff.
+        # Every member path must exist either way.
+        _sep = "|" if (net_path and "|" in net_path) else "+"
+        for _p in (net_path.split(_sep) if net_path else []):
             if _p and not Path(_p).exists():
                 raise SystemExit(f"bc net not found: {_p}")
         if xnet_path and not Path(xnet_path).exists():
@@ -406,6 +414,9 @@ def build_agent(spec: str, deck: list[int],
             raise SystemExit("xrnd without xrank=/xrankfile= samples UNIFORM "
                              "ranks, which is not depth-matched to any "
                              "treatment. E26 requires the calibration file.")
+        if handoff_threshold is not None and not (net_path and "|" in net_path):
+            raise SystemExit("ready= needs net=early|mid (phase handoff); "
+                             f"got net={net_path!r}")
         try:
             agent = PolicyAgent(deck, net_path, chip_targeting=chip,
                                 energy_spread=spread, drag_target=drag,
@@ -430,7 +441,8 @@ def build_agent(spec: str, deck: list[int],
                                 vlk_tau=vlk_tau,
                                 xnet_path=xnet_path, x_rand=x_rand,
                                 x_rank=x_rank, x_rankfile=x_rankfile,
-                                x_dump=x_dump, x_accept=x_accept)
+                                x_dump=x_dump, x_accept=x_accept,
+                                handoff_threshold=handoff_threshold)
         except ValueError as exc:
             # the `net=` guard (sa/bcagent.py): a net that exists but fails
             # policynet.load used to fall through to the tracked singleton and
@@ -526,10 +538,13 @@ def _net_fp(net_path: str | None) -> str:
 
     # An ensemble's identity is ALL of its members, in order: swapping one
     # member is a different agent, and voting order is part of the spec
-    # (member 0 supplies the count rule).
-    if net_path and "+" in net_path:
+    # (member 0 supplies the count rule). Same idea for a phase handoff
+    # (`dev|mid`): both weight files fingerprint the agent.
+    if net_path and ("+" in net_path or "|" in net_path):
+        sep = "|" if "|" in net_path else "+"
         h = hashlib.md5()
-        for p in net_path.split("+"):
+        h.update(sep.encode())
+        for p in net_path.split(sep):
             if not p:
                 continue
             q = Path(p)

@@ -35,6 +35,99 @@ from ptcg import config  # noqa: E402
 
 SIZE_CAP_MIB = 197.7
 
+# 🔴 Kaggle's EPISODE RUNNER is Python 3.11 -- `kaggle_environments` lives under
+# `/usr/local/lib/python3.11/dist-packages/`. Kaggle *notebooks* are 3.12, and
+# so is this dev box, so 3.12-only syntax parses everywhere we normally look and
+# then raises SyntaxError at IMPORT on the grader. Submission 55489084 died that
+# way: one PEP 701 multi-line f-string in `sa/policynet.py` (a logging nicety)
+# stopped `from sa.bcagent import PolicyAgent`, both seats crashed in 0.04s, and
+# the LB said only "Validation Episode failed." The smoke test CANNOT catch this
+# -- it runs on the local interpreter, where the file is valid.
+KAGGLE_PY = (3, 11)
+
+
+def _find_kaggle_python() -> str | None:
+    """An interpreter matching Kaggle's episode runner, or None.
+
+    `SA_KAGGLE_PYTHON` wins; otherwise ask uv for a managed 3.11. Returning
+    None is not fatal -- the caller falls back to a narrower static check.
+    """
+    pinned = os.environ.get("SA_KAGGLE_PYTHON")
+    if pinned and Path(pinned).exists():
+        return pinned
+    ver = "%d.%d" % KAGGLE_PY
+    try:
+        proc = subprocess.run(["uv", "python", "find", ver],
+                              capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    cand = proc.stdout.strip()
+    return cand if proc.returncode == 0 and cand and Path(cand).exists() else None
+
+
+def _scan_pep701(root: Path) -> list[str]:
+    """Static fallback: f-strings that only parse on 3.12+ (PEP 701).
+
+    Catches the multi-line replacement field that actually shipped. It is a
+    subset of what a real 3.11 parse catches, so it is the fallback, never the
+    primary check.
+    """
+    import io
+    import tokenize
+    fs_start = getattr(tokenize, "FSTRING_START", None)
+    fs_end = getattr(tokenize, "FSTRING_END", None)
+    if fs_start is None:  # pre-3.12 host: it would have failed outright
+        return []
+    hits = []
+    for f in sorted(root.rglob("*.py")):
+        try:
+            toks = list(tokenize.generate_tokens(
+                io.StringIO(f.read_text(encoding="utf-8")).readline))
+        except Exception:  # noqa: BLE001  -- a parse failure is caught elsewhere
+            continue
+        depth, start = 0, None
+        for t in toks:
+            if t.type == fs_start:
+                if depth == 0:
+                    start = t
+                depth += 1
+            elif t.type == fs_end:
+                depth -= 1
+                if depth == 0 and start is not None:
+                    quoted = start.string.lstrip("fFrRbB")
+                    if t.end[0] != start.start[0] and quoted not in ('"""', "'''"):
+                        hits.append(f"{f.relative_to(root)}:{start.start[0]}"
+                                    " multi-line f-string (PEP 701, 3.12+)")
+                    start = None
+    return hits
+
+
+def _check_kaggle_syntax(build: Path) -> None:
+    """Compile every bundled .py the way the grader's interpreter will."""
+    py = _find_kaggle_python()
+    if py:
+        proc = subprocess.run([py, "-m", "compileall", "-q", str(build)],
+                              capture_output=True, text=True, timeout=600)
+        for cache in build.rglob("__pycache__"):
+            shutil.rmtree(cache, ignore_errors=True)
+        if proc.returncode != 0:
+            print(proc.stdout[-3000:] or proc.stderr[-3000:])
+            raise SystemExit(
+                "syntax check FAILED under Python %d.%d -- this bundle would "
+                "crash at import on Kaggle, exactly like 55489084" % KAGGLE_PY)
+        print("  kaggle syntax: OK under %d.%d (%s)" % (*KAGGLE_PY, py))
+        return
+    hits = _scan_pep701(build)
+    if hits:
+        for h in hits:
+            print(f"    {h}")
+        raise SystemExit(
+            "bundle uses 3.12-only f-string syntax and Kaggle runs %d.%d"
+            % KAGGLE_PY)
+    print("  kaggle syntax: no %d.%d interpreter found (`uv python install "
+          "%d.%d`); ran the PEP-701 scan only -- WEAKER" % (*KAGGLE_PY,
+                                                            *KAGGLE_PY))
+
 MAIN_PY = '''\
 import os
 import sys
@@ -358,6 +451,10 @@ def main() -> int:
         present = (build / "sa" / extra).exists()
         note = "present" if present else "excluded -> handcrafted fallback"
         print(f"  sa/{extra}: {note}")
+
+    # Before tarring: would the GRADER's interpreter even parse this? The smoke
+    # below runs on the local one and cannot answer that (see KAGGLE_PY).
+    _check_kaggle_syntax(build)
 
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out = (config.DIST_DIR /

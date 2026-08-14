@@ -144,7 +144,8 @@ class PolicyAgent:
                  vlk_rand: float = 0.0, vlk_tau: float = 0.0,
                  xnet_path: str | None = None, x_rand: float = 0.0,
                  x_rank: str = "", x_rankfile: str = "", x_dump: str = "",
-                 x_accept: float = 1.0):
+                 x_accept: float = 1.0,
+                 handoff_threshold: float | None = None):
         self.decklist = list(decklist)
         # R2 (day 27): average the decision over K bench-slot relabellings, a
         # nuisance variable the net demonstrably reads -- 16.9% of decisions
@@ -174,7 +175,24 @@ class PolicyAgent:
         # to policynet.get() here would silently use the bundled checkpoint.
         # `net=a.npz+b.npz` loads an ENSEMBLE: the members vote per option
         # (softmax each, then average). One path behaves exactly as before.
-        if net_path and "+" in net_path:
+        # `net=dev.npz|mid.npz` loads a PHASE HANDOFF: readiness_score picks
+        # mid once the board looks past setup (see sa/readiness.py). `+` and
+        # `|` are mutually exclusive specs.
+        if net_path and "+" in net_path and "|" in net_path:
+            raise ValueError(
+                f"net {net_path!r}: use either '+' (ensemble) or '|' "
+                f"(dev→mid handoff), not both")
+        if net_path and "|" in net_path:
+            parts = [p for p in net_path.split("|") if p]
+            if len(parts) != 2:
+                raise ValueError(
+                    f"net {net_path!r}: phase handoff needs exactly "
+                    f"early|mid (got {len(parts)} paths)")
+            from .readiness import (DEFAULT_THRESHOLD, load_phase_handoff)
+            thr = (DEFAULT_THRESHOLD if handoff_threshold is None
+                   else float(handoff_threshold))
+            self.net = load_phase_handoff(parts[0], parts[1], threshold=thr)
+        elif net_path and "+" in net_path:
             parts = [p for p in net_path.split("+") if p]
             self.net = policynet.load_ensemble(parts)
         else:
