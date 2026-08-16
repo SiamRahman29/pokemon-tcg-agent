@@ -219,17 +219,31 @@ def push(args: argparse.Namespace) -> None:
     print(f"           https://www.kaggle.com/code/{meta['id'].split('/')[1]}")
 
 
+def _kid(args: argparse.Namespace) -> str:
+    """The kernel this invocation is about.
+
+    ⚠ `--tag` MUST be threaded through here. It is the only thing separating a
+    top10 run from the untagged hostall one, and status/pull/logs each accepted
+    `--tag` while dropping it on the floor -- so they reported on, and pulled
+    the net out of, a DIFFERENT kernel than the one push created. Rule 20: a
+    path is not an identity.
+    """
+    return kernel_id(args.probe, getattr(args, "scale_test", False),
+                     getattr(args, "half", 0), getattr(args, "train", False),
+                     getattr(args, "tag", ""))
+
+
 def status(args: argparse.Namespace) -> None:
-    r = subprocess.run(["kaggle", "kernels", "status", kernel_id(args.probe, getattr(args, "scale_test", False), getattr(args, "half", 0), getattr(args, "train", False))],
+    r = subprocess.run(["kaggle", "kernels", "status", _kid(args)],
                        capture_output=True, text=True)
     print(r.stdout or r.stderr)
 
 
 def logs(args: argparse.Namespace) -> None:
     """The kernel's stdout. This is where a 'missing dataset' or an OOM shows."""
-    dest = ROOT / "out" / "kaggle_out" / (kernel_id(args.probe, getattr(args, "scale_test", False), getattr(args, "half", 0), getattr(args, "train", False)).split("/")[1])
+    dest = ROOT / "out" / "kaggle_out" / (_kid(args).split("/")[1])
     dest.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run(["kaggle", "kernels", "output", kernel_id(args.probe, getattr(args, "scale_test", False), getattr(args, "half", 0), getattr(args, "train", False)),
+    r = subprocess.run(["kaggle", "kernels", "output", _kid(args),
                         "-p", str(dest)], capture_output=True, text=True)
     print(r.stdout or r.stderr)
     for f in sorted(dest.glob("*.log")) + sorted(dest.glob("*.txt")):
@@ -239,9 +253,9 @@ def logs(args: argparse.Namespace) -> None:
 
 
 def pull(args: argparse.Namespace) -> None:
-    dest = ROOT / "out" / "kaggle_out" / (kernel_id(args.probe, getattr(args, "scale_test", False), getattr(args, "half", 0), getattr(args, "train", False)).split("/")[1])
+    dest = ROOT / "out" / "kaggle_out" / (_kid(args).split("/")[1])
     dest.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run(["kaggle", "kernels", "output", kernel_id(args.probe, getattr(args, "scale_test", False), getattr(args, "half", 0), getattr(args, "train", False)),
+    r = subprocess.run(["kaggle", "kernels", "output", _kid(args),
                         "-p", str(dest)], capture_output=True, text=True)
     print(r.stdout or r.stderr)
     got = sorted(p for p in dest.rglob("*") if p.is_file())
