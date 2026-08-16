@@ -164,6 +164,11 @@ EPISODES_PER_DAY = 0              # top-N of each day's manifest by avg_score. 0
                                   # ⚠ read the RAM table in the header before raising this
                                   # for a run that TRAINS; a build-only run is unconstrained.
 BUILD_PROCS      = 4              # parallel builder processes (Kaggle gives 4 vCPU)
+TOP_PCT          = 0              # 0 = every episode. 10 = keep only the top 10%
+                                  # of episodes by avg_score. `gid` IS the
+                                  # episode id, so this is a row mask over the
+                                  # SAME corpus -- no rebuild.
+KEEP_GIDS        = ""             # set by the cut cell below
 STREAM           = False          # load shards a buffer at a time. REQUIRED above
                                   # ~4M rows: the in-RAM path wants 7.8 KB/row
                                   # (313 GB at 40.1M) against a 34 GB box.
@@ -506,6 +511,37 @@ if peak > 0.80 * have:
 assert rows > 0, "empty corpus"
 '''
 
+CUT = '''\n# ── the rating cut: which episodes survive ───────────────────────────────────
+# ⚡ The 0.440 result (EVIDENCE §1a) says UNFILTERED volume is negative and the
+# suspect is composition: v5_s2 cloned the top ~400/day (cutoff ~1150) while the
+# full corpus reaches down to avg_score ~700-900. This applies a quality bar to
+# the SAME shards, so composition moves and nothing else does.
+import csv as _csv, glob as _glob
+
+if TOP_PCT and TOP_PCT > 0:
+    cand = _glob.glob("/kaggle/input/**/episode_ratings.csv", recursive=True)
+    if not cand:
+        raise SystemExit("TOP_PCT set but episode_ratings.csv is not attached; "
+                         "add siamrahman29/ptcg-episode-ratings")
+    with open(cand[0], encoding="utf-8-sig", newline="") as fh:
+        rows = [(int(r["episode_id"]), float(r["avg_score"]))
+                for r in _csv.DictReader(fh)]
+    rows.sort(key=lambda r: -r[1])
+    k = max(1, int(len(rows) * TOP_PCT / 100.0))
+    KEEP_GIDS = f"{ROOT}/keep_gids.txt"
+    with open(KEEP_GIDS, "w", encoding="utf-8") as fh:
+        # chr(10), not a backslash escape: this cell is embedded in the
+        # generator as a string literal, where a newline escape is one more
+        # level of quoting to get wrong.
+        fh.write(chr(10).join(str(e) for e, _ in rows[:k]))
+    print(f"TOP_PCT {TOP_PCT}%: {k:,} of {len(rows):,} episodes, "
+          f"avg_score cutoff {rows[k-1][1]:.0f} -> {KEEP_GIDS}")
+    print(f"  (for reference v5_s2's own corpus cut at ~1150)")
+else:
+    print("TOP_PCT 0: every episode in the corpus is kept")
+'''
+
+
 TRAIN = '''\
 # ── train: the v5_s2 command, unchanged except --ds and --out ────────────────
 import torch
@@ -542,6 +578,7 @@ cmd = [sys.executable, "-X", "utf8", "scripts/train_policy.py",
        "--seed", str(SEED),
        "--max-hours", str(MAX_HOURS),
        *(["--stream", "--stream-buffer", str(STREAM_BUFFER)] if STREAM else []),
+       *(["--keep-gids", KEEP_GIDS] if KEEP_GIDS else []),
        "--device", device,
        "--out", f"out/{NET_NAME}"]
 if POOL:
@@ -712,6 +749,7 @@ def build(out_path: Path, mode: str = "full") -> int:
         cells.append(code(FETCH))
     cells.append(code(CENSUS))
     cells.append(md("## Training\n"))
+    cells.append(code(CUT))
     cells.append(code(TRAIN))
     cells.append(code(VERIFY.format(shapes=reference_shapes())))
     cells.append(code(COLLECT))

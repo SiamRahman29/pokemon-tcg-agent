@@ -1044,6 +1044,12 @@ def main() -> int:
                     help="B8: comma-separated top-level parameter groups to "
                          "train; everything else is frozen (e.g. 'head')")
     ap.add_argument("--epochs", type=int, default=4)
+    ap.add_argument("--keep-gids", default="",
+                    help="file of episode ids (one per line, or a CSV whose "
+                         "first column is the id) -- keep only rows whose gid "
+                         "is in it. `gid` IS the episode id, so this is how a "
+                         "rating cut or an archetype filter is applied to an "
+                         "already-built corpus WITHOUT rebuilding it.")
     ap.add_argument("--stream", action="store_true",
                     help="load shards a buffer at a time instead of "
                          "concatenating the corpus. Required above ~4M rows. "
@@ -1248,6 +1254,28 @@ def main() -> int:
         a_mask = apply_a_drop(data, [s.strip() for s in args.drop_a.split(",")
                                      if s.strip()])
     keep = np.ones(data.n, dtype=bool)
+    if args.keep_gids:
+        kp = Path(args.keep_gids)
+        if not kp.is_absolute():
+            kp = ROOT / kp
+        want = set()
+        for ln in kp.read_text(encoding="utf-8-sig").splitlines():
+            tok = ln.split(",", 1)[0].strip()
+            if tok and tok.lstrip("-").isdigit():
+                want.add(int(tok))
+        if not want:
+            raise SystemExit(f"{kp}: parsed zero episode ids")
+        sel = np.isin(data.gid, np.fromiter(want, dtype=np.int64, count=len(want)))
+        keep &= sel
+        # ⚠ rule 9: a filter that matches almost nothing must not look like a
+        # small corpus. Say what fraction survived, in games as well as rows.
+        print(f"--keep-gids {kp.name}: {len(want):,} ids -> "
+              f"{int(sel.sum()):,} of {data.n:,} rows kept "
+              f"({int(sel.sum())/max(data.n,1):.1%}), "
+              f"{len(np.unique(data.gid[sel])):,} episodes matched")
+        if not sel.any():
+            raise SystemExit("--keep-gids matched ZERO rows; the id space is "
+                             "wrong (gid is the episode id)")
     if args.episode_span:
         start, end = parse_episode_span(args.episode_span)
         span = episode_span_mask(data.gid, start, end)

@@ -41,6 +41,7 @@ EPISODE_DS = "kaggle/pokemon-tcg-ai-battle-episodes-{d}"
 CG_DS = "kiyotah/cg-lib"
 # The corpus, now a durable private Dataset rather than kernel output.
 CORPUS_DS = "siamrahman29/ptcg-hostall-corpus"
+RATINGS_DS = "siamrahman29/ptcg-episode-ratings"
 FIRST_DAY, LAST_DAY = "2026-06-16", "2026-08-13"
 # ⚠ Measured cap: 50 dataset_sources push, 55 get a 400 from SaveKernel. 59 days
 # therefore needs TWO kernels; --half picks which.
@@ -60,9 +61,9 @@ def episode_days(half: int = 0) -> list[str]:
 
 
 def kernel_id(probe: bool, scale: bool = False, half: int = 0,
-              train: bool = False) -> str:
+              train: bool = False, tag: str = "") -> str:
     if train:
-        return f"{USER}/{SLUG}-train"
+        return f"{USER}/{SLUG}-train" + (f"-{tag}" if tag else "")
     if scale:
         return f"{USER}/{SLUG}-scale"
     if half:
@@ -128,6 +129,7 @@ def push(args: argparse.Namespace) -> None:
                    DEVICE='"cuda"' if args.gpu else '"cpu"',
                    STREAM="True" if args.stream else "False",
                    STREAM_BUFFER=str(args.stream_buffer),
+                   TOP_PCT=str(args.top_pct),
                    EPOCHS=str(args.epochs), MAX_HOURS=str(args.max_hours),
                    NET_NAME='"policy_v5_s2_hostall.npz"')
     elif args.scale_test:
@@ -167,14 +169,14 @@ def push(args: argparse.Namespace) -> None:
     # The cg engine rides along as a mount: the featurizer needs its card and
     # attack tables, and a runtime attach is impossible in a batch kernel.
     # A training run needs only the engine; the corpus arrives via kernel_sources.
-    sources = [CG_DS, CORPUS_DS] if args.train else (
+    sources = [CG_DS, CORPUS_DS, RATINGS_DS] if args.train else (
         [CG_DS] + [EPISODE_DS.format(d=d) for d in days])
     if len(sources) > MAX_SOURCES:
         sys.exit(f"{len(sources)} dataset_sources exceeds the measured cap "
                  f"({MAX_SOURCES}); pass --half 1 or --half 2")
     meta = {
-        "id": kernel_id(args.probe, args.scale_test, args.half, args.train),
-        "title": kernel_id(args.probe, args.scale_test, args.half, args.train).split("/")[1],
+        "id": kernel_id(args.probe, args.scale_test, args.half, args.train, getattr(args, "tag", "")),
+        "title": kernel_id(args.probe, args.scale_test, args.half, args.train, getattr(args, "tag", "")).split("/")[1],
         "code_file": "notebook.ipynb",
         "language": "python",
         "kernel_type": "notebook",
@@ -273,6 +275,10 @@ def main() -> None:
     p.add_argument("--train", action="store_true",
                    help="train off the corpus the build kernels produced, on a "
                         "TPU VM (for its 405 GB host RAM), --device cpu")
+    p.add_argument("--tag", default="",
+                   help="suffix for the kernel id, so runs do not clobber")
+    p.add_argument("--top-pct", type=int, default=0,
+                   help="keep only the top N%% of episodes by avg_score")
     p.add_argument("--stream", action="store_true",
                    help="stream shards instead of loading the whole corpus")
     p.add_argument("--stream-buffer", type=int, default=8)
@@ -290,6 +296,7 @@ def main() -> None:
         q.add_argument("--scale-test", action="store_true")
         q.add_argument("--half", type=int, default=0, choices=(0, 1, 2))
         q.add_argument("--train", action="store_true")
+        q.add_argument("--tag", default="")
         q.set_defaults(fn=fn)
 
     args = ap.parse_args()
