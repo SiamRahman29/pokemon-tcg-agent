@@ -40,6 +40,58 @@ runs) — this is `HANDOFF` rule 3, and it is the reason every claim in this fil
 is an arena A/B. `--loss listwise` reaches in 1 epoch what BCE took 4 to reach,
 so the loss function mattered and the data volume did not.
 
+### 1a. 🔴 THE CORPUS AXIS, TAKEN TO ITS LIMIT: **every episode the hosts ever released** reads **0.440 [0.412, 0.468]** (2026-08-16, day 35)
+
+The plateau above was measured at 2,810 → 4,010 games. This is the same axis at
+**160× `v5_s2`'s corpus**, and it goes past flat into negative.
+
+| net | corpus | episodes | rows | val top-1 | vs `v5_s2`, n=1,200 |
+|---|---|---|---|---|---|
+| **`policy_v5_s2`** (shipped) | `pds_v4`, top-400/day × 4 days | ~1,600 | 248,985 | 0.6927 | — |
+| `policy_v5_s2_all` | `pds_all`, top-400/day × 15 days | ~6,000 | 939,203 | 0.6926 | 0.492 [0.444, 0.541] (n=400) |
+| **`policy_v5_s2_hostall`** `#052dc9ed` | **every episode, all 59 days** | **292,008** | **40,127,492** | **0.7233** | **0.440 [0.412, 0.468]** |
+
+Mirror, `grimmsnarl` both sides, shipped config (`noChip,noSpread,noSrc`),
+architecture verified byte-identical to `policy_v5_s2.npz` (every array name and
+shape), `health OK calls=243550 fallbacks=0 net_missing=0`. Log
+`out/arena/hostall_vs_v5s2.jsonl`.
+
+- 🔴 **The interval excludes 0.500 and sits below the §8z seed-noise floor's
+  centre (0.482).** This is not a null; more data made the agent worse.
+- ⚡ **`val_top1` ROSE while strength FELL — 0.6927 → 0.7233, and 528–672 in the
+  arena.** The single cleanest instance of rule 3 this project has produced: the
+  net fits the demonstrators better than the shipped one and loses to it.
+- 🔬 **The dominant confound is COMPOSITION, not volume.** `v5_s2` cloned the
+  **top ~400 episodes/day by `avg_score`** (cutoff ~1150, i.e. the strong band).
+  This corpus is unfiltered — the bottom of some days' manifests sits at
+  `avg_score` ~700–900. We did not add more of the same demonstrators; **we added
+  weaker ones**, which is `--winners-only`'s lesson (§1) pointed the other way:
+  *whose* rows you clone dominates *how many*.
+- ⚠ **Two further confounds, both smaller and both declared.** (1) **4 epochs,
+  not 12** — the run hit its own `--max-hours 9` guard after epoch 3 at 10.63 h.
+  Undertraining is unlikely to explain it: `val_top1` after 4 epochs (0.7233)
+  already exceeds `v5_s2`'s final (0.6927). (2) **`--stream` shuffles
+  buffer-locally**, not globally; measured at 0.0012 of `val_top1` against an
+  in-RAM control on `pds_v4`, ~50× too small for a 0.06 swing.
+- ⛔ **What this does NOT license:** it does not say the corpus axis is closed at
+  every composition. It says *unfiltered* volume is negative. The pre-registered
+  follow-up is a rating cut on the same corpus (`gid` **is** the episode id and
+  the manifests carry `avg_score`, so no rebuild is needed).
+
+```powershell
+python -X utf8 scripts/arena.py play `
+    "bc:hostall,net=out/policy_v5_s2_hostall.npz,noChip,noSpread,noSrc" `
+    "bc:v5s2ship,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc" `
+    --matches 600 --deck-a grimmsnarl --deck-b grimmsnarl `
+    --archive out/arena/hostall_vs_v5s2.jsonl
+```
+
+**Infrastructure this bought, and it is reusable regardless of the verdict:**
+`siamrahman29/ptcg-hostall-corpus` — a private Kaggle Dataset holding all
+40,127,492 rows / 292,008 episodes / 59 days as 701 shards (3.46 GB). Built by
+`scripts/make_kaggle_notebook.py` + `scripts/kaggle/train_run.py`. Any future
+corpus experiment attaches it in seconds instead of spending 6 h rebuilding.
+
 ---
 
 ## 2. Search — dead, ours *and* the field's

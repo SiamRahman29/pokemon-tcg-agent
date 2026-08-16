@@ -431,7 +431,15 @@ def count_targets(seld: torch.Tensor, chosen: torch.Tensor,
 
 
 class Data:
-    def __init__(self, paths: list[Path]):
+    def __init__(self, paths: list[Path], want_attr: bool = True):
+        # ⚠ `want_attr=False` skips the v6 attribute block entirely instead of
+        # materialising it. It is 276 float32 per row -- 27.6% of this object --
+        # and `Model.forward` only reads it when the net was built with
+        # `--attr`, so under the v5 recipe every one of those bytes is loaded,
+        # copied per batch and moved to the device to be discarded. On the
+        # 40.1M-row corpus that is 44.3 GB resident and ~89 GB of load peak for
+        # nothing. Verified no-op: train loss identical to 4 dp with and
+        # without. Default True so every existing caller is unchanged.
         sd, slots, seld, gid, won, rating = [], [], [], [], [], []
         xd, xs, at = [], [], []
         # B8. Present only in shards written by p26_selfplay_gen.py; a BC
@@ -464,8 +472,9 @@ class Data:
             # Same contract for the v6 block: corpora built before day 20 get
             # zeros so they stay loadable, and `--attr` on such a corpus is
             # refused in main() rather than silently training on nothing.
-            at.append(z["attr"] if "attr" in z
-                      else np.zeros((n, N_ATTR), dtype=np.float32))
+            at.append(z["attr"] if (want_attr and "attr" in z)
+                      else np.zeros((n, N_ATTR if want_attr else 0),
+                                    dtype=np.float32))
             gid.append(z["gid"])
             won.append(z["won"])
             self.rows_per_path.append(n)
@@ -717,6 +726,152 @@ def apply_freeze(model: "PolicyNet", spec: str) -> None:
           f"froze {n_frozen:,} ({n_train / max(n_train + n_frozen, 1):.1%} live)")
 
 
+class StreamData:
+    """Shard-at-a-time corpus, for a corpus that does not fit in RAM.
+
+    `Data` concatenates everything: ~4.0 KB/row resident and ~7.8 KB/row at the
+    load peak, which is 160 GB / 313 GB on the 40.1M-row host corpus against a
+    34 GB box. This holds only the SMALL per-row columns globally --
+    gid/won/rating/margin/adv/w/routes, ~40 B/row, so ~1.6 GB at 40M rows -- and
+    loads the big ones (dense, opt_*, bags) one BUFFER of shards at a time.
+
+    It exposes the same surface `Data` does, so nothing in the training loop
+    changes and `--stream` is purely additive.
+
+    ⚠ THE ONE REAL DIFFERENCE, AND IT MUST BE DECLARED IN ANY A/B: batches are
+    drawn from a buffer of `--stream-buffer` shards, not from the whole corpus.
+    Shard order is reshuffled every epoch and rows are shuffled across the
+    buffer, which is the standard approximation, but it is NOT the global
+    shuffle the in-RAM path does. A net trained with --stream and one trained
+    without differ in more than the corpus.
+    """
+
+    def __init__(self, paths: list[Path], buffer: int = 4,
+                 want_attr: bool = False):
+        self.paths = list(paths)
+        self.buffer = max(1, buffer)
+        self.want_attr = want_attr
+        gid, won, rating, margin, adv, routes = [], [], [], [], [], []
+        self.rows_per_path: list[int] = []
+        self.has_extra = True
+        self.has_attr = True
+        t0 = time.time()
+        for i, p in enumerate(self.paths):
+            with np.load(p) as z:
+                n = len(z["gid"])
+                gid.append(z["gid"])
+                won.append(z["won"])
+                nan = np.full(n, np.nan, dtype=np.float32)
+                rating.append(z["rating"] if "rating" in z else nan)
+                margin.append(z["margin"] if "margin" in z else nan)
+                adv.append(z["adv"] if "adv" in z else nan)
+                self.rows_per_path.append(n)
+                self.has_extra &= "xdense" in z
+                self.has_attr &= "attr" in z
+                # Routes are per-row ints derived from slots + the opponent's
+                # discard bag. Computed HERE, once, because the training loop
+                # reads `data.routes` outside of any batch.
+                routes.append(routes_from_corpus(
+                    z["slots"].astype(np.int64),
+                    z["bag_opp_discard_flat"].astype(np.int64),
+                    z["bag_opp_discard_off"]))
+            if (i + 1) % 100 == 0:
+                print(f"  scanned {i + 1}/{len(self.paths)} shards "
+                      f"({time.time() - t0:.0f}s)", flush=True)
+        self.gid = np.concatenate(gid)
+        self.won = np.concatenate(won)
+        self.rating = np.concatenate(rating)
+        self.margin = np.concatenate(margin)
+        self.adv = np.concatenate(adv)
+        self.routes = np.concatenate(routes)
+        self.n = len(self.gid)
+        self.w = np.ones(self.n, dtype=np.float32)
+        off = np.zeros(len(self.paths) + 1, dtype=np.int64)
+        np.cumsum(self.rows_per_path, out=off[1:])
+        self._off = off
+        print(f"--stream: {len(self.paths)} shards, {self.n:,} rows indexed in "
+              f"{time.time() - t0:.0f}s; big columns stay on disk "
+              f"(buffer={self.buffer} shards)", flush=True)
+
+    # `Data` materialises these; nothing in the loop reads them when streaming,
+    # so fail loudly rather than return something silently wrong.
+    def _refuse(self, what: str):
+        raise SystemExit(f"--stream does not support {what}; it needs the whole "
+                         f"corpus resident, which is the thing --stream exists "
+                         f"to avoid")
+
+    @property
+    def attr(self):
+        self._refuse("--drop-a / whole-corpus attr access")
+
+    def _groups(self, idx: np.ndarray):
+        """Global row indices -> [(shard, its rows)], in shard order."""
+        sh = np.searchsorted(self._off, idx, side="right") - 1
+        order = np.argsort(sh, kind="stable")
+        idx_s, sh_s = idx[order], sh[order]
+        bounds = np.searchsorted(sh_s, np.arange(len(self.paths) + 1))
+        return [(k, idx_s[bounds[k]:bounds[k + 1]])
+                for k in range(len(self.paths)) if bounds[k + 1] > bounds[k]]
+
+    def batches(self, idx: np.ndarray, bs: int,
+                rng: "np.random.Generator | None"):
+        groups = self._groups(np.asarray(idx))
+        gorder = (rng.permutation(len(groups)) if rng is not None
+                  else np.arange(len(groups)))
+        for i in range(0, len(gorder), self.buffer):
+            picks = [groups[g] for g in gorder[i:i + self.buffer]]
+            sub = Data([self.paths[k] for k, _ in picks],
+                       want_attr=self.want_attr)
+            # Global row ids of every row in the loaded shards, in load order.
+            gids = np.concatenate([np.arange(self._off[k], self._off[k + 1])
+                                   for k, _ in picks])
+            # Carry the globally-computed per-row columns onto the sub-corpus so
+            # weighting and route accounting stay identical to the in-RAM path.
+            sub.w = self.w[gids]
+            sub.rating = self.rating[gids]
+            sub.routes = self.routes[gids]
+            # Selected rows, remapped global -> local within the loaded buffer.
+            local, base = [], 0
+            for k, rows in picks:
+                local.append(rows - self._off[k] + base)
+                base += self.rows_per_path[k]
+            sel = np.concatenate(local)
+            for b in sub.batches(sel, bs, rng):
+                # ⚠ The loop indexes `data.rating[vsel]` with the yielded sel,
+                # so it MUST come back out as global ids, not buffer-local ones.
+                b = list(b)
+                b[13] = gids[b[13]]
+                yield tuple(b)
+            del sub
+
+
+def count_fraction_table_stream(data: "StreamData", idx: np.ndarray
+                                ) -> np.ndarray:
+    """count_fraction_table over a streamed corpus: same arithmetic, one shard
+    of `seld`/`opt_chosen` resident at a time."""
+    num = np.zeros((11, 64))
+    den = np.zeros((11, 64))
+    for k, rows in data._groups(np.asarray(idx)):
+        local = rows - data._off[k]
+        with np.load(data.paths[k]) as z:
+            seld_all = z["seld"]
+            off = z["opt_off"]
+            chosen = z["opt_chosen"]
+        for j in local:
+            seld = seld_all[j]
+            t = int(np.argmax(seld[:11]))
+            ctx = min(int(round(seld[13] * 50.0)), 63)
+            mn = int(round(seld[11] * 5.0))
+            mx = int(round(seld[12] * 5.0))
+            if mx <= mn:
+                continue
+            c = float(chosen[off[j]:off[j + 1]].sum())
+            num[t, ctx] += (c - mn) / (mx - mn)
+            den[t, ctx] += 1.0
+    frac = np.where(den > 0, num / np.maximum(den, 1), 1.0)
+    return frac.astype(np.float32)
+
+
 def count_fraction_table(data: "Data", idx: np.ndarray) -> np.ndarray:
     """(11, 64) mean of (chosen-min)/(max-min) per (selectType, context) over
     variable-count selects. Unseen cells default to 1.0 (take the max), which
@@ -889,6 +1044,16 @@ def main() -> int:
                     help="B8: comma-separated top-level parameter groups to "
                          "train; everything else is frozen (e.g. 'head')")
     ap.add_argument("--epochs", type=int, default=4)
+    ap.add_argument("--stream", action="store_true",
+                    help="load shards a buffer at a time instead of "
+                         "concatenating the corpus. Required above ~4M rows. "
+                         "⚠ shuffling becomes buffer-local; declare it.")
+    ap.add_argument("--stream-buffer", type=int, default=4,
+                    help="shards held resident per buffer under --stream")
+    ap.add_argument("--max-hours", type=float, default=0.0,
+                    help="stop after the first epoch that finishes past this "
+                         "many hours and exit 0. For hosted runs with a hard "
+                         "wall-clock cap that discard output on kill.")
     ap.add_argument("--bs", type=int, default=1024)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--wd", type=float, default=1e-5)
@@ -1035,7 +1200,23 @@ def main() -> int:
         if not got:
             raise SystemExit(f"no shards under {ROOT / d}")
         paths += got
-    data = Data(paths)
+    if args.stream:
+        # ⛔ Everything below needs whole-corpus arrays. Refusing is the point:
+        # a silently-ignored ablation flag would produce a net that is not the
+        # arm it claims to be.
+        for flag, name in ((args.drop_x, "--drop-x"), (args.drop_a, "--drop-a"),
+                           (args.vocab, "--vocab"),
+                           (args.advantage, "--advantage"),
+                           (args.advantage_col, "--advantage-col"),
+                           (args.primary_mass, "--primary-mass"),
+                           (args.rating_temp, "--rating-temp"),
+                           (args.anchor_ds, "--anchor-ds")):
+            if flag:
+                raise SystemExit(f"--stream does not support {name} yet")
+        data = StreamData(paths, buffer=args.stream_buffer,
+                          want_attr=args.attr)
+    else:
+        data = Data(paths, want_attr=args.attr)
     # Which rows came from --ds rather than --anchor-ds. Built from the
     # per-path row counts Data records, so it cannot drift from the actual
     # concatenation order.
@@ -1138,7 +1319,8 @@ def main() -> int:
     print(f"{len(paths)} shards, {data.n} rows -> {len(train_idx)} train / "
           f"{len(val_idx)} val ({len(np.unique(data.gid))} games)")
 
-    count_frac = count_fraction_table(data, train_idx)
+    count_frac = (count_fraction_table_stream(data, train_idx) if args.stream
+                  else count_fraction_table(data, train_idx))
 
     state_h = tuple(int(x) for x in args.state_h.split(","))
     head_h = tuple(int(x) for x in args.head_h.split(","))
@@ -1198,6 +1380,7 @@ def main() -> int:
     rng = np.random.default_rng(args.seed)
     best = -1.0
 
+    t_start = time.time()
     for epoch in range(args.epochs):
         model.train()
         t0 = time.time()
@@ -1359,6 +1542,18 @@ def main() -> int:
             best = acc
             export_npz(model, ROOT / args.out, count_frac, x_mask, a_mask,
                            remap)
+        # 🔴 A HOSTED RUN THAT IS KILLED COMMITS NOTHING. Kaggle terminates a
+        # batch kernel at its 12 h cap and discards /kaggle/working with it, so
+        # a checkpoint written every epoch still reaches nobody -- the process
+        # has to EXIT CLEANLY for the output to be saved. `--max-hours` turns
+        # "trained 11 h, delivered nothing" into "trained N epochs, exported
+        # the best one, exit 0". Set it BELOW the platform cap, not at it.
+        if args.max_hours and (time.time() - t_start) > args.max_hours * 3600:
+            print(f"--max-hours {args.max_hours:g} reached after epoch {epoch} "
+                  f"({(time.time() - t_start) / 3600:.2f} h). Stopping cleanly "
+                  f"so the export is committed; chain the rest with "
+                  f"`--init {args.out}`.")
+            break
     return 0
 
 

@@ -21,7 +21,19 @@ returns **all 6,024 rows as a zipped CSV in ONE call** (columns: `Rank`,
 still works but is obsolete. **This is what made the day-10 analysis possible** —
 it lets any team name in a replay be joined to its rating.
 
-> # ▶ START HERE — DAY 31, LATE (2026-08-12): **FIVE CELLS CLOSED IN ONE DAY, ZERO ARENA GAMES SPENT, AND THE ROUND IS OUT OF LEVERS.**
+> # ▶ START HERE — DAY 35 (2026-08-16): **THE CORPUS AXIS WAS TAKEN TO ITS ABSOLUTE LIMIT — EVERY EPISODE THE HOSTS EVER RELEASED — AND IT READS 0.440 [0.412, 0.468].**
+>
+> - 🔴 **§1a: `policy_v5_s2_hostall` (`#052dc9ed`) loses to `v5_s2`, 528–672 over 1,200 games.** Corpus = **292,008 episodes / 40,127,492 rows / all 59 daily datasets**, against `v5_s2`'s 248,985 rows. 160× the data, and the interval **excludes 0.500** and sits below the §8z noise floor's centre. ⛔ Unfiltered volume is NEGATIVE, not null.
+> - ⚡ **The sharpest instance of rule 3 this project owns: `val_top1` ROSE 0.6927 → 0.7233 while the agent got WORSE.** It fits the demonstrators better and loses to the net that fits them less.
+> - 🔬 **The diagnosis is COMPOSITION, not volume.** `v5_s2` cloned the **top ~400/day by `avg_score`** (cutoff ~1150). This corpus is unfiltered and reaches down to ~700–900. **We added weaker demonstrators, not more of the same ones** — §1's `--winners-only` lesson pointed the other way.
+> - ✅ **REUSABLE ASSET, independent of the verdict:** `siamrahman29/ptcg-hostall-corpus`, a private Kaggle Dataset with all 701 shards (3.46 GB). Attaches in seconds; **never rebuild it** (2 × 3 h). Built by `scripts/make_kaggle_notebook.py` + `scripts/kaggle/train_run.py`.
+> - 🔬 **`train_policy.py` gained three things, all opt-in and all defaulted off:** `--stream` (shard-at-a-time loading — 1.45 GB peak on a corpus that MemoryError'd in-RAM; **required above ~4M rows**), `--max-hours` (stop cleanly so a hosted run's export is committed — Kaggle discards output when it kills a kernel), and `Data(want_attr=)` (skips the 276-col v6 block the v5 recipe never reads: −27.6% RAM, verified no-op at 4 dp).
+> - ⚠ **`--stream` shuffles BUFFER-LOCALLY, not globally.** Any A/B against a non-streamed net differs in more than the corpus. Declare it.
+> - ▶ **NEXT, pre-registered:** a **rating cut** on the same corpus. `gid` **is** the episode id and the manifests carry `avg_score`, so top-N% is a row mask — **no rebuild**.
+>
+> ⚠ **Superseded but NOT retracted:** the day-31 header below stands unchanged; this sits on top of it.
+>
+> # ▶ DAY 31, LATE (2026-08-12): **FIVE CELLS CLOSED IN ONE DAY, ZERO ARENA GAMES SPENT, AND THE ROUND IS OUT OF LEVERS.**
 >
 > **Routing: `docs/experiments/ROUND-2026-08-12.md` is the charter for everything below and it EXPIRES on 08-17** — after that it is history, not routing. Read it before any experiment doc.
 >
