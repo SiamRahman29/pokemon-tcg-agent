@@ -131,7 +131,12 @@ def push(args: argparse.Namespace) -> None:
                    STREAM_BUFFER=str(args.stream_buffer),
                    TOP_PCT=str(args.top_pct),
                    EPOCHS=str(args.epochs), MAX_HOURS=str(args.max_hours),
-                   NET_NAME='"policy_v5_s2_hostall.npz"')
+                   # ⚠ rule 20: a path is not an identity. --tag already splits
+                   # the kernel and the pull directory, so it must split the net
+                   # too -- otherwise a top10 run exports over the name the
+                   # 40.1M-row day-35 net already carries and the only record of
+                   # which corpus produced which weights is the kernel log.
+                   NET_NAME=f'"policy_v5_s2_{args.tag or "hostall"}.npz"')
     elif args.scale_test:
         # ⚠ ONE day, EVERY episode in it, no training. This is the measurement
         # the last run skipped: it converts "0.15 s/episode on my laptop" into

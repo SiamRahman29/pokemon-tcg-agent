@@ -53,6 +53,8 @@ EMBED = [
     "agents/sa/policynet.py",
     "scripts/build_policy_dataset.py",
     "scripts/train_policy.py",
+    # numpy only -- it never imports the engine, so its position here is free.
+    "scripts/filter_corpus.py",
 ]
 
 # The shipped net, for an exact architecture check on the notebook's own export.
@@ -168,12 +170,19 @@ TOP_PCT          = 0              # 0 = every episode. 10 = keep only the top 10
                                   # of episodes by avg_score. `gid` IS the
                                   # episode id, so this is a row mask over the
                                   # SAME corpus -- no rebuild.
-KEEP_GIDS        = ""             # set by the cut cell below
+                                  # ⚠ the cut is applied to the SHARDS by the
+                                  # filter cell, NOT passed to the trainer as a
+                                  # row mask -- see that cell for why.
+KEEP_GIDS        = ""             # set by the cut cell below, cleared by the filter cell
 STREAM           = False          # load shards a buffer at a time. REQUIRED above
                                   # ~4M rows: the in-RAM path wants 7.8 KB/row
                                   # (313 GB at 40.1M) against a 34 GB box.
                                   # ⚠ shuffling becomes buffer-local -- declare it.
-STREAM_BUFFER    = 8              # shards resident per buffer under STREAM
+STREAM_BUFFER    = 8              # shards resident per buffer under STREAM.
+                                  # ⚠ this counts SHARDS, so what it means
+                                  # depends on rows/shard. It is comparable to
+                                  # the unfiltered run ONLY because the filter
+                                  # cell repacks to the same ~57k rows/shard.
 MAX_HOURS        = 0.0            # >0: stop after the first epoch past this many
                                   # hours and exit 0. Kaggle DISCARDS output when
                                   # it kills a kernel at the 12 h cap, so a run
@@ -542,6 +551,43 @@ else:
 '''
 
 
+FILTER = '''\n# ── apply the cut to the SHARDS, once, before any epoch runs ─────────────────
+# ⚠ WHY THIS CELL EXISTS. `--keep-gids` masks rows AFTER the loader has
+# materialised them, so under --stream every epoch still opens and fully
+# decompresses every shard holding at least one surviving row. A GLOBAL top-N%
+# cut is spread across all 59 days, so that is essentially all 701 shards: the
+# gradient steps drop to N% of the rows and the I/O does not move at all.
+# "10% of the data" would not have bought 10% of the time.
+#
+# It also silently shrinks the shuffle. StreamData buffers WHOLE shards and
+# trains on whatever survives the mask inside them, so at the same
+# --stream-buffer a 10% cut holds ~10x fewer TRAINABLE rows than the unfiltered
+# run did -- a confound EVIDENCE §1a's measured 0.0012 bound does NOT cover,
+# because it was measured with no mask in play.
+#
+# Cutting the shards once fixes both at once: the corpus the epochs read is N%
+# of the BYTES, and --stream-buffer keeps the meaning it had in the unfiltered
+# run. Verified against `Data()` masked to the same gids -- all 23 shard keys
+# preserved, every array bit-identical.
+if KEEP_GIDS:
+    FILTERED = f"artifacts/pds_top{TOP_PCT}"
+    rc = subprocess.run([sys.executable, "-X", "utf8",
+                         "scripts/filter_corpus.py",
+                         "--ds", CORPUS_DIR,
+                         "--keep-gids", KEEP_GIDS,
+                         "--out", f"{ROOT}/{FILTERED}"], cwd=ROOT).returncode
+    if rc != 0:
+        raise SystemExit(f"filter_corpus.py exited {rc}")
+    CORPUS, CORPUS_DIR = FILTERED, f"{ROOT}/{FILTERED}"
+    # The cut is baked into the shards now. Passing it again would be a no-op
+    # that still costs an np.isin over every row of every buffer, and it would
+    # make the log read as though the mask were doing the work.
+    KEEP_GIDS = ""
+    print(f"training corpus is now {CORPUS_DIR}")
+else:
+    print("TOP_PCT 0: no cut, training on the corpus as built")
+'''
+
 TRAIN = '''\
 # ── train: the v5_s2 command, unchanged except --ds and --out ────────────────
 import torch
@@ -750,6 +796,7 @@ def build(out_path: Path, mode: str = "full") -> int:
     cells.append(code(CENSUS))
     cells.append(md("## Training\n"))
     cells.append(code(CUT))
+    cells.append(code(FILTER))
     cells.append(code(TRAIN))
     cells.append(code(VERIFY.format(shapes=reference_shapes())))
     cells.append(code(COLLECT))
