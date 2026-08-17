@@ -42,6 +42,8 @@ CG_DS = "kiyotah/cg-lib"
 # The corpus, now a durable private Dataset rather than kernel output.
 CORPUS_DS = "siamrahman29/ptcg-hostall-corpus"
 RATINGS_DS = "siamrahman29/ptcg-episode-ratings"
+# Nets to warm-start from (--init). Small; one version per chained run.
+INIT_DS = "siamrahman29/ptcg-init-nets"
 FIRST_DAY, LAST_DAY = "2026-06-16", "2026-08-13"
 # ⚠ Measured cap: 50 dataset_sources push, 55 get a 400 from SaveKernel. 59 days
 # therefore needs TWO kernels; --half picks which.
@@ -71,9 +73,13 @@ def kernel_id(probe: bool, scale: bool = False, half: int = 0,
     return f"{USER}/{SLUG}-probe" if probe else f"{USER}/{SLUG}"
 
 
-def stage_dir(probe: bool, half: int = 0, train: bool = False) -> Path:
+def stage_dir(probe: bool, half: int = 0, train: bool = False,
+              tag: str = "") -> Path:
     if train:
-        return STAGE / f"{SLUG}-train"
+        # ⚠ tag-aware for the same reason kernel_id is: staging RUN 2 while
+        # RUN 1 is in flight would otherwise delete the exact notebook RUN 1 was
+        # pushed from, which is the only local record of what it is running.
+        return STAGE / (f"{SLUG}-train" + (f"-{tag}" if tag else ""))
     if half:
         return STAGE / f"{SLUG}-h{half}"
     return STAGE / (f"{SLUG}-probe" if probe else SLUG)
@@ -130,6 +136,8 @@ def push(args: argparse.Namespace) -> None:
                    STREAM="True" if args.stream else "False",
                    STREAM_BUFFER=str(args.stream_buffer),
                    TOP_PCT=str(args.top_pct),
+                   INIT_NET=f'"{args.init_net}"',
+                   ARCHETYPE=f'"{args.archetype}"',
                    EPOCHS=str(args.epochs), MAX_HOURS=str(args.max_hours),
                    # ⚠ rule 20: a path is not an identity. --tag already splits
                    # the kernel and the pull directory, so it must split the net
@@ -163,7 +171,7 @@ def push(args: argparse.Namespace) -> None:
             over["EPISODES_PER_DAY"] = str(args.episodes)
         set_config(nb, **over)
 
-    d = stage_dir(args.probe, args.half, args.train)
+    d = stage_dir(args.probe, args.half, args.train, getattr(args, "tag", ""))
     if d.exists():
         shutil.rmtree(d)
     d.mkdir(parents=True)
@@ -174,7 +182,10 @@ def push(args: argparse.Namespace) -> None:
     # The cg engine rides along as a mount: the featurizer needs its card and
     # attack tables, and a runtime attach is impossible in a batch kernel.
     # A training run needs only the engine; the corpus arrives via kernel_sources.
-    sources = [CG_DS, CORPUS_DS, RATINGS_DS] if args.train else (
+    sources = [CG_DS, CORPUS_DS, RATINGS_DS]
+    if args.train and getattr(args, "init_net", ""):
+        sources.append(INIT_DS)
+    sources = sources if args.train else (
         [CG_DS] + [EPISODE_DS.format(d=d) for d in days])
     if len(sources) > MAX_SOURCES:
         sys.exit(f"{len(sources)} dataset_sources exceeds the measured cap "
@@ -298,6 +309,15 @@ def main() -> None:
                    help="suffix for the kernel id, so runs do not clobber")
     p.add_argument("--top-pct", type=int, default=0,
                    help="keep only the top N%% of episodes by avg_score")
+    p.add_argument("--init-net", default="",
+                   help="warm-start from this net (a filename inside "
+                        "the ptcg-init-nets dataset). ⚠ WEIGHTS only -- "
+                        "the optimizer state resets, so a chain is not "
+                        "a contiguous run.")
+    p.add_argument("--archetype", default="",
+                   help="rank TOP_PCT WITHIN this archetype instead of "
+                        "globally (e.g. grimmsnarl). Needs a name known to "
+                        "scripts/label_archetypes.py.")
     p.add_argument("--stream", action="store_true",
                    help="stream shards instead of loading the whole corpus")
     p.add_argument("--stream-buffer", type=int, default=8)

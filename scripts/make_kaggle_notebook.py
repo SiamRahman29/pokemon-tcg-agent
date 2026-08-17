@@ -53,8 +53,9 @@ EMBED = [
     "agents/sa/policynet.py",
     "scripts/build_policy_dataset.py",
     "scripts/train_policy.py",
-    # numpy only -- it never imports the engine, so its position here is free.
+    # numpy only -- they never import the engine, so their position here is free.
     "scripts/filter_corpus.py",
+    "scripts/label_archetypes.py",
 ]
 
 # The shipped net, for an exact architecture check on the notebook's own export.
@@ -173,6 +174,13 @@ TOP_PCT          = 0              # 0 = every episode. 10 = keep only the top 10
                                   # ⚠ the cut is applied to the SHARDS by the
                                   # filter cell, NOT passed to the trainer as a
                                   # row mask -- see that cell for why.
+ARCHETYPE        = ""             # "" = rank every episode together (RUN 1).
+                                  # "grimmsnarl" = keep only episodes the
+                                  # DEMONSTRATOR played that deck in, and rank
+                                  # TOP_PCT within them (RUN 2). ⚠ the quality
+                                  # bar then floats to that deck's own rating
+                                  # distribution -- the cutoff will NOT be the
+                                  # global one.
 KEEP_GIDS        = ""             # set by the cut cell below, cleared by the filter cell
 STREAM           = False          # load shards a buffer at a time. REQUIRED above
                                   # ~4M rows: the in-RAM path wants 7.8 KB/row
@@ -187,6 +195,13 @@ MAX_HOURS        = 0.0            # >0: stop after the first epoch past this man
                                   # hours and exit 0. Kaggle DISCARDS output when
                                   # it kills a kernel at the 12 h cap, so a run
                                   # that might overrun must stop itself.
+INIT_NET         = ""             # "" = train from scratch. A filename (e.g.
+                                  # "policy_v5_s2_hostall.npz") warm-starts from
+                                  # that net, found by glob under /kaggle/input.
+                                  # ⚠ WARM START, NOT RESUME: --init restores
+                                  # WEIGHTS only. AdamW's moment estimates reset,
+                                  # so a chained 4+8 is NOT a contiguous 12 --
+                                  # declare the chain in any result that uses it.
 SKIP_TRAIN       = False          # True = build the corpus and stop (for scale tests
                                   # and for the build half of a split pipeline)
 THROUGHPUT_TEST  = True           # measure mount read scaling before building
@@ -535,6 +550,31 @@ if TOP_PCT and TOP_PCT > 0:
     with open(cand[0], encoding="utf-8-sig", newline="") as fh:
         rows = [(int(r["episode_id"]), float(r["avg_score"]))
                 for r in _csv.DictReader(fh)]
+    if ARCHETYPE:
+        # ⚠ RUN 2 ranks WITHIN the archetype ("top N% OF Grimmsnarl games"), not
+        # globally-then-filtered. The consequence, and it must be recorded with
+        # the result: the quality bar FLOATS to wherever this archetype's own
+        # rating distribution sits, so the cutoff below is NOT the global one
+        # and the two runs are not comparable on cutoff alone.
+        from scripts.label_archetypes import label_corpus, ARCHETYPES as _ARCH
+        if ARCHETYPE not in _ARCH:
+            raise SystemExit(f"unknown ARCHETYPE {ARCHETYPE!r}; "
+                             f"known: {sorted(_ARCH)}")
+        _sh = sorted(_glob.glob(f"{CORPUS_DIR}/**/shard_*.npz", recursive=True))
+        _hits, _seen = label_corpus(_sh, {ARCHETYPE: _ARCH[ARCHETYPE]})
+        keep_arch = {g for g, v in _hits.items() if ARCHETYPE in v}
+        share = len(keep_arch) / max(_seen, 1)
+        print(f"ARCHETYPE {ARCHETYPE}: {len(keep_arch):,} of {_seen:,} "
+              f"episodes on the DEMONSTRATOR's side ({share:.1%})")
+        # Pre-registered gate. The two ways a label silently produces a wrong
+        # corpus are matching nothing and matching everything -- neither is a
+        # cut, and both would train happily and read as a real result.
+        if not 0.02 <= share <= 0.98:
+            raise SystemExit(
+                f"archetype share {share:.1%} is outside [2%, 98%]: the "
+                f"labeller is not discriminating. Refusing to train.")
+        rows = [r for r in rows if r[0] in keep_arch]
+        print(f"  ranking within the archetype: {len(rows):,} rated episodes")
     rows.sort(key=lambda r: -r[1])
     k = max(1, int(len(rows) * TOP_PCT / 100.0))
     KEEP_GIDS = f"{ROOT}/keep_gids.txt"
@@ -543,9 +583,13 @@ if TOP_PCT and TOP_PCT > 0:
         # generator as a string literal, where a newline escape is one more
         # level of quoting to get wrong.
         fh.write(chr(10).join(str(e) for e, _ in rows[:k]))
-    print(f"TOP_PCT {TOP_PCT}%: {k:,} of {len(rows):,} episodes, "
+    scope = f"within {ARCHETYPE}" if ARCHETYPE else "global"
+    print(f"TOP_PCT {TOP_PCT}% ({scope}): {k:,} of {len(rows):,} episodes, "
           f"avg_score cutoff {rows[k-1][1]:.0f} -> {KEEP_GIDS}")
     print(f"  (for reference v5_s2's own corpus cut at ~1150)")
+    if ARCHETYPE:
+        print(f"  ⚠ this cutoff is the {ARCHETYPE} distribution's own, NOT the "
+              f"global one -- record it with the result")
 else:
     print("TOP_PCT 0: every episode in the corpus is kept")
 '''
@@ -570,7 +614,7 @@ FILTER = '''\n# ── apply the cut to the SHARDS, once, before any epoch runs 
 # run. Verified against `Data()` masked to the same gids -- all 23 shard keys
 # preserved, every array bit-identical.
 if KEEP_GIDS:
-    FILTERED = f"artifacts/pds_top{TOP_PCT}"
+    FILTERED = f"artifacts/pds_top{TOP_PCT}" + (f"_{ARCHETYPE}" if ARCHETYPE else "")
     rc = subprocess.run([sys.executable, "-X", "utf8",
                          "scripts/filter_corpus.py",
                          "--ds", CORPUS_DIR,
@@ -629,6 +673,16 @@ cmd = [sys.executable, "-X", "utf8", "scripts/train_policy.py",
        "--out", f"out/{NET_NAME}"]
 if POOL:
     cmd.append("--pool")
+if INIT_NET:
+    import glob as _g
+    hits = [p for p in _g.glob(f"/kaggle/input/**/{INIT_NET}", recursive=True)]
+    if not hits:
+        raise SystemExit(f"INIT_NET {INIT_NET!r} not found under /kaggle/input; "
+                         f"attach the dataset that holds it")
+    # ⚠ rule 20: say which FILE, not just which name. Two datasets can carry the
+    # same basename and the log is the only record of which one trained this net.
+    print(f"--init {hits[0]} (warm start: WEIGHTS only, optimizer state resets)")
+    cmd += ["--init", hits[0]]
 
 if SKIP_TRAIN:
     print("SKIP_TRAIN: corpus is built; stopping before training.")
