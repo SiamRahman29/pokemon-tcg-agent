@@ -77,3 +77,12 @@ out/kaggle_pack/
 # large. Receipts that matter are copied into out/logs/ instead.
 out/kaggle_jobs/
 out/kaggle_out/
+
+# Colab upload staging: a 150 MB zip of the licensed engine plus the corpus,
+# and the unpacked tree beside it. `scripts/colab/pack.py` regenerates it;
+# like out/kaggle_pack/ it must never enter git history.
+out/colab/
+
+# Kaggle Dataset staging for --init nets: a copy of a net that already lives
+# in out/ or agents/sa/, plus its dataset-metadata.json. Regenerable.
+out/kaggle_init/
