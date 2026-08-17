@@ -1,0 +1,38 @@
+=== p100 wave 2: archaludon / crustle / teal mask ogerpon ===
+net=out/policy_v5_s2_all.npz  rules=noChip,noSpread,noSrc
+health: all cells OK (fallbacks=0, net_missing=0)
+
+Decks:
+  archaludon_ex       existing rule-pilot 60
+  crustle             field consensus (not crustle_v1)
+  teal_mask_ogerpon   NEW — exact 60 seen 79x in out/meta/day_0802.txt
+                      (Teal Mask Ogerpon ex, 4.8% of our field census)
+
+Scores are A's win rate (Wilson 95%). A = shared v5_s2_all net on the named deck.
+
+--- Archaludon (archaludon_ex) ---
+vs rule:v10,noS@lucario_v10     0.310 [0.271, 0.352]  W155/L345  n=500
+vs rule:crustle@crustle_v1      0.080 [0.057, 0.111]  W32/L368   n=400
+vs rule:alakazam5@alakazam5     0.325 [0.281, 0.372]  W130/L270  n=400
+vs rule:archaludon@archaludon   0.253 [0.212, 0.297]  W101/L299  n=400
+vs rule:dragapult@dragapult_ex  0.328 [0.283, 0.375]  W131/L269  n=400
+vs bc:v5s2@grimmsnarl           0.094 [0.069, 0.126]  W37/L362   n=400
+vs bc:all@grimmsnarl            0.075 [0.053, 0.105]  W30/L370   n=400
+
+--- Crustle (field crustle.py) ---
+vs rule:v10,noS@lucario_v10     0.476 [0.433, 0.520]  W237/L261  n=500
+vs rule:crustle@crustle_v1      0.700 [0.653, 0.743]  W277/L117  n=400
+vs rule:alakazam5@alakazam5     0.540 [0.491, 0.588]  W216/L184  n=400
+vs rule:archaludon@archaludon   0.591 [0.542, 0.638]  W234/L161  n=400
+vs rule:dragapult@dragapult_ex  0.890 [0.856, 0.917]  W356/L44   n=400
+vs bc:v5s2@grimmsnarl           0.463 [0.414, 0.511]  W185/L215  n=400
+vs bc:all@grimmsnarl            0.479 [0.430, 0.528]  W191/L208  n=400
+
+--- Teal Mask Ogerpon (teal_mask_ogerpon) ---
+vs rule:v10,noS@lucario_v10     0.562 [0.518, 0.605]  W281/L219  n=500
+vs rule:crustle@crustle_v1      0.003 [0.000, 0.014]  W1/L399    n=400
+vs rule:alakazam5@alakazam5     0.873 [0.836, 0.902]  W349/L51   n=400
+vs rule:archaludon@archaludon   0.388 [0.341, 0.436]  W155/L245  n=400
+vs rule:dragapult@dragapult_ex  0.600 [0.551, 0.647]  W240/L160  n=400
+vs bc:v5s2@grimmsnarl           0.863 [0.825, 0.893]  W345/L55   n=400
+vs bc:all@grimmsnarl            0.860 [0.823, 0.891]  W344/L56   n=400

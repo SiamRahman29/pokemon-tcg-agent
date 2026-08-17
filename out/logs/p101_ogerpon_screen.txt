@@ -1,0 +1,5 @@
+=== p101 screen vs Ogerpon + mirror, matches=500 ===
+grimmsnarl                    vs oger 0.155 [0.134,0.179]  mirror 0.506 [0.462,0.550]  (stock 60)
+grimmsnarl_anti_ogerpon       vs oger 0.084 [0.068,0.103]  mirror 0.464 [0.421,0.508]  (Budew + Xerosic + Boss/Scrapper)
+grimmsnarl_budew              vs oger 0.134 [0.114,0.157]  mirror 0.492 [0.448,0.536]  (existing Budew variant)
+grimmsnarl_xerosic            vs oger 0.090 [0.074,0.109]  mirror 0.391 [0.349,0.434]  (existing Xerosic variant)

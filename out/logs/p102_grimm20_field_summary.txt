@@ -1,0 +1,36 @@
+=== p102 grimm20 vs field  2026-08-16T15:07:31 ===
+A = bc:grimm20,net=out/policy_v5_s2_grimm20.npz,noChip,noSpread,noSrc @ grimmsnarl   (score is A's; higher = better for us)
+15 cells
+
+rulev10@lucario_v10
+  0.709 [0.668, 0.747]  W354/D1/L145 over 500 games  (57s, health OK)
+rulecrustle@crustle_v1
+  0.804 [0.762, 0.840]  W320/D3/L77 over 400 games  (48s, health OK)
+rulealakazam5@alakazam5
+  0.797 [0.755, 0.834]  W319/D0/L81 over 400 games  (49s, health OK)
+rulearchaludon@archaludon_ex
+  0.705 [0.659, 0.748]  W282/D0/L118 over 400 games  (46s, health OK)
+ruledragapult@dragapult_ex
+  0.873 [0.836, 0.902]  W349/D0/L51 over 400 games  (49s, health OK)
+bcall_luc@lucario_v10
+  0.684 [0.637, 0.727]  W273/D1/L126 over 400 games  (64s, health OK)
+bcall_gar@cynthia_garchomp
+  0.797 [0.755, 0.834]  W319/D0/L81 over 400 games  (73s, health OK)
+bcall_ala@alakazam5
+  0.680 [0.633, 0.724]  W272/D0/L128 over 400 games  (78s, health OK)
+bcall_arch@archaludon_ex
+  0.912 [0.881, 0.936]  W365/D0/L35 over 400 games  (57s, health OK)
+bcall_cru@crustle
+  0.611 [0.563, 0.658]  W244/D1/L155 over 400 games  (71s, health OK)
+bcall_oger@teal_mask_ogerpon
+  0.185 [0.150, 0.226]  W74/D0/L326 over 400 games  (56s, health OK)
+bcall_grimm@grimmsnarl
+  0.443 [0.395, 0.491]  W177/D0/L223 over 400 games  (79s, health OK)
+bcv5s2@grimmsnarl
+  0.509 [0.469, 0.549]  W305/D1/L294 over 600 games  (120s, health OK)
+bchostall@grimmsnarl
+  0.567 [0.527, 0.606]  W340/D0/L260 over 600 games  (117s, health OK)
+bctop10@grimmsnarl
+  0.570 [0.530, 0.609]  W342/D0/L258 over 600 games  (117s, health OK)
+
+done 2026-08-16T15:25:33

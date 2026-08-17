@@ -1,0 +1,25 @@
+=== p101 screen vs Ogerpon + mirror, matches=500 ===
+grimmsnarl                    vs oger 0.155 [0.134,0.179]  mirror 0.506 [0.462,0.550]  (stock 60)
+grimmsnarl_anti_ogerpon       vs oger 0.084 [0.068,0.103]  mirror 0.464 [0.421,0.508]  (Budew + Xerosic + Boss/Scrapper)
+grimmsnarl_budew              vs oger 0.134 [0.114,0.157]  mirror 0.492 [0.448,0.536]  (existing Budew variant)
+grimmsnarl_xerosic            vs oger 0.090 [0.074,0.109]  mirror 0.391 [0.349,0.434]  (existing Xerosic variant)
+
+Best vs Ogerpon: grimmsnarl @ 0.155
+=== p101 test out/policy_v5_s2_oger_ft.npz @ grimmsnarl vs Ogerpon ===
+grimmsnarl WR=0.161 [0.140,0.185] n=1000
+bc:all@grimmsnarl vs bc:oger@teal_mask_ogerpon  0.163 [0.141, 0.187]  n=1000
+=== p101 test out/policy_v5_s2_oger_ft2.npz @ grimmsnarl vs Ogerpon ===
+grimmsnarl WR=0.175 [0.153,0.200] n=1000
+=== p101 test out/policy_v5_s2_oger_r2.npz @ grimmsnarl vs Ogerpon ===
+grimmsnarl WR=0.174 [0.152,0.199] n=1000
+=== p101 reward A/B matches=500 ===
+r0  WR=0.178 [0.156,0.203] n=1000
+r1  WR=0.171 [0.149,0.196] n=1000
+r2  WR=0.164 [0.142,0.188] n=1000
+=== p101 Ogerpon TD specialist ===
+oger_td vs Ogerpon  WR=0.162 [0.140,0.186] n=1000
+oger_td vs stock grimmsnarl  WR=0.315 [0.276,0.357] n=500
+stock vs Ogerpon  WR=0.178 [0.156,0.203] n=1000  delta_td=-0.016
+value=E:\Kaggle\pokemon-tcg-simulation-2\out\value_oger_td.npz
+policy=out/policy_v5_s2_oger_td.npz
+keep_frac=0.3 beta=0.5

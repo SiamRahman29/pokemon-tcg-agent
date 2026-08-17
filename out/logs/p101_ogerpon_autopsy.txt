@@ -1,0 +1,6 @@
+=== p101 autopsy p101_grimmsnarl_vs_ogerpon ===
+games=120  grimmsnarl_w=23 L=97 D=0  WR=0.192
+avg turns  win=1.0  loss=1.0
+missed low-HP Teal Mask KO lines (losses only scan): 0
+
+opponent Item plays seen (all games):

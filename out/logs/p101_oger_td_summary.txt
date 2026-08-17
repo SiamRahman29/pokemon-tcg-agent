@@ -1,0 +1,7 @@
+=== p101 Ogerpon TD specialist ===
+oger_td vs Ogerpon  WR=0.162 [0.140,0.186] n=1000
+oger_td vs stock grimmsnarl  WR=0.315 [0.276,0.357] n=500
+stock vs Ogerpon  WR=0.178 [0.156,0.203] n=1000  delta_td=-0.016
+value=E:\Kaggle\pokemon-tcg-simulation-2\out\value_oger_td.npz
+policy=out/policy_v5_s2_oger_td.npz
+keep_frac=0.3 beta=0.5

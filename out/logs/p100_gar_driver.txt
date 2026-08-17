@@ -1,0 +1,40 @@
+=== p100 multi-archetype arena start 2026-08-14T11:33:14 ===
+net=out/policy_v5_s2_all.npz rules=noChip,noSpread,noSrc
+note: no rule:garchomp pilot exists
+
+=== gar@cynthia_garchomp vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.400 [0.358, 0.444] W200/D0/L300 over 500 games
+  [health] OK calls=36035 fallbacks=0 net_missing=0 deck=500
+exit=0 elapsed=83.6s log=p100_gar_cynthia_garchomp_vs_rulev10_lucario_v10_arena.txt
+=== gar@cynthia_garchomp vs rule:crustle@crustle_v1 matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.305 [0.262, 0.352] W122/D0/L278 over 400 games
+  [health] OK calls=35330 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=58.8s log=p100_gar_cynthia_garchomp_vs_rulecrustle_crustle_v1_arena.txt
+=== gar@cynthia_garchomp vs rule:alakazam5@alakazam5 matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.672 [0.625, 0.717] W269/D0/L131 over 400 games
+  [health] OK calls=32543 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=76.1s log=p100_gar_cynthia_garchomp_vs_rulealakazam5_alakazam5_arena.txt
+=== gar@cynthia_garchomp vs rule:archaludon@archaludon_ex matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.383 [0.336, 0.431] W153/D0/L247 over 400 games
+  [health] OK calls=30587 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=61.9s log=p100_gar_cynthia_garchomp_vs_rulearchaludon_archaludon_ex_arena.txt
+=== gar@cynthia_garchomp vs rule:dragapult@dragapult_ex matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.517 [0.469, 0.566] W207/D0/L193 over 400 games
+  [health] OK calls=29474 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=79.2s log=p100_gar_cynthia_garchomp_vs_ruledragapult_dragapult_ex_arena.txt
+=== gar@cynthia_garchomp vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.323 [0.279, 0.370] W129/D0/L271 over 400 games
+  [health] OK calls=70662 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=118.2s log=p100_gar_cynthia_garchomp_vs_bcv5s2_grimmsnarl_arena.txt
+=== gar@cynthia_garchomp vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [cynthia_garchomp] vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl], 200 paired matches (400 games)...
+A=bc:gar,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.245 [0.205, 0.289] W98/D0/L302 over 400 games
+  [health] OK calls=65763 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=100.3s log=p100_gar_cynthia_garchomp_vs_bcall_grimmsnarl_arena.txt
+done -> E:\Kaggle\pokemon-tcg-simulation-2\out\logs\p100_multi_archetype_summary.txt

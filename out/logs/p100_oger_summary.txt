@@ -1,0 +1,47 @@
+=== p100 multi-archetype arena start 2026-08-14T11:48:31 ===
+net=out/policy_v5_s2_all.npz rules=noChip,noSpread,noSrc
+note: no rule:garchomp or rule:ogerpon pilots exist
+agents={'oger'}
+
+=== oger@teal_mask_ogerpon vs rule:v10,noS@lucario_v10 matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs rule:v10,noS@lucario_v10 [lucario_v10], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.750 [0.301, 0.954] W3/D0/L1 over 4 games
+  [health] OK calls=295 fallbacks=0 net_missing=0 deck=4
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_rulev10_lucario_v10_arena.txt
+
+=== oger@teal_mask_ogerpon vs rule:crustle@crustle_v1 matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs rule:crustle@crustle_v1 [crustle_v1], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.000 [0.000, 0.490] W0/D0/L4 over 4 games
+  [health] OK calls=411 fallbacks=0 net_missing=0 deck=4
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_rulecrustle_crustle_v1_arena.txt
+
+=== oger@teal_mask_ogerpon vs rule:alakazam5@alakazam5 matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs rule:alakazam5@alakazam5 [alakazam5], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=1.000 [0.510, 1.000] W4/D0/L0 over 4 games
+  [health] OK calls=351 fallbacks=0 net_missing=0 deck=4
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_rulealakazam5_alakazam5_arena.txt
+
+=== oger@teal_mask_ogerpon vs rule:archaludon@archaludon_ex matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs rule:archaludon@archaludon_ex [archaludon_ex], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.250 [0.046, 0.699] W1/D0/L3 over 4 games
+  [health] OK calls=191 fallbacks=0 net_missing=0 deck=4
+exit=0 elapsed=0.9s log=p100_oger_teal_mask_ogerpon_vs_rulearchaludon_archaludon_ex_arena.txt
+
+=== oger@teal_mask_ogerpon vs rule:dragapult@dragapult_ex matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs rule:dragapult@dragapult_ex [dragapult_ex], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.750 [0.301, 0.954] W3/D0/L1 over 4 games
+  [health] OK calls=284 fallbacks=0 net_missing=0 deck=4
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_ruledragapult_dragapult_ex_arena.txt
+
+=== oger@teal_mask_ogerpon vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc@grimmsnarl matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.750 [0.301, 0.954] W3/D0/L1 over 4 games
+  [health] OK calls=592 fallbacks=0 net_missing=0 deck=8
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_bcv5s2_grimmsnarl_arena.txt
+
+=== oger@teal_mask_ogerpon vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc@grimmsnarl matches=2 ===
+bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [teal_mask_ogerpon] vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl], 2 paired matches (4 games)...
+A=bc:oger,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=1.000 [0.510, 1.000] W4/D0/L0 over 4 games
+  [health] OK calls=604 fallbacks=0 net_missing=0 deck=8
+exit=0 elapsed=1.3s log=p100_oger_teal_mask_ogerpon_vs_bcall_grimmsnarl_arena.txt
+

@@ -1,0 +1,47 @@
+=== p100 multi-archetype arena start 2026-08-14T11:49:06 ===
+net=out/policy_v5_s2_all.npz rules=noChip,noSpread,noSrc
+note: no rule:garchomp or rule:ogerpon pilots exist
+agents={'cru'}
+
+=== cru@crustle vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.476 [0.433, 0.520] W237/D2/L261 over 500 games
+  [health] OK calls=22001 fallbacks=0 net_missing=0 deck=500
+exit=0 elapsed=64.2s log=p100_cru_crustle_vs_rulev10_lucario_v10_arena.txt
+
+=== cru@crustle vs rule:crustle@crustle_v1 matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.700 [0.653, 0.743] W277/D6/L117 over 400 games
+  [health] OK calls=20316 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=47.9s log=p100_cru_crustle_vs_rulecrustle_crustle_v1_arena.txt
+
+=== cru@crustle vs rule:alakazam5@alakazam5 matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.540 [0.491, 0.588] W216/D0/L184 over 400 games
+  [health] OK calls=17080 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=55.3s log=p100_cru_crustle_vs_rulealakazam5_alakazam5_arena.txt
+
+=== cru@crustle vs rule:archaludon@archaludon_ex matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.591 [0.542, 0.638] W234/D5/L161 over 400 games
+  [health] OK calls=19249 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=55.1s log=p100_cru_crustle_vs_rulearchaludon_archaludon_ex_arena.txt
+
+=== cru@crustle vs rule:dragapult@dragapult_ex matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.890 [0.856, 0.917] W356/D0/L44 over 400 games
+  [health] OK calls=19993 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=72.9s log=p100_cru_crustle_vs_ruledragapult_dragapult_ex_arena.txt
+
+=== cru@crustle vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.463 [0.414, 0.511] W185/D0/L215 over 400 games
+  [health] OK calls=69211 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=119.1s log=p100_cru_crustle_vs_bcv5s2_grimmsnarl_arena.txt
+
+=== cru@crustle vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [crustle] vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl], 200 paired matches (400 games)...
+A=bc:cru,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.479 [0.430, 0.528] W191/D1/L208 over 400 games
+  [health] OK calls=69679 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=113.7s log=p100_cru_crustle_vs_bcall_grimmsnarl_arena.txt
+
