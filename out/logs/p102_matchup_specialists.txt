@@ -1,0 +1,11 @@
+=== p102 R0 specialists games=4000 matches=500 ===
+mirror    stock=0.496 [0.465,0.527]  spec=0.493 [0.462,0.524]  delta=-0.003  n=1000
+crustle   stock=0.591 [0.560,0.621]  spec=0.583 [0.552,0.613]  delta=-0.008  n=1000
+garchomp  stock=0.779 [0.752,0.804]  spec=0.747 [0.719,0.773]  delta=-0.032  n=1000
+lucario   stock=0.722 [0.693,0.749]  spec=0.739 [0.711,0.765]  delta=+0.017  n=1000
+
+nets:
+  mirror: out/policy_v5_s2_spec_mirror.npz
+  crustle: out/policy_v5_s2_spec_crustle.npz
+  garchomp: out/policy_v5_s2_spec_garchomp.npz
+  lucario: out/policy_v5_s2_spec_lucario.npz

@@ -1,0 +1,40 @@
+=== p100 multi-archetype arena start 2026-08-14T11:33:13 ===
+net=out/policy_v5_s2_all.npz rules=noChip,noSpread,noSrc
+note: no rule:garchomp pilot exists
+
+=== ala@alakazam5 vs rule:v10,noS@lucario_v10 matches=250 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs rule:v10,noS@lucario_v10 [lucario_v10], 250 paired matches (500 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.750 [0.710, 0.786] W375/D0/L125 over 500 games
+  [health] OK calls=30983 fallbacks=0 net_missing=0 deck=500
+exit=0 elapsed=74.0s log=p100_ala_alakazam5_vs_rulev10_lucario_v10_arena.txt
+=== ala@alakazam5 vs rule:crustle@crustle_v1 matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs rule:crustle@crustle_v1 [crustle_v1], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.943 [0.915, 0.961] W377/D0/L23 over 400 games
+  [health] OK calls=18639 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=30.1s log=p100_ala_alakazam5_vs_rulecrustle_crustle_v1_arena.txt
+=== ala@alakazam5 vs rule:alakazam5@alakazam5 matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs rule:alakazam5@alakazam5 [alakazam5], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.755 [0.711, 0.795] W302/D0/L98 over 400 games
+  [health] OK calls=30023 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=66.5s log=p100_ala_alakazam5_vs_rulealakazam5_alakazam5_arena.txt
+=== ala@alakazam5 vs rule:archaludon@archaludon_ex matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs rule:archaludon@archaludon_ex [archaludon_ex], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.728 [0.682, 0.769] W291/D0/L109 over 400 games
+  [health] OK calls=25229 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=57.6s log=p100_ala_alakazam5_vs_rulearchaludon_archaludon_ex_arena.txt
+=== ala@alakazam5 vs rule:dragapult@dragapult_ex matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs rule:dragapult@dragapult_ex [dragapult_ex], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.557 [0.509, 0.605] W223/D0/L177 over 400 games
+  [health] OK calls=27719 fallbacks=0 net_missing=0 deck=400
+exit=0 elapsed=69.8s log=p100_ala_alakazam5_vs_ruledragapult_dragapult_ex_arena.txt
+=== ala@alakazam5 vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs bc:v5s2,net=out/policy_v5_s2.npz,noChip,noSpread,noSrc#4790c469 [grimmsnarl], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.352 [0.307, 0.401] W141/D0/L259 over 400 games
+  [health] OK calls=69189 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=114.8s log=p100_ala_alakazam5_vs_bcv5s2_grimmsnarl_arena.txt
+=== ala@alakazam5 vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc@grimmsnarl matches=200 ===
+bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [alakazam5] vs bc:all,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff [grimmsnarl], 200 paired matches (400 games)...
+A=bc:ala,net=out/policy_v5_s2_all.npz,noChip,noSpread,noSrc#8b40a9ff: score=0.273 [0.231, 0.318] W109/D0/L291 over 400 games
+  [health] OK calls=69757 fallbacks=0 net_missing=0 deck=800
+exit=0 elapsed=118.3s log=p100_ala_alakazam5_vs_bcall_grimmsnarl_arena.txt
+done -> E:\Kaggle\pokemon-tcg-simulation-2\out\logs\p100_multi_archetype_summary.txt

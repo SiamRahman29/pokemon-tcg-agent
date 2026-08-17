@@ -1,0 +1,38 @@
+=== Ogerpon-resistant Grimmsnarl (p101) ===
+
+Baseline (bc:all@grimmsnarl vs bc:oger@teal_mask_ogerpon, n=1000):
+  stock policy_v5_s2_all     WR=0.155–0.163  (Grimmsnarl wins ~16%)
+
+Self-play data generated:
+  1500 games, 102,713 decision rows (grimmsnarl seat only)
+  artifacts/pds_ogerpon_matchup/
+  Training baseline win rate in shards: 14.9%
+
+Deck tech (screened n=1000 vs Ogerpon) — all WORSE than stock:
+  grimmsnarl (stock)           0.155
+  grimmsnarl_anti_ogerpon      0.084
+  grimmsnarl_budew             0.134
+  grimmsnarl_xerosic           0.090
+
+Policy fine-tunes (n=1000 vs Ogerpon):
+  policy_v5_s2_oger_ft   (AWR adv=0.5, 3ep)   WR=0.161  [0.140, 0.185]
+  policy_v5_s2_oger_ft2  (winners-only, 5ep)  WR=0.175  [0.153, 0.200]  ← best
+
+Mirror sanity (oger_ft vs stock, n=400):
+  fine-tuned seat A WR=0.450  (not catastrophically off-distribution)
+
+Recommended Ogerpon-resistant build:
+  Deck:   grimmsnarl (stock 60 — do NOT use grimmsnarl_anti_ogerpon)
+  Policy: out/policy_v5_s2_oger_ft2.npz
+  Arena:  bc:grim,net=out/policy_v5_s2_oger_ft2.npz,noChip,noSpread,noSrc
+
+Pipeline:
+  python -X utf8 scripts/p101_ogerpon_resist.py generate --games 1500
+  python -X utf8 scripts/train_policy.py --ds artifacts/pds_ogerpon_matchup \
+    --opt-cols 37 --state-h 512,256 --head-h 256,128 --pool --loss listwise \
+    --winners-only --init out/policy_v5_s2_all.npz --epochs 5 --lr 0.001 \
+    --export-last --out out/policy_v5_s2_oger_ft2.npz
+  python -X utf8 scripts/p101_ogerpon_resist.py test --net out/policy_v5_s2_oger_ft2.npz
+
+Note: Ogerpon still heavily favored (~82–85% WR). +1–2pp is within noise;
+more self-play + anchor fine-tune on Kaggle (RAM) likely needed for larger gains.
