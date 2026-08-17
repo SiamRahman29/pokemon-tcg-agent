@@ -256,13 +256,19 @@ def probe(args) -> int:
 
 
 def generate(args) -> int:
-    _, deck = resolve_deck(args.deck)
+    _, deck_a = resolve_deck(args.deck)
+    deck_b_name = args.deck_b or args.deck
+    _, deck_b = resolve_deck(deck_b_name)
+    cross = deck_b_name != args.deck
     net = load_net(args.net)
     rng = np.random.default_rng(args.seed)
     out = ROOT / args.out
     writer = RLWriter(out)
     opp_label = args.opp or f"self(tau={args.tau})"
-    print(f"  net={args.net} tau={args.tau} deck={args.deck} opp={opp_label}")
+    print(f"  net={args.net} tau={args.tau} deck={args.deck} deck_b={deck_b_name} "
+          f"opp={opp_label}")
+    if cross:
+        print("  cross-deck: recording deck-a decisions only")
     print(f"  -> {out}")
 
     n_rows = n_seen = 0
@@ -296,13 +302,15 @@ def generate(args) -> int:
         # Seats alternate. §8aj measured first player at ~+1 pp, so a corpus
         # generated from one seat would bake that in as if it were policy.
         swap = g % 2 == 1
-        a = SamplingNetAgent(deck, net, args.tau, rng, tap=make_tap(0))
+        a = SamplingNetAgent(deck_a, net, args.tau, rng, tap=make_tap(0))
         if args.opp:
-            _, b = build_agent(args.opp, list(deck))
+            _, b = build_agent(args.opp, list(deck_b))
         else:
-            b = SamplingNetAgent(deck, net, args.tau, rng, tap=make_tap(1))
+            b = SamplingNetAgent(
+                deck_b, net, args.tau, rng,
+                tap=make_tap(1) if not cross else (lambda *a, **k: None))
         a0, a1 = (b, a) if swap else (a, b)
-        r = harness.play_game(a0, a1, list(deck), list(deck))
+        r = harness.play_game(a0, a1, list(deck_a), list(deck_b))
         tally[r.winner if r.winner in (0, 1) else 2] += 1
 
         gid = args.gid_base + g
@@ -346,6 +354,9 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--net", default="out/policy_v5.npz")
     ap.add_argument("--deck", default="grimmsnarl")
+    ap.add_argument("--deck-b", default=None,
+                    help="opponent decklist module. Default: same as --deck. "
+                         "When different, only --deck decisions are recorded.")
     ap.add_argument("--tau", type=float, default=0.5,
                     help="sampling temperature; 0 = argmax (no exploration)")
     ap.add_argument("--games", type=int, default=200)
