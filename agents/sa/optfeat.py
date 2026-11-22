@@ -39,6 +39,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from .features import N_CARD_IDS
+
 VERSION = 3
 
 N_OPTION_TYPES = 17
@@ -332,4 +334,12 @@ def option_features(obs: dict, opt: dict) -> tuple[np.ndarray, int, int, int]:
 
     if attack_id >= N_ATTACK_IDS:
         attack_id = 0
+    # The Playground's R2 pool runs card ids to 1431, past the 1300-row
+    # card_emb of every shipped net. An opponent's new card as card_id or
+    # target_id would IndexError and send the whole decision to the catch-all
+    # fallback. 0 = PAD, the same clamp features.py applies to state ids.
+    if card_id >= N_CARD_IDS:
+        card_id = 0
+    if target_id >= N_CARD_IDS:
+        target_id = 0
     return dense, card_id, attack_id, target_id
