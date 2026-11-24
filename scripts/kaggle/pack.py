@@ -44,7 +44,9 @@ PAYLOAD = [
     ("agents", "agents"),
     ("decks", "decks"),
     ("data/sample_submission", "data/sample_submission"),
-    ("data/EN_Card_Data.csv", "data/EN_Card_Data.csv"),
+    # data/EN_Card_Data.csv used to ship here. Nothing at runtime reads it (the
+    # engine serves card data through `api().all_card_data()`), and the
+    # Playground tree no longer has it -- only EN_Card_Data_R2_full.csv.
 ]
 
 # Nets live in out/ and are named per job; ship the whole v5 family plus the
@@ -65,7 +67,7 @@ def _size(p: Path) -> int:
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
 
 
-def stage(corpus: str | None) -> list[tuple[str, int]]:
+def stage(corpus: str | None, slug: str = CODE_SLUG) -> list[tuple[str, int]]:
     if STAGE.exists():
         shutil.rmtree(STAGE)
     STAGE.mkdir(parents=True)
@@ -117,8 +119,8 @@ def stage(corpus: str | None) -> list[tuple[str, int]]:
                      payload.stat().st_size))
 
     meta = {
-        "title": "ptcg code v1",
-        "id": f"{USER}/{CODE_SLUG}",
+        "title": slug.replace("-", " "),
+        "id": f"{USER}/{slug}",
         "licenses": [{"name": "unknown"}],
     }
     (STAGE / "dataset-metadata.json").write_text(json.dumps(meta, indent=2))
@@ -132,9 +134,12 @@ def main() -> None:
     ap.add_argument("--push", action="store_true",
                     help="create or version the Kaggle dataset")
     ap.add_argument("--message", default="repack")
+    ap.add_argument("--slug", default=CODE_SLUG,
+                    help="dataset slug to create or version. A new slug leaves "
+                         "ptcg-code-v1 (which holds nets not kept locally) as is")
     args = ap.parse_args()
 
-    manifest = stage(args.corpus)
+    manifest = stage(args.corpus, args.slug)
     total = sum(s for _, s in manifest)
     print(f"=== payload staged at {STAGE} ===")
     for name, size in manifest:
@@ -147,9 +152,9 @@ def main() -> None:
         return
 
     listed = subprocess.run(
-        ["kaggle", "datasets", "list", "-m", "-s", CODE_SLUG],
+        ["kaggle", "datasets", "list", "-m", "-s", args.slug],
         capture_output=True, text=True)
-    exists = f"{USER}/{CODE_SLUG}" in listed.stdout
+    exists = f"{USER}/{args.slug}" in listed.stdout
 
     cmd = (["kaggle", "datasets", "version", "-p", str(STAGE), "-m", args.message]
            if exists else
