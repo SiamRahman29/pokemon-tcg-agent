@@ -194,9 +194,9 @@ def push(args: argparse.Namespace) -> None:
         "is_private": True,
         "enable_gpu": args.gpu,
         "enable_internet": False,
-        "dataset_sources": [CODE_DS],
+        "dataset_sources": [args.code_ds],
         "competition_sources": [],
-        "kernel_sources": [],
+        "kernel_sources": args.kernel_input,
     }, indent=2), encoding="utf-8")
 
     print(f"=== job {args.job}: {args.shards} shards ===")
@@ -252,6 +252,13 @@ def main() -> None:
     p.add_argument("--collect", default="out/arena,out/logs",
                    help="comma-separated repo-relative dirs copied to "
                         "/kaggle/working for `pull`")
+    p.add_argument("--kernel-input", action="append", default=[],
+                   help="owner/kernel-slug whose OUTPUT is attached under "
+                        "/kaggle/input (repeatable). Chains one stage to the next "
+                        "without downloading anything locally")
+    p.add_argument("--code-ds", default=CODE_DS,
+                   help="code dataset to attach (owner/slug), as pushed by "
+                        "pack.py --slug")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=push)
 
