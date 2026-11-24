@@ -207,8 +207,10 @@ def push(args: argparse.Namespace) -> None:
     if args.dry_run:
         print(f"\n(dry run -- kernel staged at {d})")
         return
-    r = subprocess.run(["kaggle", "kernels", "push", "-p", str(d)],
-                       capture_output=True, text=True)
+    push_cmd = ["kaggle", "kernels", "push", "-p", str(d)]
+    if args.accelerator:
+        push_cmd += ["--accelerator", args.accelerator]
+    r = subprocess.run(push_cmd, capture_output=True, text=True)
     print(r.stdout or r.stderr)
     sys.exit(r.returncode)
 
@@ -242,6 +244,8 @@ def main() -> None:
     p.add_argument("--cmd", required=True, help="shard command; {i} = shard index")
     p.add_argument("--shards", type=int, default=4)
     p.add_argument("--gpu", action="store_true")
+    p.add_argument("--accelerator", default="",
+                   help="request a specific accelerator, e.g. NvidiaTeslaT4 (with --gpu)")
     p.add_argument("--out-flag", default="--archive",
                    help="the flag naming each shard's own output path "
                         "(--archive for arena.py, --out for the generators)")
