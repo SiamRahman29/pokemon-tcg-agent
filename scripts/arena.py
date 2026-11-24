@@ -192,6 +192,19 @@ def build_agent(spec: str, deck: list[int],
                             minor_cap=_flag_num(flags, "nc", float),
                             prior_bonus=_flag_num(flags, "pb", float),
                             main_only="mo" in flags))
+    if kind == "tx":
+        # tx:<model.npz> -- the distilled entity Transformer (agents/tx),
+        # greedy, NumPy inference. The model is bound to one deck and refuses
+        # any other. The identity carries the weights' hash, like bc's.
+        import hashlib
+
+        from tx.agent import TxAgent
+        from tx.deck import engine_tables
+
+        path = spec.split(":", 1)[1]
+        digest = hashlib.md5((ROOT / path).read_bytes()).hexdigest()[:8]
+        return f"tx:{path}#{digest}", TxAgent(list(deck), str(ROOT / path),
+                                              engine_tables()[0])
     if kind == "bc":
         # bc[:tag][,net=<path>] -- pure behavioral-clone policy agent. `net=`
         # pins this instance to a specific npz, so two candidate policies can
