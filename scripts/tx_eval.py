@@ -5,6 +5,9 @@ Play mode runs this shard's share of every matchup through `arena.py play`
 archive under a directory and prints the Transformer's score per opponent with
 a 95% interval, next to the teacher's own score from the teacher games, and
 the distillation gate: score >= 0.45 against v5_s2 (frozen 2026-11-24).
+With `--distilled`, also plays 1,000 paired matches against that model; a
+PPO checkpoint "beats the distillation" when that interval's lower bound is
+above 0.5.
 
     # one shard of four (Kaggle: one process per core)
     python -X utf8 scripts/tx_eval.py --model out/tx_model/model.npz \\
@@ -42,11 +45,32 @@ TEACHER_SCORE = {"v10": 0.585, "crustle": 0.784, "alakazam": 0.805, "archaludon"
                  "teacher": 0.500}
 
 
+def resolve(path: str) -> str:
+    """A .npz path, or a directory holding exactly one model.npz (Kaggle inputs)."""
+    p = Path(path) if Path(path).is_absolute() else ROOT / path
+    if not p.is_dir():
+        return path
+    found = sorted(p.rglob("model.npz"))
+    if len(found) != 1:
+        raise SystemExit(f"{path}: expected one model.npz, found {[str(f) for f in found]}")
+    return str(found[0])
+
+
 def play(args) -> int:
+    args.model = resolve(args.model)
+    if args.distilled:
+        args.distilled = resolve(args.distilled)
     out = ROOT / args.out
     out.mkdir(parents=True, exist_ok=True)
+    # Which archived agent is the one under test. Needed because in the
+    # `distilled` matchup BOTH agents are `tx:` models.
+    (out / "meta.json").write_text(json.dumps(dict(model=f"tx:{args.model}")) + "\n")
     rc = 0
-    for tag, spec, deck, matches in MATCHUPS:
+    matchups = list(MATCHUPS)
+    if args.distilled:
+        matchups.append(("distilled", f"tx:{args.distilled}", "grimmsnarl", 1000))
+    for tag, spec, deck, matches in matchups:
+        matches = max(1, round(matches * args.scale))
         n = matches // args.shards + (args.shard < matches % args.shards)
         if n == 0:
             continue
@@ -64,15 +88,18 @@ def summarize(args) -> int:
     tally: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
     for f in sorted((ROOT / args.summarize).rglob("*.jsonl")):
         tag = f.stem
+        model = json.loads((f.parent / "meta.json").read_text())["model"]
         for line in f.open():
             r = json.loads(line)
-            me = 0 if r["agent0"].startswith("tx:") else 1
+            me = 0 if r["agent0"].startswith(model + "#") else 1
+            if not r[f"agent{me}"].startswith(model + "#"):
+                raise SystemExit(f"{f}: neither agent is {model}")
             t = tally[tag]
             t[0] += 0.5 if r["winner"] == 2 else float(r["winner"] == me)
             t[1] += 1
     rows = []
     print(f"{'opponent':<12}{'games':>7}{'tx score':>10}   95% CI          teacher")
-    for tag, *_ in MATCHUPS:
+    for tag in [m[0] for m in MATCHUPS] + ["distilled"]:
         if tag not in tally:
             continue
         s, n = tally[tag]
@@ -95,7 +122,10 @@ def summarize(args) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--model", help="exported .npz, repo-relative or absolute")
+    ap.add_argument("--model", help="exported .npz (repo-relative or absolute), or a directory holding one")
+    ap.add_argument("--distilled", help="also play this .npz head-to-head (PPO checkpoints)")
+    ap.add_argument("--scale", type=float, default=1.0,
+                    help="multiply every matchup's match count (smoke tests)")
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--shards", type=int, default=1)
     ap.add_argument("--out", help="this shard's archive directory")
