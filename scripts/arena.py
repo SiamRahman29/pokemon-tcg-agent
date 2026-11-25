@@ -39,6 +39,14 @@ suffix and pool everything that shared a spec string.
 """
 from __future__ import annotations
 
+import os
+
+# One BLAS thread per process: arena runs go one per core, and numpy's default
+# thread pool oversubscribes them (15x slower with 4 processes on 4 cores).
+# Must precede any numpy import.
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import argparse
 import json
 import math
