@@ -39,21 +39,21 @@ def load_npz(path: Path | str) -> tuple[dict[str, NDArray[np.float32]], dict[str
     return tensors, header
 
 
-def _erf(x: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Abramowitz-Stegun 7.1.26 error function (|error| < 1.5e-7); numpy has no erf."""
-    sign = np.sign(x)
-    a = np.abs(x)
-    t = 1.0 / (1.0 + 0.3275911 * a)
-    poly = t * (
-        0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))
-    )
-    return sign * (1.0 - poly * np.exp(-a * a))
+_A = [np.float32(c) for c in (0.254829592, -0.284496736, 1.421413741, -1.453152027,
+                                1.061405429)]
 
 
 def _gelu(x: NDArray[np.float32]) -> NDArray[np.float32]:
-    """Exact (erf) GELU, matching torch's default `F.gelu`."""
-    x64 = x.astype(np.float64)
-    return (0.5 * x64 * (1.0 + _erf(x64 / math.sqrt(2.0)))).astype(np.float32)
+    """Exact (erf) GELU, matching torch's default `F.gelu`, in float32.
+
+    erf is Abramowitz-Stegun 7.1.26 (|error| < 1.5e-7); numpy has no erf.
+    Float32 throughout (upstream: float64), which moves logits by ~1e-6.
+    """
+    a = np.abs(x) * np.float32(1 / math.sqrt(2.0))
+    t = np.float32(1) / (np.float32(1) + np.float32(0.3275911) * a)
+    poly = t * (_A[0] + t * (_A[1] + t * (_A[2] + t * (_A[3] + t * _A[4]))))
+    erf = np.float32(1) - poly * np.exp(-a * a)
+    return np.float32(0.5) * x * (np.float32(1) + np.copysign(erf, x))
 
 
 class NumpyTransformer:
@@ -65,16 +65,23 @@ class NumpyTransformer:
         if encoder is not None and self.header["contract_id"] != encoder.contract_id:
             raise ValueError("model .npz contract does not match this encoder/deck")
         self.support = np.linspace(-1, 1, 51, dtype=np.float32)
+        # Contiguous transposes of every Linear weight, made once.
+        self.wt = {k[: -len(".weight")]: np.ascontiguousarray(v.T) for k, v in self.w.items()
+                   if k.endswith(".weight") and v.ndim == 2 and k[: -len(".weight")] + ".bias"
+                   in self.w}
 
     def _linear(self, name: str, x: NDArray[np.float32]) -> NDArray[np.float32]:
         """Apply `nn.Linear` weights stored under `name`."""
-        return x @ self.w[name + ".weight"].T + self.w[name + ".bias"]
+        return x @ self.wt[name] + self.w[name + ".bias"]
 
     def _norm(self, name: str, x: NDArray[np.float32]) -> NDArray[np.float32]:
         """Apply `nn.LayerNorm` weights stored under `name`."""
-        mean = x.mean(-1, keepdims=True)
-        var = ((x - mean) ** 2).mean(-1, keepdims=True)
-        return (x - mean) / np.sqrt(var + EPS) * self.w[name + ".weight"] + self.w[name + ".bias"]
+        d = x - x.mean(-1, keepdims=True)
+        var = np.einsum("ij,ij->i", d, d)[:, None] * np.float32(1 / x.shape[-1])
+        d *= 1 / np.sqrt(var + np.float32(EPS))
+        d *= self.w[name + ".weight"]
+        d += self.w[name + ".bias"]
+        return d
 
     def _stem(self, name: str, x: NDArray[np.float32]) -> NDArray[np.float32]:
         """Two-layer token projection followed by LayerNorm."""
@@ -96,34 +103,34 @@ class NumpyTransformer:
             index = np.clip(slot, 0, None).astype(np.int64)
             return table[index] * (slot >= 0)[:, None]
 
-        identity, extra = embedding(x[:, 4]), embedding(x[:, 5])
-        counts, evolution = x[:, 102:134] @ table, x[:, 134:166] @ table
+        # Each stem runs only on its own token kind (upstream ran all four
+        # stems on every token and masked); row-wise, so the result is the same.
         generic, result = x[:, 6:102], x[:, 166:198]
-        h = (
-            self._stem("global_stem", np.concatenate([generic, identity, extra], -1))
-            * (kind == 0)[:, None]
-        )
-        h = (
-            h
-            + self._stem("board_stem", np.concatenate([generic, identity, counts, evolution], -1))
-            * (kind == 1)[:, None]
-        )
-        h = (
-            h
-            + self._stem("zone_stem", np.concatenate([generic[:, :48], counts], -1))
-            * (kind == 2)[:, None]
-        )
-        option = self._stem("option_stem", np.concatenate([generic, identity, result], -1))
-        h = h + (option + self._linear("result_delta", result)) * (kind == 3)[:, None]
-        h = h + self.w["stop"] * (kind == 4)[:, None] + self.w["token_type.weight"][kind]
-        h = h.astype(np.float32)
+        h = np.zeros((len(x), DIM), np.float32)
+        r = np.flatnonzero(kind == 0)
+        h[r] = self._stem("global_stem", np.concatenate(
+            [generic[r], embedding(x[r, 4]), embedding(x[r, 5])], -1))
+        r = np.flatnonzero(kind == 1)
+        h[r] = self._stem("board_stem", np.concatenate(
+            [generic[r], embedding(x[r, 4]), x[r, 102:134] @ table, x[r, 134:166] @ table], -1))
+        r = np.flatnonzero(kind == 2)
+        h[r] = self._stem("zone_stem", np.concatenate(
+            [generic[r, :48], x[r, 102:134] @ table], -1))
+        r = np.flatnonzero(kind == 3)
+        h[r] = (self._stem("option_stem", np.concatenate(
+            [generic[r], embedding(x[r, 4]), result[r]], -1))
+                + self._linear("result_delta", result[r]))
+        h[kind == 4] = self.w["stop"]
+        h += self.w["token_type.weight"][kind]
         n = len(x)
+        all_valid = bool(valid.all())
         for i in range(LAYERS):
             p = f"blocks.{i}"
             qkv = self._linear(p + ".qkv", self._norm(p + ".norm1", h))
             q, k, v = qkv.reshape(n, 3, HEADS, HEAD_DIM).transpose(1, 2, 0, 3)
             scores = (q @ k.transpose(0, 2, 1)) / np.float32(math.sqrt(HEAD_DIM))
-            scores = np.where(valid[None, None, :], scores, -np.inf)
+            if not all_valid:
+                scores = np.where(valid[None, None, :], scores, -np.inf)
             scores = np.exp(scores - scores.max(-1, keepdims=True))
             attention = scores / scores.sum(-1, keepdims=True)
             h = h + self._linear(p + ".out", (attention @ v).transpose(1, 0, 2).reshape(n, DIM))
