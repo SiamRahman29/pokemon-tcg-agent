@@ -163,57 +163,31 @@ class Encoder:
                 damage = max(0, damage - 30)
         return damage
 
-    def feature_row(self, obs: dict[str, Any], option_index: int,
-                    prefix: Sequence[int]) -> list[float]:
-        """One candidate's generic feature row from the acting player's view."""
+    # The row is assembled from the parts below. `tokenize` reads only some
+    # columns, so it calls the parts directly and computes the
+    # option-independent ones once per observation instead of once per option.
+
+    def _shared(self, obs: dict[str, Any]) -> dict[str, Any]:
+        """Option-independent values: state head, actives, first 8 deck-block columns."""
         cur, sel = obs["current"], obs["select"]
         actor = cur["yourIndex"]
         me, opponent = cur["players"][actor], cur["players"][1 - actor]
-        stop = option_index == -1
-        option = {} if stop else sel["option"][option_index]
-        kind = option.get("type", -1)
-        card = None if stop else self.candidate(obs, option)
-        target = None
-        if kind in (8, 9):
-            target = self.card_at(obs, option["inPlayArea"], option["inPlayIndex"], actor)
-        elif kind in (3, 4, 5, 6):
-            target = card
         my_active = next(iter(me["active"]), None)
         op_active = next(iter(opponent["active"]), None)
-        if kind == 13:
-            target = op_active
-        area = option.get("area", -1)
-        target_area = option.get("inPlayArea", area)
-        owner = option.get("playerIndex", actor)
-        row = [
+        state = [
             cur["turn"], int(cur["firstPlayer"] == actor), int(cur["supporterPlayed"]),
             int(cur["energyAttached"]), me["handCount"], me["deckCount"], len(me["prize"]),
             opponent["handCount"], opponent["deckCount"], len(opponent["prize"]),
             len(me["bench"]), len(opponent["bench"]), int(me["asleep"]),
             int(me["paralyzed"]), sel["minCount"], sel["maxCount"], len(sel["option"]),
             sel["remainDamageCounter"], int(sel.get("deck") is not None),
-            int(cur.get("looking") is not None), len(prefix), sel["maxCount"] - len(prefix),
-            int(stop), option.get("number", 0), int(card is not None and owner == actor),
-            int(area == 4), int(area == 5), int(target_area == 4), int(target_area == 5),
-            int(target is not None and (owner != actor or kind == 13)),
+            int(cur.get("looking") is not None),
         ]
-        for value in (card, target, my_active, op_active):
-            row.extend(self.card_values(value))
-        row.extend(int(sel["context"] == i) for i in range(48))
-        row.extend(int(kind == i) for i in range(18))
-        row.extend(int(area == i) for i in range(1, 13))
-        row.extend(int(option.get("attackId") == a) for a in self.profile.attack_ids)
-        zones = [me["hand"], me["discard"], me["active"], me["bench"], sel.get("deck") or [],
-                 [card], [target], [self.candidate(obs, sel["option"][i]) for i in prefix],
-                 [sel.get("effect")], [sel.get("contextCard")]]
-        for cards in zones:
-            counts = Counter(c["id"] for c in cards if c)
-            row.extend(counts[i] for i in self.ids)
         # Deck block. Upstream semantics, deck-derived values:
         #   multi-prize attacker in play, # of them, # evolved, bench ready now,
         #   bench ready with +1 energy, deck-type energy in discard, energy on
-        #   board, min(3, discard energy), attack damage, damage - HP, KO, KO
-        #   that takes the last prizes.
+        #   board, min(3, discard energy), then (per option, `_attack_tail`)
+        #   attack damage, damage - HP, KO, KO that takes the last prizes.
         board = [c for c in me["active"] + me["bench"] if c]
         multi = sum(1 for c in board if self.cards[c["id"]]["ex"] or self.cards[c["id"]]["megaEx"])
         evolved = sum(1 for c in board if self.cards[c["id"]]["stage1"] or self.cards[c["id"]]["stage2"])
@@ -221,19 +195,74 @@ class Encoder:
         in_discard = sum(1 for c in me["discard"]
                          if c and self.cards[c["id"]]["cardType"] == 5
                          and self.cards[c["id"]]["energyType"] == etype)
-        damage = self._damage(option.get("attackId") if kind == 13 else None,
-                              my_active, op_active)
-        op_hp = (op_active or {}).get("hp", 0)
-        ko = damage > 0 and op_hp > 0 and damage >= op_hp
-        op_prize = self.card_values(op_active)[-1]
-        row.extend([
+        deck8 = [
             int(multi > 0), multi, evolved,
             sum(self._ready(c, 0) for c in me["bench"] if c),
             sum(self._ready(c, 1) for c in me["bench"] if c),
             in_discard, sum(len(c.get("energies", [])) for c in board), min(3, in_discard),
-            damage, damage - op_hp if damage else 0, int(ko),
-            int(ko and len(me["prize"]) <= op_prize),
-        ])
+        ]
+        op_values = self.card_values(op_active)
+        return dict(actor=actor, me=me, opponent=opponent, my_active=my_active,
+                    op_active=op_active, state=state, deck8=deck8,
+                    my_values=self.card_values(my_active), op_values=op_values,
+                    op_hp=(op_active or {}).get("hp", 0), op_prize=op_values[-1])
+
+    def _option_parts(self, obs: dict[str, Any], option: dict[str, Any], sh: dict[str, Any],
+                      card: dict[str, Any] | None) -> tuple[list, Any, int, int]:
+        """Row columns 22-29 (STOP flag onward), the option's target, kind and area."""
+        actor = sh["actor"]
+        stop = not option
+        kind = option.get("type", -1)
+        target = None
+        if kind in (8, 9):
+            target = self.card_at(obs, option["inPlayArea"], option["inPlayIndex"], actor)
+        elif kind in (3, 4, 5, 6):
+            target = card
+        elif kind == 13:
+            target = sh["op_active"]
+        area = option.get("area", -1)
+        target_area = option.get("inPlayArea", area)
+        owner = option.get("playerIndex", actor)
+        head = [int(stop), option.get("number", 0), int(card is not None and owner == actor),
+                int(area == 4), int(area == 5), int(target_area == 4), int(target_area == 5),
+                int(target is not None and (owner != actor or kind == 13))]
+        return head, target, kind, area
+
+    def _one_hots(self, option: dict[str, Any], kind: int, area: int) -> list[int]:
+        """Kind (18), area (12) and attack-id (8) one-hots: columns kind..zones."""
+        attack = option.get("attackId")
+        return ([int(kind == i) for i in range(18)] + [int(area == i) for i in range(1, 13)]
+                + [int(attack == a) for a in self.profile.attack_ids])
+
+    def _attack_tail(self, option: dict[str, Any], kind: int, sh: dict[str, Any]) -> list[int]:
+        """Last 4 deck-block columns: damage, damage - HP, KO, KO on last prizes."""
+        damage = self._damage(option.get("attackId") if kind == 13 else None,
+                              sh["my_active"], sh["op_active"])
+        op_hp = sh["op_hp"]
+        ko = damage > 0 and op_hp > 0 and damage >= op_hp
+        return [damage, damage - op_hp if damage else 0, int(ko),
+                int(ko and len(sh["me"]["prize"]) <= sh["op_prize"])]
+
+    def feature_row(self, obs: dict[str, Any], option_index: int,
+                    prefix: Sequence[int]) -> list[float]:
+        """One candidate's generic feature row from the acting player's view."""
+        sel = obs["select"]
+        sh = self._shared(obs)
+        me = sh["me"]
+        option = {} if option_index == -1 else sel["option"][option_index]
+        card = self.candidate(obs, option) if option else None
+        head, target, kind, area = self._option_parts(obs, option, sh, card)
+        row = sh["state"] + [len(prefix), sel["maxCount"] - len(prefix)] + head
+        row += self.card_values(card) + self.card_values(target) + sh["my_values"] + sh["op_values"]
+        row.extend(int(sel["context"] == i) for i in range(48))
+        row += self._one_hots(option, kind, area)
+        zones = [me["hand"], me["discard"], me["active"], me["bench"], sel.get("deck") or [],
+                 [card], [target], [self.candidate(obs, sel["option"][i]) for i in prefix],
+                 [sel.get("effect")], [sel.get("contextCard")]]
+        for cards in zones:
+            counts = Counter(c["id"] for c in cards if c)
+            row.extend(counts[i] for i in self.ids)
+        row += sh["deck8"] + self._attack_tail(option, kind, sh)
         if len(row) != self.layout.width:
             raise ValueError(f"feature width {len(row)} != {self.layout.width}")
         return row
@@ -287,11 +316,12 @@ class Encoder:
             v = np.asarray(values, np.float32)
             x[row, 6:6 + len(v)] = np.sign(v) * np.log1p(np.abs(v))
 
-        base = self.feature_row(obs, -1, [])
+        sh = self._shared(obs)
         x[0, 0] = 1
         x[0, 4] = slot(sel.get("effect"))
         x[0, 5] = slot(sel.get("contextCard"))
-        generic(0, base[:20] + base[L.context:L.kind] + base[L.deck:L.deck + 8])
+        # = feature_row(STOP) columns [:20] + [context:kind] + [deck:deck+8]
+        generic(0, sh["state"] + [int(sel["context"] == i) for i in range(48)] + sh["deck8"])
         me = cur["players"][actor]
         op = cur["players"][1 - actor]
         known = list(me["hand"]) + list(me["discard"])
@@ -336,27 +366,32 @@ class Encoder:
             generic(r, [int(z == i) for i in range(6)]
                     + [float(values.sum()), int(z in (2, 3)), int(exact_ok and z in (2, 3))])
             x[r, 102:134] = values / 60
+        rows = []
         for i, o in enumerate(sel["option"]):
             r = 19 + i
             x[r, 0] = 1
             x[r, 1] = 3
             x[r, 2] = int(i in legal)
             x[r, 3] = int(i in prefix)
-            x[r, 4] = slot(self.candidate(obs, o))
-            f = self.feature_row(obs, i, [])
-            # 22..59: option state tail + the candidate's and target's card
-            # values (upstream f[22:60]); then kind/area/attack one-hots.
-            generic(r, f[22:L.cards + 2 * CARD_FIELDS] + f[L.kind:L.zones]
-                    + f[L.deck:L.deck + 12])
+            card = self.candidate(obs, o)
+            x[r, 4] = slot(card)
+            head, target, kind, area = self._option_parts(obs, o, sh, card)
+            tail = self._attack_tail(o, kind, sh)
+            # = feature_row(i) columns [22:60] (option state tail + the
+            # candidate's and target's card values; upstream f[22:60]), then
+            # [kind:zones] (kind/area/attack one-hots), then [deck:deck+12].
+            rows.append(head + self.card_values(card) + self.card_values(target)
+                        + self._one_hots(o, kind, area) + sh["deck8"] + tail)
             # Approximate public damage, explicitly uncertain (no text effects).
-            result = np.zeros(32, np.float32)
-            if o["type"] == 13:
-                result[0] = 1
-                result[3] = 1
-                result[29] = f[L.deck + 8] / 600
-                result[30] = f[L.deck + 10]
-                result[31] = f[L.deck + 11]
-            x[r, 166:198] = result
+            if kind == 13:
+                x[r, 166] = 1
+                x[r, 169] = 1
+                x[r, 195] = np.float32(tail[0] / 600)
+                x[r, 196] = tail[2]
+                x[r, 197] = tail[3]
+        if rows:
+            v = np.asarray(rows, np.float32)
+            x[19:19 + count, 6:6 + v.shape[1]] = np.sign(v) * np.log1p(np.abs(v))
         x[-1, 0] = 1
         x[-1, 1] = 4
         x[-1, 2] = int(-1 in legal)
