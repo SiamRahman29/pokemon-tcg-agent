@@ -23,9 +23,19 @@ its last 3 cycles (0.5 when unseen). A frozen snapshot joins every
 3 cycles leaves [0.5x, 2x] the target, the LR is rescaled toward it (bounded
 0.5x-2x per step), since a long chain cannot be recalibrated by hand.
 
+Roles. `session` (default) runs whole cycles in one notebook. A cycle can
+also be split across notebooks (scripts/ppo_chain.py --parallel): K
+`collect` runs each play shard j of the cycle's game plan from the same state
+and write `rollout/part{j}.npz` + `.json`; one `learn` run then finds the
+state and all K parts under --resume, checks every part was played for this
+cycle and this model.pt, merges them and does the same learning step.
+
     python -X utf8 scripts/ppo_session.py --init out/tx_model/model.pt \\
         --output out/ppo0 --max-hours 11
     python -X utf8 scripts/ppo_session.py --resume /kaggle/input --output out/ppo0
+    python -X utf8 scripts/ppo_session.py --role collect --shard 0 --shards 4 \\
+        --resume /kaggle/input --output out/ppo0
+    python -X utf8 scripts/ppo_session.py --role learn --resume /kaggle/input --output out/ppo0
 """
 from __future__ import annotations
 
@@ -36,6 +46,7 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
 
 import argparse  # noqa: E402
 import copy  # noqa: E402
+import hashlib  # noqa: E402
 import json  # noqa: E402
 import shutil  # noqa: E402
 import subprocess  # noqa: E402
@@ -149,19 +160,27 @@ def allocate(state: dict, games: int) -> dict[str, int]:
 
 
 def collect(state: dict, model_npz: Path, sdir: Path, games: int, workers: int,
-            temperature: float, tmp: Path) -> tuple[dict, list[dict]]:
+            temperature: float, tmp: Path, shard: int = 0,
+            shards: int = 1) -> tuple[dict, list[dict]]:
+    """Play this shard's share of the cycle's games. The full plan (allocation
+    and order) depends only on the state, so `shards` notebooks given the same
+    state split one cycle between them with no overlap."""
     from tx.ppo import merge
 
     alloc = allocate(state, games)
     plan = [(name, (i % 2)) for name, n in alloc.items() for i in range(n)]
     rng = np.random.default_rng(1000 + state["cycle"])
     rng.shuffle(plan)
+    plan = plan[shard::shards]
+    if shard:
+        rng = np.random.default_rng([1000 + state["cycle"], shard])
     jobs = []
     for w in range(workers):
-        jobs.append(dict(worker=w, games=plan[w::workers], model=str(model_npz),
+        unit = shard * workers + w
+        jobs.append(dict(worker=unit, games=plan[w::workers], model=str(model_npz),
                          pool=state["pool"], snapshot_dir=str(sdir), temperature=temperature,
                          seed=int(rng.integers(2**31)), out=str(tmp / f"part{w}.npz"),
-                         episode_base=state["cycle"] * 10_000_000 + w * 1_000_000))
+                         episode_base=state["cycle"] * 100_000_000 + unit * 1_000_000))
     with get_context("spawn").Pool(workers) as pool:
         parts = pool.map(collect_part, jobs)
     data = merge([dict(np.load(j["out"])) for j in jobs])
@@ -231,9 +250,126 @@ def evaluate(out: Path, model_npz: Path, distilled_npz: Path, cycle: int, worker
     return {row["opponent"]: row for row in rows}
 
 
+def file_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def load_rollouts(root: Path, state: dict, model_sha: str) -> tuple[dict, list[dict], float]:
+    """Merge every collector's part under `root`; refuse a mismatched or missing one."""
+    from tx.ppo import merge
+
+    metas = [json.loads(f.read_text()) for f in sorted(root.rglob("rollout/part*.json"))]
+    if not metas:
+        raise SystemExit(f"no rollout parts under {root}")
+    shards = metas[0]["shards"]
+    got = sorted(m["shard"] for m in metas)
+    if got != list(range(shards)):
+        raise SystemExit(f"rollout shards {got}, expected 0..{shards - 1}")
+    for m in metas:
+        if m["cycle"] != state["cycle"] or m["model_sha"] != model_sha:
+            raise SystemExit(f"rollout shard {m['shard']} was played for cycle {m['cycle']} "
+                             f"model {m['model_sha'][:12]}, state is cycle {state['cycle']} "
+                             f"model {model_sha[:12]}")
+    data = merge([dict(np.load(f)) for f in sorted(root.rglob("rollout/part*.npz"))])
+    parts = [p for m in metas for p in m["parts"]]
+    return data, parts, max(m["seconds"] for m in metas)
+
+
+def step(a, state: dict, model, optimizer, payload: dict, config: dict, data: dict,
+         parts: list[dict], t_collect: float, out: Path, history) -> bool:
+    """One cycle's learning half: audit, (calibrate or) update, snapshot,
+    evaluate, save. Returns False when the cycle only calibrated the LR."""
+    import torch
+
+    from tx.ppo import audit_behavior, export_npz, update
+
+    sd = out / "state"
+    snap_dir = sd / "snapshots"
+    live = out / "tmp" / "live.npz"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    c0 = time.time()
+    audit = audit_behavior(model, data, config["temperature"], sample=2000, seed=state["cycle"])
+    if max(audit["max_abs_errors"].values()) > 1e-3:
+        raise SystemExit(f"behaviour audit failed: {audit}")
+    if not state["calibrated"]:
+        trials = []
+        for rate in a.rates:
+            m = copy.deepcopy(model)
+            o = torch.optim.AdamW(m.parameters(), lr=rate, weight_decay=config["weight_decay"])
+            if "optimizer_state" in payload:
+                o.load_state_dict(optimizer.state_dict())
+            rep = update(m, o, data, dict(config, learning_rate=rate), a.threads)
+            trials.append(dict(learning_rate=rate, kl=rep["heldout_global_approximate_kl"]))
+            print(json.dumps(dict(calibration=trials[-1])), flush=True)
+        best = min(trials, key=lambda t: abs(t["kl"] - config["kl_target"]))
+        state.update(learning_rate=best["learning_rate"], calibrated=True)
+        history.write(json.dumps(dict(cycle=state["cycle"], calibration=trials,
+                                      selected=best)) + "\n")
+        history.flush()
+        # Upstream: trial weights are never deployed; the next cycle
+        # collects a fresh rollout at the selected rate.
+        save_state(out, state, model, optimizer, payload)
+        return False
+    rep = update(model, optimizer, data, dict(config, learning_rate=state["learning_rate"]),
+                 a.threads)
+    state["cycle"] += 1
+    for part in parts:
+        for name, rs in part["results"].items():
+            state["recent"].setdefault(name, []).append(float(np.mean(rs)))
+            state["recent"][name] = state["recent"][name][-RECENT:]
+    kls = [rep["heldout_global_approximate_kl"]] + state.get("recent_kl", [])
+    state["recent_kl"] = kls[:3]
+    if len(state["recent_kl"]) == 3:
+        mean_kl = float(np.mean(state["recent_kl"]))
+        if not 0.5 * config["kl_target"] <= mean_kl <= 2 * config["kl_target"]:
+            factor = float(np.clip(config["kl_target"] / max(mean_kl, 1e-9), 0.5, 2.0))
+            state["learning_rate"] *= factor
+            state["recent_kl"] = []
+            print(f"LR rescaled x{factor:.2f} -> {state['learning_rate']:.2e}", flush=True)
+    line = dict(cycle=state["cycle"], seconds_collect=round(t_collect),
+                seconds_learn=round(time.time() - c0),
+                games=sum(p["games"] for p in parts), errors=sum(p["errors"] for p in parts),
+                decisions=int(len(data["old_logp"])), audit=audit["max_abs_errors"],
+                scores={n: round(float(np.mean(v)), 3) for n, v in state["recent"].items()},
+                allocation=allocate(state, a.games), **{k: rep[k] for k in (
+                    "heldout_global_approximate_kl", "learning_rate", "parameter_delta_l2",
+                    "mean_metrics")})
+    if state["cycle"] % a.snapshot_every == 0:
+        name = f"snap{state['cycle']:04d}"
+        export_npz(model, dict(payload, stage="ppo", cycle=state["cycle"]),
+                   snap_dir / f"{name}.npz")
+        state["pool"].append(dict(name=name, kind="snapshot", file=f"{name}.npz"))
+        line["snapshot"] = name
+    save_state(out, state, model, optimizer, payload)
+    if state["cycle"] % a.eval_every == 0:
+        export_npz(model, dict(payload, stage="ppo", cycle=state["cycle"]), live)
+        ev = evaluate(out, live, snap_dir / "snap0000.npz", state["cycle"], a.workers,
+                      a.eval_scale)
+        line["eval"] = {k: dict(score=round(v["score"], 3), lo=round(v["lo"], 3),
+                                games=v["games"]) for k, v in ev.items()}
+        d = ev.get("distilled")
+        if d and d["lo"] > 0.5:
+            cand = sd / "candidates"
+            cand.mkdir(exist_ok=True)
+            shutil.copy(live, cand / f"cycle{state['cycle']:04d}.npz")
+            line["candidate"] = True
+    line["seconds_total"] = round(time.time() - c0 + t_collect)
+    history.write(json.dumps(line) + "\n")
+    history.flush()
+    print(json.dumps({k: v for k, v in line.items() if k not in ("allocation", "mean_metrics")}),
+          flush=True)
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--role", choices=["session", "collect", "learn"], default="session",
+                    help="session: collect and learn in a loop (one notebook); collect: play "
+                         "shard --shard of --shards of one cycle's games; learn: merge the "
+                         "collectors' rollouts found under --resume and run one update")
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--shards", type=int, default=1)
     ap.add_argument("--init", type=Path, help="distilled model.pt, or a dir to search")
     ap.add_argument("--resume", type=Path, help="dir to search for a previous session's state")
     ap.add_argument("--output", type=Path, required=True)
@@ -254,19 +390,49 @@ def main() -> int:
 
     import torch
 
-    from tx.ppo import DEFAULTS, audit_behavior, export_npz, update
+    from tx.ppo import DEFAULTS, export_npz
 
     t0 = time.time()
     out = a.output
     sd = out / "state"
     snap_dir = sd / "snapshots"
     prev = find_state(a.resume) if a.resume and a.resume.exists() else None
+
+    if a.role == "collect":
+        # Read the state in place (inputs are read-only); write only rollout/.
+        if prev is None:
+            raise SystemExit(f"no state under {a.resume}")
+        state = json.loads((prev / "ppo_state.json").read_text())
+        model, payload = load_model(prev / "model.pt")
+        tmp = out / "tmp"
+        tmp.mkdir(parents=True, exist_ok=True)
+        live = tmp / "live.npz"
+        export_npz(model, dict(payload, stage="ppo", cycle=state["cycle"]), live)
+        config = dict(DEFAULTS)
+        data, parts = collect(state, live, prev / "snapshots", a.games, a.workers,
+                              config["temperature"], tmp, a.shard, a.shards)
+        rd = out / "rollout"
+        rd.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(rd / f"part{a.shard}.npz", **data)
+        meta = dict(cycle=state["cycle"], shard=a.shard, shards=a.shards,
+                    model_sha=file_sha(prev / "model.pt"), parts=parts,
+                    seconds=round(time.time() - t0),
+                    games=sum(p["games"] for p in parts),
+                    decisions=int(len(data["old_logp"])))
+        (rd / f"part{a.shard}.json").write_text(json.dumps(meta) + "\n")
+        shutil.rmtree(tmp, ignore_errors=True)
+        print(json.dumps({k: v for k, v in meta.items() if k != "parts"}), flush=True)
+        return 0
+
     if prev is not None:
+        model_sha = file_sha(prev / "model.pt")
         shutil.copytree(prev, sd, dirs_exist_ok=True)
         state = json.loads((sd / "ppo_state.json").read_text())
         model, payload = load_model(sd / "model.pt")
         print(f"resumed at cycle {state['cycle']} from {prev}", flush=True)
     else:
+        if a.role == "learn":
+            raise SystemExit(f"no state under {a.resume}")
         if a.init is None:
             raise SystemExit("no previous state found; pass --init")
         init = a.init if a.init.suffix == ".pt" else find_checkpoint(a.init)
@@ -288,13 +454,23 @@ def main() -> int:
                                   weight_decay=config["weight_decay"])
     if "optimizer_state" in payload:
         optimizer.load_state_dict(payload["optimizer_state"])
+    if prev is None:
+        save_state(out, state, model, optimizer, payload)  # a 0-cycle run seeds a chain
     tmp = out / "tmp"
     tmp.mkdir(parents=True, exist_ok=True)
-    live = tmp / "live.npz"
     history = (sd / "history.jsonl").open("a")
+
+    if a.role == "learn":
+        data, parts, t_collect = load_rollouts(a.resume, state, model_sha)
+        step(a, state, model, optimizer, payload, config, data, parts, t_collect, out, history)
+        shutil.rmtree(tmp, ignore_errors=True)
+        print(f"learn done: cycle {state['cycle']}, {(time.time() - t0) / 60:.1f} min",
+              flush=True)
+        return 0
+
+    live = tmp / "live.npz"
     last_cycle_s = None
     done_here = 0
-
     while done_here < a.max_cycles:
         elapsed = time.time() - t0
         need = (last_cycle_s or 3600) * 1.25
@@ -307,80 +483,11 @@ def main() -> int:
         data, parts = collect(state, live, snap_dir, a.games, a.workers,
                               config["temperature"], tmp)
         t_collect = time.time() - c0
-        audit = audit_behavior(model, data, config["temperature"], sample=2000,
-                               seed=state["cycle"])
-        if max(audit["max_abs_errors"].values()) > 1e-3:
-            raise SystemExit(f"behaviour audit failed: {audit}")
-        if not state["calibrated"]:
-            trials = []
-            for rate in a.rates:
-                m = copy.deepcopy(model)
-                o = torch.optim.AdamW(m.parameters(), lr=rate, weight_decay=config["weight_decay"])
-                if "optimizer_state" in payload:
-                    o.load_state_dict(optimizer.state_dict())
-                rep = update(m, o, data, dict(config, learning_rate=rate), a.threads)
-                trials.append(dict(learning_rate=rate, kl=rep["heldout_global_approximate_kl"]))
-                print(json.dumps(dict(calibration=trials[-1])), flush=True)
-            best = min(trials, key=lambda t: abs(t["kl"] - config["kl_target"]))
-            state.update(learning_rate=best["learning_rate"], calibrated=True)
-            history.write(json.dumps(dict(cycle=state["cycle"], calibration=trials,
-                                          selected=best)) + "\n")
-            history.flush()
-            # Upstream: trial weights are never deployed; the next cycle
-            # collects a fresh rollout at the selected rate.
-            save_state(out, state, model, optimizer, payload)
-            last_cycle_s = time.time() - c0
-            continue
-        rep = update(model, optimizer, data, dict(config, learning_rate=state["learning_rate"]),
-                     a.threads)
-        state["cycle"] += 1
-        for part in parts:
-            for name, rs in part["results"].items():
-                state["recent"].setdefault(name, []).append(float(np.mean(rs)))
-                state["recent"][name] = state["recent"][name][-RECENT:]
-        kls = [rep["heldout_global_approximate_kl"]] + state.get("recent_kl", [])
-        state["recent_kl"] = kls[:3]
-        if len(state["recent_kl"]) == 3:
-            mean_kl = float(np.mean(state["recent_kl"]))
-            if not 0.5 * config["kl_target"] <= mean_kl <= 2 * config["kl_target"]:
-                factor = float(np.clip(config["kl_target"] / max(mean_kl, 1e-9), 0.5, 2.0))
-                state["learning_rate"] *= factor
-                state["recent_kl"] = []
-                print(f"LR rescaled x{factor:.2f} -> {state['learning_rate']:.2e}", flush=True)
-        line = dict(cycle=state["cycle"], seconds_collect=round(t_collect),
-                    seconds_total=round(time.time() - c0),
-                    games=sum(p["games"] for p in parts), errors=sum(p["errors"] for p in parts),
-                    decisions=int(len(data["old_logp"])), audit=audit["max_abs_errors"],
-                    scores={n: round(float(np.mean(v)), 3) for n, v in state["recent"].items()},
-                    allocation=allocate(state, a.games), **{k: rep[k] for k in (
-                        "heldout_global_approximate_kl", "learning_rate", "parameter_delta_l2",
-                        "mean_metrics")})
+        updated = step(a, state, model, optimizer, payload, config, data, parts, t_collect,
+                       out, history)
         del data
-        if state["cycle"] % a.snapshot_every == 0:
-            name = f"snap{state['cycle']:04d}"
-            export_npz(model, dict(payload, stage="ppo", cycle=state["cycle"]),
-                       snap_dir / f"{name}.npz")
-            state["pool"].append(dict(name=name, kind="snapshot", file=f"{name}.npz"))
-            line["snapshot"] = name
-        save_state(out, state, model, optimizer, payload)
-        if state["cycle"] % a.eval_every == 0:
-            export_npz(model, dict(payload, stage="ppo", cycle=state["cycle"]), live)
-            ev = evaluate(out, live, snap_dir / "snap0000.npz", state["cycle"], a.workers,
-                          a.eval_scale)
-            line["eval"] = {k: dict(score=round(v["score"], 3), lo=round(v["lo"], 3),
-                                    games=v["games"]) for k, v in ev.items()}
-            d = ev.get("distilled")
-            if d and d["lo"] > 0.5:
-                cand = sd / "candidates"
-                cand.mkdir(exist_ok=True)
-                shutil.copy(live, cand / f"cycle{state['cycle']:04d}.npz")
-                line["candidate"] = True
-        history.write(json.dumps(line) + "\n")
-        history.flush()
-        print(json.dumps({k: v for k, v in line.items() if k not in ("allocation", "mean_metrics")}),
-              flush=True)
         last_cycle_s = time.time() - c0
-        done_here += 1
+        done_here += int(updated)
     shutil.rmtree(tmp, ignore_errors=True)
     print(f"session done: cycle {state['cycle']}, {done_here} cycles this session, "
           f"{(time.time() - t0) / 3600:.2f} h", flush=True)
