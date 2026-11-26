@@ -1,0 +1,31 @@
+# PPO chain controller as a systemd user service: it starts at boot and
+# resumes from the latest finished learner (scripts/ppo_chain.py --source auto).
+#
+#   install:  ln -sf "$PWD/scripts/systemd/ppo-chain.service" ~/.config/systemd/user/
+#             systemctl --user daemon-reload && systemctl --user enable --now ppo-chain
+#             loginctl enable-linger "$USER"     # start at boot, not only at login
+#   status:   systemctl --user status ppo-chain; tail out/kaggle_out/ppo_par.log
+#   stop:     systemctl --user disable --now ppo-chain
+#
+# Exit 0 (cycle limit reached, or another controller holds the lock) ends it;
+# a failure restarts it after 5 minutes, at most 4 times an hour.
+[Unit]
+Description=PPO chain controller (Kaggle notebooks)
+StartLimitIntervalSec=3600
+StartLimitBurst=4
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Kaggle/pokemon-tcg-agent
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
+# Wait for the network after boot; the controller polls Kaggle.
+ExecStartPre=/bin/sh -c 'until getent hosts www.kaggle.com >/dev/null; do sleep 10; done'
+TimeoutStartSec=30min
+ExecStart=%h/Kaggle/pokemon-tcg-agent/.venv/bin/python -u -X utf8 scripts/ppo_chain.py --parallel 4 --source auto --until-cycle 300
+StandardOutput=append:%h/Kaggle/pokemon-tcg-agent/out/kaggle_out/ppo_par.log
+StandardError=inherit
+Restart=on-failure
+RestartSec=300
+
+[Install]
+WantedBy=default.target
