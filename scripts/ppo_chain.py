@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 USER = "siamrahman29"
 CODE_DS = f"{USER}/ptcg-teacher-code"
+# Time limits (s). Normal: collectors ~10 min, learner ~10 min, eval learner ~45.
+COLLECT_LIMIT = 45 * 60
+LEARN_LIMIT = 40 * 60
+EVAL_EXTRA = 90 * 60
 SMALL = r"ppo_state\.json|history\.jsonl|summary\.json|candidates|\.log$|logs/"
 
 
@@ -78,11 +83,13 @@ def push(job: str, inputs: list[str], cmd: str) -> str:
     raise SystemExit(f"could not push {job}")
 
 
-def wait(slugs: list[str], poll: int, seen_timeout: int = 900) -> dict[str, str]:
+def wait(slugs: list[str], poll: int, seen_timeout: int = 900,
+         limit: float | None = None) -> dict[str, str]:
     """Wait until every kernel finishes. A just-pushed kernel can still report
     its PREVIOUS version's COMPLETE for a short while, so a final status only
     counts after the kernel has been seen QUEUED or RUNNING (or after
-    `seen_timeout` seconds)."""
+    `seen_timeout` seconds). A kernel still unfinished after `limit` seconds
+    ends as TIMEOUT: a notebook can hang in RUNNING until Kaggle's 12 h cutoff."""
     t0 = time.time()
     seen = {s: False for s in slugs}
     final: dict[str, str] = {}
@@ -96,6 +103,8 @@ def wait(slugs: list[str], poll: int, seen_timeout: int = 900) -> dict[str, str]
             elif st in ("COMPLETE", "ERROR", "CANCEL") and (
                     seen[s] or time.time() - t0 > seen_timeout):
                 final[s] = st
+        if limit is not None and time.time() - t0 > limit:
+            final.update({s: "TIMEOUT" for s in slugs if s not in final})
         if len(final) < len(slugs):
             time.sleep(poll)
     return final
@@ -116,13 +125,17 @@ def last_history(dest: Path) -> dict:
     return json.loads(lines[-1]) if lines else {}
 
 
-def latest_learner() -> str:
-    """The learner whose finished output holds the highest cycle (waits for a
-    running one first). Used after a restart, when the last source is unknown."""
+def latest_learner(stale_minutes: float) -> str:
+    """The learner whose finished output holds the highest cycle (waits up to
+    `stale_minutes` for a running one first, then treats it as hung). Used
+    after a restart, when the last source is unknown."""
     best, best_cycle = "", -1
     for side in "ab":
         slug = f"ptcg-ppo-learn-{side}"
-        if wait([slug], 60, seen_timeout=0)[slug] != "COMPLETE":
+        st = wait([slug], 60, seen_timeout=0, limit=stale_minutes * 60)[slug]
+        if st == "TIMEOUT":
+            log(f"{slug} still running after {stale_minutes:g} min; treating it as hung")
+        if st != "COMPLETE":
             continue
         cycle = pull(slug, ROOT / "out/kaggle_out/ppo-par/auto" / side).get("cycle")
         if cycle is not None and cycle > best_cycle:
@@ -154,7 +167,7 @@ def collectors_ready(state: dict, k: int) -> bool:
 
 def run_parallel(a) -> int:
     reuse = a.source == "auto"
-    source = latest_learner() if reuse else a.source
+    source = latest_learner(a.stale_minutes) if reuse else a.source
     k = a.parallel
     learner = 0
     if source.split("/")[-1].startswith("ptcg-ppo-learn-"):
@@ -179,7 +192,7 @@ def run_parallel(a) -> int:
                           collect.replace("--shards", f"--shard {j} --shards"))
                      for j in range(k)]
             log(f"cycle {cycle}: {k} collectors pushed")
-        done = wait(slugs, a.poll)
+        done = wait(slugs, a.poll, limit=COLLECT_LIMIT)
         for retry in range(2):
             failed = [s for s, v in done.items() if v != "COMPLETE"]
             if not failed:
@@ -189,7 +202,7 @@ def run_parallel(a) -> int:
                 j = int(s.rsplit("col", 1)[1])
                 push(f"ppo-col{j}", [source],
                      collect.replace("--shards", f"--shard {j} --shards"))
-            done.update(wait(failed, a.poll))
+            done.update(wait(failed, a.poll, limit=COLLECT_LIMIT))
         if any(v != "COMPLETE" for v in done.values()):
             log(f"collectors failed twice: {done}; chain stopped")
             return 1
@@ -198,8 +211,10 @@ def run_parallel(a) -> int:
         learn = (f"scripts/ppo_session.py --role learn --resume /kaggle/input "
                  f"--output out/ppo{{i}} --games {a.games} {a.extra}").strip()
         inputs = [source] + [f"{USER}/{s}" for s in slugs]
+        # An evaluation cycle's learner also plays ~4,600 games (~45 min).
+        limit = LEARN_LIMIT + (EVAL_EXTRA if ((cycle or 0) + 1) % 20 == 0 else 0)
         slug = push(name, inputs, learn)
-        st = wait([slug], a.poll)[slug]
+        st = wait([slug], a.poll, limit=limit)[slug]
         if st != "COMPLETE" and reuse:
             log(f"{slug} ended {st} on reused rollouts; collecting afresh")
             reuse = False
@@ -208,7 +223,7 @@ def run_parallel(a) -> int:
         if st != "COMPLETE":
             log(f"{slug} ended {st}; retrying once")
             slug = push(name, inputs, learn)
-            st = wait([slug], a.poll)[slug]
+            st = wait([slug], a.poll, limit=limit)[slug]
         dest = ROOT / "out/kaggle_out/ppo-par" / f"c{(cycle or 0) + 1:04d}"
         new = pull(slug, dest) if st == "COMPLETE" else {}
         if st != "COMPLETE" or new.get("cycle") is None:
@@ -276,6 +291,10 @@ def main() -> int:
     ap.add_argument("--hours", type=float, default=11.0, help="sessions: per-session budget")
     ap.add_argument("--poll", type=int, default=30, help="seconds between status checks")
     ap.add_argument("--stop-on-candidate", action="store_true")
+    ap.add_argument("--stale-minutes", type=float,
+                    default=float(os.environ.get("PPO_STALE_MINUTES", 150)),
+                    help="auto: a learner still running after this long counts as hung "
+                         "(env PPO_STALE_MINUTES)")
     ap.add_argument("--extra", default="",
                     help="parallel: extra ppo_session.py flags for every notebook (smoke tests)")
     a = ap.parse_args()
