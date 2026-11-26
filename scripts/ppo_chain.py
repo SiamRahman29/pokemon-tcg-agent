@@ -22,11 +22,18 @@ model. Submitting is left to a person.
 
     python -X utf8 scripts/ppo_chain.py --parallel 4 \\
         --source siamrahman29/ptcg-ppo-s001 --until-cycle 300
+
+After a reboot, `--source auto` resumes from whichever learner holds the
+latest finished cycle, waiting for one that is still running, and reuses
+collectors that already finished that cycle. `scripts/systemd/ppo-chain.service`
+runs it that way. A lock file keeps two controllers from running together.
 """
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -95,7 +102,8 @@ def wait(slugs: list[str], poll: int, seen_timeout: int = 900) -> dict[str, str]
 
 
 def pull(slug: str, dest: Path) -> dict:
-    dest.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(dest, ignore_errors=True)  # a stale state file must not be read back
+    dest.mkdir(parents=True)
     sh(["kaggle", "kernels", "output", f"{USER}/{slug}", "-p", str(dest),
         "--file-pattern", SMALL])
     states = list(dest.rglob("ppo_state.json"))
@@ -108,8 +116,45 @@ def last_history(dest: Path) -> dict:
     return json.loads(lines[-1]) if lines else {}
 
 
+def latest_learner() -> str:
+    """The learner whose finished output holds the highest cycle (waits for a
+    running one first). Used after a restart, when the last source is unknown."""
+    best, best_cycle = "", -1
+    for side in "ab":
+        slug = f"ptcg-ppo-learn-{side}"
+        if wait([slug], 60, seen_timeout=0)[slug] != "COMPLETE":
+            continue
+        cycle = pull(slug, ROOT / "out/kaggle_out/ppo-par/auto" / side).get("cycle")
+        if cycle is not None and cycle > best_cycle:
+            best, best_cycle = f"{USER}/{slug}", cycle
+    if not best:
+        raise SystemExit("no finished learner to resume from")
+    return best
+
+
+def collectors_ready(state: dict, k: int) -> bool:
+    """True when all K collectors already finished this state's cycle, so a
+    restarted controller can go straight to the learner. The learner still
+    checks cycle and model hash; a mismatch there falls back to collecting."""
+    slugs = [f"ptcg-ppo-col{j}" for j in range(k)]
+    if any(v != "COMPLETE" for v in wait(slugs, 60, seen_timeout=0).values()):
+        return False
+    for j, slug in enumerate(slugs):
+        dest = ROOT / "out/kaggle_out/ppo-par/auto" / f"col{j}"
+        shutil.rmtree(dest, ignore_errors=True)
+        dest.mkdir(parents=True)
+        sh(["kaggle", "kernels", "output", f"{USER}/{slug}", "-p", str(dest),
+            "--file-pattern", r"part\d+\.json"])
+        metas = [json.loads(f.read_text()) for f in dest.rglob("part*.json")]
+        if not any(m["shard"] == j and m["shards"] == k and m["cycle"] == state.get("cycle")
+                   for m in metas):
+            return False
+    return True
+
+
 def run_parallel(a) -> int:
-    source = a.source
+    reuse = a.source == "auto"
+    source = latest_learner() if reuse else a.source
     k = a.parallel
     learner = 0
     if source.split("/")[-1].startswith("ptcg-ppo-learn-"):
@@ -120,14 +165,20 @@ def run_parallel(a) -> int:
         return 1
     state = pull(source.split("/")[-1], ROOT / "out/kaggle_out/ppo-par/source")
     log(f"source {source} at cycle {state.get('cycle')}")
+    reuse = reuse and collectors_ready(state, k)
     while True:
         c0 = time.time()
         cycle = state.get("cycle")
         collect = (f"scripts/ppo_session.py --role collect --shards {k} --resume /kaggle/input "
                    f"--output out/ppo{{i}} --games {a.games} {a.extra}").strip()
-        slugs = [push(f"ppo-col{j}", [source], collect.replace("--shards", f"--shard {j} --shards"))
-                 for j in range(k)]
-        log(f"cycle {cycle}: {k} collectors pushed")
+        if reuse:
+            slugs = [f"ptcg-ppo-col{j}" for j in range(k)]
+            log(f"cycle {cycle}: reusing {k} finished collectors")
+        else:
+            slugs = [push(f"ppo-col{j}", [source],
+                          collect.replace("--shards", f"--shard {j} --shards"))
+                     for j in range(k)]
+            log(f"cycle {cycle}: {k} collectors pushed")
         done = wait(slugs, a.poll)
         for retry in range(2):
             failed = [s for s, v in done.items() if v != "COMPLETE"]
@@ -149,6 +200,11 @@ def run_parallel(a) -> int:
         inputs = [source] + [f"{USER}/{s}" for s in slugs]
         slug = push(name, inputs, learn)
         st = wait([slug], a.poll)[slug]
+        if st != "COMPLETE" and reuse:
+            log(f"{slug} ended {st} on reused rollouts; collecting afresh")
+            reuse = False
+            continue
+        reuse = False
         if st != "COMPLETE":
             log(f"{slug} ended {st}; retrying once")
             slug = push(name, inputs, learn)
@@ -210,7 +266,8 @@ def main() -> int:
     ap.add_argument("--parallel", type=int, default=0,
                     help="collector notebooks per cycle (0 = one-notebook sessions)")
     ap.add_argument("--source", default="",
-                    help="parallel: kernel whose output holds the state to continue from")
+                    help="parallel: kernel whose output holds the state to continue from, "
+                         "or `auto` for the learner with the highest finished cycle")
     ap.add_argument("--init-kernel", default=f"{USER}/ptcg-tx-train-v1",
                     help="sessions: kernel whose output holds the distilled model.pt")
     ap.add_argument("--first", type=int, default=1, help="sessions: session number to start at")
@@ -225,6 +282,13 @@ def main() -> int:
     if a.parallel:
         if not a.source:
             ap.error("--parallel needs --source")
+        # One controller at a time: a second one would push the same notebooks.
+        lock = open(ROOT / "out/kaggle_out/ppo_chain.lock", "w")
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            log("another controller holds the lock; exiting")
+            return 0
         return run_parallel(a)
     return run_sessions(a)
 
