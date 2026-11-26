@@ -178,6 +178,9 @@ def run_parallel(a) -> int:
         return 1
     state = pull(source.split("/")[-1], ROOT / "out/kaggle_out/ppo-par/source")
     log(f"source {source} at cycle {state.get('cycle')}")
+    if (state.get("cycle") or 0) >= a.until_cycle:
+        log(f"already at cycle {state.get('cycle')} (until {a.until_cycle}); chain done")
+        return 0
     reuse = reuse and collectors_ready(state, k)
     while True:
         c0 = time.time()
